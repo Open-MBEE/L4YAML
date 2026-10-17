@@ -503,6 +503,18 @@ checkout is disposable; here it can move the committed
 [doc/lake-manifest.json](doc/lake-manifest.json), so check `git status` after a
 run if you intend to commit.
 
+One thing it deliberately undoes. `collect-stats --emit-lean` writes the stats
+payload into [doc/Doc/L4YAML/StatsData.lean](doc/Doc/L4YAML/StatsData.lean), a
+*tracked* file, because Verso's `:::statsTable` reads it when the chapter
+elaborates; the committed state is a placeholder that renders every cell as
+`?`. Phase 3 parks the generated payload under `.ci-local/`, phase 4 installs
+it for the render, and the placeholder goes back afterwards — so a run leaves
+that file unmodified, and a numbered table in `docs/` is not something you can
+commit by accident. The consequence is that phase 4 needs phase 3 to have run
+at some point: `./scripts/generate-all.sh 4` on its own warns and renders the
+`?` cells. If you have your own edits to that file, the script says so and
+leaves it alone in both directions.
+
 Missing optional tools degrade rather than fail: without `cmake` or `cargo` the
 C and Rust backends drop out of phase 2, without Graphviz `dot` the import
 graph is not regenerated, without `weasyprint` phase 5 is skipped, and without

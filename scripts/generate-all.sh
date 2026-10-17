@@ -134,6 +134,29 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   echo "  docker       -> phase 6"
 fi
 
+# `lake exe collect-stats --emit-lean` writes the stats payload into a TRACKED
+# source file, because Verso's `:::statsTable` reads it at elaboration time.  In
+# CI the checkout is throwaway; here it would leave the tree dirty on a file
+# whose payload carries a timestamp, one `git commit -a` away from publication.
+# So phase 3 parks the payload in $WORK, phase 4 installs it for the render, and
+# the EXIT trap puts the committed placeholder back even if a phase dies.
+STATS_LEAN="doc/Doc/L4YAML/StatsData.lean"
+STATS_SAVED="$WORK/StatsData.lean"
+STATS_INSTALLED=0
+STATS_MANAGED=1
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  STATS_MANAGED=0
+elif ! git diff --quiet -- "$STATS_LEAN" 2>/dev/null; then
+  STATS_MANAGED=0
+  warn "$STATS_LEAN carries local edits — not saving and not restoring it"
+fi
+restore_stats() {
+  [ "$STATS_INSTALLED" = 1 ] || return 0
+  STATS_INSTALLED=0
+  git checkout -- "$STATS_LEAN" 2>/dev/null || true
+}
+trap restore_stats EXIT
+
 # Hermetic Python venv, for the reason the workflow spells out: an ambient
 # PYTHONPATH (ROS exports one on this box) is searched BEFORE a venv's own
 # site-packages, and the plugins it registers crash pytest. Point PYTHONPATH at
@@ -257,7 +280,11 @@ if wants 3; then
   LOG="$LOGS/03-collect-stats.log"
   lake exe collect-stats --emit-lean > "$LOG" 2>&1
   test -f "$REPORTS/stats.json"
-  grep -q 'statsJson? : Option String := some' doc/Doc/L4YAML/StatsData.lean
+  grep -q 'statsJson? : Option String := some' "$STATS_LEAN"
+  if [ "$STATS_MANAGED" = 1 ]; then
+    cp "$STATS_LEAN" "$STATS_SAVED"
+    git checkout -- "$STATS_LEAN"
+  fi
   note 3 collect-stats ok
 
   say "Phase 3 — proof-hygiene gates"
@@ -286,6 +313,14 @@ fi
 # ------------------------------------------------------------------ phase 4
 if wants 4; then
   say "Phase 4 — doc/ sub-project build"
+  if [ "$STATS_MANAGED" = 1 ]; then
+    if [ -f "$STATS_SAVED" ]; then
+      cp "$STATS_SAVED" "$STATS_LEAN"
+      STATS_INSTALLED=1
+    else
+      warn "no stats payload in $WORK — statsTable cells render '?' (run phase 3 first)"
+    fi
+  fi
   LOG="$LOGS/04-doc-build.log"
   ( cd doc && lake update && lake build l4yaml-doc ) > "$LOG" 2>&1
   echo "$(grep -oE 'Build completed successfully \([0-9]+ jobs\)' "$LOG" | tail -1 || echo built)"
@@ -322,8 +357,11 @@ if wants 4; then
          --dir doc/Doc/L4YAML/graphs --clobber > "$LOG" 2>&1; then
       tar xzf doc/Doc/L4YAML/graphs/theorem-graphs-headlines.tar.gz -C doc/Doc/L4YAML/graphs/
       rm -f doc/Doc/L4YAML/graphs/theorem-graphs-headlines.tar.gz
-      N="$(ls doc/Doc/L4YAML/graphs/*.svg 2>/dev/null | wc -l)"
-      echo "$N SVG graphs"
+      # Recursive, and excluding the import graph: the tarball extracts into
+      # `L4YAML/`, `group/` and `module/`, so a top-level glob would match only
+      # `import-graph.svg` — the previous step's output, and none of these.
+      N="$(find doc/Doc/L4YAML/graphs -name '*.svg' -not -name 'import-graph.svg' | wc -l)"
+      echo "$N theorem-graph SVGs"
       note 4 fgm-graphs "$N svgs"
     else
       warn "could not download theorem graphs (see $LOG) — chapter figures will be missing"
@@ -342,9 +380,13 @@ if wants 4; then
   [ -d "$REPORTS" ] && cp -r "$REPORTS" docs.new/reports
   rm -rf docs
   mv docs.new docs
-  PAGES="$(find docs -name '*.html' -not -path 'docs/api/*' | wc -l)"
-  echo "docs/ rebuilt — $PAGES pages (reports preserved)"
-  note 4 verso-render "$PAGES pages"
+  # Count the render and the carried-over reports apart: summing them labels 12
+  # phase-2/3 report pages as something the Verso render produced.
+  VPAGES="$(find doc/_out/html-multi -name '*.html' | wc -l)"
+  RPAGES="$(find docs/reports -name '*.html' 2>/dev/null | wc -l)"
+  echo "docs/ rebuilt — $VPAGES rendered pages + $RPAGES report pages carried across"
+  note 4 verso-render "$VPAGES pages +$RPAGES reports"
+  restore_stats
 
   if [ "$SKIP_API_DOCS" = 1 ]; then
     note 4 api-docs SKIPPED

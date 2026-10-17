@@ -27,8 +27,8 @@ so that any drift **fails the build**:
   declarations allowed to use the `theorem` keyword);
 - the `#assert_capstone_axioms` pin freezes each capstone's **axiom
   profile** — `pure` = `propext`/`Classical.choice`/`Quot.sound` only,
-  `native` = additionally `Lean.ofReduceBool`-backed `native_decide`
-  reflected-decide leaves. Any `sorryAx` or project-declared axiom is a
+  `native` = additionally the per-call-site axiom each `native_decide`
+  reflected-decide leaf emits. Any `sorryAx` or project-declared axiom is a
   hard error, and a capstone silently acquiring a `native_decide`
   dependency flips its line and fails the pin;
 - the `#guard` sentinels are compile-time non-vacuity witnesses: the

@@ -205,9 +205,8 @@ def gatherYamlTestSuite (reportsDir : FilePath) : IO (Option Json) := do
 /-- Lean's stock axioms (always present in any Lean program). Filtered out
     of `axioms_total` so the count reflects user-declared axioms only. -/
 def builtinAxioms : Lean.NameSet :=
-  ([`Classical.choice, `propext, `Quot.sound, `sorryAx,
-    `Lean.ofReduceBool, `Lean.ofReduceNat, `Lean.trustCompiler,
-    `Lean.trustReducibility].foldl (·.insert ·) Lean.NameSet.empty)
+  ([`Classical.choice, `propext, `Quot.sound,
+    `sorryAx].foldl (·.insert ·) Lean.NameSet.empty)
 
 /-- The `sorry` tactic compiles to `sorryAx`. -/
 def sorryAxName : Lean.Name := `sorryAx
@@ -252,8 +251,8 @@ def scanEnvAction (rootName : Lean.Name) : Lean.CoreM EnvStats := do
       -- A "custom axiom" here means a user-declared L4YAML axiom. We
       -- exclude `Name.isInternalDetail` to skip Lean's auto-generated
       -- `_native.native_decide.ax_*` axioms (one per `native_decide` call).
-      -- Those are stock kernel infrastructure trusted via `Lean.ofReduceBool`,
-      -- not project-declared axioms.
+      -- Each such axiom records that one `native_decide` call trusts the
+      -- compiler; none is a project-declared axiom.
       let customs := axs.filter fun a =>
         rootName.isPrefixOf a && !a.isInternalDetail
       if !customs.isEmpty then

@@ -156,8 +156,8 @@ theorem mapTokens_first_doc_at_pos_one
 -- Axiom audit — the position-pinning lemma and its loop traces route through `parseStreamLoop` /
 -- `parseDocument` and the `Except`-monad simp machinery, so they carry `Classical.choice` (same
 -- profile as bricks 1 / 2(a) / 2(b)-part-1, §5.6). `expect_pos_succ` is a pure structural inversion
--- of `expect` and audits `[propext]` ALONE. None depend on `Lean.ofReduceBool` (the firing probes
--- above are separate `native_decide` lemmas).
+-- of `expect` and audits `[propext]` ALONE. None carries a `native_decide` axiom (the firing
+-- probes above are separate `native_decide` lemmas).
 /-- info: 'L4YAML.Proofs.EmitterScannability.parseStream_first_doc_at_pos_one' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/

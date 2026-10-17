@@ -98,7 +98,7 @@ theorem mapPS_recovers_mapping
 
 -- Axiom audit — the source lemmas are structural unfolds; `Classical.choice` is inherited from
 -- the parser/`Except`-monad simp machinery they unfold, NOT from `native_decide` (the
--- `native_decide` firing probes above are separate and carry `Lean.ofReduceBool` on top).
+-- `native_decide` firing probes above are separate and carry a per-call-site axiom on top).
 /-- info: 'L4YAML.Proofs.EmitterScannability.parseFlowSequence_produces_sequence' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/

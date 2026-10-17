@@ -7526,8 +7526,8 @@ structure FlowBodyContentDeepSeq (tokens : Array (Positioned YamlToken)) (lo hi 
     guard's root seed was true while the EMPTY/`{`/map-`,` cases that falsify OLD are absent.  Establishes
     the re-scoped guard's root is INHABITED before any restriction/consumer is built on it
     ([[ref-probe-provider-satisfiable-before-assembler]] / [[ref-restriction-hides-root-falsity]]); the
-    GENERAL root seed (emitter induction, TRUE now) is the next brick.  `native_decide` leaf — the
-    `ofReduceBool` axiom is contained here, off the `universal_roundtrip` path. -/
+    GENERAL root seed (emitter induction, TRUE now) is the next brick.  `native_decide` leaf — its
+    per-call-site axiom is contained here, off the `universal_roundtrip` path. -/
 lemma flowBodyContentDeepSeq_root_holds_nested_scalar
     (tokens : Array (Positioned YamlToken))
     (h : Scanner.scanFiltered
@@ -7679,7 +7679,7 @@ lemma flowBodyContentDeepMap_advance (tokens : Array (Positioned YamlToken)) (lo
     exercise (it had no depth-`0` `,`).  Establishes the guard's root is INHABITED before any
     consumer/restriction is built on it ([[ref-probe-provider-satisfiable-before-assembler]]).  The
     layout is `streamStart {.key a .value b .flowEntry .key c .value d} streamEnd` (size 13, window
-    `[2, 11)`).  `native_decide` leaf — the `ofReduceBool` axiom is contained here, off the
+    `[2, 11)`).  `native_decide` leaf — its per-call-site axiom is contained here, off the
     `universal_roundtrip` path; references no sorry site, frontier sorry count unchanged at 4. -/
 lemma flowBodyContentDeepMap_root_holds_two_pairs
     (tokens : Array (Positioned YamlToken))

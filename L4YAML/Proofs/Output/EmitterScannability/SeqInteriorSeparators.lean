@@ -8055,8 +8055,8 @@ lemma flowBodyContentDeep_window_of_root
     Machine-checked: `native_decide` on the concrete 6-token scan of `"[[]]"` (the input shown literally
     as the emitter form), then `openerContentStart` at `k = 2` contradicts `tokens[3] = .flowSequenceEnd`.
     A guard rail: it permanently refutes the "prove the root seed" path so it is not re-attempted.  Off
-    the critical path (a refutation, consumed by nothing — `native_decide`'s `Lean.ofReduceBool` does not
-    reach `universal_roundtrip`); frontier sorry count unchanged at 4. -/
+    the critical path (a refutation, consumed by nothing — `native_decide`'s per-call-site axiom does
+    not reach `universal_roundtrip`); frontier sorry count unchanged at 4. -/
 lemma flowBodyContentDeep_root_seed_false
     (tokens : Array (Positioned YamlToken))
     (h : Scanner.scanFiltered
@@ -8132,8 +8132,8 @@ lemma flowBodyContentDeep_root_seed_false
     (`tokens[6] = .flowSequenceStart` at `flowBracketBalance 2 6 = 1`, `tokens[7]` content-start) is the
     positive witness that the opener field reaches a non-seq-structural, non-depth-`0` opener.  A guard rail:
     it fences the "produce `openerContentStart` from `RecSeqBody`" path so it is not re-attempted.  Off the
-    critical path (a witness consumed by nothing — `native_decide`'s `Lean.ofReduceBool` does not reach
-    `universal_roundtrip`); frontier sorry count unchanged at 4. -/
+    critical path (a witness consumed by nothing — `native_decide`'s per-call-site axiom does not
+    reach `universal_roundtrip`); frontier sorry count unchanged at 4. -/
 lemma flowBodyContentDeepSeq_opener_reaches_map_interior
     (tokens : Array (Positioned YamlToken))
     (h : Scanner.scanFiltered
@@ -9694,8 +9694,8 @@ lemma seqRec_of_carrier_and_windowFacts_seq (tokens : Array (Positioned YamlToke
     and every interior prefix is balanced), and `WellTyped_prefix_some` turns whole-stream
     well-typedness into fold-totality at EVERY prefix.  So the probe also NAMES the future discharge
     route for `h_fold_total`: a whole-stream `WellTyped tokens.toList` fact (none exists yet — `h_wt_outer`
-    covers only the interior `(take (size-2)).drop 2`) fed through `WellTyped_prefix_some`.  Contains the
-    `ofReduceBool` axiom (`native_decide`), off the `universal_roundtrip` path. -/
+    covers only the interior `(take (size-2)).drop 2`) fed through `WellTyped_prefix_some`.  Contains a
+    `native_decide` per-call-site axiom, off the `universal_roundtrip` path. -/
 lemma seqFoldTotal_satisfiable_on_real_output
     (tokens : Array (Positioned YamlToken))
     (h : Scanner.scanFiltered
@@ -10200,8 +10200,8 @@ lemma mapFoldTotal_of_context
     8th guard to `h_seq_rec`/`windowFacts` (it EXCLUDES every cross-matched false window and makes
     `FlowBodyWindow.dyck` a trivial pass-through).  This is the [[ref-end-free-gate-underdetermines-close]] /
     [[ref-probe-provider-head-blind-gate]] family: an endpoint + total-balance gate underdetermines the
-    matched pair; the interior floor is the discriminator.  This lemma contains the `ofReduceBool` axiom
-    (`native_decide`), off the `universal_roundtrip` path. -/
+    matched pair; the interior floor is the discriminator.  This lemma contains a `native_decide`
+    per-call-site axiom, off the `universal_roundtrip` path. -/
 lemma seqWindowFacts_false_window
     (tokens : Array (Positioned YamlToken))
     (h : Scanner.scanFiltered
@@ -10258,7 +10258,7 @@ lemma seqWindowFacts_false_window
     mis-nested pairing.  It is the `FlowSubrangesOk`-contract-level analogue of the producer-layer
     `seqWindowFacts_false_window` (which rejects the same window via `FlowBodyWindow.dyck`); the
     [[ref-end-free-gate-underdetermines-close]] / [[ref-probe-provider-head-blind-gate]] discriminator now
-    lives at the parser contract's own `.seq` guard.  Contains the `ofReduceBool` axiom (`native_decide`),
+    lives at the parser contract's own `.seq` guard.  Contains a `native_decide` per-call-site axiom,
     off the `universal_roundtrip` path. -/
 lemma flowSubrangesOk_seq_floor_rejects_crossMatched_window
     (tokens : Array (Positioned YamlToken))
@@ -10331,8 +10331,8 @@ lemma flowSubrangesOk_seq_floor_rejects_crossMatched_window
     Dyck-INDEPENDENT (their `isFlowContentStart tokens[k+1]` conjunct is an emitter-global property of every
     `.key`/`.value`, and `k+1 < hi` is forced by the `.flowMappingEnd` closer) so they survive cross-matching;
     only the four BOUNDARY-referencing facts (the scalar/bracket successors, which name `hi` via `k+2 = hi` /
-    `j+1 = hi` or pin an interior separator) genuinely need Dyck.  Contains the `ofReduceBool` axiom
-    (`native_decide`), off the `universal_roundtrip` path; references no sorry site, frontier sorry count
+    `j+1 = hi` or pin an interior separator) genuinely need Dyck.  Contains a `native_decide`
+    per-call-site axiom, off the `universal_roundtrip` path; references no sorry site, frontier sorry count
     unchanged at 4. -/
 lemma mapGrammarFacts_false_window
     (tokens : Array (Positioned YamlToken))

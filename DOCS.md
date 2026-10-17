@@ -37826,12 +37826,64 @@ records.
 | 274 | reshape the frame's carrier, then the ride and `optok` | **PRICED — the reshape is not the next ring either.**  Five probes on `FlowBaseAnchor.gate`'s slot branch read `anchor=B bare=O nonoffer=B offer=O floor=B`: it closes by EX FALSO where §9.2 fires and not at all where §8.1 does, and ONE reading on the close's own state closes the other half.  `closeGate == (144, 90, 54, 90, 144, 126, 18, 18)` — the two verdicts are silent together at no cell, `GateOf`'s own is TRUE at all 144 (so gating the ride MOVES the drop rather than retiring it), and the premise the slot's spend needs is the negation of `ParkAnchor.parkProp`, 126 against 18: a `choice` disjunction's two branches are opposed on it.  The premise cannot be STATED on either spend (`name=OO`; both quantify `g`), the payable phrasing is `wrap=BB`, and `apps=2` says an arity census's four locations are two applications.  The second verdict's bill at `h_closable` is `closable=20/5`.  **A disjunction chosen to keep both producers is a producer's argument wearing a consumer's clothes** — its consumer gets a case split, and a split pays only if every branch can spend. | no | `scripts/close_price.py` + `ScannerFlowOpenUnderRun.lean` §14; 31 perturbations |
 | 275 | carry §8.1's silence beside §9.2's at the close | **PAID, and the bill was not the one that was priced.**  `closable=20/5` was an arity census taken with a DUMMY premise, and the same census reads `closable=20/5` again now that the carry is paid — it counts where a premise must be written, not the chain that must supply it.  The real cost is FIVE rings: thirteen producers that ignore a binder, `close_with_ssl` and item 157's four pre-split closures, thirteen restated carrier statements, fifteen landings growing `h_fv` with thirteen sites reading the silence off it, and `scanNextToken_accum_step`, which derived §8.1's success and discarded it on the next line (item 268, exact on this tree) and now passes it down.  `ParkBill` §5 moves from `fv/mid=0 fv/eof=0` to **`fv/mid=16 fv/eof=4`** against §9.2's 21/5, the gap being the six refutation lemmas that read the dangling run to refute a landing.  **An arity census prices a signature, not a supply.** | **yes** — `StreamAccum.lean` +211/−80, two bridge lemmas | `ParkBill.lean` §5 (gates every build) + battery stage 22f; `flip_supplier.py` re-aimed and its `--end all` made failure-isolating |
 
-**Two housekeeping questions, measured 2026-09-22.**  Neither is a plan row;
-the numbers are recorded so the decision can be taken against them rather
-than against a forecast.
+**Housekeeping questions, measured 2026-09-22 and re-measured 2026-10-17.**
+None is a plan row; the numbers are recorded so the decision can be taken
+against them rather than against a forecast.
 
-* **Lean v4.34.0 — LANDED 2026-09-22.**  This branch and its doc workspace
-  are on `leanprover/lean4:v4.34.0`; the release-line branch `v4.34.0`
+* **Lean v4.35.0 — LANDED 2026-10-17.**  This branch and its doc workspace are
+  on `leanprover/lean4:v4.35.0`.  No release-line branch exists for it yet, so
+  `v4.34.0` is still the newest branch a consumer pinning by release will find.
+  What the bump cost:
+  * **One code change, and it was a dead name.**  v4.35.0 removes
+    `Lean.ofReduceBool`, `Lean.ofReduceNat`, `Lean.trustCompiler` and
+    `Lean.trustReducibility`.  `CapstoneAttr.lean` named the first three in
+    `allowedCapstoneAxioms` and two of them again in its `native` classifier,
+    and those five `Unknown constant` errors were the whole of the break.  A
+    probe run under every installed toolchain from v4.31.0 through v4.35.0
+    shows `native_decide` emitting ONLY a per-call-site
+    `…_native.native_decide.ax_1_1`
+    (`scratchpad/l4yaml-435-migration/native-axioms-by-version.log`), so the
+    named-axiom signature had been dead here for four releases and the
+    classifier's live signal was always `Name.isInternalDetail`.
+    `#assert_capstone_axioms` reads 18 pure / 7 native over 25 capstones
+    before and after, so no verdict moved.  Twenty prose sites across eleven
+    files asserted the old signature and now name the real one.
+  * **Seven pins moved, in two shapes, and no conclusion with them.**  Term
+    size: `nodes` 96158 → 96125 on the twenty-four-declaration walk
+    (`CloseStackCover`, `PuntCoverInputs`, `PaidLeafDelta`), 12307 → 12296
+    (`ValueLinePacks`), and 12337 → 12326 with `liteNodes` 491982 → 491884
+    while `alts` holds at 4312 (`ValueLineOrigins`).  Verdict lanes: `eta` +5,
+    `READ` +5, `RELAY` −10 in BOTH `HypothesisReaderCensus` (369/1050/2120 →
+    374/1055/2110) and `PremiseNecessityCensus` (369/1088/1983 →
+    374/1093/1973) — one set of ten binder verdicts seen through two peels,
+    not two drifts.  `verdictWith` reports `ETA` when a value's `lamDepth` is
+    under its type's binder count, so five declarations elaborate eta-shorter
+    and five relayed binders now appear applied.  Every NAMED roster held, in
+    all seven files, and `constants` and `decls` did not move at all — unlike
+    v4.34.0, whose four pins moved because one `toCtorIdx` left the module.
+  * **The ten are unnamed, and that is the lesson.**  Naming them needs a
+    v4.34.0 olean baseline to diff and none was kept — the `verdict.out` the
+    reader census cites is a two-line dump of a single declaration.  This
+    migration emits the roster that was missing,
+    `scratchpad/l4yaml-435-migration/verdict-roster-435.out`: 3749 rows, one
+    per binder, whose lane counts reproduce the pin exactly.  **A tally pin
+    with no roster beside it can say that it moved and not what moved.**
+  * **Pins.**  `LeanCopilot`, `importGraph`, `DocGen4` at their `v4.35.0`
+    tags; the doc workspace at verso's `v4.35.0` tag (`304b8561`) with
+    subverso in lockstep at `892d6dc5`, checked against verso's own
+    `verso-v4.35.0` tag rather than assumed.  `lake update` also moved the
+    four `main`/`master`-tracking packages — `leansqlite`, `Cli`,
+    `UnicodeBasic`, `BibtexQuery` — to their heads, a wider surface than the
+    toolchain alone; `MD4Lean` was the one that did not move.
+  * **Gates, all at baseline.**  Full `lake build` **1251** jobs exit 0, the
+    same count as the pre-bump build on this tree, so nothing structural
+    moved; the four static gates and `check-serialization-proofs.sh` all exit
+    0, the last reporting `45 observed profiles; exact headline sets`
+    unchanged; the doc workspace builds 497 jobs and the site renders at 52
+    pages.
+
+* **Lean v4.34.0 — LANDED 2026-09-22.**  The bump that put this branch and its
+  doc workspace on `leanprover/lean4:v4.34.0`; the release-line branch `v4.34.0`
   (= `v4.33.0` + `fdef03ca`) exists for consumers that pin by release
   (`soil-moisture-workflows/tools/algctl`, itself on 4.34.0, requires the
   `v4.33.0` branch and moves when this one is pushed).  What the bump cost,

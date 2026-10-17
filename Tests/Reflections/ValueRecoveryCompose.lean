@@ -118,8 +118,8 @@ theorem mapRawDoc_compose_recovers_mapping
 -- Axiom audit — the source lemmas are structural unfolds of `compose` / `resolveAliasesOrdered` /
 -- `stripAnchors` (a `rfl` projection, the ordered walk's sequence/mapping equation, an `unfold`,
 -- and a constructor witness).  Since J2 (order-aware alias resolution) the ordered walk's equation
--- lemmas carry `Classical.choice`; still no `sorryAx` and no `Lean.ofReduceBool` (the
--- `native_decide` firing probes above are separate and carry that on top.)
+-- lemmas carry `Classical.choice`; still no `sorryAx` and no `native_decide` axiom (the
+-- `native_decide` firing probes above are separate and carry one on top.)
 /-- info: 'L4YAML.Proofs.EmitterScannability.compose_preserves_flow_sequence' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/

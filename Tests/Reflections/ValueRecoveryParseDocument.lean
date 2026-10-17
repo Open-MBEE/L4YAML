@@ -134,7 +134,7 @@ theorem mapDocPS_parseDocument_recovers_mapping
 -- dispatch / wrap, so they inherit brick 2(a)'s `Classical.choice` from the parser/`Except`-monad
 -- simp machinery (same profile as bricks 1 / 2(a); brick 2(b) was leaner only because `compose`
 -- never touches that machinery). NOT from `native_decide` (the firing probes above are separate and
--- carry `Lean.ofReduceBool` on top).
+-- carry a per-call-site axiom on top).
 /-- info: 'L4YAML.Proofs.EmitterScannability.parseDocument_flowSeqStart_produces_sequence' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/

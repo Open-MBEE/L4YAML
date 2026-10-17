@@ -235,10 +235,16 @@ declarations' own binders and not by a rescoring of an existing one.
     `decls` 981 → 983.  The peel scores their fifteen `Prop` binders the way
     the reader does — `READ` 1084 → 1086, `RELAY` 1951 → 1964 — and the two
     `READ`s are both item 271's, `h_floor` and `hcorr`, each projected.  Item
-    272's nine all relay, which is what a composition is. -/
+    272's nine all relay, which is what a composition is.
+
+    Lean v4.35.0 moves the same ten verdicts the reader census records, scored
+    through this peel: `eta` 369 → 374, `READ` 1088 → 1093, `RELAY` 1983 →
+    1973.  `constants`, `decls`, `FIELD`, `RETURN` and the `UNUSED` roster hold,
+    and so does every named roster below — the lane totals moved, no conclusion
+    did. -/
 
 def expectedModuleTallyP : String :=
-  "constants=1165 decls=985 eta=369 FIELD=171 READ=1088 RELAY=1983 RETURN=129 UNUSED=9"
+  "constants=1165 decls=985 eta=374 FIELD=171 READ=1093 RELAY=1973 RETURN=129 UNUSED=9"
 
 def expectedOptTallyP : String :=
   "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"

@@ -404,9 +404,23 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
     declaration IS the composition: three go to
     `preprocess_landing_on_stack` and six to the first.  So `READ` 1048 → 1050
     and `RELAY` 2086 → 2099, with no other lane moving and the `UNUSED` roster
-    unchanged (`scratchpad/l4yaml-beta5-item272/verdict.out`). -/
+    unchanged (`scratchpad/l4yaml-beta5-item272/verdict.out`).
+
+    Lean v4.35.0 moves ten verdicts and no constant: `eta` 369 → 374, `READ`
+    1050 → 1055, `RELAY` 2120 → 2110, with `constants`, `decls`, `FIELD`,
+    `RETURN` and the `UNUSED` roster all unchanged.  `verdictWith` reports
+    `ETA` when a value's `lamDepth` is under its type's binder count, so the
+    five that entered that lane are declarations v4.35.0 elaborates
+    eta-shorter, and the five that left `RELAY` for `READ` now appear applied.
+    Every NAMED pin held — the fifteen ground-truth rows below, `expectedUnused`
+    and `CloseStackCover`'s rosters — so no verdict this census ARGUES moved,
+    only its lane totals.  The ten are not named here: naming them needs a
+    v4.34.0 olean baseline to diff against and none was kept.  The roster this
+    build does emit is
+    `scratchpad/l4yaml-435-migration/verdict-roster-435.out`, so the next move
+    is diffable. -/
 def expectedModuleTally : String :=
-  "constants=1165 decls=985 eta=369 FIELD=152 READ=1050 RELAY=2120 RETURN=49 UNUSED=9"
+  "constants=1165 decls=985 eta=374 FIELD=152 READ=1055 RELAY=2110 RETURN=49 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",

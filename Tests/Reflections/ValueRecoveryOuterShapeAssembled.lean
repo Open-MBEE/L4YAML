@@ -141,8 +141,8 @@ theorem mapTokens_outer_shape_recovered
 -- Axiom audit — the assembled outer-shape lemmas route through §5.7's position-pinning
 -- (`parseStream_first_doc_at_pos_one`, carrying `Classical.choice` from the `Except`-monad simp) plus
 -- the §5.6 / §5.5 links and the `Array.map` / `getElem!` bridge, so both carry the same
--- `[propext, Classical.choice, Quot.sound]` profile as the §5.7 traces. They do NOT depend on
--- `Lean.ofReduceBool` (the firing probes above are separate `native_decide` lemmas).
+-- `[propext, Classical.choice, Quot.sound]` profile as the §5.7 traces. They carry no
+-- `native_decide` axiom (the firing probes above are separate `native_decide` lemmas).
 /-- info: 'L4YAML.Proofs.EmitterScannability.parseStream_flowSeqStart_recovers_outer_shape' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/

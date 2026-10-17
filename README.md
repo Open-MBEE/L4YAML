@@ -452,6 +452,63 @@ lake exe schemadump              # Schema ↔ Dump integration
 
 The full list of executables is in [lakefile.lean](lakefile.lean).
 
+### Everything at once
+
+The suites above are one phase of a longer pipeline. Building the library,
+running every suite, regenerating the documentation and scoring L4YAML against
+the other YAML processors happens in one pass in
+[.github/workflows/test-coverage.yml](.github/workflows/test-coverage.yml), and
+[`scripts/generate-all.sh`](scripts/generate-all.sh) runs that same pipeline on
+your machine:
+
+```sh
+./scripts/generate-all.sh                 # phases 1-5 (build, test, report, docs, PDF)
+./scripts/generate-all.sh --list          # the phases, options, and what each needs
+./scripts/generate-all.sh 4 5             # just the documentation and the PDF
+./scripts/generate-all.sh --with-matrix   # also the YAML Test Matrix (needs Docker)
+./scripts/generate-all.sh --publish       # also write the local gh-pages branch
+```
+
+| Phase | What it produces |
+|---|---|
+| 1 build | the library and the test executables, then the serialization axiom gate |
+| 2 test | Lean suites, the C shared library and `tryparse_c`, the Rust `tryparse`, the Python FFI and package suites, and the four-backend cross-language comparison |
+| 3 report | the test-result HTML, the `collect-stats` payload, and the four proof-hygiene gates plus the kernel-accurate sorry/axiom assertion over the compiled environment |
+| 4 docs | the `doc/` build, the import graph, the theorem graphs, the Verso render, the SVG `<object>` rewrite, the swap into `docs/`, and the doc-gen4 API tree |
+| 5 pdf | `docs/L4YAML.pdf` and its landing-page link |
+| 6 matrix | `docs/matrix/` — `--with-matrix` only |
+| 7 publish | the local `gh-pages` branch — `--publish` only |
+
+Each phase prints the log it wrote (under `.ci-local/logs/`), and the run ends
+with a table of the numbers a reader would otherwise have to grep for — job
+count, `Verified: n/n`, observed axiom profiles, page count. A failing step is
+reported in that table and sets a non-zero exit status rather than stopping the
+site from being assembled from whatever did succeed.
+
+Four differences from CI, all deliberate: it installs no toolchain (it asserts
+the [lean-toolchain](lean-toolchain) one is present), installs no system
+packages, uploads no artifact and posts no comment, and never pushes —
+`--publish` writes the local `gh-pages` branch and leaves
+`PAGES_PUSH=1 ./scripts/publish-pages.sh` as a separate, deliberate act. What
+it *does* handle for you is the setup a fresh checkout or worktree needs: it
+initializes the `yaml-test-suite` submodule, builds the test executables (they
+are not default targets, so a bare `lake build` leaves them absent), and
+regenerates the import graph the Verso render requires.
+
+Two side effects worth knowing. Phase 4 rebuilds `docs/` from scratch, carrying
+`docs/reports/` across the swap exactly as CI does — that directory is
+generated and gitignored, but a local `docs/` you were keeping is not safe.
+And phase 4 runs `lake update` in `doc/`, which CI can do freely because its
+checkout is disposable; here it can move the committed
+[doc/lake-manifest.json](doc/lake-manifest.json), so check `git status` after a
+run if you intend to commit.
+
+Missing optional tools degrade rather than fail: without `cmake` or `cargo` the
+C and Rust backends drop out of phase 2, without Graphviz `dot` the import
+graph is not regenerated, without `weasyprint` phase 5 is skipped, and without
+a reachable Docker daemon phase 6 is skipped with a warning — the same way the
+workflow's own matrix step skips itself.
+
 ### Querying test results
 
 `suiterunner --html` also writes structured results to
@@ -478,6 +535,10 @@ lake exe queryresults diff before.json after.json
 ```
 
 ### L4YAML and the YAML Test Matrix
+
+To generate the matrix locally rather than on a release tag, run
+`./scripts/generate-all.sh --with-matrix` (it needs a reachable Docker daemon;
+see the phase table above).
 
 Submitted [yaml-runtimes PR #39](https://github.com/yaml/yaml-runtimes/pull/39) to
 add L4YAML to the official YAML Test Matrix, which was last updated in [v2022-01-17](https://matrix.yaml.info/). At that time, there were 20 processors; this PR would make L4YAML the 21st processor, and the first verified one. The PR is still open as of 2026-07-05.

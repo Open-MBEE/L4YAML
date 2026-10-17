@@ -204,59 +204,19 @@ jobs:
 
       - name: Run cross-language yaml-test-suite comparison
         run: |
-          # pipefail: the heredoc python's sys.exit(1) on a backend
-          # mismatch must fail this step, not be eaten by tee.
+          # pipefail: the script's exit 1 on a backend mismatch must fail this
+          # step, not be eaten by tee.
+          #
+          # The comparison itself lives in scripts/cross-lang-compare.py so that
+          # this step and scripts/generate-all.sh score the four backends with
+          # one implementation rather than two copies of it.
           set -o pipefail
           RESULTS="docs/reports"
           echo "=== Cross-Language yaml-test-suite Comparison ===" | tee "$RESULTS/cross-lang-comparison.txt"
           L4YAML_LIB="$GITHUB_WORKSPACE/ffi/out/libl4yaml.so" \
           LD_LIBRARY_PATH="$GITHUB_WORKSPACE/ffi/out:${LD_LIBRARY_PATH:-}" \
-          python3 - "$RESULTS" <<'PYEOF' | tee -a "$RESULTS/cross-lang-comparison.txt"
-          import subprocess, sys, json, pathlib
-
-          results_dir = pathlib.Path(sys.argv[1])
-          BACKENDS = ["lean", "c", "python", "rust"]
-          PRESETS = ["unlimited", "default", "strict", "permissive", "safe_tags"]
-          suiterunner = ".lake/build/bin/suiterunner"
-          results = {}
-          all_match = True
-
-          for preset in PRESETS:
-              for backend in BACKENDS:
-                  cmd = [suiterunner, "--backend", backend, "--limits", preset]
-                  proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-                  output = proc.stdout + proc.stderr
-                  for line in output.splitlines():
-                      if "TOTAL:" in line:
-                          parts = line.split()
-                          p, f, s, t = int(parts[1]), int(parts[3]), int(parts[5]), int(parts[7].strip("()"))
-                          results[(backend, preset)] = (p, f, s, t)
-                          break
-                  else:
-                      print(f"ERROR: no TOTAL line for {backend}/{preset}", file=sys.stderr)
-                      results[(backend, preset)] = (0, 0, 0, 0)
-                      all_match = False
-
-              vals = [results[(b, preset)] for b in BACKENDS]
-              if len(set(vals)) != 1:
-                  print(f"MISMATCH for preset '{preset}': {dict(zip(BACKENDS, vals))}")
-                  all_match = False
-              else:
-                  p, f, s, t = vals[0]
-                  print(f"{preset:12s}: {p} passed, {f} failed, {s} skipped ({t} total) — all 4 backends identical")
-
-          print()
-          if all_match:
-              print("✓ All backends produce identical results for every preset")
-          else:
-              print("✗ Backend mismatch detected!")
-              sys.exit(1)
-
-          json_data = {}
-          for (backend, preset), (p, f, s, t) in results.items():
-              json_data.setdefault(preset, {})[backend] = {"passed": p, "failed": f, "skipped": s, "total": t}
-          (results_dir / "cross-lang-results.json").write_text(json.dumps(json_data, indent=2))
-          PYEOF
+          python3 scripts/cross-lang-compare.py "$RESULTS" \
+            | tee -a "$RESULTS/cross-lang-comparison.txt"
 
       # -------------------------------------------------------
       # Phase 3: Generate HTML reports from test data

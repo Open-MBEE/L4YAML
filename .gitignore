@@ -70,3 +70,5 @@ doc/Doc/L4YAML/graphs/
 .pixi/
 # scratch files
 /Scratch
+# local CI pipeline work dir (scripts/generate-all.sh)
+/.ci-local/

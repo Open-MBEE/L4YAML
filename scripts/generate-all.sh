@@ -380,12 +380,19 @@ if wants 4; then
   [ -d "$REPORTS" ] && cp -r "$REPORTS" docs.new/reports
   rm -rf docs
   mv docs.new docs
-  # Count the render and the carried-over reports apart: summing them labels 12
-  # phase-2/3 report pages as something the Verso render produced.
-  VPAGES="$(find doc/_out/html-multi -name '*.html' | wc -l)"
-  RPAGES="$(find docs/reports -name '*.html' 2>/dev/null | wc -l)"
-  echo "docs/ rebuilt — $VPAGES rendered pages + $RPAGES report pages carried across"
-  note 4 verso-render "$VPAGES pages +$RPAGES reports"
+  # Count the render apart from what is staged beside it.  `<base>` is Verso's
+  # own marker, so it counts pages the render produced and not the HTML that
+  # arrives with them: `graphs/` from the import-graph and theorem-graph steps,
+  # `reports/` from phases 2-3.  A path exclusion would need editing whenever
+  # `extraFilesHtml` gains an entry; this does not, and if the marker ever stops
+  # matching the count reads 0 rather than quietly absorbing the staged files.
+  # Each count is guarded: an empty `grep`/`find` exits 1, which `pipefail`
+  # would turn into the script dying here instead of reporting a zero.
+  VPAGES="$({ grep -rl '<base' doc/_out/html-multi --include='*.html' || true; } | wc -l)"
+  GPAGES="$({ find docs/graphs -name '*.html' 2>/dev/null || true; } | wc -l)"
+  RPAGES="$({ find docs/reports -name '*.html' 2>/dev/null || true; } | wc -l)"
+  echo "docs/ rebuilt — $VPAGES rendered pages, $GPAGES staged graph pages, $RPAGES report pages"
+  note 4 verso-render "$VPAGES pages +$GPAGES graphs +$RPAGES reports"
   restore_stats
 
   if [ "$SKIP_API_DOCS" = 1 ]; then

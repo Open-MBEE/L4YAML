@@ -264,14 +264,20 @@ environment.  **The four counts are identical at every closure tried**; the
 pins below are what makes that checkable rather than asserted. -/
 
 /-- The modules of this library and its tests that this file's own imports
-    reach: the library complete at 232, plus the two `Tests.Guards` modules that
+    reach: the library complete at 243, plus the two `Tests.Guards` modules that
     hold the Tests-side half of the first ring.
+
+    243 on 2026-10-05, when the eleven modules of `L4YAML.Proofs.Serialization`
+    joined the library (PR #1), imported by `L4YAML.lean` so the
+    kernel-accurate hygiene gate reaches them.  Only the closure moved: the
+    census, `direct`, `rawElim` and `trans` pins are unchanged, so the
+    serialization package references the `scannerDrop` arm zero times.
 
     232 on 2026-10-02, when `Proofs.Parser.ParserScannableBase` joined the
     library — the `Scannable`-valued compose chain, kept in its own module
     because two `maxHeartbeats 4000000` `YamlValue` inductions do not elaborate
     in one. -/
-def expectedClosure : Nat := 234
+def expectedClosure : Nat := 245
 
 /-- `scripts/drop_sweep.py`'s reading, re-derivable in one command and pinned
     here so that a walk which starts from the wrong root disagrees with it

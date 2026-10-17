@@ -85,7 +85,11 @@ def expectedUnread : List Name :=
   [`L4YAML.Output.Events, `L4YAML.Output.EventsIx,
    `L4YAML.Output.Json, `L4YAML.Output.JsonIx]
 
-def expectedClosure : String := "modulesSeen=228"
+def expectedClosure : String := "modulesSeen=239"
+-- 228 → 239 on 2026-10-05: the eleven modules of `L4YAML.Proofs.Serialization`
+-- (PR #1), which `L4YAML.lean` imports so the kernel-accurate hygiene gate can
+-- see them.  Only the closure moved: `expectedCensus` and `expectedFree` are
+-- unchanged, so none of the eleven states a goal this census reads.
 -- 227 → 228 on 2026-10-02: `L4YAML/Proofs/Parser/ParserScannableBase.lean`,
 -- the `Scannable`-valued compose chain, is a new module in this closure.  It
 -- is a separate module and not a section of `ParserGrammableBase` because the

@@ -16,7 +16,14 @@ import re
 import sys
 from pathlib import Path
 
-IMPORT_RE = re.compile(r"^import\s+([A-Za-z0-9_.«»]+)", re.M)
+# A module-system header writes `public import M`, `meta import M`,
+# `public meta import M` or `import all M`; every one of those is a real
+# dependency edge.  Matching only a bare `import` read the migrated library as
+# having no imports at all, so this gate called 243 of 243 modules orphans
+# (2026-10-17).  An unqualified `^import` is still the legacy form and still
+# matches.
+IMPORT_RE = re.compile(
+    r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([A-Za-z0-9_.«»]+)", re.M)
 FENCE_RE = re.compile(r"^```.*?^```", re.M | re.S)
 
 # Closure roots: every `@[default_target]` whose root is a module, not just the

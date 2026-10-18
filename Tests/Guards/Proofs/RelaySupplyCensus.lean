@@ -974,15 +974,6 @@ plainRoot=46 agree=100/100 disagree=0 [DECLINE-closed=165, DECLINE-free=4, PAY-f
     `dite`'s `major` is argument 1 — the PROPOSITION, not a proof of it — so
     `VIA Eq` and `VIA LE.le` naming a type here is the instrument reading the
     condition, not losing the discriminant. -/
--- 2026-10-17: two rows gained a `_private.<module>.0.` prefix when the library
--- took `module` headers.  A generated matcher stays private even inside the
--- blanket's `public section`, so its real name is the mangled one and that is
--- what this roster prints.  Only those two NAMES moved: all eight rows hold
--- their counts, their split kinds and their DECLINE|PAY verdicts, so nothing
--- this census concludes moved with them.  The prefix embeds a module path, so
--- splitting `L4YAML/Proofs/Production/StreamAccum.lean` will break this pin --
--- normalizing the mangling away in the printer is the better fix and is filed in
--- TODO/l4yaml-module-system.md.
 def expectedSiteDecided : List String :=
   ["1 accum_block_on_closeThenBlock :: dite on VIA Eq ⇒ DECLINE|PAY",
    "1 accum_block_on_pendingBlock :: dite on VIA Eq ⇒ DECLINE|PAY",
@@ -990,11 +981,11 @@ def expectedSiteDecided : List String :=
    "1 accum_block_on_pendingBlockContent :: dite on VIA Eq ⇒ DECLINE|PAY",
    "1 accum_content_pending :: Or.casesOn on VIA Nat.eq_zero_or_pos ⇒ \
 DECLINE|DECLINE|DECLINE|PAY",
-   "1 accum_flow_open_depth0 :: _private.L4YAML.Proofs.Production.StreamAccum.0.accum_flow_open_depth0.match_1_18 \
-on SPLIT Or.casesOn on VIA preprocess_some_savedKey_shape ⇒ DECLINE|PAY",
+   "1 accum_flow_open_depth0 :: accum_flow_open_depth0.match_1_18 on SPLIT Or.casesOn \
+on VIA preprocess_some_savedKey_shape ⇒ DECLINE|PAY",
    "2 accum_block_pending :: Or.casesOn on VIA Nat.eq_zero_or_pos ⇒ DECLINE|PAY",
-   "2 question_open_map :: _private.L4YAML.Proofs.Production.StreamAccum.0.question_open_map.match_1_7 \
-on VIA frameChainUnion ⇒ DECLINE|PAY"]
+   "2 question_open_map :: question_open_map.match_1_7 on VIA frameChainUnion ⇒ \
+DECLINE|PAY"]
 
 /-- **The premises the branch is taken on**, by binder NAME, for the 99 splits
     whose discriminant roots at an optional premise of the enclosing lemma.
@@ -1242,8 +1233,14 @@ disagree={disagree.size} {(lsT.toList.map (fun (a,b) => s!"{a}={b}")).mergeSort 
   let mut sd : Std.HashMap String Nat := {}
   for e in split.filter (fun e => e.rootTgt.isNone) do
     let shp := String.intercalate "|" (e.leaves.map (fun a => (a.splitOn " ").head!)).qsort.toList
+    -- The splitter's name goes through `privateToUserName` first.  A generated
+    -- matcher stays private inside the blanket's `public section`, so its real
+    -- name is `_private.<module>.0.<user name>`; stripping only `pfx` left two
+    -- rows reading `_private.L4YAML.Proofs.Production.StreamAccum.0.…`, which
+    -- pins this census to a module PATH -- splitting `StreamAccum.lean` would
+    -- have moved it.  The user name is the same name it has always been.
     let k := s!"{e.caller.getString!} :: {
-      ((e.how.splitOn " ").getLast!).replace pfx ""} on {
+      (Lean.privateToUserName ((e.how.splitOn " ").getLast!).toName).toString.replace pfx ""} on {
       e.disc.replace pfx ""} ⇒ {shp}"
     sd := sd.insert k ((sd.getD k 0) + 1)
   let gotSite := (sd.toList.map (fun (a,b) => s!"{b} {a}")).mergeSort (· ≤ ·)

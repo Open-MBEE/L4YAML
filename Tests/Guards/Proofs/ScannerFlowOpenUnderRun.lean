@@ -2035,44 +2035,36 @@ Three pins below re-read against the paid tree:
 * `TRANSPORT-PRICE`: `genesis=OOO pay=OOO` — the same `hrun` at the same arms.
 * `CLOSE-PRICE`: `anchor=B` — the control returns the pair now. -/
 
-/-! ## §16 The slot the arms were told to supply is FALSE on accepted input (DOCS item 277)
+/-! ## §16 Why the slot the arms were told to supply was false, and what fixed it
+    (DOCS items 277, 278)
 
 Item 276 recorded a NEXT — *supply `slotRun` at the three arms* — and a supply
 question: price a `PendingNode` field against an `accum_flow_open_depth0`
-hypothesis.  The question is moot, and the rows below are why: the fact is not
-derivable at the arms because it does not hold there.
+hypothesis.  Item 277 measured the fact instead of pricing a carrier for it,
+and found it FALSE at the arms: `slotRun` asks that the `[96]` run in front of
+the park's cursor be absent or *offered a node slot*, and `offersNodeSlot` then
+counted only the three block indicators `:`, `?`, `-`.  A document root is
+exactly where a run can stand with nothing but the start in front of it, so
+`&x⏎[1]` — accepted, and correctly, since the property and its node may sit on
+separate lines — read `slotRun = false`.  No carrier supplies a false fact.
 
-`slotRun` reads the `[96]` run standing in front of the park's own cursor and
-asks that it be absent or *offered a node slot*, and `offersNodeSlot` is
-exactly the three block indicators `:`, `?`, `-` (`[Token.lean]`'s own
-docstring: "After anything else a run at an open level's own column has no
-slot").  `streamStart` and `documentStart` are therefore not offers — and a
-document root is precisely where a run may stand with nothing but the start in
-front of it.  So the cell item 276 named — a park whose run is offered no slot,
-at which both of the close's verdicts are silent — is INHABITED, by input the
-scanner accepts.
+Item 278 settled which of the two readings was wrong, by the measurement item
+277 §5 named rather than by argument.  `offersNodeSlot` was under-approximating
+its own criterion: `[185] l-bare-document` is `s-l+block-node(-1, block-in)`
+just as `[186]` is the block entry's, so the stream and document starts offer
+the following node a slot in the same sense the three indicators do.  Extending
+it moves **no verdict** — censused over 1420 inputs of this family (700 with the
+run behind a start, 720 with a block level on the indent stack so §8.1's second
+conjunct can hold), the 402-case suite (869 passed / 0 failed / 151 skipped,
+unchanged) and the whole Lean battery (21 suites, zero failures) — and it
+breaks **no proof**.  The structural reason the reading moves and no verdict
+does: §8.1's floor needs the open's column on the indent stack as well, and
+nothing has opened a block level at the point where a run can sit behind a
+start, so the two conditions are mutually exclusive.
 
-`&x⏎[1]` is such an input, and the acceptance is correct rather than a bug: the
-anchor property and its node may sit on separate lines at block level, and
-PyYAML 6.0.3 loads all four of the shapes below as `[1]`.  The scan SUCCEEDING
-is itself the measurement that both verdicts are silent at the close — §8.1
-fires as `underIndentedFlowContent` and §9.2 as `invalidBareDocument`, so
-either one would have refused the input.
-
-A `ParkSlot` consequently cannot be built at the three arms, `ParkChoice`'s
-slot disjunct is dead there, and `gated=OOO` stands for a reason no supply
-removes.  `RIDE-PRICE`'s `slot=OOO` is unchanged in value and changed in
-meaning: not "no arm holds it" but "no arm can".
-
-**What is still open is which of two things is wrong**, and it is one
-measurement, not an argument: either `slotRun` over-asks — the close needs
-something weaker than an offered slot, and the carrier should name that — or
-`offersNodeSlot` under-approximates its own docstring's criterion, since
-`[185] l-bare-document`'s `s-l+block-node` follows the document start as surely
-as `[185]`'s does a `-`.  The second reading is a RUNTIME change and must be
-measured as one: extending the offer would let §8.1's `offered` fire at a
-document root, which can only over-reject, so it is priced by the corpus and
-not by this file. -/
+The rows below are therefore the arms' supply, pinned at the open — and each
+pins the PREDECESSOR beside the verdict, so a revert of `offersNodeSlot` breaks
+them with the reason attached rather than with a bare `false`. -/
 
 /-- The index of the first depth-0 flow open, or `none`. -/
 private def depth0OpenIdx (tokens : Array (Positioned YamlToken)) : Option Nat :=
@@ -2085,10 +2077,11 @@ private def depth0OpenIdx (tokens : Array (Positioned YamlToken)) : Option Nat :
       else go (i + 1) d
   go 0 0
 
-/-- `ParkSlot.slotRun`, read at the depth-0 open of a scanned input: the park is
-    the state just before the open is pushed, so the park's cursor IS that
-    index, and both the walk-back and the offer test read only below it. -/
-private def slotRunAtOpen (input : String) : Option Bool :=
+/-- `ParkSlot.slotRun` read at the depth-0 open of a scanned input, paired with
+    the token the run stands behind.  The park is the state just before the open
+    is pushed, so the park's cursor IS that index, and both the walk-back and the
+    offer test read only below it. -/
+private def slotRunAtOpen (input : String) : Option (Bool × String) :=
   match L4YAML.Scanner.scanFiltered input with
   | .error _ => none
   | .ok tokens =>
@@ -2096,28 +2089,38 @@ private def slotRunAtOpen (input : String) : Option Bool :=
     | none => none
     | some o =>
       let st := L4YAML.Scanner.propsRunStart tokens o
+      let pred := match L4YAML.Scanner.prevRealIdx? tokens st with
+        | some j => toString (repr tokens[j]!.val)
+        | none => "<none>"
       some (st == o || (match L4YAML.Scanner.prevRealIdx? tokens st with
         | some j => tokens[j]!.val.offersNodeSlot
-        | none => false))
+        | none => false), pred)
 
--- ACCEPTED, and the slot is NOT offered: the run stands behind the start.
-#guard slotRunAtOpen "&x\n[1]\n" == some false
-#guard slotRunAtOpen "&x\n[1, 2]\n" == some false
-#guard slotRunAtOpen "--- &x\n[1]\n" == some false
-#guard slotRunAtOpen "---\n&x\n[1]\n" == some false
-#guard slotRunAtOpen "---\n&x !t\n[1]\n" == some false
+-- the run stands behind a START, which is an offer since item 278
+#guard slotRunAtOpen "&x\n[1]\n" == some (true, "L4YAML.YamlToken.streamStart")
+#guard slotRunAtOpen "&x\n[1, 2]\n" == some (true, "L4YAML.YamlToken.streamStart")
+#guard slotRunAtOpen "--- &x\n[1]\n" == some (true, "L4YAML.YamlToken.documentStart")
+#guard slotRunAtOpen "---\n&x\n[1]\n" == some (true, "L4YAML.YamlToken.documentStart")
+#guard slotRunAtOpen "---\n&x !t\n[1]\n" == some (true, "L4YAML.YamlToken.documentStart")
+#guard slotRunAtOpen "---\na\n...\n---\n&x\n[1]\n"
+  == some (true, "L4YAML.YamlToken.documentStart")
 
--- the block indicators DO offer one, which is why the family's own shapes hold
-#guard slotRunAtOpen "k: &x [1]\n" == some true
-#guard slotRunAtOpen "- &x [1]\n" == some true
-#guard slotRunAtOpen "? &x [1]\n" == some true
+-- the three block indicators, which offered one all along
+#guard slotRunAtOpen "k: &x [1]\n" == some (true, "L4YAML.YamlToken.value")
+#guard slotRunAtOpen "- &x [1]\n" == some (true, "L4YAML.YamlToken.blockEntry")
+#guard slotRunAtOpen "? &x [1]\n" == some (true, "L4YAML.YamlToken.key")
 
--- and a park with no run at all holds it by the left disjunct
-#guard slotRunAtOpen "[1]\n" == some true
-#guard slotRunAtOpen "k: [1]\n" == some true
+-- a park with no run at all holds it by the LEFT disjunct, whatever stands there
+#guard slotRunAtOpen "[1]\n" == some (true, "L4YAML.YamlToken.streamStart")
+#guard slotRunAtOpen "k: [1]\n" == some (true, "L4YAML.YamlToken.value")
 
--- the block-offer variants of the same under-run shape are REFUSED, which is
--- why the counterexamples had to come from the document root
+-- and every OTHER shape that would put a non-offer in front of the run is a
+-- second root node in one document, which §9.2 refuses — this is why extending
+-- the two starts is the whole of the supply
+#guard slotRunAtOpen "---\nk:\n  j: a\n&x\n[1]\n" == none
+#guard slotRunAtOpen "---\n- a\n&x\n[1]\n" == none
+#guard slotRunAtOpen "---\nk: a\n&x\n[1]\n" == none
+#guard slotRunAtOpen "---\n[a]\n&x\n[1]\n" == none
 #guard slotRunAtOpen "k:\n  b:\n    &x\n  [1]\n" == none
 #guard slotRunAtOpen "k:\n  -\n[1]\n" == none
 

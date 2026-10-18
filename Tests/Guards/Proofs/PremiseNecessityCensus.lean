@@ -254,7 +254,7 @@ declarations' own binders and not by a rescoring of an existing one.
 -- that `@[expose]` now forces into the environment.  See [[HypothesisReaderCensus]]
 -- and TODO/l4yaml-module-system.md.
 def expectedModuleTallyP : String :=
-  "constants=1280 decls=1010 eta=376 FIELD=173 READ=1096 RELAY=2030 RETURN=128 UNUSED=9"
+  "constants=1284 decls=1010 eta=376 FIELD=173 READ=1096 RELAY=2034 RETURN=128 UNUSED=9"
 
 def expectedOptTallyP : String :=
   "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"

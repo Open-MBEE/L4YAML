@@ -208,13 +208,18 @@ hands to the same dangling reading as its props-headed rows. -/
       "PARSE-ERR L4YAML.ScanError.invalidBareDocument 1 0",
       "PARSE-ERR L4YAML.ScanError.invalidBareDocument 1 0"]
 
+-- Item 277 moved the `pred` column of the four pins below and NO `park`
+-- verdict: `offersNodeSlot` now counts the stream and document starts, so a run
+-- standing behind one reads `pred=slot`.  The dangling reading is unchanged —
+-- §8.1's floor also needs the open's column on the indent stack, and nothing
+-- has opened a block level where a run can sit behind a start.
 -- `a: 1⏎&p [b]` step by step.  The props park at step 4 reads the dangling run;
 -- the `[` no longer ends it, and at step 7 — the state end of input reads — the
 -- close is walked back to its own open and the run is `&p` again.  Step 5's
 -- `run=none` is the OPEN's own state, where nothing has closed yet.
 #guard (List.range 8).map (fun n => parkAt "a: 1\n&p [b]\n" n)
   == ["run=none park=none",
-      "run=body@0,0 pred=no-slot park=none",
+      "run=body@0,0 pred=slot park=none",
       "run=none park=none",
       "run=body@0,3 pred=slot park=none",
       "run=prop@1,0 pred=no-slot park=1,0",
@@ -230,7 +235,7 @@ hands to the same dangling reading as its props-headed rows. -/
 #guard parseOk "a: 1\n&p [b]: c\n" == "PARSE-OK"
 #guard (List.range 8).map (fun n => parkAt "a: 1\n&p [b]: c\n" n)
   == ["run=none park=none",
-      "run=body@0,0 pred=no-slot park=none",
+      "run=body@0,0 pred=slot park=none",
       "run=none park=none",
       "run=body@0,3 pred=slot park=none",
       "run=prop@1,0 pred=no-slot park=1,0",
@@ -299,17 +304,17 @@ relay's own premise is false there and the window is deleted
 -- so the park is SOME from the `&b` on.
 #guard (List.range 5).map (fun n => parkAt "&a\n!t &b x\n" n)
   == ["run=none park=none",
-      "run=prop@0,0 pred=no-slot park=none",
-      "run=prop@0,0 pred=no-slot park=none",
+      "run=prop@0,0 pred=slot park=none",
+      "run=prop@0,0 pred=slot park=none",
       "run=prop@1,0 pred=no-slot park=1,3",
       "run=prop@1,0 pred=no-slot park=1,3"]
 
 -- The TWO-property run it stops at is untouched, across a break as on a line.
 #guard (List.range 5).map (fun n => parkAt "&a\n!t x\n" n)
   == ["run=none park=none",
-      "run=prop@0,0 pred=no-slot park=none",
-      "run=prop@0,0 pred=no-slot park=none",
-      "run=prop@0,0 pred=no-slot park=none",
+      "run=prop@0,0 pred=slot park=none",
+      "run=prop@0,0 pred=slot park=none",
+      "run=prop@0,0 pred=slot park=none",
       "no-state"]
 
 -- The same three properties on ONE line stay scanner-refused — §6.9's kind

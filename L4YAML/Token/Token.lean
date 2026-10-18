@@ -321,18 +321,33 @@ def YamlToken.isFlowClose : YamlToken → Bool
   | _ => false
 
 /--
-Whether a token OFFERS the following node a slot: the three block indicators
-whose own production is followed by `s-l+block-indented` or
-`s-l+block-node`.  A node run that stands after one of these is that
-indicator's content, at whatever column the content sits — `a:⏎b` is
-`{a: b}`, `?⏎b⏎: v` is an explicit key's, `-⏎b` is the entry's.  After
-anything else a run at an open level's own column has no slot, which is
-§9.2's dangling-node violation.
+Whether a token OFFERS the following node a slot: the tokens whose own
+production is followed by `s-l+block-indented` or `s-l+block-node`.  A node run
+that stands after one of these is that production's content, at whatever column
+the content sits — `a:⏎b` is `{a: b}`, `?⏎b⏎: v` is an explicit key's, `-⏎b` is
+the entry's, and `---⏎&p [b]` is the bare document's root node, since
+`[185] l-bare-document` is `s-l+block-node(-1, block-in)` just as
+`[186] s-l+block-in-block` is the entry's.  After anything else a run at an
+open level's own column has no slot, which is §9.2's dangling-node violation.
+
+**The two starts are offers, and that is measured rather than argued** (item
+277).  A `[96]` run can stand at a depth-0 open's front behind a token that is
+not an offer only directly after the stream or document start — every other
+such shape is refused as bare document content, because it is a second root
+node in one document.  Extending the three block indicators with the two starts
+therefore changes no verdict: §8.1's floor also requires the open's column to
+stand on the indent stack, and nothing has opened a block level at that point,
+so the two conditions are mutually exclusive.  Censused over 1420 inputs of the
+family, the 402-case suite and the whole Lean battery: zero verdict moves, and
+only the `pred` reading of `PropsParkDangling`'s pins changes.  What it buys is
+`ParkSlot.slotRun`, which was false at the three arms without it.
 -/
 def YamlToken.offersNodeSlot : YamlToken → Bool
   | .value => true
   | .key => true
   | .blockEntry => true
+  | .documentStart => true
+  | .streamStart => true
   | _ => false
 
 /--

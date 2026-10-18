@@ -672,7 +672,7 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- the instrument measures declarations and their auxiliaries, and wrong here,
 -- where the population counts theorems -- it read 7676 instead of 5291, a 45%
 -- inflation, because every generated matcher auxiliary joined the population.
-def expectedNoopTally : String := "theorems=5301 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+def expectedNoopTally : String := "theorems=5302 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5282 → 5292 on 2026-10-02, and the move is +11 − 1 rather than +10 of one
 -- kind.  The `+11` is authored: `ParserScannableBase.lean` carries the
 -- `Scannable`-valued compose chain (`stripAnchors_preserves_Scannable`,

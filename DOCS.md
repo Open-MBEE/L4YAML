@@ -38064,8 +38064,11 @@ None is a plan row; the numbers are recorded so the decision can be taken
 against them rather than against a forecast.
 
 * **Lean v4.35.0 — LANDED 2026-10-17.**  This branch and its doc workspace are
-  on `leanprover/lean4:v4.35.0`.  No release-line branch exists for it yet, so
-  `v4.34.0` is still the newest branch a consumer pinning by release will find.
+  on `leanprover/lean4:v4.35.0`.  The release-line branch `v4.35.0` exists for
+  consumers that pin by release: it began as `v4.34.0` + `145afc52` (the same
+  bump applied to the pre-fix-a tree — 868 jobs, suite 4407/4407) and on
+  2026-10-18 took this branch's tree by merge, so it carries the module-system
+  library and every item through 277.
   What the bump cost:
   * **One code change, and it was a dead name.**  v4.35.0 removes
     `Lean.ofReduceBool`, `Lean.ofReduceNat`, `Lean.trustCompiler` and

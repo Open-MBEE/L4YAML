@@ -438,7 +438,15 @@ run_cmd do
   let modIdx := env.getModuleIdxFor? ``colon_fires_implicit_key
   let mut names : Array Name := #[]
   for (nm, _) in env.constants.toList do
-    if nm.isInternal then continue
+    -- Filter on the USER name, not the raw one.  Since the library took `module`
+    -- headers its generated auxiliaries are private, so their real names read
+    -- `_private.<module>.0.<name>`; such a name starts with `_`, so `isInternal`
+    -- is true for it and the L4YAML prefix test fails.  Filtering the raw name
+    -- therefore DISCARDS them -- `constants` read 959 instead of 1165 -- while the
+    -- declarations are still in the environment.  `privateToUserName` is the
+    -- identity on an ordinary name, so this is a no-op for everything else.
+    let un := Lean.privateToUserName nm
+    if un.isInternal then continue
     if env.getModuleIdxFor? nm != modIdx then continue
     names := names.push nm
   let mut tally : Std.HashMap String Nat := {}
@@ -493,9 +501,10 @@ run_cmd do
   let mut tally : Std.HashMap String Nat := {}
   let mut total := 0
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    let un := Lean.privateToUserName nm
+    if un.isInternal then continue
+    if !(`L4YAML).isPrefixOf un then continue
+    if (`L4YAML.Tests).isPrefixOf un then continue
     if isMechanism env nm then continue
     for (i, _) in (optBinders ci.type).1 do
       total := total + 1
@@ -561,9 +570,10 @@ run_cmd do
   let env ← getEnv
   let mut core : Array String := #[]
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    let un := Lean.privateToUserName nm
+    if un.isInternal then continue
+    if !(`L4YAML).isPrefixOf un then continue
+    if (`L4YAML.Tests).isPrefixOf un then continue
     if isMechanism env nm then continue
     for (i, bn) in (optBinders ci.type).1 do
       if verdict env nm i != "RELAY" then continue

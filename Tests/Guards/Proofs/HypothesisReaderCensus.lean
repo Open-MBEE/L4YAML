@@ -420,7 +420,7 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
     `scratchpad/l4yaml-435-migration/verdict-roster-435.out`, so the next move
     is diffable. -/
 def expectedModuleTally : String :=
-  "constants=1165 decls=985 eta=374 FIELD=152 READ=1055 RELAY=2110 RETURN=49 UNUSED=9"
+  "constants=1174 decls=993 eta=376 FIELD=154 READ=1058 RELAY=2138 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",

@@ -154,16 +154,18 @@ example {sp_start sp_br sp_ne sp_mid : SurfPos} {n kc : Nat}
 example {g : Option ScannerState} {s_bc : ScannerState}
     (h : FlowBaseAnchor g s_bc 0)
     (hflow : (scanFlowSequenceEnd s_bc).inFlow = false)
-    (hnd : danglingNodePos? (scanFlowSequenceEnd s_bc) = none) : GateOf g :=
+    (hnd : danglingNodePos? (scanFlowSequenceEnd s_bc) = none)
+    (hui : underIndentedFlowValuePos? (scanFlowSequenceEnd s_bc) = none) : GateOf g :=
   h.gate_of_close (scanFlowSequenceEnd_tokens s_bc) rfl
-    (L4YAML.Proofs.EmitterScannability.scanFlowSequenceEnd_preserves_indents s_bc) hflow hnd
+    (L4YAML.Proofs.EmitterScannability.scanFlowSequenceEnd_preserves_indents s_bc) hflow hnd hui
 
 example {g : Option ScannerState} {s_bc : ScannerState}
     (h : FlowBaseAnchor g s_bc 0)
     (hflow : (scanFlowMappingEnd s_bc).inFlow = false)
-    (hnd : danglingNodePos? (scanFlowMappingEnd s_bc) = none) : GateOf g :=
+    (hnd : danglingNodePos? (scanFlowMappingEnd s_bc) = none)
+    (hui : underIndentedFlowValuePos? (scanFlowMappingEnd s_bc) = none) : GateOf g :=
   h.gate_of_close (scanFlowMappingEnd_tokens s_bc) rfl
-    (L4YAML.Proofs.EmitterScannability.scanFlowMappingEnd_preserves_indents s_bc) hflow hnd
+    (L4YAML.Proofs.EmitterScannability.scanFlowMappingEnd_preserves_indents s_bc) hflow hnd hui
 
 /-! ## §5  The floor, measured
 

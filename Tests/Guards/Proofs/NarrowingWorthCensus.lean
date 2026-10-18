@@ -661,7 +661,7 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
     roster below does not move.  Item 271 adds the under-run's own column
     reading and item 272 the composition that spends it, one authored lemma
     each and neither with that conclusion: **5276**. -/
-def expectedNoopTally : String := "theorems=5294 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+def expectedNoopTally : String := "theorems=5302 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5282 → 5292 on 2026-10-02, and the move is +11 − 1 rather than +10 of one
 -- kind.  The `+11` is authored: `ParserScannableBase.lean` carries the
 -- `Scannable`-valued compose chain (`stripAnchors_preserves_Scannable`,

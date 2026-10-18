@@ -1651,7 +1651,7 @@ elaboration at the three arms that spend `drop_ride`:
   arity, so no flip in this repo can see that ring. -/
 
 def expectedTransportPrice : String :=
-  "source=BBB hcol=OOO genesis=BBB optok=3 pay=BBB frames=7 ride=0/3"
+  "source=BBB hcol=OOO genesis=OOO optok=3 pay=OOO frames=7 ride=0/3"
 
 /-! ## §13 What the ride can carry, and what the frame will receive
     (DOCS item 273)
@@ -1784,19 +1784,22 @@ four censuses taken by arity flip:
   inside one declaration.  Three are the live arms' run-end halves and the
   fourth is `opaque_resume`, which `pendingFlow` takes and which has no
   under-run to read a membership from.
-* `add` / `swap` / `choice` — three reshapes of `FlowBaseAnchor`'s `some` arm.
-  `add` is item 268's `anchor=2` ring re-derived (the slot BESIDE the anchor);
-  `swap` and `choice` put it in the anchor's place and beside it as an
-  alternative, and each costs the same three declarations —
-  `FlowBaseAnchor.gate`, `FlowBaseAnchor.transport`, `propsPark_open_gate`.
+* `add` / `swap` / `anchor` — three reshapes of `FlowBaseAnchor`'s `some` arm.
+  Item 276 PAID the `choice` reshape, so each flip now prices UN-paying it:
+  `add` puts the slot beside the anchor, `swap` the slot alone, `anchor`
+  restores item 162's anchor-only arm — and each costs the same three
+  declarations, `FlowBaseAnchor.gate`, `FlowBaseAnchor.transport`,
+  `propsPark_open_gate` (`add` reaches `gate` at two sites).
+  `slot=OOO` since item 276: `ParkSlot.ofOpen` takes `hrun`, which no arm holds
+  (§15).
 * `transport` — the arity flip on `FlowBaseAnchor.transport`, the funnel every
   other carrier lemma is routed through.  Nine sites in seven declarations:
   that is the second wave any of the three reshapes pays, and it is the number
   the `anchor=2` of item 268 was taken without. -/
 
 def expectedRidePrice : String :=
-  "slot=BBB floor=BBB prop_sc=BOO prop=OOO gated=OOO ride=4/1 add=2/2 \
-   swap=3/3 choice=3/3 transport=9/7"
+  "slot=OOO floor=BBB prop_sc=BOO prop=OOO gated=OOO ride=4/1 add=4/3 \
+   swap=3/3 anchor=3/3 transport=9/7"
 
 /-! ## §14 What the CLOSE can pay for a reshaped carrier (DOCS item 274)
 
@@ -2003,5 +2006,23 @@ null twin that must FAIL — and five censuses taken by flip:
 def expectedClosePrice : String :=
   "anchor=B bare=O nonoffer=B offer=O floor=B name=OO wrap=BB gate=1/1 \
    close=4/1 closable=20/5 apps=2"
+
+
+/-! ## §15 What the reshape paid, and what the slot owes (DOCS item 276)
+
+Item 276 PAID the `choice` reshape: `FlowBaseAnchor`'s `some` arm names
+`ParkChoice sc0 s d ∧ ParkFloor sc0 s d`, `GateOf (some sc0)` carries the
+park's own `simpleKeyAllowed = false` beside §9.2's verdict, and `ParkSlot`
+grew `slotRun` — the cell item 274's `closeGate` never enumerated, a park whose
+`[96]` run is offered no slot, at which BOTH verdicts are silent at the close.
+Three pins below re-read against the paid tree:
+
+* `RIDE-PRICE`: `slot=OOO` — `ParkSlot.ofOpen` now takes `hrun`, and no arm
+  holds it (`by assumption` stands where it would go, so the refusal names the
+  datum); `gated=OOO` for the same reason plus `parkSka`; the three flips now
+  price UN-paying the reshape (`anchor` restores item 162's arm) and
+  `transport` re-reads the funnel over `ParkChoice`.
+* `TRANSPORT-PRICE`: `genesis=OOO pay=OOO` — the same `hrun` at the same arms.
+* `CLOSE-PRICE`: `anchor=B` — the control returns the pair now. -/
 
 end L4YAML.Tests.Guards.ScannerFlowOpenUnderRun

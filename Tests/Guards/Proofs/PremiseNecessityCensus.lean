@@ -244,7 +244,7 @@ declarations' own binders and not by a rescoring of an existing one.
     did. -/
 
 def expectedModuleTallyP : String :=
-  "constants=1165 decls=985 eta=374 FIELD=171 READ=1093 RELAY=1973 RETURN=129 UNUSED=9"
+  "constants=1174 decls=993 eta=376 FIELD=173 READ=1096 RELAY=2001 RETURN=128 UNUSED=9"
 
 def expectedOptTallyP : String :=
   "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"

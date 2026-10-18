@@ -219,8 +219,9 @@ example {g : Option ScannerState} {s_bc s_cl : ScannerState}
     (hflow : s_cl.inFlow = false)
     (hlast : prevRealIdx? s_cl.tokens s_cl.tokens.size = some s_bc.tokens.size)
     (hclose : s_cl.tokens[s_bc.tokens.size]!.val.isFlowClose = true)
-    (hnd : danglingNodePos? s_cl = none) : GateOf g :=
-  h.gate hpre hind hflow hlast hclose hnd
+    (hnd : danglingNodePos? s_cl = none)
+    (hui : underIndentedFlowValuePos? s_cl = none) : GateOf g :=
+  h.gate hpre hind hflow hlast hclose hnd hui
 
 /-- The ungated half, with nothing to supply. -/
 example : GateOf none := trivial

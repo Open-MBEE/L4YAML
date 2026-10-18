@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.FlowMonoChain.Basic` — Phase 3 Step 6f.3b3 core
 
@@ -364,6 +369,9 @@ lemma scanNextTokenIx_preprocess_preserves_flowLevel {input : String}
     s1.flowLevel = s.flowLevel := by
   unfold scanNextTokenIx_preprocess at h
   dsimp only at h
+  -- Peel the §6.1/§6.6 strictness-walker guard (item 7).
+  split at h
+  · simp at h
   split at h
   · simp at h
   · split at h
@@ -398,6 +406,9 @@ lemma scanNextTokenIx_preprocess_preserves_simpleKeyStack {input : String}
   unfold scanNextTokenIx_preprocess at h
   dsimp only at h
   have h_skip := skipToContentS_preserves_simpleKeyStack s
+  -- Peel the §6.1/§6.6 strictness-walker guard (item 7).
+  split at h
+  · simp at h
   split at h
   · simp at h
   · split at h
@@ -427,6 +438,9 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
   dsimp only at h
   have h_skip : s.skipToContentS.tokens.size = s.tokens.size := by
     rw [skipToContentS_tokens]
+  -- Peel the §6.1/§6.6 strictness-walker guard (item 7).
+  split at h
+  · simp at h
   split at h
   · simp at h
   · split at h
@@ -491,6 +505,9 @@ lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
     skipToContentS_preserves_simpleKey s
   have h_tok_skip : s.skipToContentS.tokens.size = s.tokens.size := by
     rw [skipToContentS_tokens]
+  -- Peel the §6.1/§6.6 strictness-walker guard (item 7).
+  split at h
+  · simp at h
   split at h
   · simp at h
   · split at h
@@ -608,38 +625,39 @@ lemma scanNextTokenIx_dispatchFlowIndicators_maintains_SKAFIx {input : String}
     (h_sync : s.simpleKeyStack.size ≥ s.flowLevel)
     (h_fl_post : s'.flowLevel ≥ fl₀) :
     SimpleKeyAboveFloorIx s' n₀ fl₀ := by
-  unfold scanNextTokenIx_dispatchFlowIndicators at h
-  simp only [bind, Except.bind, pure, Pure.pure, Except.pure] at h
-  repeat (any_goals (split at h))
-  any_goals contradiction
-  all_goals (try simp only [Except.ok.injEq, Option.some.injEq] at h)
-  any_goals contradiction
-  all_goals (try subst_vars)
-  all_goals first
-    | exact SimpleKeyAboveFloorIx_of_flow_open _ s n₀ fl₀
-        (scanFlowSequenceStartIx_simpleKey_cleared s)
-        (scanFlowSequenceStartIx_stack_pushed s) h_inv
-    | exact SimpleKeyAboveFloorIx_of_flow_open _ s n₀ fl₀
-        (scanFlowMappingStartIx_simpleKey_cleared s)
-        (scanFlowMappingStartIx_stack_pushed s) h_inv
-    | (rename_i h_eq; exact SimpleKeyAboveFloorIx_of_preserved _ s n₀ fl₀
-        (scanFlowEntryIx_preserves_simpleKey s _ h_eq)
-        (scanFlowEntryIx_preserves_simpleKeyStack s _ h_eq) h_inv)
-    | (simp_all; done)
-    | -- Flow close (sequence end): derive size>fl₀ ∨ fl₀=0 from h_fl_post + h_sync
-      (have h_fl_eq : (scanFlowSequenceEndIx s).flowLevel = s.flowLevel - 1 :=
-        scanFlowSequenceEndIx_flowLevel_eq s
-       have h_gt : s.simpleKeyStack.size > fl₀ ∨ fl₀ = 0 := by omega
-       exact SimpleKeyAboveFloorIx_of_flow_close _ s n₀ fl₀
-         (scanFlowSequenceEndIx_simpleKey_restored s)
-         (scanFlowSequenceEndIx_stack_popped s) h_inv h_gt)
-    | -- Flow close (mapping end)
-      (have h_fl_eq : (scanFlowMappingEndIx s).flowLevel = s.flowLevel - 1 :=
-        scanFlowMappingEndIx_flowLevel_eq s
-       have h_gt : s.simpleKeyStack.size > fl₀ ∨ fl₀ = 0 := by omega
-       exact SimpleKeyAboveFloorIx_of_flow_close _ s n₀ fl₀
-         (scanFlowMappingEndIx_simpleKey_restored s)
-         (scanFlowMappingEndIx_stack_popped s) h_inv h_gt)
+  -- The 9a flow-close kind check adds a throw arm per close indicator; the
+  -- pre-9a robust split script leaves the enlarged `do`-tree unsplit, so walk
+  -- the dispatcher through the validated `_ok_some_cases` enumerator instead.
+  rcases scanNextTokenIx_dispatchFlowIndicators_ok_some_cases h with
+    heq | heq | heq | heq | hOk
+  · subst heq
+    exact SimpleKeyAboveFloorIx_of_flow_open _ s n₀ fl₀
+      (scanFlowSequenceStartIx_simpleKey_cleared s)
+      (scanFlowSequenceStartIx_stack_pushed s) h_inv
+  · -- Flow close (sequence end): derive size>fl₀ ∨ fl₀=0 from h_fl_post + h_sync
+    subst heq
+    have h_fl_eq : (scanFlowSequenceEndIx s).flowLevel = s.flowLevel - 1 :=
+      scanFlowSequenceEndIx_flowLevel_eq s
+    have h_gt : s.simpleKeyStack.size > fl₀ ∨ fl₀ = 0 := by omega
+    exact SimpleKeyAboveFloorIx_of_flow_close _ s n₀ fl₀
+      (scanFlowSequenceEndIx_simpleKey_restored s)
+      (scanFlowSequenceEndIx_stack_popped s) h_inv h_gt
+  · subst heq
+    exact SimpleKeyAboveFloorIx_of_flow_open _ s n₀ fl₀
+      (scanFlowMappingStartIx_simpleKey_cleared s)
+      (scanFlowMappingStartIx_stack_pushed s) h_inv
+  · -- Flow close (mapping end)
+    subst heq
+    have h_fl_eq : (scanFlowMappingEndIx s).flowLevel = s.flowLevel - 1 :=
+      scanFlowMappingEndIx_flowLevel_eq s
+    have h_gt : s.simpleKeyStack.size > fl₀ ∨ fl₀ = 0 := by omega
+    exact SimpleKeyAboveFloorIx_of_flow_close _ s n₀ fl₀
+      (scanFlowMappingEndIx_simpleKey_restored s)
+      (scanFlowMappingEndIx_stack_popped s) h_inv h_gt
+  · -- item 9q: the `,` clears the current key, preserves the stack
+    exact SimpleKeyAboveFloorIx_of_cleared_preserved _ s n₀ fl₀
+      (scanFlowEntryIx_clears_simpleKey s _ hOk)
+      (scanFlowEntryIx_preserves_simpleKeyStack s _ hOk) h_inv
 
 /-- `scanNextTokenIx_dispatchBlockIndicators` maintains `SimpleKeyAboveFloorIx`.
     Indexed twin of legacy `dispatchBlockIndicators_maintains_SimpleKeyAboveFloor`
@@ -699,7 +717,9 @@ lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
   · -- '&' anchor
     rw [ite_eq_left hg1] at h
     -- 4.32.0 already reduces the anchor bind; the `cases`/`rw` below is robust either way
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
+    try simp only [Bind.bind, Except.bind] at h
+    split at h   -- item 9e: the property-run guard
+    · cases h
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h; cases h
     | ok v =>
@@ -713,10 +733,16 @@ lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
     by_cases hg2 : (c == '*') = true
     · -- '*' alias
       rw [ite_eq_left hg2] at h
+      split at h   -- item 9e: the property-run guard
+      · cases h
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h; cases h
       | ok v =>
         rw [hA] at h
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h
+        split at h
+        · cases h
         simp only [Except.ok.injEq] at h; subst h
         exact SimpleKeyAboveFloorIx_of_preserved _ s n₀ fl₀
           (scanAnchorOrAliasIx_preserves_simpleKey s false v hA)
@@ -725,6 +751,8 @@ lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
       by_cases hg3 : (c == '!') = true
       · -- '!' tag
         rw [ite_eq_left hg3] at h
+        split at h   -- item 9e: the property-run guard
+        · cases h
         cases hT : scanTagIx s with
         | error e => rw [hT] at h; cases h
         | ok v =>
@@ -735,16 +763,29 @@ lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
             (scanTagIx_preserves_simpleKeyStack s v hT) h_inv
       · rw [ite_eq_right hg3] at h
         by_cases hg4 : (c == '|' || c == '>') = true
-        · -- block scalar
+        · -- block scalar: clears the pending simple key (it ends at a line
+          -- start), so this is the `_of_cleared_preserved` transport.
           rw [ite_eq_left hg4] at h
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
+          split at h
+          · cases h
+          -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+          split at h
+          · cases h
+          -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+          split at h
+          · cases h
           split at h
           · simp only [Except.ok.injEq] at h; subst h
-            exact SimpleKeyAboveFloorIx_of_preserved _ s n₀ fl₀ rfl rfl h_inv
+            exact SimpleKeyAboveFloorIx_of_cleared_preserved _ s n₀ fl₀ rfl rfl h_inv
           · cases h
         · rw [ite_eq_right hg4] at h
           by_cases hg5 : (c == '"') = true
           · -- double-quoted
             rw [ite_eq_left hg5] at h
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h
+            · cases h
             split at h
             · simp only [Except.ok.injEq] at h; subst h
               exact SimpleKeyAboveFloorIx_of_preserved _ s n₀ fl₀ rfl rfl h_inv
@@ -753,6 +794,9 @@ lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
             by_cases hg6 : (c == '\'') = true
             · -- single-quoted
               rw [ite_eq_left hg6] at h
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h
+              · cases h
               split at h
               · simp only [Except.ok.injEq] at h; subst h
                 exact SimpleKeyAboveFloorIx_of_preserved _ s n₀ fl₀ rfl rfl h_inv
@@ -760,7 +804,10 @@ lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
             · rw [ite_eq_right hg6] at h
               -- plain scalar (success) vs error: one small inner `if`
               split at h
-              · simp only [Except.ok.injEq] at h; subst h
+              · -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h
+                · cases h
+                simp only [Except.ok.injEq] at h; subst h
                 exact SimpleKeyAboveFloorIx_of_preserved _ s n₀ fl₀ rfl rfl h_inv
               · cases h
 
@@ -819,6 +866,12 @@ lemma scanNextTokenIx_maintains_SKAFIx {input : String}
       have h_pre_sync : s1.simpleKeyStack.size ≥ s1.flowLevel := by
         rw [h_pre_stack, h_pre_fl]; exact h_sync
       have h_pre_n₀ : n₀ ≤ s1.tokens.size := by omega
+      -- §9.2 dangling-node check (item 133)
+      split at h_next
+      · contradiction
+      -- §8.1 flow-value floor (item 172)
+      split at h_next
+      · contradiction
       -- Split on dispatchStructural outcome
       split at h_next
       · contradiction
@@ -853,32 +906,35 @@ lemma scanNextTokenIx_maintains_SKAFIx {input : String}
           -- Split on checkNoPendingDirectives (Fix B)
           split at h_next
           · contradiction
-          · -- Split on checkBlockFlowIndent
-            split at h_next
+          -- §9.2 bare-document check (item 132)
+          split at h_next
+          · contradiction
+          · split at h_next
             · contradiction
             · split at h_next
-              · contradiction
-              · split at h_next
-                · -- FlowIndicators dispatch produced some s''
-                  rename_i s'' hFlow
-                  simp only [Except.ok.injEq, Option.some.injEq] at h_next
-                  subst h_next
-                  exact scanNextTokenIx_dispatchFlowIndicators_maintains_SKAFIx _ _ _ hFlow
-                    n₀ fl₀ h_s2_tok h_s2_inv h_s2_sync h_fl_post
-                · -- FlowIndicators returned none → BlockIndicators
-                  rename_i hFlowNone
-                  split at h_next
-                  · contradiction
-                  · split at h_next
-                    · -- BlockIndicators dispatch produced some s''
-                      rename_i s'' hBlock
-                      simp only [Except.ok.injEq, Option.some.injEq] at h_next
-                      subst h_next
-                      exact scanNextTokenIx_dispatchBlockIndicators_maintains_SKAFIx _ _ _ hBlock
-                        n₀ fl₀ h_s2_tok h_s2_inv
-                    · -- BlockIndicators returned none → Content
-                      rename_i hBlockNone
-                      split at h_next
+              · -- FlowIndicators dispatch produced some s''
+                rename_i s'' hFlow
+                simp only [Except.ok.injEq, Option.some.injEq] at h_next
+                subst h_next
+                exact scanNextTokenIx_dispatchFlowIndicators_maintains_SKAFIx _ _ _ hFlow
+                  n₀ fl₀ h_s2_tok h_s2_inv h_s2_sync h_fl_post
+              · -- FlowIndicators returned none → BlockIndicators
+                rename_i hFlowNone
+                split at h_next
+                · contradiction
+                · split at h_next
+                  · -- BlockIndicators dispatch produced some s''
+                    rename_i s'' hBlock
+                    simp only [Except.ok.injEq, Option.some.injEq] at h_next
+                    subst h_next
+                    exact scanNextTokenIx_dispatchBlockIndicators_maintains_SKAFIx _ _ _ hBlock
+                      n₀ fl₀ h_s2_tok h_s2_inv
+                  · -- BlockIndicators returned none → Content
+                    rename_i hBlockNone
+                    -- item 47: adjacent-value check (pure, no state change)
+                    split at h_next
+                    · contradiction
+                    · split at h_next
                       · contradiction
                       · rename_i sC hContent
                         simp only [Except.ok.injEq, Option.some.injEq] at h_next
@@ -896,6 +952,381 @@ lemma scanNextTokenIx_checkNoPendingDirectives_ok {input : String}
     (s : ScannerStateIx input) (h : s.directivesPresent = false) :
     scanNextTokenIx_checkNoPendingDirectives s = .ok () := by
   simp only [scanNextTokenIx_checkNoPendingDirectives, h, Bool.false_eq_true, ↓reduceIte]
+
+/-- Item 132's §9.2 bare-document check is a no-op inside a flow collection.
+    Indexed twin of `scanNextToken_checkBareDocument_ok_of_inFlow`. -/
+lemma scanNextTokenIx_checkBareDocument_ok_of_inFlow {input : String}
+    (s : ScannerStateIx input) (h : s.inFlow = true) :
+    scanNextTokenIx_checkBareDocument s = .ok () := by
+  simp only [scanNextTokenIx_checkBareDocument, h, Bool.not_true, Bool.false_and,
+             Bool.false_eq_true, ↓reduceIte]
+
+/-- Indexed twin of `init_indents_sentinel`: the stream's seed carries the
+    sentinel alone, so item 140's PRE-unwind reading is `none` at the first
+    landing. -/
+lemma initIx_indents_sentinel (input : String) :
+    ((ScannerStateIx.mk' input).emit YamlToken.streamStart).indents
+      = #[{ column := -1, isSequence := false }] := rfl
+
+/-- Item 133's §9.2 dangling-node check is a no-op inside a flow collection. -/
+lemma scanNextTokenIx_checkDanglingNode_ok_of_inFlow {input : String}
+    (s_run s_land : ScannerStateIx input) (h : s_run.inFlow = true) :
+    scanNextTokenIx_checkDanglingNode s_run s_land = .ok () := by
+  unfold scanNextTokenIx_checkDanglingNode danglingNodePosIx?
+  rw [ite_eq_left h]
+  split <;> rfl
+
+/-! Item 180's crossed-block clause fires at ANY column — the indexed twins
+    of the legacy kit in `EmitterScannability/ScanSteps.lean`. -/
+
+/-- The clause's position reading is `none` exactly where its index is. -/
+lemma crossedPropsExcessPosIx?_none {input : String}
+    {ts : Indexed.TokenStream input}
+    (h : crossedPropsExcessIdxIx? ts = none) :
+    crossedPropsExcessPosIx? ts = none := by
+  unfold crossedPropsExcessPosIx?; rw [h]
+
+/-- Indexed twin of `runLineCrossDanglingPos?_none_of_no_level` (item 182):
+    the break-crossing clause keeps its crossing only AT an open level's own
+    column. -/
+lemma runLineCrossDanglingPosIx?_none_of_no_level {input : String}
+    {ts : Indexed.TokenStream input} {indents : Array IndentEntryIx}
+    (h : ∀ n : Nat, indents.any (fun e => e.column == (n : Int)) = false) :
+    runLineCrossDanglingPosIx? ts indents = none := by
+  unfold runLineCrossDanglingPosIx?
+  cases hq : runLineCrossPosIx? ts with
+  | none => rfl
+  | some q => simp [h q.col]
+
+/-- The block scan reports nothing over a stream with no property tokens. -/
+lemma propsBlockScanLoopIx_no_props {input : String}
+    {ts : Indexed.TokenStream input}
+    (h : ∀ j : Nat, ts.tokens[j]!.token.isNodeProperty = false) :
+    ∀ n, propsBlockScanLoopIx ts n = (false, false, none) := by
+  intro n
+  induction n with
+  | zero => rfl
+  | succ m ih =>
+    unfold propsBlockScanLoopIx
+    simp only [h m, Bool.false_eq_true, ↓reduceIte]
+    split
+    · exact ih
+    · rfl
+
+/-- …so the trailing block has no excess there either. -/
+lemma crossedPropsExcessIdxIx?_none_of_no_props {input : String}
+    {ts : Indexed.TokenStream input}
+    (h : ∀ j : Nat, ts.tokens[j]!.token.isNodeProperty = false) :
+    crossedPropsExcessIdxIx? ts = none := by
+  unfold crossedPropsExcessIdxIx?
+  split
+  · rfl
+  · rename_i i _
+    simp only [h i, Bool.false_eq_true, ↓reduceIte,
+      propsBlockScanLoopIx_no_props h]
+    split
+    · rfl
+    · split <;> first | rfl | (split <;> rfl)
+
+/-- The stream's seed has one real token, and `streamStart` is no property. -/
+lemma crossedPropsExcessIdxIx?_init (input : String) :
+    crossedPropsExcessIdxIx?
+      ((ScannerStateIx.mk' input).emit YamlToken.streamStart).tokens = none := rfl
+
+/-- The no-props reading survives any non-property push. -/
+lemma no_props_pushIx {input : String} {ts : Indexed.TokenStream input}
+    {p : Indexed.IxToken input}
+    (h : ∀ j : Nat, ts.tokens[j]!.token.isNodeProperty = false)
+    (hp : p.token.isNodeProperty = false) :
+    ∀ j : Nat, (ts.tokens.push p)[j]!.token.isNodeProperty = false := by
+  intro j
+  by_cases hj : j < ts.tokens.size
+  · rw [getElem!_pos _ j (by rw [Array.size_push]; omega), Array.getElem_push_lt hj]
+    have := h j
+    rwa [getElem!_pos _ j hj] at this
+  · by_cases hj' : j = ts.tokens.size
+    · subst hj'
+      rw [getElem!_pos _ _ (by rw [Array.size_push]; omega), Array.getElem_push_eq]
+      exact hp
+    · rw [getElem!_neg (ts.tokens.push p) j (by rw [Array.size_push]; omega)]
+      rfl
+
+/-- A FILTERED delta pin bounds the stream's properties: placeholders are no
+    properties, and everything else survives the filter into the pinned run. -/
+lemma no_props_of_filtered_pushIx {input : String} {ts : Indexed.TokenStream input}
+    {base : Array (Indexed.IxToken input)} {tok : Indexed.IxToken input}
+    (h_pin : ts.tokens.filter (fun t => t.token != .placeholder) = base.push tok)
+    (h_base : ∀ t ∈ base, t.token.isNodeProperty = false)
+    (h_tok : tok.token.isNodeProperty = false) :
+    ∀ j : Nat, ts.tokens[j]!.token.isNodeProperty = false := by
+  intro j
+  by_cases hj : j < ts.tokens.size
+  · rw [getElem!_pos ts.tokens j hj]
+    by_cases hph : ts.tokens[j].token = .placeholder
+    · rw [hph]; rfl
+    · have h_mem : ts.tokens[j] ∈ base.push tok := by
+        rw [← h_pin]
+        refine Array.mem_filter.mpr ⟨Array.getElem_mem hj, ?_⟩
+        simpa using hph
+      rcases Array.mem_push.mp h_mem with h_in | rfl
+      · exact h_base _ h_in
+      · exact h_tok
+  · rw [getElem!_neg ts.tokens j hj]
+    rfl
+
+/-- `emit` pushes one token of the given value: the no-props reading rides. -/
+lemma no_props_emitIx {input : String} {s : ScannerStateIx input} {tok : YamlToken}
+    (h : ∀ j : Nat, s.tokens.tokens[j]!.token.isNodeProperty = false)
+    (ht : tok.isNodeProperty = false) :
+    ∀ j : Nat, (s.emit tok).tokens.tokens[j]!.token.isNodeProperty = false :=
+  no_props_pushIx h ht
+
+/-- …and a key save reserves at most two placeholders. -/
+lemma no_props_saveSimpleKeyIx {input : String} {s : ScannerStateIx input}
+    (h : ∀ j : Nat, s.tokens.tokens[j]!.token.isNodeProperty = false) :
+    ∀ j : Nat, (saveSimpleKeyIx s).tokens.tokens[j]!.token.isNodeProperty = false := by
+  unfold saveSimpleKeyIx
+  split
+  · exact h
+  · split
+    · exact no_props_emitIx (no_props_emitIx h rfl) rfl
+    · exact h
+
+lemma danglingNodePosIx?_none_of_sentinel_stack {input : String}
+    (s : ScannerStateIx input)
+    (h : s.indents = #[{ column := -1, isSequence := false }])
+    (hx : crossedPropsExcessIdxIx? s.tokens = none) :
+    danglingNodePosIx? s = none := by
+  have hnone : ∀ n : Nat, s.indents.any (fun e => e.column == (n : Int)) = false := by
+    intro n
+    rw [h, Array.any_eq_false]
+    intro i hi
+    have hi0 : i = 0 := by simp at hi; omega
+    subst hi0
+    simp only [beq_iff_eq]
+    show ¬ ((-1 : Int) = (n : Int))
+    omega
+  unfold danglingNodePosIx?
+  simp only [hnone, Bool.false_eq_true, ↓reduceIte, ite_self,
+    crossedPropsExcessPosIx?_none hx, runLineCrossDanglingPosIx?_none_of_no_level hnone]
+  split
+  · rfl
+  · split <;> rfl
+
+lemma scanNextTokenIx_checkDanglingNode_ok_of_sentinel_stack {input : String}
+    (s_run s_land : ScannerStateIx input)
+    (h : s_run.indents = #[{ column := -1, isSequence := false }])
+    (hx : crossedPropsExcessIdxIx? s_run.tokens = none) :
+    scanNextTokenIx_checkDanglingNode s_run s_land = .ok () := by
+  unfold scanNextTokenIx_checkDanglingNode
+  rw [danglingNodePosIx?_none_of_sentinel_stack s_run h hx]
+  split <;> rfl
+
+/-- Indexed twin of `trailingNodeRun?_push_none`: a stream whose last token
+    heads no run — not a `[96]` property, not a one-token body, and (item 159)
+    not a flow collection's close — ends in no run. -/
+lemma trailingNodeRunIx?_push_none {input : String}
+    (ts : Indexed.TokenStream input) (p : Indexed.IxToken input)
+    (hb : p.token.isNodeBody = false) (hp : p.token.isNodeProperty = false)
+    (hc : p.token.isFlowClose = false)
+    (hph : (p.token == YamlToken.placeholder) = false) :
+    trailingNodeRunIx? ⟨ts.tokens.push p⟩ = none := by
+  have hget : (ts.tokens.push p)[ts.tokens.size]! = p := by
+    simp [Array.getElem_push]
+  have hlast : prevRealIdxIx? (⟨ts.tokens.push p⟩ : Indexed.TokenStream input)
+      (ts.tokens.push p).size = some ts.tokens.size := by
+    have hsz : (ts.tokens.push p).size = ts.tokens.size + 1 := Array.size_push ..
+    rw [hsz]
+    show (if (ts.tokens.push p)[ts.tokens.size]!.token == .placeholder then
+            prevRealIdxIx? _ ts.tokens.size else some ts.tokens.size) = some ts.tokens.size
+    rw [hget, hph]
+    rfl
+  unfold trailingNodeRunIx?
+  rw [hlast]
+  simp only [hget, hb, hp, hc, Bool.false_eq_true, ↓reduceIte]
+
+lemma danglingNodePosIx?_none_of_no_run {input : String} (s : ScannerStateIx input)
+    (h : trailingNodeRunIx? s.tokens = none) : danglingNodePosIx? s = none := by
+  unfold danglingNodePosIx?
+  split
+  · rfl
+  · rw [h]
+
+lemma scanLoopIx_checkDanglingNode_ok_of_no_run {input : String}
+    (s : ScannerStateIx input) (h : trailingNodeRunIx? s.tokens = none) :
+    scanLoopIx_checkDanglingNode s = .ok () := by
+  unfold scanLoopIx_checkDanglingNode
+  rw [danglingNodePosIx?_none_of_no_run s h]
+
+lemma scanLoopIx_checkDanglingNode_ok_of_sentinel_stack {input : String}
+    (s : ScannerStateIx input)
+    (h : s.indents = #[{ column := -1, isSequence := false }])
+    (hx : crossedPropsExcessIdxIx? s.tokens = none) :
+    scanLoopIx_checkDanglingNode s = .ok () := by
+  unfold scanLoopIx_checkDanglingNode
+  rw [danglingNodePosIx?_none_of_sentinel_stack s h hx]
+
+/-! #### Item 172: the §8.1 flow-value floor's indexed discharge family
+
+Twins of the legacy family in `EmitterScannability/ScanSteps.lean` — the
+reading is `danglingNodePosIx?`'s slot-offered complement and its discharges
+are the same. -/
+
+lemma underIndentedFlowValuePosIx?_none_of_inFlow {input : String}
+    (s : ScannerStateIx input) (h : s.inFlow = true) :
+    underIndentedFlowValuePosIx? s = none := by
+  simp only [underIndentedFlowValuePosIx?, h, ↓reduceIte]
+
+lemma underIndentedFlowValuePosIx?_none_of_sentinel_stack {input : String}
+    (s : ScannerStateIx input)
+    (h : s.indents = #[{ column := -1, isSequence := false }]) :
+    underIndentedFlowValuePosIx? s = none := by
+  have hnone : ∀ n : Nat, s.indents.any (fun e => e.column == (n : Int)) = false := by
+    intro n
+    rw [h, Array.any_eq_false]
+    intro i hi
+    have hi0 : i = 0 := by simp at hi; omega
+    subst hi0
+    simp only [beq_iff_eq]
+    show ¬ ((-1 : Int) = (n : Int))
+    omega
+  unfold underIndentedFlowValuePosIx?
+  split
+  · rfl
+  · split
+    · rfl
+    · split
+      · rfl
+      · split
+        · rfl
+        · simp only [hnone, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
+
+lemma underIndentedFlowValuePosIx?_none_of_no_run {input : String}
+    (s : ScannerStateIx input)
+    (h : trailingNodeRunIx? s.tokens = none) : underIndentedFlowValuePosIx? s = none := by
+  cases hif : s.inFlow with
+  | true => exact underIndentedFlowValuePosIx?_none_of_inFlow s hif
+  | false =>
+    cases hpr : prevRealIdxIx? s.tokens s.tokens.tokens.size with
+    | none => simp [underIndentedFlowValuePosIx?, hif, hpr]
+    | some i =>
+      cases hcl : s.tokens.tokens[i]!.token.isFlowClose with
+      | false => simp [underIndentedFlowValuePosIx?, hif, hpr, hcl]
+      | true =>
+        cases hprop : s.tokens.tokens[i]!.token.isNodeProperty with
+        | true => simp [trailingNodeRunIx?, hpr, hprop] at h
+        | false =>
+          cases hbody : s.tokens.tokens[i]!.token.isNodeBody with
+          | true => simp [trailingNodeRunIx?, hpr, hprop, hbody] at h
+          | false =>
+            cases hfo : flowOpenIdxIx? s.tokens i with
+            | some o => simp [trailingNodeRunIx?, hpr, hprop, hbody, hcl, hfo] at h
+            | none => simp [underIndentedFlowValuePosIx?, hif, hpr, hcl, hfo]
+
+lemma scanNextTokenIx_checkFlowValueIndent_ok_of_none {input : String}
+    (s_run s_land : ScannerStateIx input)
+    (h : underIndentedFlowValuePosIx? s_run = none) :
+    scanNextTokenIx_checkFlowValueIndent s_run s_land = .ok () := by
+  unfold scanNextTokenIx_checkFlowValueIndent
+  rw [h]
+  split <;> rfl
+
+lemma scanNextTokenIx_checkFlowValueIndent_ok_of_keyNotAllowed {input : String}
+    (s_run s_land : ScannerStateIx input)
+    (h : s_land.simpleKeyAllowed = false) :
+    scanNextTokenIx_checkFlowValueIndent s_run s_land = .ok () := by
+  simp only [scanNextTokenIx_checkFlowValueIndent, h, Bool.false_eq_true, ↓reduceIte]
+
+lemma scanNextTokenIx_checkFlowValueIndent_ok_of_inFlow {input : String}
+    (s_run s_land : ScannerStateIx input) (h : s_run.inFlow = true) :
+    scanNextTokenIx_checkFlowValueIndent s_run s_land = .ok () :=
+  scanNextTokenIx_checkFlowValueIndent_ok_of_none s_run s_land
+    (underIndentedFlowValuePosIx?_none_of_inFlow s_run h)
+
+lemma scanNextTokenIx_checkFlowValueIndent_ok_of_sentinel_stack {input : String}
+    (s_run s_land : ScannerStateIx input)
+    (h : s_run.indents = #[{ column := -1, isSequence := false }]) :
+    scanNextTokenIx_checkFlowValueIndent s_run s_land = .ok () :=
+  scanNextTokenIx_checkFlowValueIndent_ok_of_none s_run s_land
+    (underIndentedFlowValuePosIx?_none_of_sentinel_stack s_run h)
+
+lemma scanNextTokenIx_checkFlowValueIndent_ok_of_no_run {input : String}
+    (s_run s_land : ScannerStateIx input)
+    (h : trailingNodeRunIx? s_run.tokens = none) :
+    scanNextTokenIx_checkFlowValueIndent s_run s_land = .ok () :=
+  scanNextTokenIx_checkFlowValueIndent_ok_of_none s_run s_land
+    (underIndentedFlowValuePosIx?_none_of_no_run s_run h)
+
+lemma scanLoopIx_checkFlowValueIndent_ok_of_none {input : String}
+    (s : ScannerStateIx input)
+    (h : underIndentedFlowValuePosIx? s = none) :
+    scanLoopIx_checkFlowValueIndent s = .ok () := by
+  unfold scanLoopIx_checkFlowValueIndent
+  rw [h]
+
+lemma scanLoopIx_checkFlowValueIndent_ok_of_inFlow {input : String}
+    (s : ScannerStateIx input) (h : s.inFlow = true) :
+    scanLoopIx_checkFlowValueIndent s = .ok () :=
+  scanLoopIx_checkFlowValueIndent_ok_of_none s
+    (underIndentedFlowValuePosIx?_none_of_inFlow s h)
+
+lemma scanLoopIx_checkFlowValueIndent_ok_of_sentinel_stack {input : String}
+    (s : ScannerStateIx input)
+    (h : s.indents = #[{ column := -1, isSequence := false }]) :
+    scanLoopIx_checkFlowValueIndent s = .ok () :=
+  scanLoopIx_checkFlowValueIndent_ok_of_none s
+    (underIndentedFlowValuePosIx?_none_of_sentinel_stack s h)
+
+lemma scanLoopIx_checkFlowValueIndent_ok_of_no_run {input : String}
+    (s : ScannerStateIx input) (h : trailingNodeRunIx? s.tokens = none) :
+    scanLoopIx_checkFlowValueIndent s = .ok () :=
+  scanLoopIx_checkFlowValueIndent_ok_of_none s
+    (underIndentedFlowValuePosIx?_none_of_no_run s h)
+
+
+/-- …and wherever nothing behind the cursor completes a node. -/
+lemma scanNextTokenIx_checkBareDocument_ok_of_last {input : String}
+    (s : ScannerStateIx input)
+    (h : ∀ t, lastRealTokenValIx? s.tokens = some t → t.completesFlowValue = false) :
+    scanNextTokenIx_checkBareDocument s = .ok () := by
+  unfold scanNextTokenIx_checkBareDocument
+  cases hx : lastRealTokenValIx? s.tokens with
+  | none => simp
+  | some t => simp [h t hx]
+
+/-- Converse extraction for item 133's §9.2 dangling-node check, which runs
+    before the structural dispatch and so needs no `h_struct`. -/
+lemma scanNextTokenIx_ok_checkDanglingNode {input : String}
+    {s s_pp : ScannerStateIx input} {c : Char} {r : Option (ScannerStateIx input)}
+    (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))
+    (h_snt : scanNextTokenIx s = .ok r) :
+    scanNextTokenIx_checkDanglingNode s s_pp = .ok () := by
+  cases h_dn : scanNextTokenIx_checkDanglingNode s s_pp with
+  | ok u => cases u; rfl
+  | error e =>
+    exfalso
+    have h_err : scanNextTokenIx s = .error e := by
+      unfold scanNextTokenIx
+      simp only [bind, Except.bind, h_pp, h_dn]
+    rw [h_err] at h_snt
+    injection h_snt
+/-- Converse extraction for item 172's §8.1 flow-value floor — the dangling
+    check's immediate successor in the indexed spine. -/
+lemma scanNextTokenIx_ok_checkFlowValueIndent {input : String}
+    {s s_pp : ScannerStateIx input} {c : Char} {r : Option (ScannerStateIx input)}
+    (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))
+    (h_snt : scanNextTokenIx s = .ok r) :
+    scanNextTokenIx_checkFlowValueIndent s s_pp = .ok () := by
+  cases h_fv : scanNextTokenIx_checkFlowValueIndent s s_pp with
+  | ok u => cases u; rfl
+  | error e =>
+    exfalso
+    have h_err : scanNextTokenIx s = .error e := by
+      unfold scanNextTokenIx
+      simp only [bind, Except.bind, h_pp,
+        scanNextTokenIx_ok_checkDanglingNode h_pp h_snt, h_fv]
+    rw [h_err] at h_snt
+    injection h_snt
 
 /-- Converse dp extraction (Fix B): if `scanNextTokenIx` succeeded and the
     pipeline reached past structural dispatch, the pending-directives check
@@ -915,8 +1346,34 @@ lemma scanNextTokenIx_ok_directivesPresent_false {input : String}
     have h_err : scanNextTokenIx s
         = .error (.directiveWithoutDocument s_pp.cursor.pos.line) := by
       unfold scanNextTokenIx
-      simp only [bind, Except.bind, h_pp, h_struct, h_check_err]
+      simp only [bind, Except.bind, h_pp,
+        scanNextTokenIx_ok_checkDanglingNode h_pp h_snt,
+        scanNextTokenIx_ok_checkFlowValueIndent h_pp h_snt, h_struct, h_check_err]
+    rw [h_err] at h_snt
+    injection h_snt
+
+/-- The same converse for item 132's §9.2 check. -/
+lemma scanNextTokenIx_ok_checkBareDocument {input : String}
+    {s s_pp : ScannerStateIx input} {c : Char} {r : Option (ScannerStateIx input)}
+    (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))
+    (h_struct : scanNextTokenIx_dispatchStructural s_pp c = .ok none)
+    (h_snt : scanNextTokenIx s = .ok r) :
+    scanNextTokenIx_checkBareDocument s_pp = .ok () := by
+  cases h_bd : scanNextTokenIx_checkBareDocument s_pp with
+  | ok u => cases u; rfl
+  | error e =>
+    exfalso
+    have h_ndp : s_pp.directivesPresent = false :=
+      scanNextTokenIx_ok_directivesPresent_false h_pp h_struct h_snt
+    have h_err : scanNextTokenIx s = .error e := by
+      unfold scanNextTokenIx
+      simp only [bind, Except.bind, h_pp,
+        scanNextTokenIx_ok_checkDanglingNode h_pp h_snt,
+        scanNextTokenIx_ok_checkFlowValueIndent h_pp h_snt, h_struct,
+        scanNextTokenIx_checkNoPendingDirectives_ok _ h_ndp, h_bd]
     rw [h_err] at h_snt
     injection h_snt
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

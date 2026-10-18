@@ -2,7 +2,16 @@
 Copyright (c) 2026 L4YAML contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.DeepNavigator
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.DeepNavigator
+
+
+
+public meta import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
+public meta import L4YAML.Proofs.Parser.ParserGrammableBase
+@[expose] public section Blanket
 
 /-!
 # `SeqInteriorSeparators` — the seq-typed separator carrier (sub-brick `(i'-b-descend-defn)`)
@@ -10926,10 +10935,10 @@ lemma nestedSeq_recseqentry_locate_hstep
     re-export after the coercion). -/
 lemma emitScansInFlowBlock_of_flowRecEntry (v : YamlValue)
     (h : EmitScansInFlowRecEntry v) : EmitScansInFlowBlock v := by
-  intro s rest h_corr h_inflow h_flow h_indent h_col h_ekl h_atol h_endline h_sks h_dp
+  intro s rest h_corr h_inflow h_flow h_indent h_col h_ekl h_atol h_endline h_sks h_dp h_last
   obtain ⟨n, s', block, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14,
           h15, h16, h17, h18, h19, h20, h21, _h22, h23, h24, h25⟩ :=
-    h s rest h_corr h_inflow h_flow h_indent h_col h_ekl h_atol h_endline h_sks h_dp
+    h s rest h_corr h_inflow h_flow h_indent h_col h_ekl h_atol h_endline h_sks h_dp h_last
   exact ⟨n, s', block, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14,
     h15, h16, h17, h18, h19, h20, h21, h23, lastNonOpener_of_entryUnit block h21, h24,
     lastNonSep_of_entryUnit_contentHead block h21 h23, h25⟩
@@ -11406,3 +11415,5 @@ lemma seqRoot_carrier_r447
   exact seqWidthEnc_of_recIH_seq tokens 2 (tokens.size - 2) h_root_win h_root_deep recIH
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

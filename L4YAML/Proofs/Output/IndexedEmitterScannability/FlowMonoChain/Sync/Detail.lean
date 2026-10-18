@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.FlowDispatch
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.FlowDispatch
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Detail` — Phase 3 Step 6f.3b3.flowmono.sync.detail
 
@@ -297,9 +302,9 @@ lemma scanFlowEntryIx_detail (s : ScannerStateIx input) (rest : List Char)
       t ≠ YamlToken.flowSequenceStart ∧ t ≠ YamlToken.flowMappingStart
       ∧ t ≠ YamlToken.flowEntry) :
     scanFlowEntryIx s =
-      .ok { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }
+      .ok { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }
     ∧ ScannerSurfCorrIx
-        { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }
+        { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }
         ⟨rest, s.cursor.pos.col + 1⟩
     ∧ ({ (s.emit YamlToken.flowEntry).advance with
             simpleKeyAllowed := true } : ScannerStateIx input).flowLevel = s.flowLevel
@@ -323,7 +328,7 @@ lemma scanFlowEntryIx_detail (s : ScannerStateIx input) (rest : List Char)
     show (s.emit YamlToken.flowEntry).advance.indents = s.indents
     rfl
   have h_corr_final := advance_non_newline_corrIx_state s
-    { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }
+    { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }
     ',' rest hcorr h_cur_eq h_ind_eq h_lt (by decide) (by decide)
   refine ⟨h_ok, h_corr_final, ?_, ?_, h_ind_eq, ?_⟩
   · show (s.emit YamlToken.flowEntry).advance.flowLevel = s.flowLevel
@@ -333,3 +338,5 @@ lemma scanFlowEntryIx_detail (s : ScannerStateIx input) (rest : List Char)
   · exact h_corr_final.col_eq.symm
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

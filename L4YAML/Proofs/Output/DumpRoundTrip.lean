@@ -1,6 +1,13 @@
-import L4YAML.Output.Dump
-import L4YAML.Output.Emitter
-import L4YAML.Parser.Composition
+module
+
+public import L4YAML.Output.Dump
+
+public meta import L4YAML.Output.Dump
+public import L4YAML.Output.Emitter
+public import L4YAML.Parser.Composition
+
+public meta import L4YAML.Spec.Types
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -308,3 +315,5 @@ lemma dumpDocuments_three :
       "a\n---\nb\n---\nc\n..." := by native_decide
 
 end L4YAML.Proofs.DumpRoundTrip
+
+end Blanket

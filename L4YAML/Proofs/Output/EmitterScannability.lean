@@ -2,32 +2,38 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Spec.CharPredicates
-import L4YAML.Proofs.Output.ScannerEmitBridge
-import L4YAML.Proofs.RoundTrip.RoundTrip
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Coupling.ScalarCoupling
-import L4YAML.Proofs.Parser.ParserGrammable
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerBound
-import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
-import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
-import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
-import L4YAML.Proofs.Output.EmitterScannability.FilteredGrowth
-import L4YAML.Proofs.Output.EmitterScannability.ScanChainGrowth
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Proofs.Output.EmitterScannability.FilteredTracking
-import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
-import L4YAML.Proofs.Output.EmitterScannability.BlockProducers
-import L4YAML.Proofs.Output.EmitterScannability.ScannerSpanLocality
-import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
-import L4YAML.Proofs.Output.EmitterScannability.SeqInteriorSeparators
-import L4YAML.Proofs.Output.EmitterScannability.StreamNodeWitness
-import L4YAML.Proofs.Output.EmitterScannability.GeneralLocality
+
+module
+
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Spec.CharPredicates
+public import L4YAML.Proofs.Output.ScannerEmitBridge
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Parser.ParserGrammable
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerBound
+public import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
+public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+public import L4YAML.Proofs.Output.EmitterScannability.FilteredGrowth
+public import L4YAML.Proofs.Output.EmitterScannability.ScanChainGrowth
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Proofs.Output.EmitterScannability.FilteredTracking
+public import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
+public import L4YAML.Proofs.Output.EmitterScannability.BlockProducers
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerSpanLocality
+public import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
+public import L4YAML.Proofs.Output.EmitterScannability.SeqInteriorSeparators
+public import L4YAML.Proofs.Output.EmitterScannability.StreamNodeWitness
+public import L4YAML.Proofs.Output.EmitterScannability.GeneralLocality
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-!
 # Emitter scannability & the universal round-trip
@@ -157,7 +163,7 @@ lemma scanFiltered_emitScalar_vals (content : String) (tokens : Array (Positione
     have h_pk_emit : ((ScannerState.mk' (emitScalar content)).emit .streamStart).peek?
         = (ScannerState.mk' (emitScalar content)).peek? := rfl
     unfold scan; dsimp only []; rw [h_pk_emit, h_pk]
-    split <;> first | rfl | exact absurd ‹_› (by decide)
+    split <;> first | exact absurd ‹_› (by decide) | rfl
   have h_ci : s₁.currentIndent = -1 := by
     unfold ScannerState.currentIndent; rw [h_ids1]; rfl
   have h_uwi : unwindIndents s₁ (-1) = s₁ := by
@@ -166,7 +172,11 @@ lemma scanFiltered_emitScalar_vals (content : String) (tokens : Array (Positione
     unfold unwindIndentsLoop; simp [h_ci]
   have h_scan_raw : scan (emitScalar content) =
       .ok (s₁.emit .streamEnd).tokens := by
-    rw [h_scan_eq, scanLoop_two_iter_eq h_fuel h_snt1 h_snt2 h_flow1 h_dp1, h_uwi]
+    rw [h_scan_eq, scanLoop_two_iter_eq h_fuel h_snt1 h_snt2 h_flow1 h_dp1
+      (scanLoop_checkDanglingNode_ok_of_sentinel_stack _ h_ids1
+        (crossedPropsExcessIdx?_none_of_no_props (no_props_of_filtered_pin h_filt1
+          (by intro v hv; simp [Array.mem_def] at hv; rcases hv with rfl | rfl <;> rfl))))
+      (scanLoop_checkFlowValueIndent_ok_of_sentinel_stack _ h_ids1), h_uwi]
   have h_tokens_eq : tokens = (s₁.emit .streamEnd).tokens.filter
       (fun t => t.val != .placeholder) := by
     simp only [scanFiltered, h_scan_raw] at h_scan
@@ -931,7 +941,7 @@ lemma stdElt_of_grammable (v : YamlValue) (hg : Grammable v false) : StdElt v :=
   have h_0' : 0 < (rd.map YamlDocument.compose).size := by rw [Array.size_map]; omega
   have h_ix : (rd.map YamlDocument.compose)[0]!.value = (rd[0]!.compose).value := by
     rw [getElem!_pos _ 0 h_0', getElem!_pos rd 0 h_ne, Array.getElem_map]
-  rw [h_ix, compose_value_of_anchorFree _ (by rw [h_docval]; exact h_pure.2.2), h_docval,
+  rw [h_ix, compose_value_of_anchorAliasFree _ (by rw [h_docval]; exact h_pure.2.2), h_docval,
     h_pure.1, h_pure.2.1]
 
 /-- **Full pipeline (with compose)**: Emitter output parses successfully
@@ -1134,7 +1144,7 @@ lemma emit_roundtrip_sequence_content_eq {inFlow : Bool} (style : CollectionStyl
         have h_items'_size : items'.size = items.size := by
           rw [h_items'_sz, Array.length_toList]
         -- R601's per-index pins are anchorless scalars, so items' is anchor-free (J2 guard)
-        have h_af : ∀ v ∈ items'.toList, v.anchorFree = true := by
+        have h_af : ∀ v ∈ items'.toList, v.anchorAliasFree = true := by
           intro v hv
           obtain ⟨i, hi, h_eq⟩ := List.getElem_of_mem hv
           have hi'' : i < items'.size := by rwa [Array.length_toList] at hi
@@ -1143,7 +1153,7 @@ lemma emit_roundtrip_sequence_content_eq {inFlow : Bool} (style : CollectionStyl
           have h_v : v = items'[i]! := by
             rw [← h_eq, Array.getElem_toList, getElem!_pos items' i hi'']
           rw [h_v, h_pin]
-          simp [YamlValue.anchorFree]
+          simp [YamlValue.anchorAliasFree]
         have h_items''_size : items''.size = items'.size := by
           rw [compose_seq_items_pointwise (raw_docs[0]!) items' items'' h_af h_raw_val h_comp_val,
             Array.size_map]
@@ -1195,7 +1205,7 @@ lemma emit_roundtrip_sequence_content_eq {inFlow : Bool} (style : CollectionStyl
           rw [← h_eq]; exact h_shape
         have h_items'_size : items'.size = items.size := by
           rw [h_sz', Array.length_toList]
-        have h_af : ∀ w ∈ items'.toList, w.anchorFree = true := by
+        have h_af : ∀ w ∈ items'.toList, w.anchorAliasFree = true := by
           intro w hw
           obtain ⟨i, hi, h_eq⟩ := List.getElem_of_mem hw
           have hi'' : i < items'.size := by rwa [Array.length_toList] at hi
@@ -1330,7 +1340,7 @@ lemma emit_roundtrip_mapping_content_eq {inFlow : Bool} (style : CollectionStyle
           rw [← h_eq]; exact h_shape
         have h_pairs'_size : pairs'.size = pairs.size := by rw [h_pairs'_sz, Array.length_toList]
         -- R608's per-index pins are anchorless scalar pairs, so pairs' is anchor-free (J2 guard)
-        have h_af : ∀ p ∈ pairs'.toList, p.1.anchorFree = true ∧ p.2.anchorFree = true := by
+        have h_af : ∀ p ∈ pairs'.toList, p.1.anchorAliasFree = true ∧ p.2.anchorAliasFree = true := by
           intro q hq
           obtain ⟨i, hi, h_eq⟩ := List.getElem_of_mem hq
           have hi'' : i < pairs'.size := by rwa [Array.length_toList] at hi
@@ -1339,7 +1349,7 @@ lemma emit_roundtrip_mapping_content_eq {inFlow : Bool} (style : CollectionStyle
           have h_q : q = pairs'[i]! := by
             rw [← h_eq, Array.getElem_toList, getElem!_pos pairs' i hi'']
           rw [h_q, h_pin]
-          exact ⟨by simp [YamlValue.anchorFree], by simp [YamlValue.anchorFree]⟩
+          exact ⟨by simp [YamlValue.anchorAliasFree], by simp [YamlValue.anchorAliasFree]⟩
         have h_pairs''_size : pairs''.size = pairs'.size := by
           rw [compose_map_pairs_pointwise (raw_docs[0]!) pairs' pairs''
             h_af h_raw_val h_comp_val, Array.size_map]
@@ -1424,7 +1434,7 @@ lemma emit_roundtrip_mapping_content_eq {inFlow : Bool} (style : CollectionStyle
           rw [← h_eq]; exact h_shape
         have h_pairs'_size : pairs'.size = pairs.size := by
           rw [h_sz', Array.length_toList]
-        have h_af : ∀ p ∈ pairs'.toList, p.1.anchorFree = true ∧ p.2.anchorFree = true := by
+        have h_af : ∀ p ∈ pairs'.toList, p.1.anchorAliasFree = true ∧ p.2.anchorAliasFree = true := by
           intro q hq
           obtain ⟨i, hi, h_eq⟩ := List.getElem_of_mem hq
           have hi'' : i < pairs'.size := by rwa [Array.length_toList] at hi
@@ -1562,3 +1572,5 @@ theorem universal_roundtrip (v : YamlValue) (hg : Grammable v false) :
   · exact emit_roundtrip_content_eq v hg raw_docs h_raw h_raw_size
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

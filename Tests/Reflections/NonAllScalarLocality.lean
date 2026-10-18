@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Output.EmitterScannability
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability
+
+@[expose] public section Blanket
 
 /-!
 # Reflection -- Front-B non-all-scalar locality blocking structure
@@ -1989,3 +1993,5 @@ eventual P1/P2a/P2b/Bridge proofs must satisfy. -/
 #print axioms seq_provides_close
 
 end NonAllScalarLocality
+
+end Blanket

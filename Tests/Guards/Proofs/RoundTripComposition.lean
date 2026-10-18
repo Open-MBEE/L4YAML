@@ -1,4 +1,10 @@
-import L4YAML.Proofs.RoundTrip.RoundTripComposition
+module
+
+public import L4YAML.Proofs.RoundTrip.RoundTripComposition
+
+
+public meta import L4YAML.Proofs.RoundTrip.RoundTripComposition
+@[expose] public section Blanket
 
 namespace L4YAML.Proofs.RoundTripComposition
 
@@ -93,3 +99,5 @@ open L4YAML.Dump
 #guard resolveRoundTripsTyped (#[#["a", "b"], #["c"]] : Array (Array String))
 
 end L4YAML.Proofs.RoundTripComposition
+
+end Blanket

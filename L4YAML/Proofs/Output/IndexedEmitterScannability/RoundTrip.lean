@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.ParseStream
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.ParseStream
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.RoundTrip` — Phase 3 Step 6f.3b3.roundtrip.{fidelity, filterinfra, maintheorem.growth}
 
@@ -197,12 +202,14 @@ lemma scanFiltered_tokens_eq_of_chain_short_stackIx
     (h_eof : scanNextTokenIx s_final = .ok none)
     (h_fl : s_final.flowLevel = 0)
     (h_dp : s_final.directivesPresent = false)
+    (h_dn : scanLoopIx_checkDanglingNode s_final = .ok ())
+    (h_fv : scanLoopIx_checkFlowValueIndent s_final = .ok ())
     (h_fuel : n + 1 ≤ (input.utf8ByteSize + 1) * 4)
     (h_stack : s_final.indents.size ≤ 1) :
     scanFilteredIx input = .ok ⟨((s_final.emit YamlToken.streamEnd).tokens.tokens.filter
       (fun t => t.token != YamlToken.placeholder))⟩ := by
   have h_eq := scanFilteredIx_of_chain_eq input s₀ s_final n h_s0 h_no_bom h_chain
-    h_eof h_fl h_dp h_fuel
+    h_eof h_fl h_dp h_dn h_fv h_fuel
   rwa [unwindIndents_noop_short_stackIx s_final h_stack] at h_eq
 
 /-- `ScanChainIx` token-stream monotonicity: the token array grows
@@ -324,7 +331,7 @@ state with `flowLevel = 1`, `peek? = ']'` / `'}'` (and nothing after),
 one `scanNextTokenIx` step produces a result state whose filtered
 token array is the input filtered array with `.flowSequenceEnd` /
 `.flowMappingEnd` appended. These compose the §1 (`preprocess_flow` →
-`saveSimpleKeyIx`), §2 (`checkBlockFlowIndent_ok_close_*`), §3
+`saveSimpleKeyIx`), §3
 (`dispatchFlowIndicators_close_*`), and §7
 (`scanNextTokenIx_via_flow_dispatch`) pipeline lemmas from
 `FlowMonoChain.Maintenance.Pipeline` / `.Sync.{Scenarios.Preflow,
@@ -371,7 +378,8 @@ lemma scanNextToken_flow_close_seq_outermost_extIx {input : String}
     (h_indent : s.currentIndent < 0)
     (h_col_pos : s.cursor.pos.col > 0)
     (h_fl : s.flowLevel = 1)
-    (h_dp : s.directivesPresent = false) :
+    (h_dp : s.directivesPresent = false)
+    (h_kind : s.flowStack.back? = some true) :
     ∃ s' : ScannerStateIx input,
       scanNextTokenIx s = .ok (some s')
       ∧ s'.flowLevel = 0
@@ -402,8 +410,6 @@ lemma scanNextToken_flow_close_seq_outermost_extIx {input : String}
     if (saveSimpleKeyIx s).allowDirectives then
       { saveSimpleKeyIx s with allowDirectives := false, documentEverStarted := true }
     else saveSimpleKeyIx s
-  have h_check : scanNextTokenIx_checkBlockFlowIndent s_ad ']' = .ok () :=
-    checkBlockFlowIndent_ok_close_bracket s_ad
   -- s_ad preserves flowLevel / directivesPresent / cursor / indents from s.
   have h_ad_fl : s_ad.flowLevel = s.flowLevel := by
     simp only [s_ad]; split <;> exact FlowMonoChain.saveSimpleKeyIx_flowLevel s
@@ -423,14 +429,21 @@ lemma scanNextToken_flow_close_seq_outermost_extIx {input : String}
   -- §3: flow dispatch on `']'` with flowLevel = 1 > 0 returns `scanFlowSequenceEndIx s_ad`.
   have h_ad_fl_pos : s_ad.flowLevel > 0 := by
     rw [h_ad_fl, h_fl]; decide
+  have h_ad_kind : s_ad.flowStack.back? = some true := by
+    have h_ad_fs : s_ad.flowStack = s.flowStack := by
+      simp only [s_ad]; split <;> exact FlowMonoChain.saveSimpleKeyIx_flowStack s
+    rw [h_ad_fs]; exact h_kind
   have h_flow_disp : scanNextTokenIx_dispatchFlowIndicators s_ad ']' =
       .ok (some (scanFlowSequenceEndIx s_ad)) :=
-    dispatchFlowIndicators_close_bracket s_ad h_ad_fl_pos
+    dispatchFlowIndicators_close_bracket s_ad h_ad_fl_pos h_ad_kind
   -- §4: factoring lemma assembles the full `scanNextTokenIx s`.
   have h_snt : scanNextTokenIx s = .ok (some (scanFlowSequenceEndIx s_ad)) :=
     scanNextTokenIx_via_flow_dispatch s (saveSimpleKeyIx s) s_ad
-      (scanFlowSequenceEndIx s_ad) ']' h_pp h_struct rfl h_check h_flow_disp
+      (scanFlowSequenceEndIx s_ad) ']' h_pp h_struct rfl (scanNextTokenIx_checkFlowValueIndent_ok_of_inFlow _ _ h_flow) h_flow_disp
       ((saveSimpleKeyIx_directivesPresent s).trans h_dp)
+      (scanNextTokenIx_checkBareDocument_ok_of_inFlow _
+        ((saveSimpleKeyIx_inFlow s).trans h_flow))
+      (scanNextTokenIx_checkDanglingNode_ok_of_inFlow _ _ h_flow)
   -- §5: `scanFlowSequenceEndIx_detail` bundles SurfCorr / flowLevel / dp / indents / col.
   obtain ⟨h_corr_final, h_fl_final, h_dp_final, h_ind_final, _⟩ :=
     scanFlowSequenceEndIx_detail s_ad [] h_ad_corr
@@ -479,7 +492,8 @@ lemma scanNextToken_flow_close_mapping_outermost_extIx {input : String}
     (h_indent : s.currentIndent < 0)
     (h_col_pos : s.cursor.pos.col > 0)
     (h_fl : s.flowLevel = 1)
-    (h_dp : s.directivesPresent = false) :
+    (h_dp : s.directivesPresent = false)
+    (h_kind : s.flowStack.back? = some false) :
     ∃ s' : ScannerStateIx input,
       scanNextTokenIx s = .ok (some s')
       ∧ s'.flowLevel = 0
@@ -506,8 +520,6 @@ lemma scanNextToken_flow_close_mapping_outermost_extIx {input : String}
     if (saveSimpleKeyIx s).allowDirectives then
       { saveSimpleKeyIx s with allowDirectives := false, documentEverStarted := true }
     else saveSimpleKeyIx s
-  have h_check : scanNextTokenIx_checkBlockFlowIndent s_ad '}' = .ok () :=
-    checkBlockFlowIndent_ok_close_brace s_ad
   have h_ad_fl : s_ad.flowLevel = s.flowLevel := by
     simp only [s_ad]; split <;> exact FlowMonoChain.saveSimpleKeyIx_flowLevel s
   have h_ad_dp : s_ad.directivesPresent = s.directivesPresent := by
@@ -524,13 +536,20 @@ lemma scanNextToken_flow_close_mapping_outermost_extIx {input : String}
     rw [h_ad_cur]
   have h_ad_fl_pos : s_ad.flowLevel > 0 := by
     rw [h_ad_fl, h_fl]; decide
+  have h_ad_kind : s_ad.flowStack.back? = some false := by
+    have h_ad_fs : s_ad.flowStack = s.flowStack := by
+      simp only [s_ad]; split <;> exact FlowMonoChain.saveSimpleKeyIx_flowStack s
+    rw [h_ad_fs]; exact h_kind
   have h_flow_disp : scanNextTokenIx_dispatchFlowIndicators s_ad '}' =
       .ok (some (scanFlowMappingEndIx s_ad)) :=
-    dispatchFlowIndicators_close_brace s_ad h_ad_fl_pos
+    dispatchFlowIndicators_close_brace s_ad h_ad_fl_pos h_ad_kind
   have h_snt : scanNextTokenIx s = .ok (some (scanFlowMappingEndIx s_ad)) :=
     scanNextTokenIx_via_flow_dispatch s (saveSimpleKeyIx s) s_ad
-      (scanFlowMappingEndIx s_ad) '}' h_pp h_struct rfl h_check h_flow_disp
+      (scanFlowMappingEndIx s_ad) '}' h_pp h_struct rfl (scanNextTokenIx_checkFlowValueIndent_ok_of_inFlow _ _ h_flow) h_flow_disp
       ((saveSimpleKeyIx_directivesPresent s).trans h_dp)
+      (scanNextTokenIx_checkBareDocument_ok_of_inFlow _
+        ((saveSimpleKeyIx_inFlow s).trans h_flow))
+      (scanNextTokenIx_checkDanglingNode_ok_of_inFlow _ _ h_flow)
   obtain ⟨h_corr_final, h_fl_final, h_dp_final, h_ind_final, _⟩ :=
     scanFlowMappingEndIx_detail s_ad [] h_ad_corr
   have h_result_fl : (scanFlowMappingEndIx s_ad).flowLevel = 0 := by
@@ -586,9 +605,9 @@ This section ships:
   - **§5.4.G.5.4** (legacy 9267–9365): scanner boundary tokens,
     `scanFilteredIx_boundary_tokens`.
 
-**Skipped**: `ScanChain_filtered_grows` (legacy 9016–9024). Its proof
-depends on the loose `scanNextToken_filtered_grows` which carries a
-`sorry` on the directive case (line 9013); downstream sub-sessions
+**Skipped**: a `ScanChain`-level filtered-growth corollary. An
+unconditional per-step growth claim is unsound on the directive case,
+so there is nothing sound to lift; downstream sub-sessions
 should consume `ScanChainGrewIx_filtered_grows` (already landed at
 `EmitScans.lean:173`) by building strict-variant `ScanChainGrewIx`
 chains — sidesteps the directive sorry entirely.
@@ -948,7 +967,10 @@ lemma emitList_body_filtered_characterizationIx_part1
     (h_ek : s.explicitKeyLine = none)
     (h_atol : AllTokensOnLineIx s s.cursor.pos.line)
     (h_endline : EndLineOnLineIx s)
-    (h_dp : s.directivesPresent = false) :
+    -- item 9r: see `EmitScansInFlowIx`.
+    (h_sync : s.simpleKeyStack.size = s.flowLevel)
+    (h_dp : s.directivesPresent = false)
+    (h_last : ∀ t, lastRealTokenValIx? s.tokens = some t → t.completesFlowValue = false) :
     let p := fun (t : Indexed.IxToken input) => t.token != YamlToken.placeholder
     let old_sz := (s.tokens.tokens.filter p).size
     ∃ n s', ScanChainIx s n s'
@@ -971,7 +993,7 @@ lemma emitList_body_filtered_characterizationIx_part1
   have h_scan := emitList_scans_nonemptyIx items h_ne h_all
   obtain ⟨n, s', h_chain, h_corr', h_fl', h_dp', h_ids', h_ek', h_col', h_inflow',
           h_indent', h_line', h_atol', h_endline', h_stack', h_fmc⟩ :=
-    h_scan s rest h_corr h_flow h_fl h_indent h_col h_ek h_atol h_endline h_dp
+    h_scan s rest h_corr h_flow h_fl h_indent h_col h_ek h_atol h_endline h_sync h_dp h_last
   -- Strict chain growth: through n steps, filtered count grows by ≥ n.
   have h_grows := ScanChainGrewIx_filtered_grows h_chain
   -- n ≥ 1 because emitList of a non-empty list is non-empty.
@@ -1031,7 +1053,12 @@ lemma emitPairList_body_filtered_characterizationIx_part1
     (h_ek : s.explicitKeyLine = none)
     (h_atol : AllTokensOnLineIx s s.cursor.pos.line)
     (h_endline : EndLineOnLineIx s)
-    (h_dp : s.directivesPresent = false) :
+    -- item 9r: the pair-start facts; see `EmitPairListScansInFlowIx`.
+    (h_ska : s.simpleKeyAllowed = true)
+    (h_lrv : LastRawNotValueIx s)
+    (h_sync : s.simpleKeyStack.size = s.flowLevel)
+    (h_dp : s.directivesPresent = false)
+    (h_last : ∀ t, lastRealTokenValIx? s.tokens = some t → t.completesFlowValue = false) :
     let p := fun (t : Indexed.IxToken input) => t.token != YamlToken.placeholder
     let old_sz := (s.tokens.tokens.filter p).size
     ∃ n s', ScanChainIx s n s'
@@ -1054,7 +1081,8 @@ lemma emitPairList_body_filtered_characterizationIx_part1
   have h_scan := emitPairList_scans_nonemptyIx pairs h_ne h_all_k h_all_v
   obtain ⟨n, s', h_chain, h_corr', h_fl', h_dp', h_ids', h_ek', h_col', h_inflow',
           h_indent', h_line', h_atol', h_endline', h_stack', h_fmc⟩ :=
-    h_scan s rest h_corr h_flow h_fl h_indent h_col h_ek h_atol h_endline h_dp
+    h_scan s rest h_corr h_flow h_fl h_indent h_col h_ek h_atol h_endline h_ska h_lrv h_sync
+      h_dp h_last
   -- Strict chain growth: through n steps, filtered count grows by ≥ n.
   have h_grows := ScanChainGrewIx_filtered_grows h_chain
   -- n ≥ 1 because emitPairList of a non-empty list is non-empty.
@@ -1085,3 +1113,5 @@ lemma emitPairList_body_filtered_characterizationIx_part1
          h_stack', h_fmc, h_lt⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.RoundTrip
+
+end Blanket

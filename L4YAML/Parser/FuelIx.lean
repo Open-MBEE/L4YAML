@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Indexed.TokenStream
+
+module
+
+public import L4YAML.Indexed.TokenStream
+
+@[expose] public section Blanket
 
 /-! # `FuelIx` — Phase 3 Step 6b indexed parser fuel (staging)
 
@@ -59,3 +64,5 @@ def initialFuelIx {input : String} (tokens : Indexed.TokenStream input) : Nat :=
   4 * tokens.size + 4
 
 end L4YAML.TokenParser.Indexed
+
+end Blanket

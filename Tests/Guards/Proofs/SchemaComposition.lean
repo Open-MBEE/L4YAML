@@ -1,4 +1,12 @@
-import L4YAML.Proofs.Schema.SchemaComposition
+module
+
+public import L4YAML.Proofs.Schema.SchemaComposition
+
+
+
+public meta import L4YAML.Schema.FromToYaml
+public meta import L4YAML.Proofs.Schema.SchemaComposition
+@[expose] public section Blanket
 
 namespace L4YAML.Proofs.SchemaComposition
 
@@ -47,3 +55,5 @@ open L4YAML.Schema
 #guard schemaRoundTrips (some true : Option Bool)
 
 end L4YAML.Proofs.SchemaComposition
+
+end Blanket

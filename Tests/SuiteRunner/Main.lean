@@ -1,24 +1,28 @@
-import L4YAML
-import Tests.SuiteRunner.Meta
-import Tests.SuiteRunner.HtmlReport
-import Tests.VerifiedResult
-import Tests.Main
-import Tests.ExplicitKeyTests
-import Tests.FlowTests
-import Tests.ValidationTests
-import Tests.DumpRoundTrip
-import Tests.RawParseTests
-import Tests.SpecExamples
-import Tests.SchemaDump
-import Tests.ScannerTests
-import Tests.ScannerSpecExamples
-import Tests.AdversarialGrammarTests
-import Tests.AdversarialInstantiation
-import Tests.MutationSuiteTests
-import Tests.PropertyTests
-import Tests.ProductionCoverage
-import Tests.LimitTests
-import Demo
+module
+
+public import L4YAML
+public import Tests.SuiteRunner.Meta
+public import Tests.SuiteRunner.HtmlReport
+public import Tests.VerifiedResult
+public import Tests.Main
+public import Tests.ExplicitKeyTests
+public import Tests.FlowTests
+public import Tests.ValidationTests
+public import Tests.DumpRoundTrip
+public import Tests.RawParseTests
+public import Tests.SpecExamples
+public import Tests.SchemaDump
+public import Tests.ScannerTests
+public import Tests.ScannerSpecExamples
+public import Tests.AdversarialGrammarTests
+public import Tests.AdversarialInstantiation
+public import Tests.MutationSuiteTests
+public import Tests.PropertyTests
+public import Tests.ProductionCoverage
+public import Tests.LimitTests
+public import Demo
+
+@[expose] public section Blanket
 
 /-!
 # yaml-test-suite Runner
@@ -55,12 +59,12 @@ open Tests.SuiteRunner
 /-! ## Debug Helpers -/
 
 /-- Flush stdout so piped output (e.g., `| tee`) appears immediately. -/
-private def flushStdout : IO Unit := do (← IO.getStdout).flush
+def flushStdout : IO Unit := do (← IO.getStdout).flush
 
 /-- Log a timestamped debug message to stderr.
     Stderr is line-buffered even when stdout is piped, so these
     always appear immediately. -/
-private def dbg (startMs : Nat) (msg : String) : IO Unit := do
+def dbg (startMs : Nat) (msg : String) : IO Unit := do
   let now ← IO.monoMsNow
   let elapsed := now - startMs
   IO.eprintln s!"[DBG +{elapsed}ms] {msg}"
@@ -105,7 +109,7 @@ def Backend.tryparseCmd (b : Backend) : String × Array String :=
 /-- Tests tagged `1.3-err`/`1.3-mod` whose YAML 1.2.2 behavior we handle correctly.
     These are included despite the 1.3 tag because the test's expected tree reflects
     the 1.2.2 result. See README P10.6d §2.2 — `foldBlockContent` 4-state machine. -/
-private def yaml13Include : List String :=
+def yaml13Include : List String :=
   ["6VJK", "7T8X", "MJS9", "M9B4"]
 
 /-- Result of running a single test case. -/
@@ -497,3 +501,5 @@ def main (args : List String) : IO UInt32 := do
   else
     let stats ← runStage stage allCases verbose backend limitsPreset
     return if stats.failed == 0 then 0 else 1
+
+end Blanket

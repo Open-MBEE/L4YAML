@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedScanner
-import L4YAML.Token.Token
+
+module
+
+public import L4YAML.Scanner.IndexedScanner
+public import L4YAML.Token.Token
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `IndexedState` — Phase 3 Step 5a scanner state (staging)
 
@@ -103,6 +109,25 @@ structure ScannerStateIx (input : String) where
   flowStack : Array Bool := #[]
   /-- Line number of the most recent unmatched `?` key indicator. -/
   explicitKeyLine : Option Nat := none
+  /-- Line number of the most recent block-context IMPLICIT value indicator
+      (item 48).  `[194] c-l-block-map-implicit-value`'s value slot is
+      `s-l+block-node` — no compact alternative, no same-line mapping — so a
+      block-collection indicator or a second `:` on this line has no
+      derivation.  The EXPLICIT value (`[192]`'s, whose slot is
+      `s-l+block-indented` with the compact alternatives) does not set it,
+      which is what keeps `? a⏎: - b` and `? a⏎: b: c` served. -/
+  implicitValueLine : Option Nat := none
+  /-- Column of the pending `?` (item 48), meaningful only while
+      `explicitKeyLine` is set: an implicit `:` whose resolved key sits
+      DEEPER than this column is inside the explicit key's own content
+      (spec 8.19's multi-line compact keys), so the pending `?` survives it;
+      at or left of it, a sibling entry has closed the `?`-entry. -/
+  explicitKeyCol : Int := -1
+  /-- Saved `(explicitKeyLine, explicitKeyCol)` pairs for enclosing flow
+      nesting levels (item 98) — the explicit-key stamp is scoped to its own
+      flow level.  Pushed on flow-open, popped on flow-close; twin of
+      `L4YAML.Scanner.ScannerState.explicitKeyStack`. -/
+  explicitKeyStack : Array (Option Nat × Int) := #[]
   /-- Anchor names defined in the current document. -/
   definedAnchors : Array String := #[]
   /-- Collected comments (position × text). Populated by
@@ -174,6 +199,17 @@ These delegate to the underlying `IxCursor`. -/
 @[inline] def advanceN {input : String} (s : ScannerStateIx input) (n : Nat) :
     ScannerStateIx input :=
   { s with cursor := s.cursor.advanceN n }
+
+/-- Indexed twin of `L4YAML.ScannerState.consumeBOM` (§5.2): consume the
+    leading `[3] c-byte-order-mark` without spending a column, so that
+    `[63] s-indent(n)` on the first line is counted from the character
+    after it.  Only `pos.col` moves; `posBound` constrains `pos.offset`
+    alone, so the cursor's well-formedness rides through untouched. -/
+@[yaml_spec "5.2" 3 "c-byte-order-mark",
+  yaml_spec "9.1.1" 202 "l-document-prefix"]
+def consumeBOM {input : String} (s : ScannerStateIx input) : ScannerStateIx input :=
+  let s := s.advance
+  { s with cursor := { s.cursor with pos := { s.cursor.pos with col := 0 } } }
 
 /-! ## Token emission
 
@@ -379,6 +415,32 @@ def hasTabInPrecedingWhitespace {input : String}
     (s : ScannerStateIx input) : Bool :=
   hasTabInPrecedingWhitespaceLoop input s.cursor.pos.offset s.cursor.pos.offset
 
+/-- Indexed analogue of `ScannerState.tabInLineIndentLoop`: walk a FIXED `col`
+    characters back, and report `false` the moment one of them is not an
+    `s-white`.  `true` therefore says the run in front of the token is the
+    line's own `[63] s-indent(n)`, and that it contains a tab. -/
+@[yaml_spec "6.1" 63 "s-indent"]
+def tabInLineIndentLoop (input : String) (pos : Nat) (col : Nat)
+    (sawTab : Bool) : Bool :=
+  match col with
+  | 0 => sawTab
+  | col' + 1 =>
+    if pos == 0 then sawTab
+    else
+      let prevPos := (String.Pos.Raw.prev input ⟨pos⟩).byteIdx
+      let c := String.Pos.Raw.get input ⟨prevPos⟩
+      if c == '\t' then tabInLineIndentLoop input prevPos col' true
+      else if c == ' ' then tabInLineIndentLoop input prevPos col' sawTab
+      else false
+
+/-- `true` when the entire line prefix in front of the cursor is whitespace
+    and a TAB occurs in it. -/
+@[yaml_spec "6.1" 63 "s-indent"]
+def tabInLineIndent {input : String} (s : ScannerStateIx input) : Bool :=
+  tabInLineIndentLoop input s.cursor.pos.offset s.cursor.pos.col false
+
 end ScannerStateIx
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

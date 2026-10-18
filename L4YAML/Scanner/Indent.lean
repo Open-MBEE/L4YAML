@@ -2,7 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.State
+
+module
+
+public import L4YAML.Scanner.State
+
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Scanner — Indentation Management
@@ -94,3 +101,5 @@ def pushMappingIndent (s : ScannerState) (col : Int) : ScannerState :=
   else s
 
 end L4YAML.Scanner
+
+end Blanket

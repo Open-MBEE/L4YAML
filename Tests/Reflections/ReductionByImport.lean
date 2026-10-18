@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reduction-by-import — runnable demonstration
 
@@ -200,3 +205,5 @@ theorem bad_not_Dyck : ¬ Dyck bad := by decide
 theorem bad_not_Execution : ¬ Execution bad := by decide
 
 end ReductionByImport
+
+end Blanket

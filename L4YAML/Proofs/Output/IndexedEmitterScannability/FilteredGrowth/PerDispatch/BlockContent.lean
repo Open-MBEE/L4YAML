@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Infra
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.StreamStart
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Infra
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.StreamStart
+
+@[expose] public section Blanket
 
 /-! # `FilteredGrowth.PerDispatch.BlockContent` — Phase 3 Step
 `6f.3b3.filteredgrowth.perdispatch.blockcontent`
@@ -111,8 +116,14 @@ lemma scanBlockEntryIx_tokens_eq {s s' : ScannerStateIx input}
     by_cases ht : s.hasTabInPrecedingWhitespace = true
     · rw [ite_eq_left ht] at h; simp [Bind.bind, Except.bind] at h
     · rw [ite_eq_right ht] at h
-      simp only [] at h
-      rw [ite_eq_left hi] at h
+      -- Item 48 same-line check: the throw branch contradicts `.ok s'`;
+      -- `split` resolves the `!s.inFlow` let-if by assumption `hi`.
+      split at h
+      · simp [Bind.bind, Except.bind] at h
+      -- `scanBlockEntryValidateIx` (item 134): its throw arm contradicts `.ok s'`.
+      simp only [Bind.bind, Except.bind] at h
+      split at h
+      · simp at h
       simp only [Except.ok.injEq] at h
       subst h
       simp only [ite_eq_left hi, advance_tokens]
@@ -132,12 +143,25 @@ lemma scanKeyIx_tokens_eq {s s' : ScannerStateIx input}
     s'.tokens =
       ((if !s.inFlow then pushMappingIndentIx s s.cursor.pos.col else s).emit
         YamlToken.key).tokens := by
-  unfold scanKeyIx at h
+  unfold scanKeyIx scanKeyValidateIx at h
   by_cases hi : (!s.inFlow) = true
-  · simp only [ite_eq_left hi, advance_inFlow, emit_inFlow, pushMappingIndentIx_inFlow] at h
+  · -- Item 31's preceding-whitespace tab check, under the same `!inFlow` guard
+    rw [ite_eq_left hi] at h
+    by_cases ht : s.hasTabInPrecedingWhitespace = true
+    · rw [ite_eq_left ht] at h
+      simp [Bind.bind, Except.bind] at h
+    rw [ite_eq_right ht] at h
+    -- §8.2.1's check (item 131), then item 48's same-line check, then the
+    -- post-`?` tab peek.
+    split at h
+    · split at h <;> simp [Bind.bind, Except.bind] at h
     split at h
     · simp [Bind.bind, Except.bind] at h
-    · simp only [Except.ok.injEq] at h
+    simp only [pure, Except.pure] at h
+    simp only [ite_eq_left hi, advance_inFlow, emit_inFlow, pushMappingIndentIx_inFlow] at h
+    split at h
+    · simp [Bind.bind, Except.bind] at h
+    · simp only [Bind.bind, Except.bind, Except.ok.injEq] at h
       subst h
       simp only [ite_eq_left hi, advance_tokens]
   · simp only [ite_eq_right hi, advance_inFlow, emit_inFlow] at h
@@ -273,6 +297,8 @@ lemma scanValue_filtered_growsIx {s s' : ScannerStateIx input}
   split at h
   · cases h                                                    -- validate threw
   · split at h
+    · cases h                                     -- indent-tab check threw (31)
+    split at h
     · cases h                                                  -- tab-check threw
     · simp only [Except.ok.injEq] at h
       subst h
@@ -378,7 +404,9 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
   unfold scanNextTokenIx_dispatchContent at h
   by_cases hg1 : (c == '&') = true
   · rw [ite_eq_left hg1] at h
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
+    try simp only [Bind.bind, Except.bind] at h
+    split at h   -- item 9e: the property-run guard
+    · cases h
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h; cases h
     | ok v =>
@@ -388,14 +416,23 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
     simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
     by_cases hg2 : (c == '*') = true
     · rw [ite_eq_left hg2] at h
+      split at h   -- item 9e: the property-run guard
+      · cases h
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h; cases h
       | ok v =>
-        rw [hA] at h; simp only [Except.ok.injEq] at h; subst h
+        rw [hA] at h
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h
+        split at h
+        · cases h
+        simp only [Except.ok.injEq] at h; subst h
         exact scanAnchorOrAliasIx_new_not_placeholderIx s false v hA (by omega)
     · rw [ite_eq_right hg2] at h
       by_cases hg3 : (c == '!') = true
       · rw [ite_eq_left hg3] at h
+        split at h   -- item 9e: the property-run guard
+        · cases h
         cases hT : scanTagIx s with
         | error e => rw [hT] at h; cases h
         | ok v =>
@@ -404,6 +441,15 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
       · rw [ite_eq_right hg3] at h
         by_cases hg4 : (c == '|' || c == '>') = true
         · rw [ite_eq_left hg4] at h
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
+          split at h
+          · cases h
+          -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+          split at h
+          · cases h
+          -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+          split at h
+          · cases h
           split at h
           · rename_i r hBS
             cases h
@@ -415,6 +461,9 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
         · rw [ite_eq_right hg4] at h
           by_cases hg5 : (c == '"') = true
           · rw [ite_eq_left hg5] at h
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h
+            · cases h
             split at h
             · rename_i r hDQ
               cases h
@@ -426,6 +475,9 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
           · rw [ite_eq_right hg5] at h
             by_cases hg6 : (c == '\'') = true
             · rw [ite_eq_left hg6] at h
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h
+              · cases h
               split at h
               · rename_i r hSQ
                 cases h
@@ -437,6 +489,9 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
             · rw [ite_eq_right hg6] at h
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
               · rw [ite_eq_left hg7] at h
+                -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h
+                · cases h
                 cases h
                 intro hpl
                 simp only [ScannerStateIx.emitAt, IxToken.mk', Indexed.TokenStream.push,
@@ -459,7 +514,9 @@ lemma dispatchContent_adds_one_tokenIx {s s' : ScannerStateIx input} {c : Char}
   unfold scanNextTokenIx_dispatchContent at h
   by_cases hg1 : (c == '&') = true
   · rw [ite_eq_left hg1] at h
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
+    try simp only [Bind.bind, Except.bind] at h
+    split at h   -- item 9e: the property-run guard
+    · cases h
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h; cases h
     | ok v =>
@@ -469,14 +526,23 @@ lemma dispatchContent_adds_one_tokenIx {s s' : ScannerStateIx input} {c : Char}
     simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
     by_cases hg2 : (c == '*') = true
     · rw [ite_eq_left hg2] at h
+      split at h   -- item 9e: the property-run guard
+      · cases h
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h; cases h
       | ok v =>
-        rw [hA] at h; simp only [Except.ok.injEq] at h; subst h
+        rw [hA] at h
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h
+        split at h
+        · cases h
+        simp only [Except.ok.injEq] at h; subst h
         exact scanAnchorOrAliasIx_adds_one_token s false v hA
     · rw [ite_eq_right hg2] at h
       by_cases hg3 : (c == '!') = true
       · rw [ite_eq_left hg3] at h
+        split at h   -- item 9e: the property-run guard
+        · cases h
         cases hT : scanTagIx s with
         | error e => rw [hT] at h; cases h
         | ok v =>
@@ -485,24 +551,43 @@ lemma dispatchContent_adds_one_tokenIx {s s' : ScannerStateIx input} {c : Char}
       · rw [ite_eq_right hg3] at h
         by_cases hg4 : (c == '|' || c == '>') = true
         · rw [ite_eq_left hg4] at h
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
+          split at h
+          · cases h
+          -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+          split at h
+          · cases h
+          -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+          split at h
+          · cases h
           split at h
           · rename_i r hBS; cases h; simp only [emitAt_tokens_size]
           · cases h
         · rw [ite_eq_right hg4] at h
           by_cases hg5 : (c == '"') = true
           · rw [ite_eq_left hg5] at h
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h
+            · cases h
             split at h
             · rename_i r hDQ; cases h; simp only [emitAt_tokens_size]
             · cases h
           · rw [ite_eq_right hg5] at h
             by_cases hg6 : (c == '\'') = true
             · rw [ite_eq_left hg6] at h
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h
+              · cases h
               split at h
               · rename_i r hSQ; cases h; simp only [emitAt_tokens_size]
               · cases h
             · rw [ite_eq_right hg6] at h
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
-              · rw [ite_eq_left hg7] at h; cases h; simp only [emitAt_tokens_size]
+              · rw [ite_eq_left hg7] at h
+                -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h
+                · cases h
+                cases h; simp only [emitAt_tokens_size]
               · rw [ite_eq_right hg7] at h; cases h
 
 lemma dispatchContent_filtered_growsIx {s s' : ScannerStateIx input} {c : Char}
@@ -522,3 +607,5 @@ lemma dispatchContent_filtered_growsIx {s s' : ScannerStateIx input} {c : Char}
     exact dispatchContent_new_not_placeholderIx h h_strict
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FilteredGrowth
+
+end Blanket

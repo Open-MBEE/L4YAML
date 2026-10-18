@@ -540,12 +540,12 @@ grammar derivation tree — the structural, strongest form of Group 2.2.
 
 | # | Theorem | Module | Status |
 | - | ------- | ------ | ------ |
-| 7.1 | `parse_strict_proof` (headline) — parser acceptance implies `InYamlLanguage input` | [`DocumentProduction`](../L4YAML/Proofs/Production/DocumentProduction.lean) | ✅ |
-| 7.2 | `scan_content_gives_stream_v2` (full SLYamlStream derivation) | [`StreamAccum`](../L4YAML/Proofs/Production/StreamAccum.lean) | ✅ |
-| 7.3 | `scanLoop_grammar_prod` | `StreamAccum` | ✅ |
+| 7.1 | `parse_strict_proof` (headline) — parser acceptance implies `InYamlLanguage input`; **vacuous while `scannerDrop` stands** | [`DocumentProduction`](../L4YAML/Proofs/Production/DocumentProduction.lean) | ✅ |
+| 7.2 | `scan_content_gives_stream_v2` (full SLYamlStream derivation) — its conclusion is `InYamlLanguage input` spelled out; **vacuous while `scannerDrop` stands** | [`StreamAccum`](../L4YAML/Proofs/Production/StreamAccum.lean) | ✅ |
+| 7.3 | `scanLoop_grammar_prod` — statement restrictive, but the derivation it builds **routes through `scannerDrop`** | `StreamAccum` | ✅ |
 | 7.4 | Per-function `*_prod` theorems (flow/block/document start/end, anchor/alias, tag, directive) | [`StructureProduction`](../L4YAML/Proofs/Production/StructureProduction.lean) / [`DocumentProduction`](../L4YAML/Proofs/Production/DocumentProduction.lean) / [`ScalarProduction`](../L4YAML/Proofs/Production/ScalarProduction.lean) / [`NodeProduction`](../L4YAML/Proofs/Production/NodeProduction.lean) | ✅ |
 | 7.5 | `parseYaml_implies_valid_token_stream` (bridge to Group 4) | `EndToEndCorrectness` | ✅ |
-| 7.6 | `scan_strict_proof` — scanner acceptance implies `InYamlLanguage input` | `DocumentProduction` | ✅ |
+| 7.6 | `scan_strict_proof` — scanner acceptance implies `InYamlLanguage input`; **vacuous while `scannerDrop` stands** | `DocumentProduction` | ✅ |
 | 7.7 | `parse_iff_grammar` **converse** — grammar completeness: `InYamlLanguage input → ∃ docs, parseYaml input = .ok docs` (closes the biconditional) | (target: `Production` / `Completeness`) | ⏳ not started |
 
 **Change since April**: the whole forward direction (7.1–7.6) is now
@@ -559,21 +559,367 @@ specific derivation tree in the YAML 1.2.2 grammar."
 
 **Depends on**: Group 2 (scanner), Group 8 (coupling).
 
+**What Group 7 does not yet establish.** `SLYamlStream.scannerDrop` relates a
+source position to a target its premises never connect it to, which makes
+`InYamlLanguage` hold of **every** string. 7.1, 7.2 and 7.6 are therefore true
+independently of their hypotheses — `inYamlLanguage_everything` discharges all
+three statements with the acceptance premise bound and unused
+([`SuffixGapAudit.lean`](../Tests/Guards/Proofs/SuffixGapAudit.lean) §5,
+[`FreeSurfaceCensus.lean`](../Tests/Guards/Proofs/FreeSurfaceCensus.lean) §2).
+The ✅ is accurate: the proofs are real and carry no `sorry`. What they do not
+yet carry is a restriction on the input. Seventeen of the library's 103
+theorems about the top-level surface are free in this sense and fifteen of them
+through that one arm; the count is re-derived at every build by
+`FreeSurfaceCensus.lean`, and row 12's β.5 is what turns it into content.
+
+**What β.5 costs Group 7.** Two proofs in the whole library build the arm, and
+**twenty-six run through it** — four of Group 7's six ✅ rows among them: 7.2
+and 7.3 on the chain, 7.1 and 7.6 at its end
+([`DropDependents.lean`](../Tests/Guards/Proofs/DropDependents.lean)). That is a
+different reading from the paragraph above: 7.3's statement is restrictive and
+not free, and its derivation still rides the arm. Nothing in the library states
+the constructor, and a theorem's consumers depend on its statement rather than
+its proof, so the twenty-six do not all have to be rewritten — the repair
+propagates only where a statement must change, and exactly two are candidates.
+Both of the two are candidates because both are FALSE **in the environment that
+deletes the arm and keeps `PendingNode.pendingFlow`**, and they are the only
+library statements that are
+([`DropFalsity.lean`](../Tests/Guards/Proofs/DropFalsity.lean)). `dropClose` is
+the arm restated. `PendingNode.close_with_ssl` is restrictive in its
+`PendingNode` premise, but restrictive in the scanner state and in nothing that
+connects the park's two positions, so a park at a target the suffix law forbids
+is buildable — from that park.
+
+**Under β.5's own edit only ONE of the two is a restatement, and that is
+measured rather than argued**
+([`flip_beta5.py`](../scripts/flip_beta5.py), DOCS item 263). Row 12 retires
+`pendingFlow` and deletes `scannerDrop` together, so the park the refutation
+builds its witness from is gone with the arm. A flip that applies both
+deletions for real and drives the build to a fixpoint leaves
+`PendingNode.close_with_ssl` elaborating with its statement AND its proof
+unchanged, on its standing axiom profile and no `sorry`. `dropClose` is the one
+statement β.5 removes. **Thirteen proofs stop elaborating and not one other
+statement in the tree changes** — seven in the library, all in
+`Proofs/Production/StreamAccum.lean`, and six in the guard tree.
+
+**What Group 7 actually owes, elaborated rather than forecast.** All four rows
+that ride the arm still elaborate against the post-β.5 tree, and all four do so
+on `sorryAx`: they are CARRIED by the thirteen proofs above, not free of them
+and not restated. Three of the twenty-six come out free outright —
+`eof_pending`, `preprocessing_eof_extends_stream` and
+`scanNextToken_none_stream` — and the remaining twenty-one, Group 7's four
+among them, land exactly when the thirteen land (DOCS item 263).
+
+**Nothing in Group 7 is FALSE, and this is the first measurement that says so.**
+All four of Group 7's rows that ride the arm conclude at end of input — 7.1 and
+7.6 assert `InYamlLanguage`, 7.2 and 7.3 spell out `∃ sp_final, SLYamlStream …
+∧ sp_final.chars = []` — and the law β.5 buys says of such a target only that
+`[]` is a suffix of the input, which is true of every string. **β.5 owes Group 7
+a reproof and not a restatement.** That is a stronger reading than "no statement
+names the constructor": these statements do not contradict the law that replaces
+it. It does not say the reproofs are easy — it says they are reproofs.
+
+**Whether they are only reproofs is a CHOICE, and this is its price**
+([`RepairChoice.lean`](../Tests/Guards/Proofs/RepairChoice.lean)). β.5 has to
+repair `PendingNode.close_with_ssl`, and there are three repairs: a premise
+connecting the park's two positions, that same connection as a field on
+`PendingNode.pendingFlow`, or retiring that park. The three flips break 5, 1 and
+7 definitions and travel three different edges, so the counts are not a ratio.
+Only the premise changes `close_with_ssl`'s own type, and it then changes
+nineteen statements above it — all four Group 7 rows among them — because no
+statement on that closure holds a stream to the park's scan position and the
+park provably cannot supply one. The other two change no consumer of
+`close_with_ssl`, which is the question asked and not a claim that they are
+free: the field repair relocates the connection onto the park's producer,
+`block_dispatch_deferred`, which holds a correspondence at the scan position
+and cannot derive a path from a point — the library derives a stream from a
+`ScannerSurfCorr` at the stream's seed and nowhere else. That producer's own
+closure is eighteen declarations, seven of them outside the twenty-six, and it
+reaches all four Group 7 rows as well
+([`ProducerDerivation.lean`](../Tests/Guards/Proofs/ProducerDerivation.lean)).
+**So "not one changed character of a Group 7 statement" is a property of the
+repair β.5 picks, and not of Group 7 — and of the two repairs measured
+statement by statement, both reach Group 7.**
+
+**And none of that price is the reproofs'**
+([`DispatchPrice.lean`](../Tests/Guards/Proofs/DispatchPrice.lean)). The arm
+relates a stream ending at one position to an `s-l-comments` starting at an
+unrelated one, and identifying the two makes it redundant: `SLYamlStream a b`
+and `SSLComments b c` give `SLYamlStream a c` through `implicitContinue` and
+`SLDocumentPrefix.comments`, in three lines, and the same three hold in the
+relation with the arm deleted. So the four Group 7 rows do not owe a new
+grammar lemma — they owe the connection, which is what the nineteen and the
+eighteen above are counting. The derivation spends `SSeparateInLine.startOfLine`,
+which this library lets hold at every position rather than only at column 0, so
+under the spec's own [66] it covers comment runs beginning at a line start.
+
+The same instrument prices what a scanner step buys on its own: 294 statements
+hold a dispatch equation, 28 hold one beside two correspondences, and **one**
+carries a grammar path across the step. Of 72 distinct scanner step functions,
+two carry one at all — preprocessing 6 times of its 186 holders and content
+dispatch once of its 129 — and that one precedent is outside the twenty-six and
+off both repair threads.
+
+**And the connection is owed per call, not per row**
+([`ParkGapCensus.lean`](../Tests/Guards/Proofs/ParkGapCensus.lean)). The arm is
+applied at eleven sites, and at none of them are its two endpoints identified —
+not syntactically, not up to reduction, not by an equation in scope and not by a
+pair of correspondences. Five of the eleven hold a correspondence at the scan
+position, all five at the park's own scanner state, and none holds one at the
+block position: a park holding both would have absorbed no characters, so the
+half that is missing is missing by construction. Six calls owe a span; the
+twenty-four owe nothing until a supplier's statement changes.
+
+**And each span is one character**
+([`ParkGapWidth.lean`](../Tests/Guards/Proofs/ParkGapWidth.lean)). The gap is
+fixed at the park's producer, whose twelve application sites read six at one
+scanner step, one at two, and five with no scanner chain reaching the scan
+position at all. The one step is a block-indicator dispatch, proved to be
+exactly one `ScannerState.advance`, so the production owed is a single `GLit` —
+`[184]`, `[190]` or `[6]`. The obligation is a literal, not an induction over a
+flow collection. What keeps it unpaid is that the crossed function has
+ninety-seven holders and no worked precedent: the one function in the library
+that carries a production across a scanner step is at the site whose gap is two.
+
+**And the character has no carrier**
+([`ParkGapProduction.lean`](../Tests/Guards/Proofs/ParkGapProduction.lean)). The
+six sites' grammar path is one edge of whitespace, so the indicator the dispatch
+scans opens a construct rather than closing one. Thirty of the library's two
+hundred and thirty-five production constructors end at a literal, twenty-three
+of them at one of the three block indicators, and every one of the twenty-three
+is a flow form; `-` ends no production at all. Those forms need a frame, and the
+park is handed `BlockStack.nil` beside a depth-zero `FlowStackB`, both of which
+force their two positions equal. Composed into the grammar's own entry
+constructor the literal is premise two of `[183]`'s, whose conclusion ends where
+the entry's content ends — so what the six owe is a block node, not a character.
+
+**And the missing arm is honest, and cheap where it is read**
+([`CarrierArmPrice.lean`](../Tests/Guards/Proofs/CarrierArmPrice.lean),
+[`flip_carrier.py`](../scripts/flip_carrier.py)). The arm that would hold the
+park's `-` — `s-indent(n)` then the indicator, `[183]`'s entry with its content
+still owed — reaches its target from its source through its own two premises,
+the reading under which `scannerDrop` is broken; the same reading over the
+proof layer's arms names exactly two escapes, `scannerDrop` and the park
+`pendingFlow`, which are the two deletions R3 names. Forty declarations mention
+`BlockStack` and twenty-one name its `nil` — eighteen build it, three only read
+it; the arm touches none of them. It touches the two absorptions whose match is
+total on `nil`, and — both being false once an entry can be open — their five
+readers. Two, then five: the carrier's price is where it is read, not where it
+is carried.
+
+**And the exits that carry the entry through are the ones that never absorbed it**
+([`ExitHandoff.lean`](../Tests/Guards/Proofs/ExitHandoff.lean)). The five
+readers and the seventeen builders they reach have sixty-one exits. Fifteen
+re-emit the input carrier beside the input stream and carry an open entry
+through unchanged — the flow-interior branches, where the carrier is never
+absorbed. Forty-three build `nil`, thirty-seven at the input position, and by
+position alone fifty-two would read as free; but a `nil` at the input position
+is the absorption's residue — its package re-emits the absorbed stream beside
+it — and every one of the forty-three hands the content to a route that
+promises or demands the stream past it, which an open entry does not supply.
+Twenty-six of them sit in fourteen lemmas outside the twenty-seven β.5 owes:
+the arm's second wave is inside the bill, its third is not.
+
+**And the promises those exits hand on are carried, not built**
+([`RouteShapes.lean`](../Tests/Guards/Proofs/RouteShapes.lean)). The ten parks
+carry fifty-four closures promising the stream from `sp_start`, thirty-nine
+shapes when each is read as the spine of productions it consumes — the
+premise's head with its context and indent shape, and the conclusion's kind —
+against six when read by head alone. At the forty-three exits, the parks' two
+hundred fifty-five closure slots carry the input park's own promise at one
+hundred fifty-four, forward it at eight, punt at eighty-five, and build it from
+the absorbed stream at eight, all in the two map openers. Over everything the
+five reach, a promise is first built from the absorbed stream in eight lemmas,
+at nine constructor slots and eight route hypotheses, and the shapes so built
+are ten: threading the arm is ten re-routing lemmas spent where a promise is
+first built, and the forty-three exits inherit the result.
+
+**And each promise composes the stream one of fifteen ways**
+([`StreamCompositions.lean`](../Tests/Guards/Proofs/StreamCompositions.lean)).
+Traced from each producer's body root, the absorbed stream reaches a promise at
+twenty-one build points in nine lemmas, the shapes so built are twelve, and the
+stream enters the promise's conclusion under fifteen compositions: extended by
+a bare document, by comments alone, by a document suffix, by a suffix and a
+directive document, by an explicit document, or absorbed by the arm β.5
+deletes, each also after an absorption of the block stack, and three of them
+stacked where the content dispatcher closes a park and re-extends the closed
+stream. Per shape that is twenty-one (shape, composition) pairs, eighteen once
+the deleted arm's compositions go with it. The trace also corrects the leaf
+reading above at five build points: an `obtain`ed closure, a `cases`-reverted
+`have`, and a hypothesis a `subst` carries into a motive whose payload discards
+it are what a reading through leaves cannot see.
+
+**And one re-routing lemma covers seven of the eighteen**
+([`OpenEntryRoute.lean`](../Tests/Guards/Proofs/OpenEntryRoute.lean)). Eight
+of the eighteen pairs compose the stream by a bare document appended at the
+landing, and under an open entry that stream does not exist. The twin of the
+root route over the entry's closure lands the entry inside the entry's own
+node, four constructors and no stream constructor, and needs the side
+condition `n + 1 ≤ k` and the slot's comments to the landing in place of the
+column and the stream. Read with the closure as the target it enters no
+stream constructor, while the closed-first proof, the entry closed empty and
+the stream re-derived, reads as the bare document appended, so the failure
+mode is detected by the same reading. The twin substitutes at five pairs,
+its entries-level twin at two more, and the eighth is a node route no mapping
+twin reaches; at the producers it is a new landing arm, since neither opener
+holds an open slot closure, threaded through the one funnel both openers
+share.
+
+**And the comment closes hold both numbers at eight of thirteen, compared at none**
+([`CloseLandingWidth.lean`](../Tests/Guards/Proofs/CloseLandingWidth.lean)).
+Six of the eleven pairs the twins leave are closes on comments at eight build
+points, six of them through the park's close, whose open-entry arms close the
+entry empty at whatever width follows, honest exactly when what follows stands
+at the entry's width or left of it. Followed to where they are spent, the
+closures are spent thirteen times on the comments and handed on seven times.
+The landing's width is in hand at every spend, the park's index is nameable at
+eight, and a comparison of the two stands beside none of the spends, only
+beside hand-offs: the dedent, and the pack chain under its side condition.
+Three build points hold both numbers at every own close and hand-off, four the
+width alone, one neither. Of the eighteen empty-node constructors in the
+reach, two are the park's own with no width beside them, and a comparison
+stands beside four.
+
+**And the eight that hold both numbers split on them beside one, punt on every miss, and the entry park's frames are dropped at the door**
+([`CloseSplitFrames.lean`](../Tests/Guards/Proofs/CloseSplitFrames.lean)).
+The eight closes feed four lemmas twice each: the landing funnel, the explicit
+`:` opener and the two deferred-stamp escapes. The width-against-index decision
+the honest close is made of stands beside one of them, the entry park's funnel
+spend, where it decides the value-line chain and not the stream; a membership
+of the width in a resume stack stands beside the two funnel spends, and each of
+those decisions punts on the miss. The content park's lemma holds its resume
+stack with the cover two options deep; the entry park's lemma holds none,
+because the one producer binds the park's frames field and never hands it
+across. The `-` arm's split is disjoint from all eight. The nested arm's
+material is in hand at the entry park's four and void at the content park's
+four, where the honest arm is the refusal it already pays; the dedent arm's
+frame is in hand at the content park's four and dropped at the door at the
+entry park's four.
+
+**And the stack the content park's four receive carries a cover that is relayed, never paid, and paid at its one origin only when the funnel's floor is**
+([`CloseStackCover.lean`](../Tests/Guards/Proofs/CloseStackCover.lean)).
+Every position a cover can be paid at is read off the environment, and every
+payment at every application is classified by following the position's type
+to its cover option through the term. None of the eight receives a stack whose
+cover is paid where the stack is built. All six producers of the content
+park's stack forward a cover they were handed, three the entry park's field
+and three the props park's entry face, and the tree behind them holds one
+literal payment, made inside the landing funnel from the floor the parks pay
+when they stand off column 0, and reached only through the mapping value
+park, the close-then-block lemma's landed-`-` re-park and the content door.
+The entry park's field is punted at six of its seven producers and relayed at
+the seventh; the block door drops it and forgets five other cover faces; the
+content door keeps all eight. At the eight no fact about the scanner's stack
+is in hand, the top only as an upper bound at the entry park's four, and the
+floor at none. At the runtime a landing between the open levels is refused as
+trailing content.
+
+**And five of the eleven producers that punt a park's stack hold a cover's inputs in full, while the floor any of them can name from its own stack is its own index, except at the root**
+([`PuntCoverInputs.lean`](../Tests/Guards/Proofs/PuntCoverInputs.lean)).
+The eleven are re-found off the previous walk, which hands every constructor
+row its binder stack, and at each the stack is read against the payment's
+signature by shape. Five hold monotonicity, the base, the preprocess, the
+dispatch and a bound on the top: the compact fill, the content park's sibling
+re-park and the entry park's sibling, nested and compact re-parks. The root
+`-` lacks monotonicity and holds the seed's empty stack instead; the two
+mapping value openers hold the top and lack monotonicity and the base; the
+props park's three hold no bound on the top, two of them at index 0 where the
+entry face has no witness. Eight can name their own index as a floor, the
+root alone can name zero, and three hold a relay's floor beside their own. The
+field shapes decide the own-index case: the entry park's frames are all below
+its index, so an own-index payment needs no mapping level at the index, which
+the top bound and monotonicity do not give, and the runtime accepts a sequence
+at its key's own column. A cover floored at the park's own index is spendable
+at no dedent width.
+
+**And of the leaves of the two close-stack trees, one turns paid when the four payments in hand are made, and the payment that turns it is the root's**
+([`PaidLeafDelta.lean`](../Tests/Guards/Proofs/PaidLeafDelta.lean)).
+The previous walk runs unchanged and its four rows are rewritten in place —
+the root's as a literal cover at floor zero, the three others as the relays
+they would be — and the content and entry trees are re-resolved by the same
+resolver under seven scenarios. With all four made, each tree reads two paid
+leaves against one, nineteen punts against twenty-one and eighteen, and the
+two trees become one component: the sibling re-park's relay forwards the
+content park's stack into the entry park's field and closes a cycle. The
+root's literal is the one leaf that turns paid and the one new origin; the
+three relays turn none, because each forwards a source the trees already
+hold — the compact fill's the mapping value park's one literal origin, the
+sibling's the content tree's own root, the mapping value content's another
+face of the same six producers, which adds two punts of its own. Of the
+library's eighty floor witnesses, twelve are the index itself and none is a
+closed term below it; the index is raised only by the nine applications of
+`mono_index`, one of them on the compact fill's path and none on the mapping
+value content's, so the cover that relay forwards into the props park's
+entry face stands at that face's own index and is spendable at no dedent
+width. The root's price is one parameter, monotonicity, which its caller
+binds and it does not; the cover it pays follows from monotonicity and a
+negative top in four lines.
+
+**And with the six payments that can be made made, the two close-stack
+trees read six paid leaves, fifteen punts and two cover-punts each, as one
+component** ([`CloseStackCover.lean`](../Tests/Guards/Proofs/CloseStackCover.lean),
+[`PaidLeafDelta.lean`](../Tests/Guards/Proofs/PaidLeafDelta.lean)). The root
+`-` pays its resume frames with a literal cover at floor zero, from the seed's
+negative top and the stack's monotonicity; the content park's sibling relays
+the park's own frames into the entry park's field at the unchanged index; the
+compact fill pays its frames with a literal from the slot's own top bound,
+floored one column above the slot and below the fill's index, because the
+stack it pushes onto is the slot's and no break was crossed; and the entry
+park's two re-parks, the inline compact `- - a` and the nested landing
+`-⏎  - a`, pay theirs with the same literal from the park's own top bound,
+floored one column above the park and below each re-park's index — the
+nested landing's bound is the old park's, and it survives the break because
+preprocessing's unwind only pops; and the compact opener `- : v` / `- ? k`,
+whose slot's own bound is at its index, pays the mapping value park's frames
+from what its two callers hold — the stack's monotonicity and a bound below
+the slot's index on the state before the dispatch — carried across the
+indicator's step, whose opened level the top pinned from both sides names as
+the slot's index
+([`IndentStackCover.lean`](../L4YAML/Proofs/Scanner/IndentStackCover.lean)).
+The relay the compact fill cannot make is the mapping value park's: that
+closure awaits a block node read at the park's position, and the compact
+fill's node is a compact sequence on the slot's own line. Of the five
+positions that still hold the punt, two are the props router's entry-level
+field at index 0, where the field's own equation `n = ne + 1` has no witness
+and the field is vacuous; of the three punts, one holds no top bound and two
+hold one at their own index. The explicit `:` opener's three callers hold the
+stack's monotonicity, the base and the preprocess equation one hop back, so
+its own-floor cover is fundable; what it lacks is the resume's bottom, which
+the paid `:` openers take as a relay of the pack's resume and it does not
+([`PuntCoverInputs.lean`](../Tests/Guards/Proofs/PuntCoverInputs.lean)). The
+refused relay would add two positions and one punt to each tree and no paid
+leaf. The carrier that would fund the bottom without that relay is a
+value-line-then-tail twin of the `?` faces' packs: eleven constructor fields
+and twenty-nine lemma parameters, every one a closure that ends at the stream
+with no tail after the value, written at 151 positions of which 42 punt; of
+the 69 that build, re-wrap or transport a pack, 11 hold a tail or a frames
+face at a level they write
+([`ValueLinePacks.lean`](../Tests/Guards/Proofs/ValueLinePacks.lean)).  Resolved to where each pack is born ([`ValueLineOrigins.lean`](../Tests/Guards/Proofs/ValueLineOrigins.lean)), the writers' chains reach 70 origin hypotheses at 38 rows, 40 of which hold the tail, and the eighteen positions of the `?` family reach exactly one, the `?` opener's dedent reading off the landing's value-line resume, which does not.
+
 **Significance & risk**
 
 - **7.1 `parse_strict_proof`** *(headline, ✅)* — *Significance:*
   parser acceptance implies the input is in the formalized YAML
-  language `InYamlLanguage` — we never accept a string outside the
-  spec's surface language. *Risk if absent:* over-acceptance —
+  language `InYamlLanguage`. This is the right shape for "we never
+  accept a string outside the spec's surface language", and it says
+  that only once `InYamlLanguage` excludes something — see *What
+  Group 7 does not yet establish* above. *Risk if absent:*
+  over-acceptance —
   accepting inputs that other conformant parsers reject, an interop
   and security divergence (the input means one thing to us, another to
   the next tool in the chain).
 - **7.2 `scan_content_gives_stream_v2`** *(✅)* — *Significance:*
   scanned content is backed by a full `SLYamlStream` derivation, not
-  just a well-formedness flag. *Risk if absent:* scanner acceptance
-  with no grammatical justification.
+  just a well-formedness flag. Its conclusion is `InYamlLanguage
+  input` written out instead of named, so a search for the predicate
+  does not reach it and it is free in exactly the same way 7.1 is.
+  *Risk if absent:* scanner acceptance with no grammatical
+  justification.
 - **7.3 `scanLoop_grammar_prod`** *(✅)* — *Significance:* the scan
-  loop itself produces a grammar derivation at each step. *Risk if
+  loop itself produces a grammar derivation at each step. The statement
+  is restrictive — unlike 7.1, 7.2 and 7.6 it is not free — but the
+  derivation it builds passes through `scannerDrop`, so β.5 rebuilds it;
+  see *What β.5 costs Group 7* above. *Risk if
   absent:* a hole in the middle of the derivation chain.
 - **7.4 per-function `*_prod`** *(✅)* — *Significance:* each concrete
   construct (flow/block collections, document markers, anchors,
@@ -583,8 +929,11 @@ specific derivation tree in the YAML 1.2.2 grammar."
 - **7.5 `parseYaml_implies_valid_token_stream`** *(✅)* —
   *Significance:* carries strictness up to the top-level API. *Risk if
   absent:* the strictness result would not reach `parseYaml`.
-- **7.6 `scan_strict_proof`** *(✅)* — *Significance:* the same
-  strictness at the scanner level. *Risk if absent:* the scanner could
+- **7.6 `scan_strict_proof`** *(✅)* — *Significance:* the same shape
+  of strictness at the scanner level, and it carries strictness only
+  once `InYamlLanguage` excludes something — 7.1's caveat applies
+  unchanged, see *What Group 7 does not yet establish* above. *Risk if
+  absent:* the scanner could
   admit non-language strings that the parser then trusts.
 - **7.7 `parse_iff_grammar` converse** *(⏳ not started)* —
   *Significance:* the missing half of the biconditional — every string
@@ -592,12 +941,13 @@ specific derivation tree in the YAML 1.2.2 grammar."
   the parser accepts **exactly** the language, no more and no less —
   the gold-standard parser-correctness statement. Requires first
   removing the over-approximation constructors that make
-  `InYamlLanguage` strictly weaker than "parseable" (`directiveDrop`
+  `InYamlLanguage` true of every string (`directiveDrop`
   removed 2026-08-02; `scannerDrop` remains, blocked on flow-collection
   accumulation)
   ([`DOCS.md` § Grammar completeness plan](../DOCS.md#grammar-completeness-plan)). *Risk
-  if absent:* we have proved we do not *over*-accept (7.1) but not that
-  we accept the *whole* language — a future scanner/parser refactor
+  if absent:* 7.1 has the shape of a non-over-acceptance proof and does
+  not yet carry it, and we have not proved that we accept the *whole*
+  language either — a future scanner/parser refactor
   could silently narrow the set of accepted YAML and no proof would
   catch the regression.
 

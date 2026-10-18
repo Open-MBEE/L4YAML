@@ -1,8 +1,12 @@
-import L4YAML.Output.Dump
-import L4YAML.Output.Emitter
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Output.DumpRoundTrip
-import Tests.VerifiedResult
+module
+
+public import L4YAML.Output.Dump
+public import L4YAML.Output.Emitter
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Output.DumpRoundTrip
+public import Tests.VerifiedResult
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -37,7 +41,7 @@ namespace Tests.DumpRoundTrip
 /-! ## Helpers -/
 
 /-- Dump a value, parse it back, check content equivalence. -/
-private def dumpRoundTrips (v : YamlValue) (cfg : DumpConfig := {}) : Bool :=
+def dumpRoundTrips (v : YamlValue) (cfg : DumpConfig := {}) : Bool :=
   match parseYamlSingle (dump v cfg) with
   | .ok v' => contentEq v v'
   | .error _ => false
@@ -417,3 +421,5 @@ def collectTests : IO VerifiedSuiteResult := do
   }
 
 end Tests.DumpRoundTrip
+
+end Blanket

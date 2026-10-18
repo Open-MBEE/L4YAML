@@ -2,9 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
-import L4YAML.Proofs.Scanner.ScannerLoopInvariant
-import L4YAML.Proofs.Scanner.ScannerProgress
+
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Proofs.Scanner.ScannerLoopInvariant
+public import L4YAML.Proofs.Scanner.ScannerProgress
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+@[expose] public section Blanket
 
 /-!
 # Scanner Bound Preservation (Phase 4.2.A)
@@ -29,6 +37,8 @@ namespace L4YAML.Proofs.ScannerBound
 open L4YAML.Scanner
 open L4YAML.Proofs.ScannerLoopInvariant
 open L4YAML.Proofs.ScannerProgress
+open L4YAML.Proofs.FlowAdjacency
+open L4YAML.Proofs.BlockScalarFlowGuard
 
 /-! ## §1  Bound Invariant Bundle
 
@@ -195,7 +205,7 @@ lemma scanFlowEntry_BoundInv (s s' : ScannerState)
     BoundInv s s' := by
   unfold scanFlowEntry at hok
   simp only [bind, Except.bind] at hok
-  -- Both paths produce { (s.emit .flowEntry).advance with simpleKeyAllowed := true }
+  -- Both paths produce { (s.emit .flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }
   let s_em := s.emit .flowEntry
   let s_adv := s_em.advance
   have h_adv : BoundInv s s_adv := advance_BoundInv _ (emit_BoundInv _ _ h) hend
@@ -217,6 +227,8 @@ lemma scanBlockEntry_BoundInv (s s' : ScannerState)
   split at hok  -- !s.inFlow
   · -- block: tab check + pushSequenceIndent
     split at hok <;> try contradiction
+    split at hok <;> try contradiction  -- item 48 same-line check
+    split at hok <;> try contradiction  -- `scanBlockEntryValidate` (item 134)
     injection hok with hok; subst hok
     let s_pi := pushSequenceIndent s s.col
     let s_em := s_pi.emit .blockEntry
@@ -241,8 +253,9 @@ lemma scanKey_BoundInv (s s' : ScannerState)
   simp only [bind, Except.bind] at hok
   -- The structure: pushMappingIndent conditionally, emit .key, advance, tab check, ok
   -- After simp, splits on the conditions
-  split at hok  -- !s.inFlow (pushMappingIndent)
-  · -- block: pushMappingIndent
+  split at hok  -- !s.inFlow (item 31's preceding-whitespace tab check)
+  · split at hok <;> try contradiction  -- `scanKeyValidate` (item 131)
+    -- block: pushMappingIndent
     let s_pi := pushMappingIndent s s.col
     let s_em := s_pi.emit .key
     let s_adv := s_em.advance
@@ -279,6 +292,7 @@ lemma dispatchFlowIndicators_preserves_bound (s s' : ScannerState) (c : Char)
     (hok : scanNextToken_dispatchFlowIndicators s c = .ok (some s')) :
     BoundInv s s' := by
   unfold scanNextToken_dispatchFlowIndicators at hok
+  replace hok := peel_flowAdj hok
   simp only [bind, Except.bind, pure, Except.pure, Bind.bind, Pure.pure] at hok
   split at hok  -- c == '['
   · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
@@ -286,10 +300,12 @@ lemma dispatchFlowIndicators_preserves_bound (s s' : ScannerState) (c : Char)
   · split at hok  -- c == ']'
     · split at hok  -- flowLevel == 0
       · cases hok
-      · split at hok  -- validateFlowClose
+      · split at hok  -- flowStack kind check
         · cases hok
-        · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
-          exact scanFlowSequenceEnd_BoundInv s h_bi hend
+        · split at hok  -- validateFlowClose
+          · cases hok
+          · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+            exact scanFlowSequenceEnd_BoundInv s h_bi hend
     · split at hok  -- c == '{'
       · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
         exact scanFlowMappingStart_BoundInv s h_bi hend
@@ -298,8 +314,10 @@ lemma dispatchFlowIndicators_preserves_bound (s s' : ScannerState) (c : Char)
           · cases hok
           · split at hok
             · cases hok
-            · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
-              exact scanFlowMappingEnd_BoundInv s h_bi hend
+            · split at hok
+              · cases hok
+              · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                exact scanFlowMappingEnd_BoundInv s h_bi hend
         · split at hok  -- c == ','
           · split at hok
             · cases hok
@@ -325,8 +343,10 @@ lemma scanValue_BoundInv (s s' : ScannerState)
   split at hok
   · contradiction  -- scanValueValidate = .error
   · split at hok
-    · contradiction  -- scanValueTabCheck = .error
-    · injection hok with hok; subst hok
+    · contradiction  -- scanValueIndentTabCheck = .error (item 31)
+    · split at hok
+      · contradiction  -- scanValueTabCheck = .error
+      injection hok with hok; subst hok
       -- Chain BoundInv: scanValueClearKey → scanValuePrepare → emit .value → advance
       have h_off : (scanValuePrepare (scanValueClearKey s)).offset = s.offset := by
         have h_ck : (scanValueClearKey s).offset = s.offset := by
@@ -859,7 +879,9 @@ lemma skipBlankLinesLoop_BoundInv {s₀ : ScannerState} (s : ScannerState)
     simp only [skipBlankLinesLoop]
     split  -- (skipSpaces s).peek? = some c
     · split  -- isLineBreakBool
-      · exact ih _ _ (consumeNewline_BoundInv _ (skipWhitespace_BoundInv s h hend) hend)
+      · split  -- item 100: the gate stops the run at the offending line
+        · exact h
+        · exact ih _ _ (consumeNewline_BoundInv _ (skipWhitespace_BoundInv s h hend) hend)
       · exact h
     · exact h
 
@@ -948,7 +970,9 @@ lemma foldQuotedNewlinesLoop_BoundInv {s₀ : ScannerState} (s : ScannerState)
     simp only [foldQuotedNewlinesLoop]
     split
     · split  -- isLineBreakBool
-      · exact ih _ _ (consumeNewline_BoundInv _ (skipWhitespace_BoundInv s h hend) hend)
+      · split  -- item 62: the tab-blank line stops the run
+        · exact h
+        · exact ih _ _ (consumeNewline_BoundInv _ (skipWhitespace_BoundInv s h hend) hend)
       · exact h
     · exact h
 
@@ -1235,20 +1259,24 @@ lemma scanBlockScalarBody_BoundInv {s₀ : ScannerState} (s_orig s_after_newline
   cases explicitOffset with
   | some m =>
     dsimp only [] at hok
-    simp only [Except.ok.injEq] at hok; subst hok
-    exact ⟨(collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).offset_le,
-           (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).inputEnd_eq,
-           (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).input_eq,
-           (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).isValid⟩
-  | none =>
-    dsimp only [] at hok
-    split at hok  -- match autoDetectErr?
+    split at hok  -- blockScalarTabStop gate
     · cases hok  -- error
     · simp only [Except.ok.injEq] at hok; subst hok
       exact ⟨(collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).offset_le,
              (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).inputEnd_eq,
              (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).input_eq,
              (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).isValid⟩
+  | none =>
+    dsimp only [] at hok
+    split at hok  -- match autoDetectErr?
+    · cases hok  -- error
+    · split at hok  -- blockScalarTabStop gate
+      · cases hok  -- error
+      · simp only [Except.ok.injEq] at hok; subst hok
+        exact ⟨(collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).offset_le,
+               (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).inputEnd_eq,
+               (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).input_eq,
+               (collectBlockScalarLoop_BoundInv s_after_newline "" _ _ _ h hend).isValid⟩
 
 set_option maxHeartbeats 3200000 in
 lemma scanBlockScalar_BoundInv (s s' : ScannerState)
@@ -1302,10 +1330,18 @@ lemma collectDoubleQuotedLoop_BoundInv {s₀ : ScannerState} (s s' : ScannerStat
       split at hok  -- s.advance.peek?
       · -- some c
         split at hok  -- isLineBreakBool
-        · -- escaped line break: no bind, just let + recurse
-          try dsimp only [] at hok
-          exact ih _ _ _ (skipWhitespace_BoundInv _
-            (consumeNewline_BoundInv _ (advance_BoundInv s h hend) hend) hend) hok
+        · -- escaped line break — the landing is a fold (item 87): throws
+          -- contradict, both folded arms recurse from the fold's state.
+          simp only [bind, Except.bind] at hok
+          split at hok  -- foldQuotedNewlines result
+          · cases hok
+          · next fp heq =>
+            try dsimp only [] at hok
+            repeat' split at hok
+            all_goals first
+              | contradiction
+              | exact ih _ _ _ (foldQuotedNewlines_BoundInv _ fp.2 _
+                  (advance_BoundInv s h hend) hend heq) hok
         · -- regular escape: do with processEscape ←
           simp only [bind, Except.bind, Bind.bind] at hok
           split at hok  -- processEscape result
@@ -1506,7 +1542,10 @@ lemma collectPlainScalarLoop_BoundInv {s₀ : ScannerState} (s : ScannerState)
               try dsimp only [] at hok
               split at hok  -- peek? = some '#'
               · simp only [Except.ok.injEq] at hok; subst hok; exact h
-              · try dsimp only [] at hok
+              · -- item 50: the flow floor's throw contradicts `.ok`
+                split at hok
+                · cases hok
+                try dsimp only [] at hok
                 split at hok  -- match recursive call
                 · next r' heq_rec =>
                   try dsimp only [] at hok
@@ -1620,31 +1659,8 @@ lemma dispatchStructural_preserves_bound (s sp s' : ScannerState) (c : Char)
   -- Step through each if/match in sequence
   -- 1. if s.inFlow && s.currentIndent >= 0 && col <= currentIndent
   split at hok
-  · -- flow indent check true → if c != ']' && c != '}'
-    split at hok
-    · cases hok  -- error
-    · -- c is ']' or '}', fall through
-      -- 2. if col == 0 && inFlow && (docStart || docEnd)
-      split at hok
-      · cases hok  -- error
-      · -- 3. if col == 0 && atDocumentStart
-        split at hok
-        · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
-          exact BoundInv.trans h_bi (scanDocumentStart_BoundInv sp h_refl h_hend)
-        · -- 4. if col == 0 && atDocumentEnd
-          split at hok
-          · -- scanDocumentEnd bind
-            split at hok
-            · cases hok  -- error from scanDocumentEnd
-            · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
-              exact BoundInv.trans h_bi (scanDocumentEnd_BoundInv sp _ h_refl h_hend ‹_›)
-          · -- 5. if c == '%' && col == 0
-            split at hok
-            · split at hok
-              · cases hok  -- error from scanDirective
-              · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
-                exact BoundInv.trans h_bi (scanDirective_BoundInv sp _ h_refl h_hend ‹_›)
-            · cases hok  -- return none
+  · -- item 50: the floor refuses outright (the `]`/`}` exemption is gone)
+    cases hok
   · -- flow indent check false
     split at hok
     · cases hok  -- error
@@ -1678,7 +1694,9 @@ lemma dispatchContent_preserves_bound (s sp s' : ScannerState) (c : Char)
   -- Step through each if-branch for the character dispatch
   -- 1. c == '&' (anchor)
   split at hok
-  · split at hok  -- bind on scanAnchorOrAlias
+  · split at hok  -- item 9e: the property-run guard
+    · simp at hok
+    split at hok  -- bind on scanAnchorOrAlias
     · cases hok
     · rename_i s_a heq
       simp only [Except.ok.injEq] at hok; subst hok
@@ -1686,18 +1704,25 @@ lemma dispatchContent_preserves_bound (s sp s' : ScannerState) (c : Char)
       exact BoundInv.trans h_bi ⟨h_aa.offset_le, h_aa.inputEnd_eq, h_aa.input_eq, h_aa.isValid⟩
   -- 2. c == '*' (alias)
   · split at hok
-    · split at hok  -- !definedAnchors check
+    · split at hok  -- item 9e: the property-run guard
+      · simp at hok
+      split at hok  -- !definedAnchors check
       · cases hok  -- error: undefined alias
-      · -- scanAnchorOrAlias result is returned directly
-        exact BoundInv.trans h_bi (scanAnchorOrAlias_BoundInv sp _ false h_refl h_hend hok)
+      · -- item 9h: peel `validateAliasClose`; the alias facts are unchanged.
+        exact BoundInv.trans h_bi
+          (scanAnchorOrAlias_BoundInv sp _ false h_refl h_hend (aliasArm_scan_ok hok))
     -- 3. c == '!' (tag)
     · split at hok
-      · -- scanTag result is returned directly
+      · -- scanTag result is returned directly, under the item-9e guard
+        split at hok
+        · simp at hok
         exact BoundInv.trans h_bi (scanTag_BoundInv sp _ h_refl h_hend hok)
       -- 4. c == '|' || c == '>' (block scalar)
       · split at hok
-        · -- scanBlockScalar result is returned directly
-          exact BoundInv.trans h_bi (scanBlockScalar_BoundInv sp _ h_refl h_hend hok)
+        · -- scanBlockScalar result is returned directly, under the item-9c
+          -- `!inFlow` guard (peeled: `.error` cannot equal `.ok`)
+          exact BoundInv.trans h_bi
+            (scanBlockScalar_BoundInv sp _ h_refl h_hend (peel_blockScalarGuard hok))
         -- 5. c == '"' (double quoted)
         · split at hok
           · split at hok  -- bind on scanDoubleQuoted
@@ -1762,6 +1787,12 @@ lemma scanNextToken_preserves_bound_full (s s' : ScannerState)
         BoundInv.refl sp h_bi_sp.offset_le h_bi_sp.isValid
       have h_hend_sp : sp.inputEnd = sp.input.utf8ByteSize := by
         rw [h_bi_sp.inputEnd_eq, h_bi_sp.input_eq]; exact hend
+      -- §9.2 dangling-node check (item 133)
+      split at h
+      · cases h
+      -- §8.1 flow-value floor (item 172)
+      split at h
+      · cases h
       -- Split on dispatchStructural
       split at h
       · cases h  -- error
@@ -1773,65 +1804,72 @@ lemma scanNextToken_preserves_bound_full (s s' : ScannerState)
           -- Pending-directives check (Fix B)
           split at h
           · cases h
-          · -- Outermost match is checkBlockFlowIndent (wrapping the if-expression)
-            split at h
-            · cases h  -- indent error
-            · -- Case-split on allowDirectives to resolve the if-expression
-              rcases h_ad : sp.allowDirectives with _ | _
-              <;> simp only [h_ad, Bool.false_eq_true, ↓reduceIte] at h
-              · -- false case: dispatchers use sp directly
-                generalize h_fi : scanNextToken_dispatchFlowIndicators sp c = fi at h
-                cases fi with
-                | error => cases h
-                | ok fi_opt =>
-                  cases fi_opt with
-                  | some s_fi =>
-                    simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
-                    exact BoundInv.trans h_bi_sp
-                      (dispatchFlowIndicators_preserves_bound sp _ c h_bi_sp_refl h_hend_sp h_fi)
-                  | none =>
-                    generalize h_bk : scanNextToken_dispatchBlockIndicators sp c = bk at h
-                    cases bk with
-                    | error => cases h
-                    | ok bk_opt =>
-                      cases bk_opt with
-                      | some s_bk =>
+          -- §9.2 bare-document check (item 132)
+          split at h
+          · cases h
+          · -- Case-split on allowDirectives to resolve the if-expression
+            rcases h_ad : sp.allowDirectives with _ | _
+            <;> simp only [h_ad, Bool.false_eq_true, ↓reduceIte] at h
+            · -- false case: dispatchers use sp directly
+              generalize h_fi : scanNextToken_dispatchFlowIndicators sp c = fi at h
+              cases fi with
+              | error => cases h
+              | ok fi_opt =>
+                cases fi_opt with
+                | some s_fi =>
+                  simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
+                  exact BoundInv.trans h_bi_sp
+                    (dispatchFlowIndicators_preserves_bound sp _ c h_bi_sp_refl h_hend_sp h_fi)
+                | none =>
+                  generalize h_bk : scanNextToken_dispatchBlockIndicators sp c = bk at h
+                  cases bk with
+                  | error => cases h
+                  | ok bk_opt =>
+                    cases bk_opt with
+                    | some s_bk =>
+                      simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
+                      exact BoundInv.trans h_bi_sp
+                        (dispatchBlockIndicators_preserves_bound sp _ c h_bi_sp_refl h_hend_sp h_bk)
+                    | none =>
+                      -- item 47: adjacent-value check (pure, no state change)
+                      generalize h_av : scanNextToken_checkAdjacentValue sp c = av at h
+                      cases av with
+                      | error => cases h
+                      | ok _ =>
+                      generalize h_dc : scanNextToken_dispatchContent sp c = dc at h
+                      cases dc with
+                      | error => cases h
+                      | ok s_dc =>
                         simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
-                        exact BoundInv.trans h_bi_sp
-                          (dispatchBlockIndicators_preserves_bound sp _ c h_bi_sp_refl h_hend_sp h_bk)
-                      | none =>
-                        generalize h_dc : scanNextToken_dispatchContent sp c = dc at h
-                        cases dc with
-                        | error => cases h
-                        | ok s_dc =>
-                          simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
-                          exact dispatchContent_preserves_bound s sp _ c h_bi_sp hend h_dc
-              · -- true case: dispatchers use { sp with allowDirectives := false, ... }
-                -- After simp reduces the if, h contains dispatchers applied
-                -- to the struct. Since the struct has the same offset/inputEnd/input
-                -- as sp, all BoundInv results follow from the false case structure.
-                -- We split directly on the dispatch matches in h.
-                have h_bi_sp2 : BoundInv s
-                    { sp with allowDirectives := false, documentEverStarted := true } :=
-                  allowDirectives_toggle_BoundInv h_bi_sp
-                -- The dispatchers in h are applied to the expanded struct.
-                -- Split on them directly.
-                split at h  -- flow dispatcher result
-                · cases h  -- error
-                · split at h  -- flow some/none
-                  · simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
-                    exact BoundInv.trans h_bi_sp2
-                      (dispatchFlowIndicators_preserves_bound _ _ c
-                        (BoundInv.refl _ h_bi_sp2.offset_le h_bi_sp2.isValid)
-                        (by rw [h_bi_sp2.inputEnd_eq, h_bi_sp2.input_eq]; exact hend) ‹_›)
-                  · split at h  -- block dispatcher result
-                    · cases h
-                    · split at h  -- block some/none
-                      · simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
-                        exact BoundInv.trans h_bi_sp2
-                          (dispatchBlockIndicators_preserves_bound _ _ c
-                            (BoundInv.refl _ h_bi_sp2.offset_le h_bi_sp2.isValid)
-                            (by rw [h_bi_sp2.inputEnd_eq, h_bi_sp2.input_eq]; exact hend) ‹_›)
+                        exact dispatchContent_preserves_bound s sp _ c h_bi_sp hend h_dc
+            · -- true case: dispatchers use { sp with allowDirectives := false, ... }
+              -- After simp reduces the if, h contains dispatchers applied
+              -- to the struct. Since the struct has the same offset/inputEnd/input
+              -- as sp, all BoundInv results follow from the false case structure.
+              -- We split directly on the dispatch matches in h.
+              have h_bi_sp2 : BoundInv s
+                  { sp with allowDirectives := false, documentEverStarted := true } :=
+                allowDirectives_toggle_BoundInv h_bi_sp
+              -- The dispatchers in h are applied to the expanded struct.
+              -- Split on them directly.
+              split at h  -- flow dispatcher result
+              · cases h  -- error
+              · split at h  -- flow some/none
+                · simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
+                  exact BoundInv.trans h_bi_sp2
+                    (dispatchFlowIndicators_preserves_bound _ _ c
+                      (BoundInv.refl _ h_bi_sp2.offset_le h_bi_sp2.isValid)
+                      (by rw [h_bi_sp2.inputEnd_eq, h_bi_sp2.input_eq]; exact hend) ‹_›)
+                · split at h  -- block dispatcher result
+                  · cases h
+                  · split at h  -- block some/none
+                    · simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
+                      exact BoundInv.trans h_bi_sp2
+                        (dispatchBlockIndicators_preserves_bound _ _ c
+                          (BoundInv.refl _ h_bi_sp2.offset_le h_bi_sp2.isValid)
+                          (by rw [h_bi_sp2.inputEnd_eq, h_bi_sp2.input_eq]; exact hend) ‹_›)
+                    · split at h  -- adjacent-value check (item 47)
+                      · cases h
                       · split at h  -- content dispatcher result
                         · cases h
                         · simp only [Except.ok.injEq, Option.some.injEq] at h; subst h
@@ -1849,3 +1887,5 @@ lemma scanNextToken_preserves_bound (s s' : ScannerState)
   exact ⟨h_bi.offset_le, h_bi.inputEnd_eq, h_bi.input_eq, h_bi.isValid⟩
 
 end L4YAML.Proofs.ScannerBound
+
+end Blanket

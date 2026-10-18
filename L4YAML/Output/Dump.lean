@@ -1,6 +1,10 @@
-import Lean.Data.Json
-import L4YAML.Spec.Types
-import L4YAML.Spec.CharPredicates
+module
+
+public import Lean.Data.Json
+public import L4YAML.Spec.Types
+public import L4YAML.Spec.CharPredicates
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -805,3 +809,5 @@ open L4YAML L4YAML.Dump
 
 
 end DumpGuards
+
+end Blanket

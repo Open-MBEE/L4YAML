@@ -3,10 +3,14 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Spec.Types
-import L4YAML.Token.Token
-import L4YAML.Scanner.Scanner
-import L4YAML.Parser.IndexedComposition
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Token.Token
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Parser.IndexedComposition
+
+@[expose] public section Blanket
 
 /-!
 # Parser Security: Limits and Tag Validation
@@ -56,6 +60,12 @@ structure AliasLimits where
       Default: 100,000 -/
   maxResolvedNodes : Nat := 100_000
   /-- Detect and reject cyclic aliases (`a: &a [*a]`).
+      This is a policy of ours, not a spec requirement: YAML 1.2.2 §3.2.1
+      explicitly permits cycles in the representation graph ("Note that the
+      YAML graph may include cycles"). What forces a *presented* graph to be
+      acyclic is §7.1, which resolves an alias to the "most recent preceding
+      node" — so a cycle is unreachable from a stream, but not from the graph
+      a program builds and asks us to serialize.
       Default: true -/
   rejectCycles : Bool := true
   deriving Repr, BEq, Inhabited
@@ -666,3 +676,5 @@ def parseYamlSingleRawSafe (input : String) (limits : ParserLimits := {})
   else throw (.scanError (.multipleDocuments docs.size))
 
 end L4YAML
+
+end Blanket

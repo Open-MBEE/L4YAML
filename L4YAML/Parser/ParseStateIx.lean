@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Indexed.TokenStream
-import L4YAML.Spec.YamlSpec
+
+module
+
+public import L4YAML.Indexed.TokenStream
+public import L4YAML.Spec.YamlSpec
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `ParseStateIx` — Phase 3 Step 6a indexed parser state (staging)
 
@@ -119,6 +125,15 @@ def ParseStateIx.peek? {input : String} (ps : ParseStateIx input) :
 def ParseStateIx.peekPos? {input : String} (ps : ParseStateIx input) :
     Option YamlPos :=
   ps.peekIx?.map (·.start)
+
+/-- Peek at the token one past the current one, without consuming.
+    Indexed twin of `ParseState.peekNext?` — used for the two-token
+    lookahead that distinguishes a scanner-inserted retroactive `key`
+    marker (`key` immediately followed by `value`) from a genuine next
+    map entry. -/
+def ParseStateIx.peekNext? {input : String} (ps : ParseStateIx input) :
+    Option YamlToken :=
+  (ps.tokens.get? (ps.pos + 1)).map (·.token)
 
 /-- Advance past the current token. -/
 def ParseStateIx.advance {input : String} (ps : ParseStateIx input) :
@@ -302,3 +317,5 @@ def validateNodeProps {input : String} (ps : ParseStateIx input)
     | _ => throw (.duplicateAnchor ps.currentLine)
 
 end L4YAML.TokenParser.Indexed
+
+end Blanket

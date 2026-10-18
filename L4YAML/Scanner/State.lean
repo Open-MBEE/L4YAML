@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Token.Token
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Token.Token
+public import L4YAML.Spec.CharPredicates
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Scanner State
@@ -108,8 +114,37 @@ structure ScannerState where
   /-- Line number of the most recent explicit `?` key indicator, if the
       entry has not yet been closed by `:`.  Used to (a) inhibit simple-key
       saving on the same line as `?`, and (b) bypass the flow-sequence
-      implicit-key-single-line restriction when `?` was used. -/
+      implicit-key-single-line restriction when `?` was used.
+
+      **Scoped to the current flow level** (item 98): a flow open pushes the
+      pair `(explicitKeyLine, explicitKeyCol)` onto `explicitKeyStack` and
+      clears both, and the matching close restores them, so a pending `?`
+      is visible exactly at its own level.  A nested collection's `,`/`:`
+      indicators end entries of the NESTED collection only — the block
+      `?`'s value is still `[197] l-block-map-explicit-value(n)`'s
+      `s-indent(n) ":"` after the close (`? {a: b}⏎: - w`), and content on
+      the `?`'s line INSIDE the nested collection is that collection's own,
+      free to reserve its simple key (`? [a: b]⏎: v`). -/
   explicitKeyLine : Option Nat := none
+  /-- Line number of the most recent block-context IMPLICIT value indicator
+      (item 48).  `[194] c-l-block-map-implicit-value`'s value slot is
+      `s-l+block-node` — no compact alternative, no same-line mapping — so a
+      block-collection indicator or a second `:` on this line has no
+      derivation.  The EXPLICIT value (`[192]`'s, whose slot is
+      `s-l+block-indented` with the compact alternatives) does not set it,
+      which is what keeps `? a⏎: - b` and `? a⏎: b: c` served. -/
+  implicitValueLine : Option Nat := none
+  /-- Column of the pending `?` (item 48), meaningful only while
+      `explicitKeyLine` is set: an implicit `:` whose resolved key sits
+      DEEPER than this column is inside the explicit key's own content
+      (spec 8.19's multi-line compact keys), so the pending `?` survives it;
+      at or left of it, a sibling entry has closed the `?`-entry. -/
+  explicitKeyCol : Int := -1
+  /-- Saved `(explicitKeyLine, explicitKeyCol)` pairs for enclosing flow
+      nesting levels (item 98) — `simpleKeyStack`'s discipline for the
+      explicit-key stamp.  Pushed on flow-open (`[`, `{`), popped on
+      flow-close (`]`, `}`). -/
+  explicitKeyStack : Array (Option Nat × Int) := #[]
   /-- Collected comments (position × text). Comments are stored here as a
       side-channel rather than in the token array so that all existing
       `preserves_tokens` proofs remain valid unchanged. -/
@@ -222,6 +257,25 @@ def ScannerState.advance (s : ScannerState) : ScannerState :=
   else
     s
 
+/-- Consume a leading byte order mark, WITHOUT spending a column.
+
+    **Implements** (YAML 1.2.2 §5.2): `[3] c-byte-order-mark`, as
+    `[202] l-document-prefix` admits it — "in the case of UTF-8 the BOM
+    is not part of the content".  It is an encoding marker, not a
+    character of the first line, so `[63] s-indent(n)` counts from the
+    character AFTER it.
+
+    `advance` alone would leave `col = 1`, which reads the first line as
+    indented by one relative to every following line: `﻿a: 1⏎b: 2`
+    then dedents below its own mapping and the scan refuses it, and
+    `﻿---` is no longer at column 0, so it is a plain scalar rather
+    than `[203] c-directives-end`.  Both are the same off-by-one, and
+    resetting the column here is the whole of the fix. -/
+@[yaml_spec "5.2" 3 "c-byte-order-mark",
+  yaml_spec "9.1.1" 202 "l-document-prefix"]
+def ScannerState.consumeBOM (s : ScannerState) : ScannerState :=
+  { s.advance with col := 0 }
+
 /-- Helper for advanceN using structural recursion on `n`.
 
     **Termination**: Structurally recursive on `n`. -/
@@ -259,3 +313,5 @@ def ScannerState.emitAt (s : ScannerState) (pos : YamlPos) (tok : YamlToken) : S
   { s with tokens := s.tokens.push { pos := pos, val := tok } }
 
 end L4YAML.Scanner
+
+end Blanket

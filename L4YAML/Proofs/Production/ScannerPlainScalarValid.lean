@@ -2,10 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Proofs.Scanner.ScannerPlainScalar
-import L4YAML.Proofs.Scanner.ScannerCorrectness
-import L4YAML.Proofs.Scanner.ScannerFlowCollection
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Proofs.Scanner.ScannerPlainScalar
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.ScannerFlowCollection
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+
+@[expose] public section Blanket
 
 /-!
 # Plain Scalar Validity for the Full Scan Chain (B3.5)
@@ -43,12 +50,14 @@ namespace L4YAML.Proofs.ScannerPlainScalarValid
 
 open L4YAML
 open L4YAML.Scanner
+open L4YAML.Proofs.BlockScalarFlowGuard
 open L4YAML.CharPredicates
 open L4YAML.Grammar
 open L4YAML.Proofs.ScannerPlainScalar
 open L4YAML.Proofs.ScannerCorrectness
 open L4YAML.Proofs.ScannerCorrectness.ScanHelpers
 open L4YAML.Proofs.ScannerProofs
+open L4YAML.Proofs.FlowAdjacency
 
 /-! ## Definition -/
 
@@ -419,7 +428,9 @@ lemma dispatchContent_preserves_PlainScalarsValid
     unfold scanNextToken_dispatchContent at h_ok
     simp only [bind, Except.bind, pure, Except.pure] at h_ok
     split at h_ok
-    · -- c == '&': .anchor — not plain scalar
+    · -- c == '&': .anchor — not plain scalar, under the item-9e guard
+      split at h_ok
+      · simp at h_ok
       generalize h_anch : scanAnchorOrAlias s true = anch_result at h_ok
       cases anch_result with
       | error => simp at h_ok
@@ -443,10 +454,14 @@ lemma dispatchContent_preserves_PlainScalarsValid
             · omega
             · simp)
     · split at h_ok
-      · -- c == '*': .alias — not plain scalar
+      · -- c == '*': .alias — not plain scalar, under the item-9e guard
+        split at h_ok
+        · simp at h_ok
         split at h_ok
         · contradiction
-        · generalize h_anch : scanAnchorOrAlias s false = anch_result at h_ok
+        · -- item 9h: peel `validateAliasClose`, then the alias bind.
+          replace h_ok := aliasArm_scan_ok h_ok
+          generalize h_anch : scanAnchorOrAlias s false = anch_result at h_ok
           cases anch_result with
           | error => simp at h_ok
           | ok s_anch =>
@@ -467,7 +482,9 @@ lemma dispatchContent_preserves_PlainScalarsValid
                 · omega
                 · simp)
       · split at h_ok
-        · -- c == '!': .tag — not plain scalar
+        · -- c == '!': .tag — not plain scalar, under the item-9e guard
+          split at h_ok
+          · simp at h_ok
           generalize h_tag : scanTag s = tag_result at h_ok
           cases tag_result with
           | error => simp at h_ok
@@ -480,7 +497,9 @@ lemma dispatchContent_preserves_PlainScalarsValid
             subst hj_eq
             exact scanTag_psv_match s s_tag h_tag hj
         · split at h_ok
-          · -- c == '|' || '>': scanBlockScalar returns directly (not .plain)
+          · -- c == '|' || '>': scanBlockScalar returns directly (not .plain),
+            -- under the item-9c `!inFlow` guard
+            replace h_ok := peel_blockScalarGuard h_ok
             intro j hj hge
             have : j = s.tokens.size := by
               have := scanBlockScalar_adds_one_token s _ h_ok; omega
@@ -977,6 +996,7 @@ lemma dispatchFlowIndicators_preserves_PlainScalarsValid
   · intro i hi; exact dispatchFlowIndicators_preserves_prefix s c s' h_ok i (by omega)
   · intro j hj hge
     unfold scanNextToken_dispatchFlowIndicators at h_ok
+    replace h_ok := peel_flowAdj h_ok
     simp only [bind, pure, Pure.pure, Except.pure] at h_ok
     simp only [Except.bind] at h_ok
     repeat (any_goals (split at h_ok))
@@ -1099,7 +1119,11 @@ lemma scanBlockEntry_preserves_PlainScalarsValid
   split at h_ok
   · split at h_ok
     · contradiction
-    · injection h_ok with h_ok; subst h_ok
+    · split at h_ok  -- item 48 same-line check
+      · contradiction
+      split at h_ok  -- `scanBlockEntryValidate` (item 134)
+      · contradiction
+      injection h_ok with h_ok; subst h_ok
       simp only [advance_preserves_tokens]
       apply PlainScalarsValid_push_non_plain _ _ _ (by trivial)
       exact pushSequenceIndent_preserves_PlainScalarsValid s s.col h_old
@@ -1117,7 +1141,8 @@ lemma scanKey_preserves_PlainScalarsValid
   unfold scanKey at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
-  · split at h_ok
+  · split at h_ok <;> try contradiction  -- `scanKeyValidate` (item 131)
+    split at h_ok
     · split at h_ok
       · contradiction
       · injection h_ok with h_ok; subst h_ok
@@ -1170,12 +1195,14 @@ lemma scanValue_preserves_PlainScalarsValid
   · contradiction
   · split at h_ok
     · contradiction
-    · injection h_ok with h_ok; subst h_ok
-      simp only [advance_preserves_tokens]
-      apply PlainScalarsValid_push_non_plain _ _ _ (by trivial)
-      have h_ck := scanValueClearKey_preserves_tokens s
-      have h_ck_psv : PlainScalarsValid (scanValueClearKey s).tokens := by rw [h_ck]; exact h_old
-      exact scanValuePrepare_preserves_PlainScalarsValid (scanValueClearKey s) h_ck_psv
+    split at h_ok
+    · contradiction  -- scanValueTabCheck (item 31 added the one above)
+    injection h_ok with h_ok; subst h_ok
+    simp only [advance_preserves_tokens]
+    apply PlainScalarsValid_push_non_plain _ _ _ (by trivial)
+    have h_ck := scanValueClearKey_preserves_tokens s
+    have h_ck_psv : PlainScalarsValid (scanValueClearKey s).tokens := by rw [h_ck]; exact h_old
+    exact scanValuePrepare_preserves_PlainScalarsValid (scanValueClearKey s) h_ck_psv
 
 set_option maxHeartbeats 400000 in
 /-- Block indicators: uses `setIfInBounds` which may overwrite tokens, but only
@@ -1228,6 +1255,10 @@ lemma scanNextToken_preserves_PlainScalarsValid :
   rename_i s2 c h_pre
   have h_old2 := preprocess_preserves_PlainScalarsValid s s2 c h_old h_pre
   have h_peek2 := preprocess_peek s s2 c h_pre
+  -- §9.2 dangling-node check (item 133)
+  split at h_ok <;> (try (simp at h_ok; done))
+  -- §8.1 flow-value floor (item 172)
+  split at h_ok <;> (try (simp at h_ok; done))
   split at h_ok <;> (try (simp at h_ok; done))
   split at h_ok
   · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
@@ -1238,7 +1269,7 @@ lemma scanNextToken_preserves_PlainScalarsValid :
       else s2).peek? = some c := by split <;> exact h_peek2
     -- Pending-directives check (Fix B)
     split at h_ok <;> (try (simp at h_ok; done))
-    -- Block→flow underindent check
+    -- §9.2 bare-document check (item 132)
     split at h_ok <;> (try (simp at h_ok; done))
     split at h_ok <;> (try (simp at h_ok; done))
     split at h_ok
@@ -1248,7 +1279,8 @@ lemma scanNextToken_preserves_PlainScalarsValid :
       split at h_ok
       · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
         exact dispatchBlockIndicators_preserves_PlainScalarsValid _ c h_old3 _ (by assumption)
-      · split at h_ok <;> (try (simp at h_ok; done))
+      · split at h_ok <;> (try (simp at h_ok; done)) -- adjacent-value check (item 47)
+        split at h_ok <;> (try (simp at h_ok; done))
         simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
         exact dispatchContent_preserves_PlainScalarsValid _ c h_peek3 h_old3 _ (by assumption)
 
@@ -1288,6 +1320,10 @@ lemma scanLoop_preserves_PlainScalarsValid
     · simp at h_ok
     · split at h_ok <;> try (simp at h_ok; done)
       split at h_ok <;> try (simp at h_ok; done)
+      -- §9.2 dangling-node check (item 133)
+      split at h_ok <;> try (simp at h_ok; done)
+      -- §8.1 flow-value floor (item 172)
+      split at h_ok <;> try (simp at h_ok; done)
       injection h_ok with h_eq; rw [← h_eq]
       exact finalEmit_preserves_PlainScalarsValid s h_old
     · rename_i s' h_snt
@@ -1304,10 +1340,10 @@ lemma scan_all_plain_scalars_valid (input : String)
   unfold scan at h
   simp only [] at h
   have h_init : PlainScalarsValid (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-      | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+      | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
       | _ => ScannerState.mk' input |>.emit .streamStart).tokens := by
     have h_tok_eq : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-        | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+        | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
         | _ => ScannerState.mk' input |>.emit .streamStart).tokens =
         (ScannerState.mk' input |>.emit .streamStart).tokens := by
       split
@@ -1636,6 +1672,10 @@ lemma fpsv_of_not_plain (tok : Positioned YamlToken)
   cases val <;> simp_all
   rename_i content style; cases style <;> simp_all
 
+-- `unusedSimpArgs` misreports the rewrite in this proof: dropping the argument
+-- makes it fail with a type mismatch, because the rewrite is what brings the
+-- goal's generated matcher application into the shape the step lemma states.
+set_option linter.unusedSimpArgs false in
 /-- `flowNesting.go` on non-flow tokens returns depth unchanged. -/
 lemma flowNesting_go_non_flow
     (tokens : Array (Positioned YamlToken)) (pos target depth : Nat)
@@ -1659,7 +1699,11 @@ lemma flowNesting_go_non_flow
         | _ => depth) = depth := by
         generalize h_tok : (tokens[pos]'h_pos).val = tok
         cases tok <;> simp_all
-      rw [this]
+      -- `simp only`, not `rw`: the two `match` applications are different
+      -- generated matcher constants -- one elaborated here, one inside the
+      -- step lemma's statement -- so kabstract finds no syntactic occurrence
+      -- while simp matches them up to reducible defeq.
+      simp only [this]
       exact ih (pos + 1) depth (fun j hge hlt hj => h_nf j (by omega) hlt hj) (by omega)
     · exact flowNesting_go_oob tokens pos target depth (by omega)
 
@@ -2245,6 +2289,7 @@ lemma dispatchFlowIndicators_preserves_FlowInv
   -- Flow indicators: `[`, `]`, `{`, `}`, `,`
   -- These change flowLevel and emit flow tokens
   unfold scanNextToken_dispatchFlowIndicators at h_ok
+  replace h_ok := peel_flowAdj h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
   -- Split on each character check
   split at h_ok
@@ -2277,30 +2322,32 @@ lemma dispatchFlowIndicators_preserves_FlowInv
     · split at h_ok
       · contradiction  -- flowLevel == 0 error
       · split at h_ok
-        · contradiction  -- validateFlowClose error
-        · -- c == ']', s' = scanFlowSequenceEnd s
-          injection h_ok with h_ok2; injection h_ok2 with h_eq; subst h_eq
-          constructor
-          · -- FlowContextPSV: new token is flowSequenceEnd (not plain scalar)
-            refine FlowContextPSV_of_prefix_and_new s.tokens (scanFlowSequenceEnd s).tokens h_fpsv ?_ ?_ ?_
-            · have : (scanFlowSequenceEnd s).tokens.size ≥ s.tokens.size + 1 := by
-                simp [scanFlowSequenceEnd_adds_one_token]
-              omega
-            · intro i hi
-              exact scanFlowSequenceEnd_preserves_prefix s i hi
-            · intro j hj hge _
-              apply fpsv_of_not_plain
-              have : j = s.tokens.size := by
-                have : (scanFlowSequenceEnd s).tokens.size = s.tokens.size + 1 := scanFlowSequenceEnd_adds_one_token s
+        · contradiction  -- flowStack kind-check error
+        · split at h_ok
+          · contradiction  -- validateFlowClose error
+          · -- c == ']', s' = scanFlowSequenceEnd s
+            injection h_ok with h_ok2; injection h_ok2 with h_eq; subst h_eq
+            constructor
+            · -- FlowContextPSV: new token is flowSequenceEnd (not plain scalar)
+              refine FlowContextPSV_of_prefix_and_new s.tokens (scanFlowSequenceEnd s).tokens h_fpsv ?_ ?_ ?_
+              · have : (scanFlowSequenceEnd s).tokens.size ≥ s.tokens.size + 1 := by
+                  simp [scanFlowSequenceEnd_adds_one_token]
                 omega
-              subst this
+              · intro i hi
+                exact scanFlowSequenceEnd_preserves_prefix s i hi
+              · intro j hj hge _
+                apply fpsv_of_not_plain
+                have : j = s.tokens.size := by
+                  have : (scanFlowSequenceEnd s).tokens.size = s.tokens.size + 1 := scanFlowSequenceEnd_adds_one_token s
+                  omega
+                subst this
+                unfold scanFlowSequenceEnd
+                simp [ScannerState.emit, advance_preserves_tokens, Array.getElem_push_eq]
+            · -- FlowNestingInv: flowLevel decreases by 1, flowNesting decreases by 1
+              unfold FlowNestingInv at *
               unfold scanFlowSequenceEnd
-              simp [ScannerState.emit, advance_preserves_tokens, Array.getElem_push_eq]
-          · -- FlowNestingInv: flowLevel decreases by 1, flowNesting decreases by 1
-            unfold FlowNestingInv at *
-            unfold scanFlowSequenceEnd
-            simp [ScannerState.emit, advance_preserves_tokens, advance_preserves_flowLevel, Array.size_push]
-            rw [flowNesting_push, h_fni]
+              simp [ScannerState.emit, advance_preserves_tokens, advance_preserves_flowLevel, Array.size_push]
+              rw [flowNesting_push, h_fni]
     · split at h_ok
       · -- c == '{'
         injection h_ok with h_ok2; injection h_ok2 with h_eq; subst h_eq
@@ -2329,30 +2376,32 @@ lemma dispatchFlowIndicators_preserves_FlowInv
         · split at h_ok
           · contradiction  -- flowLevel == 0 error
           · split at h_ok
-            · contradiction  -- validateFlowClose error
-            · -- c == '}'
-              injection h_ok with h_ok2; injection h_ok2 with h_eq; subst h_eq
-              constructor
-              · -- FlowContextPSV
-                refine FlowContextPSV_of_prefix_and_new s.tokens (scanFlowMappingEnd s).tokens h_fpsv ?_ ?_ ?_
-                · have : (scanFlowMappingEnd s).tokens.size ≥ s.tokens.size + 1 := by
-                    simp [scanFlowMappingEnd_adds_one_token]
-                  omega
-                · intro i hi
-                  exact scanFlowMappingEnd_preserves_prefix s i hi
-                · intro j hj hge _
-                  apply fpsv_of_not_plain
-                  have : j = s.tokens.size := by
-                    have : (scanFlowMappingEnd s).tokens.size = s.tokens.size + 1 := scanFlowMappingEnd_adds_one_token s
+            · contradiction  -- flowStack kind-check error
+            · split at h_ok
+              · contradiction  -- validateFlowClose error
+              · -- c == '}'
+                injection h_ok with h_ok2; injection h_ok2 with h_eq; subst h_eq
+                constructor
+                · -- FlowContextPSV
+                  refine FlowContextPSV_of_prefix_and_new s.tokens (scanFlowMappingEnd s).tokens h_fpsv ?_ ?_ ?_
+                  · have : (scanFlowMappingEnd s).tokens.size ≥ s.tokens.size + 1 := by
+                      simp [scanFlowMappingEnd_adds_one_token]
                     omega
-                  subst this
+                  · intro i hi
+                    exact scanFlowMappingEnd_preserves_prefix s i hi
+                  · intro j hj hge _
+                    apply fpsv_of_not_plain
+                    have : j = s.tokens.size := by
+                      have : (scanFlowMappingEnd s).tokens.size = s.tokens.size + 1 := scanFlowMappingEnd_adds_one_token s
+                      omega
+                    subst this
+                    unfold scanFlowMappingEnd
+                    simp [ScannerState.emit, advance_preserves_tokens, Array.getElem_push_eq]
+                · -- FlowNestingInv
+                  unfold FlowNestingInv at *
                   unfold scanFlowMappingEnd
-                  simp [ScannerState.emit, advance_preserves_tokens, Array.getElem_push_eq]
-              · -- FlowNestingInv
-                unfold FlowNestingInv at *
-                unfold scanFlowMappingEnd
-                simp [ScannerState.emit, advance_preserves_tokens, advance_preserves_flowLevel, Array.size_push]
-                rw [flowNesting_push, h_fni]
+                  simp [ScannerState.emit, advance_preserves_tokens, advance_preserves_flowLevel, Array.size_push]
+                  rw [flowNesting_push, h_fni]
         · split at h_ok
           · -- c == ','
             split at h_ok
@@ -2882,9 +2931,12 @@ lemma scanBlockScalar_preserves_flowLevel (s s' : ScannerState)
     · -- Case: autoDetectErr? = some err (error case)
       contradiction
     · -- Case: autoDetectErr? = none (success case)
-      simp only [ScannerState.emitAt] at h_ok
-      injection h_ok with h_eq; subst h_eq
-      simp [collectBlockScalarLoop_preserves_flowLevel, h_fl]
+      repeat (any_goals (split at h_ok))
+      all_goals (try contradiction)
+      all_goals
+        simp only [ScannerState.emitAt] at h_ok
+        injection h_ok with h_eq; subst h_eq
+        simp [collectBlockScalarLoop_preserves_flowLevel, h_fl]
 
 lemma collectHexDigitsLoop_preserves_flowLevel (s : ScannerState) (hex : String) (n : Nat) :
     (collectHexDigitsLoop s hex n).snd.flowLevel = s.flowLevel := by
@@ -2952,7 +3004,9 @@ lemma foldQuotedNewlinesLoop_preserves_flowLevel (s : ScannerState) (emptyCount 
     simp only []
     split
     · split
-      · rw [ih, consumeNewline_preserves_flowLevel, skipWhitespace_preserves_flowLevel]
+      · split
+        · rfl
+        · rw [ih, consumeNewline_preserves_flowLevel, skipWhitespace_preserves_flowLevel]
       · rfl
     · rfl
 
@@ -3005,10 +3059,16 @@ lemma collectDoubleQuotedLoop_preserves_flowLevel (s : ScannerState) (content : 
       · -- s_after_backslash.peek? = some c
         -- Now split on isLineBreakBool c
         split at h
-        · -- Escaped line break
-          exact ih _ _ _ h |>.trans (skipWhitespace_preserves_flowLevel _)
-                         |>.trans (consumeNewline_preserves_flowLevel _)
-                         |>.trans (advance_preserves_flowLevel s)
+        · -- Escaped line break — the landing is a fold (item 87)
+          simp only [bind, Except.bind] at h
+          split at h <;> try contradiction
+          rename_i folded_result heq_fold
+          have h_fl_fold := foldQuotedNewlines_preserves_flowLevel _ _ heq_fold
+          repeat' split at h
+          all_goals first
+            | contradiction
+            | exact ih _ _ _ h |>.trans h_fl_fold
+                |>.trans (advance_preserves_flowLevel s)
         · -- Regular escape
           simp only [bind, Except.bind] at h
           split at h <;> try contradiction
@@ -3111,8 +3171,11 @@ lemma skipBlankLinesLoop_preserves_flowLevel (s : ScannerState) (cnt fuel inputE
     · -- peek? = some c
       split
       · -- isLineBreakBool c = true
-        exact ih _ _ |>.trans (consumeNewline_preserves_flowLevel _)
-                             |>.trans (skipWhitespace_preserves_flowLevel s)
+        -- item 100: the gate's arm keeps the state untouched
+        split
+        · rfl
+        · exact ih _ _ |>.trans (consumeNewline_preserves_flowLevel _)
+                               |>.trans (skipWhitespace_preserves_flowLevel s)
       · -- isLineBreakBool c = false
         rfl
     · -- peek? = none
@@ -3174,7 +3237,9 @@ lemma collectPlainScalarLoop_preserves_flowLevel (s : ScannerState) (content spa
             split at h
             · -- peek after fold is some '#': terminates → state = s
               injection h with h_eq; subst h_eq; rfl
-            · -- recurse with content-length check
+            · -- item 50: the flow floor's throw contradicts `.ok`
+              split at h
+              · cases h
               generalize h_loop : collectPlainScalarLoop _ _ "" fuel' inFlow contentIndent inputEnd = cont_result at h
               cases cont_result with
               | ok inner_result =>
@@ -3291,15 +3356,19 @@ lemma scanBlockScalar_preserves_FlowInv (s s' : ScannerState)
       simp only [] at h_ok
       split at h_ok
       · contradiction
-      · simp only [ScannerState.emitAt, Except.ok.injEq] at h_ok
-        subst h_ok
-        dsimp only [] at h_gen
-        simp only [Array.getElem_push] at h_gen
-        rw [collectBlockScalarLoop_preserves_tokens, h_tok] at h_gen
-        simp only [Nat.lt_irrefl, dite_false] at h_gen
-        -- h_gen : .scalar content (if ... then .literal else .folded) = tok_val
-        -- Split the if in the hypothesis, then subst back
-        split at h_gen <;> (subst h_gen; trivial)
+      · repeat (any_goals (split at h_ok))
+        all_goals (try contradiction)
+        all_goals
+          simp only [ScannerState.emitAt, Except.ok.injEq] at h_ok
+          subst h_ok
+          dsimp only [] at h_gen
+          simp only [Array.getElem_push] at h_gen
+          rw [collectBlockScalarLoop_preserves_tokens, h_tok] at h_gen
+          simp only [Nat.lt_irrefl, dite_false] at h_gen
+          -- h_gen : .scalar content (with the style decided) = tok_val
+          first
+          | (split at h_gen <;> (subst h_gen; trivial))
+          | (subst h_gen; trivial)
   · -- FlowNestingInv: flowLevel unchanged, scalar is non-flow token
     unfold FlowNestingInv at *
     have h_size : s'.tokens.size = s.tokens.size + 1 := by
@@ -3322,12 +3391,15 @@ lemma scanBlockScalar_preserves_FlowInv (s s' : ScannerState)
             skipWhitespace_preserves_tokens,
             parseBlockHeaderLoop_preserves_tokens,
             advance_preserves_tokens]
-      simp only [ScannerState.emitAt] at h_ok
-      injection h_ok with h_eq; subst h_eq
-      simp only []
-      rw [collectBlockScalarLoop_preserves_tokens, h_tok]
-      rw [flowNesting_push_non_flow s.tokens _ (by nofun) (by nofun) (by nofun) (by nofun)]
-      exact h_fni
+      repeat (any_goals (split at h_ok))
+      all_goals (try contradiction)
+      all_goals
+        simp only [ScannerState.emitAt] at h_ok
+        injection h_ok with h_eq; subst h_eq
+        simp only []
+        rw [collectBlockScalarLoop_preserves_tokens, h_tok]
+        rw [flowNesting_push_non_flow s.tokens _ (by nofun) (by nofun) (by nofun) (by nofun)]
+        exact h_fni
 
 lemma scanDoubleQuoted_preserves_FlowInv (s s' : ScannerState)
     (h_ok : scanDoubleQuoted s = .ok s')
@@ -3562,7 +3634,9 @@ lemma dispatchContent_preserves_FlowInv
   unfold scanNextToken_dispatchContent at h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
   split at h_ok
-  · -- c == '&'
+  · -- c == '&', under the item-9e property-run guard
+    split at h_ok
+    · simp at h_ok
     generalize h_anch : scanAnchorOrAlias s true = anch_result at h_ok
     cases anch_result with
     | error => simp at h_ok
@@ -3572,10 +3646,14 @@ lemma dispatchContent_preserves_FlowInv
       have h_eq := Except.ok.inj h_ok; subst h_eq
       exact scanAnchorOrAlias_preserves_FlowInv s true s_anch h_anch h_fpsv h_fni
   · split at h_ok
-    · -- c == '*'
+    · -- c == '*', under the item-9e property-run guard
+      split at h_ok
+      · simp at h_ok
       split at h_ok
       · contradiction
-      · generalize h_anch : scanAnchorOrAlias s false = anch_result at h_ok
+      · -- item 9h: peel `validateAliasClose`, then the alias bind.
+        replace h_ok := aliasArm_scan_ok h_ok
+        generalize h_anch : scanAnchorOrAlias s false = anch_result at h_ok
         cases anch_result with
         | error => simp at h_ok
         | ok s_anch =>
@@ -3583,7 +3661,9 @@ lemma dispatchContent_preserves_FlowInv
           simp only [Except.ok.injEq] at h_ok; subst h_ok
           exact scanAnchorOrAlias_preserves_FlowInv s false s_anch h_anch h_fpsv h_fni
     · split at h_ok
-      · -- c == '!'
+      · -- c == '!', under the item-9e property-run guard
+        split at h_ok
+        · simp at h_ok
         generalize h_tag : scanTag s = tag_result at h_ok
         cases tag_result with
         | error => simp at h_ok
@@ -3592,8 +3672,9 @@ lemma dispatchContent_preserves_FlowInv
           simp only [Except.ok.injEq] at h_ok; subst h_ok
           exact scanTag_preserves_FlowInv s s_tag h_tag h_fpsv h_fni
       · split at h_ok
-        · -- c == '|' or c == '>': scanBlockScalar returns directly
-          exact scanBlockScalar_preserves_FlowInv s _ h_ok h_fpsv h_fni
+        · -- c == '|' or c == '>': scanBlockScalar returns directly, under the
+          -- item-9c `!inFlow` guard
+          exact scanBlockScalar_preserves_FlowInv s _ (peel_blockScalarGuard h_ok) h_fpsv h_fni
         · split at h_ok
           · -- c == '"'
             split at h_ok
@@ -3660,7 +3741,11 @@ lemma scanBlockEntry_new_token_not_plain (s s' : ScannerState)
   split at h_ok
   · split at h_ok
     · contradiction
-    · injection h_ok with h_eq; subst h_eq
+    · split at h_ok  -- item 48 same-line check
+      · contradiction
+      split at h_ok  -- `scanBlockEntryValidate` (item 134)
+      · contradiction
+      injection h_ok with h_eq; subst h_eq
       simp only [advance_preserves_tokens] at h_gen
       unfold pushSequenceIndent ScannerState.emit at h_gen
       split at h_gen
@@ -3712,7 +3797,11 @@ lemma scanBlockEntry_preserves_FlowNestingInv
   split at h_ok
   · split at h_ok
     · contradiction
-    · injection h_ok with h_eq; subst h_eq
+    · split at h_ok  -- item 48 same-line check
+      · contradiction
+      split at h_ok  -- `scanBlockEntryValidate` (item 134)
+      · contradiction
+      injection h_ok with h_eq; subst h_eq
       -- Case: !inFlow, no tab error
       -- s' = (pushSequenceIndent s s.col).emit(blockEntry).advance
       unfold pushSequenceIndent
@@ -3769,6 +3858,7 @@ lemma scanKey_new_token_not_plain (s s' : ScannerState)
   -- After Array.getElem_push, h_gen has nested ifs. Repeatedly split + close.
   split at h_ok
   · -- !s.inFlow
+    split at h_ok <;> try contradiction  -- `scanKeyValidate` (item 131)
     split at h_ok
     · split at h_ok
       · contradiction
@@ -3847,7 +3937,8 @@ lemma scanKey_preserves_FlowNestingInv
   unfold scanKey at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
-  · split at h_ok
+  · split at h_ok <;> try contradiction  -- `scanKeyValidate` (item 131)
+    split at h_ok
     · split at h_ok
       · contradiction
       · injection h_ok with h_eq; subst h_eq
@@ -3944,6 +4035,10 @@ lemma flowNesting_depth_non_flow (v : YamlToken) (depth : Nat)
      | _ => depth) = depth := by
   cases v <;> first | contradiction | rfl
 
+-- `unusedSimpArgs` misreports the rewrite in this proof: dropping the argument
+-- makes it fail with a type mismatch, because the rewrite is what brings the
+-- goal's generated matcher application into the shape the step lemma states.
+set_option linter.unusedSimpArgs false in
 /-- Replacing a non-flow token with another non-flow token preserves `flowNesting.go`. -/
 lemma flowNesting_go_setIfInBounds_non_flow
     (tokens : Array (Positioned YamlToken))
@@ -3982,7 +4077,7 @@ lemma flowNesting_go_setIfInBounds_non_flow
          | .flowSequenceEnd | .flowMappingEnd => if depth > 0 then depth - 1 else 0
          | _ => depth) = depth := by
           generalize (tokens[idx]'h_pos).val = v at ho1 ho2 ho3 ho4; cases v <;> first | contradiction | rfl
-        rw [hd1, hd2]
+        simp only [hd1, hd2]
         exact ih (idx + 1) _ (by omega)
       · rw [ite_eq_right h_eq]
         exact ih (pos + 1) _ (by omega)
@@ -4186,35 +4281,37 @@ lemma scanValue_preserves_FlowContextPSV
   · contradiction
   · split at h_ok
     · contradiction
-    · injection h_ok with h_ok; subst h_ok
-      simp only [advance_preserves_tokens]
-      -- s'.tokens = (scanValuePrepare (scanValueClearKey s)).tokens.push ⟨pos, .value, pos⟩
-      -- Step 1: FlowContextPSV for scanValuePrepare (scanValueClearKey s)
-      have h_ck := scanValueClearKey_preserves_tokens s
-      have h_fpsv_ck : FlowContextPSV (scanValueClearKey s).tokens := by
-        rw [h_ck]; exact h_fpsv
-      have h_ph_ck : (scanValueClearKey s).simpleKey.possible = true →
-          (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex < (scanValueClearKey s).tokens.size),
-            ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex]'h).val = .placeholder) ∧
-          (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex + 1 < (scanValueClearKey s).tokens.size),
-            ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex + 1]'h).val = .placeholder) := by
-        cases scanValueClearKey_identity_or_clear s with
-        | inl h_eq => rw [h_eq]; exact h_ph
-        | inr h_cl => intro h; rw [h_cl.1] at h; exact absurd h (by decide)
-      have h_fpsv_prep := scanValuePrepare_preserves_FlowContextPSV
-        (scanValueClearKey s) h_fpsv_ck h_ph_ck
-      -- Step 2: FlowContextPSV_of_prefix_and_new for emit .value
-      refine FlowContextPSV_of_prefix_and_new
-        (scanValuePrepare (scanValueClearKey s)).tokens _ h_fpsv_prep ?_ ?_ ?_
-      · simp [ScannerState.emit, Array.size_push]
-      · intro i hi
-        exact emit_preserves_tokens_at (scanValuePrepare (scanValueClearKey s)) .value i hi
-      · intro j hj hge _
-        apply fpsv_of_not_plain
-        simp only [ScannerState.emit] at hj ⊢
-        have : j = (scanValuePrepare (scanValueClearKey s)).tokens.size := by
-          simp [Array.size_push] at hj; omega
-        subst this; simp [Array.getElem_push_eq]
+    split at h_ok
+    · contradiction  -- scanValueTabCheck (item 31 added the one above)
+    injection h_ok with h_ok; subst h_ok
+    simp only [advance_preserves_tokens]
+    -- s'.tokens = (scanValuePrepare (scanValueClearKey s)).tokens.push ⟨pos, .value, pos⟩
+    -- Step 1: FlowContextPSV for scanValuePrepare (scanValueClearKey s)
+    have h_ck := scanValueClearKey_preserves_tokens s
+    have h_fpsv_ck : FlowContextPSV (scanValueClearKey s).tokens := by
+      rw [h_ck]; exact h_fpsv
+    have h_ph_ck : (scanValueClearKey s).simpleKey.possible = true →
+        (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex < (scanValueClearKey s).tokens.size),
+          ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex]'h).val = .placeholder) ∧
+        (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex + 1 < (scanValueClearKey s).tokens.size),
+          ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex + 1]'h).val = .placeholder) := by
+      cases scanValueClearKey_identity_or_clear s with
+      | inl h_eq => rw [h_eq]; exact h_ph
+      | inr h_cl => intro h; rw [h_cl.1] at h; exact absurd h (by decide)
+    have h_fpsv_prep := scanValuePrepare_preserves_FlowContextPSV
+      (scanValueClearKey s) h_fpsv_ck h_ph_ck
+    -- Step 2: FlowContextPSV_of_prefix_and_new for emit .value
+    refine FlowContextPSV_of_prefix_and_new
+      (scanValuePrepare (scanValueClearKey s)).tokens _ h_fpsv_prep ?_ ?_ ?_
+    · simp [ScannerState.emit, Array.size_push]
+    · intro i hi
+      exact emit_preserves_tokens_at (scanValuePrepare (scanValueClearKey s)) .value i hi
+    · intro j hj hge _
+      apply fpsv_of_not_plain
+      simp only [ScannerState.emit] at hj ⊢
+      have : j = (scanValuePrepare (scanValueClearKey s)).tokens.size := by
+        simp [Array.size_push] at hj; omega
+      subst this; simp [Array.getElem_push_eq]
 
 lemma scanValue_preserves_FlowNestingInv
     (s s' : ScannerState) (h_fni : FlowNestingInv s)
@@ -4231,37 +4328,39 @@ lemma scanValue_preserves_FlowNestingInv
   · contradiction
   · split at h_ok
     · contradiction
-    · injection h_ok with h_ok; subst h_ok
-      -- s' = { advance(emit(scanValuePrepare(scanValueClearKey s)).value) with ... }
-      -- Step 1: scanValueClearKey preserves FlowNestingInv
-      have h_fni_ck : FlowNestingInv (scanValueClearKey s) := by
-        unfold FlowNestingInv at h_fni ⊢; unfold scanValueClearKey
-        split
+    split at h_ok
+    · contradiction  -- scanValueTabCheck (item 31 added the one above)
+    injection h_ok with h_ok; subst h_ok
+    -- s' = { advance(emit(scanValuePrepare(scanValueClearKey s)).value) with ... }
+    -- Step 1: scanValueClearKey preserves FlowNestingInv
+    have h_fni_ck : FlowNestingInv (scanValueClearKey s) := by
+      unfold FlowNestingInv at h_fni ⊢; unfold scanValueClearKey
+      split
+      · split
+        · dsimp only []; exact h_fni
         · split
           · dsimp only []; exact h_fni
-          · split
-            · dsimp only []; exact h_fni
-            · exact h_fni
-        · exact h_fni
-      have h_ph_ck : (scanValueClearKey s).simpleKey.possible = true →
-          (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex < (scanValueClearKey s).tokens.size),
-            ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex]'h).val = .placeholder) ∧
-          (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex + 1 < (scanValueClearKey s).tokens.size),
-            ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex + 1]'h).val = .placeholder) := by
-        cases scanValueClearKey_identity_or_clear s with
-        | inl h_eq => rw [h_eq]; exact h_ph
-        | inr h_cl => intro h; rw [h_cl.1] at h; exact absurd h (by decide)
-      -- Step 2: scanValuePrepare preserves FlowNestingInv
-      have h_fni_prep := scanValuePrepare_preserves_FlowNestingInv
-        (scanValueClearKey s) h_fni_ck h_ph_ck
-      -- Step 3: emit .value preserves FlowNestingInv
-      have h_fni_emit := FlowNestingInv_emit_non_flow
-        (scanValuePrepare (scanValueClearKey s)) .value h_fni_prep
-        (by nofun) (by nofun) (by nofun) (by nofun)
-      -- Step 4: advance + field updates preserve FlowNestingInv
-      unfold FlowNestingInv at h_fni_emit ⊢
-      simp only [advance_preserves_flowLevel, advance_preserves_tokens]
-      exact h_fni_emit
+          · exact h_fni
+      · exact h_fni
+    have h_ph_ck : (scanValueClearKey s).simpleKey.possible = true →
+        (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex < (scanValueClearKey s).tokens.size),
+          ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex]'h).val = .placeholder) ∧
+        (∀ (h : (scanValueClearKey s).simpleKey.tokenIndex + 1 < (scanValueClearKey s).tokens.size),
+          ((scanValueClearKey s).tokens[(scanValueClearKey s).simpleKey.tokenIndex + 1]'h).val = .placeholder) := by
+      cases scanValueClearKey_identity_or_clear s with
+      | inl h_eq => rw [h_eq]; exact h_ph
+      | inr h_cl => intro h; rw [h_cl.1] at h; exact absurd h (by decide)
+    -- Step 2: scanValuePrepare preserves FlowNestingInv
+    have h_fni_prep := scanValuePrepare_preserves_FlowNestingInv
+      (scanValueClearKey s) h_fni_ck h_ph_ck
+    -- Step 3: emit .value preserves FlowNestingInv
+    have h_fni_emit := FlowNestingInv_emit_non_flow
+      (scanValuePrepare (scanValueClearKey s)) .value h_fni_prep
+      (by nofun) (by nofun) (by nofun) (by nofun)
+    -- Step 4: advance + field updates preserve FlowNestingInv
+    unfold FlowNestingInv at h_fni_emit ⊢
+    simp only [advance_preserves_flowLevel, advance_preserves_tokens]
+    exact h_fni_emit
 
 /-! ### SimpleKeyPlaceholderInv — token-value invariant for simple-key positions
 
@@ -4532,38 +4631,8 @@ lemma dispatchStructural_preserves_AllKeysPlaceholderInv
   unfold scanNextToken_dispatchStructural at h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
   split at h_ok
-  · split at h_ok
-    · simp at h_ok
-    · split at h_ok
-      · simp at h_ok
-      · split at h_ok
-        · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-          exact AllKeysPlaceholderInv_of_cleared_mono s _ h_akpi
-            (scanDocumentStart_clears_simpleKey s)
-            (scanDocumentStart_preserves_simpleKeyStack s)
-            (by have := ScanHelpers.scanDocumentStart_adds_tokens s; omega)
-            (fun i hi => ScanHelpers.scanDocumentStart_preserves_prefix s i hi)
-        · split at h_ok
-          · split at h_ok
-            · simp at h_ok
-            · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-              rename_i s_de h_de
-              exact AllKeysPlaceholderInv_of_cleared_mono s _ h_akpi
-                (scanDocumentEnd_clears_simpleKey s s_de h_de)
-                (scanDocumentEnd_preserves_simpleKeyStack s s_de h_de)
-                (by have := ScanHelpers.scanDocumentEnd_adds_tokens s s_de h_de; omega)
-                (fun i hi => ScanHelpers.scanDocumentEnd_preserves_prefix s s_de h_de i hi)
-          · split at h_ok
-            · split at h_ok
-              · simp at h_ok
-              · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-                rename_i s_dir h_dir
-                exact AllKeysPlaceholderInv_mono s _ h_akpi
-                  (scanDirective_preserves_simpleKey s s_dir h_dir)
-                  (scanDirective_preserves_simpleKeyStack s s_dir h_dir)
-                  (ScanHelpers.scanDirective_monotonic s s_dir h_dir)
-                  (fun i hi => ScanHelpers.scanDirective_preserves_prefix s s_dir h_dir i hi)
-            · simp at h_ok
+  · -- item 50: the floor refuses outright (the `]`/`}` exemption is gone)
+    simp at h_ok
   · split at h_ok
     · simp at h_ok
     · split at h_ok
@@ -4729,6 +4798,7 @@ lemma dispatchFlowIndicators_preserves_AllKeysPlaceholderInv
     (h_ok : scanNextToken_dispatchFlowIndicators s c = .ok (some s')) :
     AllKeysPlaceholderInv s' := by
   unfold scanNextToken_dispatchFlowIndicators at h_ok
+  replace h_ok := peel_flowAdj h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
   split at h_ok
   · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
@@ -4742,12 +4812,14 @@ lemma dispatchFlowIndicators_preserves_AllKeysPlaceholderInv
       · simp at h_ok
       · split at h_ok
         · simp at h_ok
-        · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-          exact flowEnd_preserves_AllKeysPlaceholderInv s _ h_akpi
-            (scanFlowSequenceEnd_simpleKey_restored s)
-            (scanFlowSequenceEnd_stack_popped s)
-            (by have := scanFlowSequenceEnd_adds_one_token s; omega)
-            (fun i hi => ScanHelpers.scanFlowSequenceEnd_preserves_prefix s i hi)
+        · split at h_ok
+          · simp at h_ok
+          · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
+            exact flowEnd_preserves_AllKeysPlaceholderInv s _ h_akpi
+              (scanFlowSequenceEnd_simpleKey_restored s)
+              (scanFlowSequenceEnd_stack_popped s)
+              (by have := scanFlowSequenceEnd_adds_one_token s; omega)
+              (fun i hi => ScanHelpers.scanFlowSequenceEnd_preserves_prefix s i hi)
     · split at h_ok
       · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
         exact flowStart_preserves_AllKeysPlaceholderInv s _ h_akpi
@@ -4760,12 +4832,14 @@ lemma dispatchFlowIndicators_preserves_AllKeysPlaceholderInv
           · simp at h_ok
           · split at h_ok
             · simp at h_ok
-            · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-              exact flowEnd_preserves_AllKeysPlaceholderInv s _ h_akpi
-                (scanFlowMappingEnd_simpleKey_restored s)
-                (scanFlowMappingEnd_stack_popped s)
-                (by have := scanFlowMappingEnd_adds_one_token s; omega)
-                (fun i hi => ScanHelpers.scanFlowMappingEnd_preserves_prefix s i hi)
+            · split at h_ok
+              · simp at h_ok
+              · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
+                exact flowEnd_preserves_AllKeysPlaceholderInv s _ h_akpi
+                  (scanFlowMappingEnd_simpleKey_restored s)
+                  (scanFlowMappingEnd_stack_popped s)
+                  (by have := scanFlowMappingEnd_adds_one_token s; omega)
+                  (fun i hi => ScanHelpers.scanFlowMappingEnd_preserves_prefix s i hi)
         · split at h_ok
           · split at h_ok
             · simp at h_ok
@@ -4773,8 +4847,9 @@ lemma dispatchFlowIndicators_preserves_AllKeysPlaceholderInv
               · simp at h_ok
               · rename_i _ _ _ h_entry
                 simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-                exact AllKeysPlaceholderInv_mono s _ h_akpi
-                  (scanFlowEntry_preserves_simpleKey s _ h_entry)
+                -- item 9q: the `,` clears the current key; the stack is untouched
+                exact AllKeysPlaceholderInv_of_cleared_mono s _ h_akpi
+                  (scanFlowEntry_clears_simpleKey s _ h_entry)
                   (scanFlowEntry_preserves_simpleKeyStack s _ h_entry)
                   (by have := ScanHelpers.scanFlowEntry_adds_one_token s _ h_entry; omega)
                   (fun i hi => ScanHelpers.scanFlowEntry_preserves_prefix s _ h_entry i hi)
@@ -4868,7 +4943,9 @@ lemma dispatchContent_preserves_AllKeysPlaceholderInv
   unfold scanNextToken_dispatchContent at h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
   split at h_ok
-  · -- c == '&': anchor with definedAnchors update
+  · -- c == '&': anchor with definedAnchors update, under the item-9e guard
+    split at h_ok
+    · simp at h_ok
     generalize h_anch : scanAnchorOrAlias s true = anch_result at h_ok
     cases anch_result with
     | error => simp at h_ok
@@ -4884,10 +4961,14 @@ lemma dispatchContent_preserves_AllKeysPlaceholderInv
       exact AllKeysPlaceholderInv_mono s_anch _ h_base rfl rfl
         (Nat.le_refl _) (fun i hi => rfl)
   · split at h_ok
-    · -- c == '*': alias (with alias validation check)
+    · -- c == '*': alias (item-9e guard, then the alias validation check)
+      split at h_ok
+      · simp at h_ok
       split at h_ok
       · contradiction
-      · generalize h_anch : scanAnchorOrAlias s false = anch_result at h_ok
+      · -- item 9h: peel `validateAliasClose`, then the alias bind.
+        replace h_ok := aliasArm_scan_ok h_ok
+        generalize h_anch : scanAnchorOrAlias s false = anch_result at h_ok
         cases anch_result with
         | error => simp at h_ok
         | ok s_anch =>
@@ -4899,7 +4980,9 @@ lemma dispatchContent_preserves_AllKeysPlaceholderInv
             (by have := ScanHelpers.scanAnchorOrAlias_adds_one_token s false s_anch h_anch; omega)
             (fun i hi => ScanHelpers.scanAnchorOrAlias_preserves_prefix s false s_anch h_anch i hi)
     · split at h_ok
-      · -- c == '!': tag
+      · -- c == '!': tag, under the item-9e property-run guard
+        split at h_ok
+        · simp at h_ok
         generalize h_tag : scanTag s = tag_result at h_ok
         cases tag_result with
         | error => simp at h_ok
@@ -4912,7 +4995,9 @@ lemma dispatchContent_preserves_AllKeysPlaceholderInv
             (by have := ScanHelpers.scanTag_adds_one_token s s_tag h_tag; omega)
             (fun i hi => ScanHelpers.scanTag_preserves_prefix s s_tag h_tag i hi)
       · split at h_ok
-        · -- c == '|' || c == '>': block scalar returns directly (clears key)
+        · -- c == '|' || c == '>': block scalar returns directly (clears key),
+          -- under the item-9c `!inFlow` guard
+          replace h_ok := peel_blockScalarGuard h_ok
           exact AllKeysPlaceholderInv_of_cleared_mono s _ h_akpi
             (scanBlockScalar_clears_simpleKey s _ h_ok)
             (scanBlockScalar_preserves_simpleKeyStack s _ h_ok)
@@ -5022,6 +5107,10 @@ lemma scanNextToken_preserves_FlowInv
   have h_fni2 := preprocess_preserves_FlowNestingInv s s2 c h_fni h_pre
   have h_akpi2 := preprocess_preserves_AllKeysPlaceholderInv s s2 c h_pre h_akpi
   have h_peek2 := preprocess_peek s s2 c h_pre
+  -- §9.2 dangling-node check (item 133)
+  split at h_ok <;> (try (simp at h_ok; done))
+  -- §8.1 flow-value floor (item 172)
+  split at h_ok <;> (try (simp at h_ok; done))
   split at h_ok <;> (try (simp at h_ok; done))
   split at h_ok
   · -- dispatchStructural
@@ -5038,7 +5127,7 @@ lemma scanNextToken_preserves_FlowInv
       else s2).peek? = some c := by split <;> exact h_peek2
     -- Pending-directives check (Fix B)
     split at h_ok <;> (try (simp at h_ok; done))
-    -- Block→flow underindent check
+    -- §9.2 bare-document check (item 132)
     split at h_ok <;> (try (simp at h_ok; done))
     split at h_ok <;> (try (simp at h_ok; done))
     split at h_ok
@@ -5054,6 +5143,7 @@ lemma scanNextToken_preserves_FlowInv
           h_akpi3.1 _ (by assumption)
         exact ⟨h_fi.1, h_fi.2, dispatchBlockIndicators_preserves_AllKeysPlaceholderInv _ c h_akpi3 _ (by assumption)⟩
       · -- dispatchContent
+        split at h_ok <;> (try (simp at h_ok; done)) -- adjacent-value check (item 47)
         split at h_ok <;> (try (simp at h_ok; done))
         simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
         have h_fi := dispatchContent_preserves_FlowInv _ c h_peek3 h_fpsv3 h_fni3 _ (by assumption)
@@ -5102,6 +5192,10 @@ lemma scanLoop_preserves_FlowInv
     · simp at h_ok
     · split at h_ok <;> try (simp at h_ok; done)
       split at h_ok <;> try (simp at h_ok; done)
+      -- §9.2 dangling-node check (item 133)
+      split at h_ok <;> try (simp at h_ok; done)
+      -- §8.1 flow-value floor (item 172)
+      split at h_ok <;> try (simp at h_ok; done)
       injection h_ok with h_eq; rw [← h_eq]
       exact finalEmit_preserves_FlowContextPSV s h_fpsv
     · rename_i s' h_snt
@@ -5130,11 +5224,11 @@ lemma scan_all_flow_context_psv (input : String)
   exact scanLoop_preserves_FlowInv _ _ _
     (by -- FlowContextPSV for initial state (1 token: .streamStart, not plain)
         have h_tok_eq : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).tokens =
             (ScannerState.mk' input |>.emit .streamStart).tokens := by
           split
-          · exact advance_preserves_tokens _
+          · exact consumeBOM_preserves_tokens _
           · rfl
         suffices h_suf : FlowContextPSV (ScannerState.mk' input |>.emit .streamStart).tokens by
           exact Eq.mpr (congrArg FlowContextPSV h_tok_eq) h_suf
@@ -5147,30 +5241,30 @@ lemma scan_all_flow_context_psv (input : String)
     (by -- FlowNestingInv for initial state (flowLevel = 0, single non-flow token)
         unfold FlowNestingInv
         split <;> (
-          try simp only [advance_preserves_tokens, advance_preserves_flowLevel]
+          try simp only [consumeBOM_preserves_tokens, consumeBOM_preserves_flowLevel]
           simp only [ScannerState.emit, ScannerState.mk', ScannerState.currentPos]
           unfold flowNesting
           exact flowNesting_go_streamStart _))
     (by -- AllKeysPlaceholderInv for initial state (simpleKey.possible = false, empty stack)
         have h_poss : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKey.possible = false := by
           split
-          · rw [advance_preserves_simpleKey]; simp [ScannerState.emit, ScannerState.mk']
+          · rw [consumeBOM_preserves_simpleKey]; simp [ScannerState.emit, ScannerState.mk']
           · simp [ScannerState.emit, ScannerState.mk']
         have h_stack : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKeyStack.size = 0 := by
           split
-          · have := advance_preserves_simpleKeyStack (ScannerState.mk' input |>.emit .streamStart)
+          · have := consumeBOM_preserves_simpleKeyStack (ScannerState.mk' input |>.emit .streamStart)
             simp_all [ScannerState.emit, ScannerState.mk']
           · simp [ScannerState.emit, ScannerState.mk']
         have h_empty : ∀ j, ¬(j < (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKeyStack.size) := by
           intro j; rw [h_stack]; omega
         have h_not_poss : ¬(match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKey.possible = true := by
           rw [h_poss]; decide
         exact ⟨fun hp => absurd hp h_not_poss,
@@ -5465,6 +5559,10 @@ lemma scanLoop_FlowBracketsMatched
       -- ¬(s.flowLevel > 0)
       split at h_ok <;> try (simp at h_ok; done)
       -- ¬(s.directivesPresent && !s.documentEverStarted)
+      -- §9.2 dangling-node check (item 133)
+      split at h_ok <;> try (simp at h_ok; done)
+      -- §8.1 flow-value floor (item 172)
+      split at h_ok <;> try (simp at h_ok; done)
       injection h_ok with h_eq; rw [← h_eq]
       -- Goal: FlowBracketsMatched ((unwindIndents s (-1)).emit .streamEnd).tokens
       unfold FlowBracketsMatched
@@ -5489,11 +5587,11 @@ lemma scan_FlowBracketsMatched (input : String)
   exact scanLoop_FlowBracketsMatched _ _ _
     (by -- FlowContextPSV for initial state (1 token: .streamStart, not plain)
         have h_tok_eq : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).tokens =
             (ScannerState.mk' input |>.emit .streamStart).tokens := by
           split
-          · exact advance_preserves_tokens _
+          · exact consumeBOM_preserves_tokens _
           · rfl
         suffices h_suf : FlowContextPSV (ScannerState.mk' input |>.emit .streamStart).tokens by
           exact Eq.mpr (congrArg FlowContextPSV h_tok_eq) h_suf
@@ -5506,30 +5604,30 @@ lemma scan_FlowBracketsMatched (input : String)
     (by -- FlowNestingInv for initial state (flowLevel = 0, single non-flow token)
         unfold FlowNestingInv
         split <;> (
-          try simp only [advance_preserves_tokens, advance_preserves_flowLevel]
+          try simp only [consumeBOM_preserves_tokens, consumeBOM_preserves_flowLevel]
           simp only [ScannerState.emit, ScannerState.mk', ScannerState.currentPos]
           unfold flowNesting
           exact flowNesting_go_streamStart _))
     (by -- AllKeysPlaceholderInv for initial state (simpleKey.possible = false, empty stack)
         have h_poss : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKey.possible = false := by
           split
-          · rw [advance_preserves_simpleKey]; simp [ScannerState.emit, ScannerState.mk']
+          · rw [consumeBOM_preserves_simpleKey]; simp [ScannerState.emit, ScannerState.mk']
           · simp [ScannerState.emit, ScannerState.mk']
         have h_stack : (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKeyStack.size = 0 := by
           split
-          · have := advance_preserves_simpleKeyStack (ScannerState.mk' input |>.emit .streamStart)
+          · have := consumeBOM_preserves_simpleKeyStack (ScannerState.mk' input |>.emit .streamStart)
             simp_all [ScannerState.emit, ScannerState.mk']
           · simp [ScannerState.emit, ScannerState.mk']
         have h_empty : ∀ j, ¬(j < (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKeyStack.size) := by
           intro j; rw [h_stack]; omega
         have h_not_poss : ¬(match (ScannerState.mk' input |>.emit .streamStart).peek? with
-            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+            | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
             | _ => ScannerState.mk' input |>.emit .streamStart).simpleKey.possible = true := by
           rw [h_poss]; decide
         exact ⟨fun hp => absurd hp h_not_poss,
@@ -5579,3 +5677,5 @@ lemma scan_flow_brackets_matched (input : String)
   · simp at h
 
 end L4YAML.Proofs.ScannerPlainScalarValid
+
+end Blanket

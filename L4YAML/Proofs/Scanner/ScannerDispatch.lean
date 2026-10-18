@@ -1,9 +1,13 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Proofs.Scanner.ScannerLoopInvariant
-import L4YAML.Proofs.Scanner.ScannerContracts
-import L4YAML.Proofs.Scanner.ScannerIndentStack
-import L4YAML.Proofs.Scanner.ScannerScalar
-import L4YAML.Proofs.Scanner.ScannerDocument
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Proofs.Scanner.ScannerLoopInvariant
+public import L4YAML.Proofs.Scanner.ScannerContracts
+public import L4YAML.Proofs.Scanner.ScannerIndentStack
+public import L4YAML.Proofs.Scanner.ScannerScalar
+public import L4YAML.Proofs.Scanner.ScannerDocument
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -261,3 +265,5 @@ that the composed dispatch preserves WellFormed through all transitions.
 
 
 end L4YAML.Proofs.ScannerDispatch
+
+end Blanket

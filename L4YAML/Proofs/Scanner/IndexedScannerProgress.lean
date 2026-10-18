@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedDispatch
-import L4YAML.Proofs.Scanner.IndexedScalar
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedDispatch
+public import L4YAML.Proofs.Scanner.IndexedScalar
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerProgress` — Phase 3 Step 6f.3b3.internals.progress
 
@@ -191,8 +196,14 @@ lemma scanBlockEntryIx_offset_lt {s s' : ScannerStateIx input}
     · rw [ite_eq_left ht] at h
       simp [Bind.bind, Except.bind] at h
     · rw [ite_eq_right ht] at h
-      simp only [] at h
-      rw [ite_eq_left hi] at h
+      -- Item 48 same-line check: the throw branch contradicts `.ok s'`.
+      split at h
+      · simp [Bind.bind, Except.bind] at h
+      -- `scanBlockEntryValidateIx` (item 134): its throw arm contradicts `.ok s'`.
+      simp only [Bind.bind, Except.bind] at h
+      split at h
+      · simp at h
+      -- `split` resolved the `!s.inFlow` let-if by assumption `hi`.
       simp only [Except.ok.injEq] at h
       subst h
       show s.cursor.pos.offset < _
@@ -212,13 +223,26 @@ lemma scanKeyIx_offset_lt {s s' : ScannerStateIx input}
     (h_hm : s.cursor.pos.offset < input.utf8ByteSize)
     (h : scanKeyIx s = .ok s') :
     s.cursor.pos.offset < s'.cursor.pos.offset := by
-  unfold scanKeyIx at h
+  unfold scanKeyIx scanKeyValidateIx at h
   by_cases hi : (!s.inFlow) = true
-  · simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
+  · -- Item 31's preceding-whitespace tab check, under the same `!inFlow` guard
+    rw [ite_eq_left hi] at h
+    by_cases ht : s.hasTabInPrecedingWhitespace = true
+    · rw [ite_eq_left ht] at h
+      simp [Bind.bind, Except.bind] at h
+    rw [ite_eq_right ht] at h
+    -- §8.2.1's check (item 131) and item 48's same-line check: every throw
+    -- branch contradicts `.ok s'`.
+    split at h
+    · split at h <;> simp [Bind.bind, Except.bind] at h
+    split at h
+    · simp [Bind.bind, Except.bind] at h
+    simp only [pure, Except.pure] at h
+    simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
       pushMappingIndentIx_inFlow] at h
     split at h
     · simp [Bind.bind, Except.bind] at h
-    · simp only [Except.ok.injEq] at h
+    · simp only [Bind.bind, Except.bind, Except.ok.injEq] at h
       subst h
       show s.cursor.pos.offset < _
       simp only [advance_cursor, emit_cursor, pushMappingIndentIx_cursor]
@@ -240,6 +264,8 @@ lemma scanValueIx_offset_lt {s s' : ScannerStateIx input}
   split at h
   · cases h                                                  -- validate threw
   · split at h
+    · cases h                                    -- indent-tab check threw (31)
+    split at h
     · cases h                                                -- tab-check threw
     · simp only [Except.ok.injEq] at h
       subst h
@@ -440,9 +466,9 @@ strict progress at the cursor level; the dispatcher composes through
     (consumes at least the leading `|`/`>`). Indexed twin of
     `ScannerCorrectness.scanBlockScalar_offset_lt`. -/
 lemma scanBlockScalarIx_offset_lt {input : String} (c : IxCursor input)
-    (parentIndent : Nat) {result : String × ScalarStyle × IxCursor input}
+    (indentFloor : Nat) {result : String × ScalarStyle × IxCursor input}
     (h_hm : c.pos.offset < input.utf8ByteSize)
-    (h : scanBlockScalarIx c parentIndent = some result) :
+    (h : scanBlockScalarIx c indentFloor = some result) :
     c.pos.offset < result.2.2.pos.offset := by
   unfold scanBlockScalarIx at h
   split at h
@@ -491,9 +517,9 @@ lemma scanBlockScalarIx_offset_lt {input : String} (c : IxCursor input)
       have hBody : (blockHeaderToBodyIx c).pos.offset ≤
         (collectBlockScalarLoopIx (blockHeaderToBodyIx c) ""
           (match (parseBlockHeaderLoopIx c.advance .clip none 2).2.1 with
-            | some m => parentIndent + m
+            | some m => indentFloor + m - 1
             | none   =>
-              autoDetectBlockScalarIndentIx (blockHeaderToBodyIx c) (parentIndent + 1))
+              autoDetectBlockScalarIndentIx (blockHeaderToBodyIx c) indentFloor)
           input.utf8ByteSize).2.pos.offset :=
         collectBlockScalarLoopIx_offset_monotonic _ _ _ _
       simp only [Option.some.injEq] at h
@@ -756,7 +782,10 @@ lemma scanNextTokenIx_dispatchContent_offset_gt {s s' : ScannerStateIx input} {c
   by_cases hg1 : (c == '&') = true
   · rw [ite_eq_left hg1] at h
     -- 4.32.0 already reduces the anchor bind; the `cases`/`rw` below is robust either way
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
+    try simp only [Bind.bind, Except.bind] at h
+    -- Item 9e: peel the property-run guard — it cannot be `.ok`.
+    split at h
+    · cases h
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h; cases h
     | ok v =>
@@ -767,15 +796,23 @@ lemma scanNextTokenIx_dispatchContent_offset_gt {s s' : ScannerStateIx input} {c
     simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
     by_cases hg2 : (c == '*') = true
     · rw [ite_eq_left hg2] at h
+      split at h   -- item 9e: the property-run guard
+      · cases h
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h; cases h
       | ok v =>
         rw [hA] at h
-        cases h
-        exact scanAnchorOrAliasIx_offset_lt h_hm hA
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h
+        split at h
+        · cases h
+        · cases h
+          exact scanAnchorOrAliasIx_offset_lt h_hm hA
     · rw [ite_eq_right hg2] at h
       by_cases hg3 : (c == '!') = true
       · rw [ite_eq_left hg3] at h
+        split at h   -- item 9e: the property-run guard
+        · cases h
         cases hT : scanTagIx s with
         | error e => rw [hT] at h; cases h
         | ok v =>
@@ -785,16 +822,28 @@ lemma scanNextTokenIx_dispatchContent_offset_gt {s s' : ScannerStateIx input} {c
       · rw [ite_eq_right hg3] at h
         by_cases hg4 : (c == '|' || c == '>') = true
         · rw [ite_eq_left hg4] at h
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
           split at h
-          · rename_i r hBS
-            cases h
-            show s.cursor.pos.offset < _
-            simp only [emitAt_cursor]
-            exact scanBlockScalarIx_offset_lt s.cursor _ h_hm hBS
           · cases h
+          · -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+            split at h
+            · cases h
+            -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+            split at h
+            · cases h
+            split at h
+            · rename_i r hBS
+              cases h
+              show s.cursor.pos.offset < _
+              simp only [emitAt_cursor]
+              exact scanBlockScalarIx_offset_lt s.cursor _ h_hm hBS
+            · cases h
         · rw [ite_eq_right hg4] at h
           by_cases hg5 : (c == '"') = true
           · rw [ite_eq_left hg5] at h
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h
+            · cases h
             split at h
             · rename_i r hDQ
               cases h
@@ -805,6 +854,9 @@ lemma scanNextTokenIx_dispatchContent_offset_gt {s s' : ScannerStateIx input} {c
           · rw [ite_eq_right hg5] at h
             by_cases hg6 : (c == '\'') = true
             · rw [ite_eq_left hg6] at h
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h
+              · cases h
               split at h
               · rename_i r hSQ
                 cases h
@@ -815,6 +867,9 @@ lemma scanNextTokenIx_dispatchContent_offset_gt {s s' : ScannerStateIx input} {c
             · rw [ite_eq_right hg6] at h
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
               · rw [ite_eq_left hg7] at h
+                -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h
+                · simp at h
                 cases h
                 show s.cursor.pos.offset < _
                 simp only [emitAt_cursor]
@@ -846,6 +901,9 @@ lemma scanNextTokenIx_preprocess_peek_eq {input : String}
     s'.peek? = some c := by
   unfold scanNextTokenIx_preprocess at h
   simp only at h
+  -- Peel the §6.1/§6.6 strictness-walker guard (item 7).
+  split at h
+  · simp at h
   split at h
   · simp at h                                                -- !hasMore arm
   · split at h
@@ -915,6 +973,22 @@ lemma scanNextTokenIx_progress {input : String}
       have hPk : sp.peek? = some c :=
         scanNextTokenIx_preprocess_peek_eq hPre
       simp only at h
+      -- §9.2 dangling-node check (item 133): peel it, keeping h's tail intact.
+      have hDN : ∃ u, scanNextTokenIx_checkDanglingNode s sp = .ok u := by
+        cases hx : scanNextTokenIx_checkDanglingNode s sp with
+        | error e => rw [hx] at h; cases h
+        | ok u => exact ⟨u, rfl⟩
+      obtain ⟨uDN, hDN⟩ := hDN
+      rw [hDN] at h
+      simp only at h
+      -- §8.1 flow-value floor (item 172): peeled the same way.
+      have hFV : ∃ u, scanNextTokenIx_checkFlowValueIndent s sp = .ok u := by
+        cases hx : scanNextTokenIx_checkFlowValueIndent s sp with
+        | error e => rw [hx] at h; cases h
+        | ok u => exact ⟨u, rfl⟩
+      obtain ⟨uFV, hFV⟩ := hFV
+      rw [hFV] at h
+      simp only at h
       cases hStr : scanNextTokenIx_dispatchStructural sp c with
       | error e => rw [hStr] at h; cases h
       | ok structRes =>
@@ -935,6 +1009,13 @@ lemma scanNextTokenIx_progress {input : String}
             | ok u => exact ⟨u, rfl⟩
           obtain ⟨u, hNPD⟩ := hNPD
           rw [hNPD] at h
+          -- §9.2 bare-document check (item 132): peeled the same way.
+          have hBD : ∃ u, scanNextTokenIx_checkBareDocument sp = .ok u := by
+            cases hx : scanNextTokenIx_checkBareDocument sp with
+            | error e => rw [hx] at h; cases h
+            | ok u => exact ⟨u, rfl⟩
+          obtain ⟨u2, hBD⟩ := hBD
+          rw [hBD] at h
           by_cases hAD : sp.allowDirectives = true
           · -- Positive case: `{ sp with allowDirectives := false,
             -- documentEverStarted := true }` has cursor = sp.cursor (defeq), so
@@ -952,67 +1033,71 @@ lemma scanNextTokenIx_progress {input : String}
             -- Reshape the goal so the dispatcher's conclusion lands on it.
             show ({ sp with allowDirectives := false, documentEverStarted := true } :
                     ScannerStateIx input).cursor.pos.offset < s'.cursor.pos.offset
-            cases hChk : scanNextTokenIx_checkBlockFlowIndent
+            cases hFlow : scanNextTokenIx_dispatchFlowIndicators
                 { sp with allowDirectives := false, documentEverStarted := true } c with
-            | error e => rw [hChk] at h; cases h
-            | ok _ =>
-              rw [hChk] at h
-              cases hFlow : scanNextTokenIx_dispatchFlowIndicators
-                  { sp with allowDirectives := false, documentEverStarted := true } c with
-              | error e => rw [hFlow] at h; cases h
-              | ok flowRes =>
-                rw [hFlow] at h
-                cases flowRes with
-                | some _ =>
-                  cases h
-                  exact scanNextTokenIx_dispatchFlowIndicators_offset_gt h_sadj_hm hFlow
-                | none =>
-                  cases hBlk : scanNextTokenIx_dispatchBlockIndicators
-                      { sp with allowDirectives := false, documentEverStarted := true } c with
-                  | error e => rw [hBlk] at h; cases h
-                  | ok blkRes =>
-                    rw [hBlk] at h
-                    cases blkRes with
-                    | some _ =>
+            | error e => rw [hFlow] at h; cases h
+            | ok flowRes =>
+              rw [hFlow] at h
+              cases flowRes with
+              | some _ =>
+                cases h
+                exact scanNextTokenIx_dispatchFlowIndicators_offset_gt h_sadj_hm hFlow
+              | none =>
+                cases hBlk : scanNextTokenIx_dispatchBlockIndicators
+                    { sp with allowDirectives := false, documentEverStarted := true } c with
+                | error e => rw [hBlk] at h; cases h
+                | ok blkRes =>
+                  rw [hBlk] at h
+                  cases blkRes with
+                  | some _ =>
+                    cases h
+                    exact scanNextTokenIx_dispatchBlockIndicators_offset_gt h_sadj_hm hBlk
+                  | none =>
+                    -- item 47: adjacent-value check (pure, no state change)
+                    cases hAdj : scanNextTokenIx_checkAdjacentValue
+                        { sp with allowDirectives := false, documentEverStarted := true } c with
+                    | error e => rw [hAdj] at h; cases h
+                    | ok _ =>
+                    rw [hAdj] at h
+                    cases hCon : scanNextTokenIx_dispatchContent
+                        { sp with allowDirectives := false, documentEverStarted := true } c with
+                    | error e => rw [hCon] at h; cases h
+                    | ok _ =>
+                      rw [hCon] at h
                       cases h
-                      exact scanNextTokenIx_dispatchBlockIndicators_offset_gt h_sadj_hm hBlk
-                    | none =>
-                      cases hCon : scanNextTokenIx_dispatchContent
-                          { sp with allowDirectives := false, documentEverStarted := true } c with
-                      | error e => rw [hCon] at h; cases h
-                      | ok _ =>
-                        rw [hCon] at h
-                        cases h
-                        exact scanNextTokenIx_dispatchContent_offset_gt h_sadj_hm h_sadj_pk hCon
+                      exact scanNextTokenIx_dispatchContent_offset_gt h_sadj_hm h_sadj_pk hCon
           · -- Negative case: dispatchers receive `sp` directly.
             rw [ite_eq_right hAD] at h
-            cases hChk : scanNextTokenIx_checkBlockFlowIndent sp c with
-            | error e => rw [hChk] at h; cases h
-            | ok _ =>
-              rw [hChk] at h
-              cases hFlow : scanNextTokenIx_dispatchFlowIndicators sp c with
-              | error e => rw [hFlow] at h; cases h
-              | ok flowRes =>
-                rw [hFlow] at h
-                cases flowRes with
-                | some _ =>
-                  cases h
-                  exact scanNextTokenIx_dispatchFlowIndicators_offset_gt hHm hFlow
-                | none =>
-                  cases hBlk : scanNextTokenIx_dispatchBlockIndicators sp c with
-                  | error e => rw [hBlk] at h; cases h
-                  | ok blkRes =>
-                    rw [hBlk] at h
-                    cases blkRes with
-                    | some _ =>
+            cases hFlow : scanNextTokenIx_dispatchFlowIndicators sp c with
+            | error e => rw [hFlow] at h; cases h
+            | ok flowRes =>
+              rw [hFlow] at h
+              cases flowRes with
+              | some _ =>
+                cases h
+                exact scanNextTokenIx_dispatchFlowIndicators_offset_gt hHm hFlow
+              | none =>
+                cases hBlk : scanNextTokenIx_dispatchBlockIndicators sp c with
+                | error e => rw [hBlk] at h; cases h
+                | ok blkRes =>
+                  rw [hBlk] at h
+                  cases blkRes with
+                  | some _ =>
+                    cases h
+                    exact scanNextTokenIx_dispatchBlockIndicators_offset_gt hHm hBlk
+                  | none =>
+                    -- item 47: adjacent-value check (pure, no state change)
+                    cases hAdj : scanNextTokenIx_checkAdjacentValue sp c with
+                    | error e => rw [hAdj] at h; cases h
+                    | ok _ =>
+                    rw [hAdj] at h
+                    cases hCon : scanNextTokenIx_dispatchContent sp c with
+                    | error e => rw [hCon] at h; cases h
+                    | ok _ =>
+                      rw [hCon] at h
                       cases h
-                      exact scanNextTokenIx_dispatchBlockIndicators_offset_gt hHm hBlk
-                    | none =>
-                      cases hCon : scanNextTokenIx_dispatchContent sp c with
-                      | error e => rw [hCon] at h; cases h
-                      | ok _ =>
-                        rw [hCon] at h
-                        cases h
-                        exact scanNextTokenIx_dispatchContent_offset_gt hHm hPk hCon
+                      exact scanNextTokenIx_dispatchContent_offset_gt hHm hPk hCon
 
 end L4YAML.Proofs.Indexed.ScannerProgress
+
+end Blanket

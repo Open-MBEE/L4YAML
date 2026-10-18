@@ -44,6 +44,11 @@ witnesses: `not_marker_inside` — an interior position with non-zero balance is
 concrete). The general helper is exercised by `least_ge3` on a pure-`Nat` predicate.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 namespace Tests.Reflections.EntryBoundaryLocator
 
 /-! ## The general constructive least-witness locator (toy of `exists_least_in_range`) -/
@@ -1719,3 +1724,5 @@ theorem classify_map_substrate_load_bearing :
   exact absurd h (by decide)
 
 end Tests.Reflections.EntryBoundaryLocator
+
+end Blanket

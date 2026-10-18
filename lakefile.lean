@@ -15,7 +15,7 @@ def leanCopilotLinkArgs : Array String :=
     #[]
 
 package L4YAML where
-  version := v!"0.6.0"
+  version := v!"0.7.0"
   leanOptions := #[
     ⟨`autoImplicit, false⟩
   ]
@@ -44,11 +44,45 @@ require DocGen4 from git
 
 
 @[default_target]
-lean_lib L4YAML
+lean_lib L4YAML where
+  -- Ratchet: every file of this library carries a `module` header (242/242), and
+  -- this makes Lake refuse a new one that does not.  It reports on the IMPORTER
+  -- side too, so the test libraries that still hold legacy census files opt out
+  -- with `allowNonModules` below -- see TODO/l4yaml-module-system.md for why those
+  -- 48 files stay legacy.
+  requiresModuleSystem := true
 
 @[default_target]
 lean_lib «Tests.Guards» where
   roots := #[`Tests.Guards]
+  -- Importer-side opt-out, scoped to the libraries that still hold legacy census
+  -- files on purpose: a body-reading census cannot take a `module` header without
+  -- `import all` of every module it walks (TODO/l4yaml-module-system.md).  Set per
+  -- library, NOT on the package: on the package it also exempts `lean_lib L4YAML`
+  -- from its own `requiresModuleSystem`, which a positive control caught --
+  -- a genuine legacy library file then built with no complaint at all.
+  allowNonModules := true
+
+-- Item 219's census module, made a library of its own at item 220 so that
+-- later censuses can IMPORT its predicates and its walk.  Its runnable entry
+-- point is `Tests.DeclineReachMain`; a module carrying a root-level `main`
+-- cannot be imported.
+@[default_target]
+lean_lib «Tests.DeclineReachCensus» where
+  roots := #[`Tests.DeclineReachCensus]
+  allowNonModules := true
+
+-- Item 220's census, likewise a library: `Tests.Guards.Proofs.DeclineArmLattice`
+-- imports it, and its entry point is `Tests.DeclineArmMain`.
+@[default_target]
+lean_lib «Tests.DeclineArmCensus» where
+  roots := #[`Tests.DeclineArmCensus]
+
+-- Item 221's census, likewise a library: `Tests.Guards.Proofs.DeclineArmInvariants`
+-- imports it, and its entry point is `Tests.DeclineCornerMain`.
+@[default_target]
+lean_lib «Tests.DeclineCornerCensus» where
+  roots := #[`Tests.DeclineCornerCensus]
 
 -- Runnable proof-engineering demonstrations (one per Blueprint Reflection) — kept
 -- as a single library, separate from the behavioural L4YAML test suites. See
@@ -94,12 +128,40 @@ lean_exe «l4yaml-json» where
   root := `Tests.EmitJson
 
 @[default_target]
+lean_exe «l4yaml-event-ix» where
+  root := `Tests.EmitEventsIx
+
+@[default_target]
+lean_exe «l4yaml-json-ix» where
+  root := `Tests.EmitJsonIx
+
+@[default_target]
 lean_exe eventscore where
   root := `Tests.SuiteRunner.EventScore
 
 @[default_target]
 lean_exe tryscan where
   root := `Tests.TryScan
+
+-- Item 219: the DECLINE-REACH census (controls + enumerated domain always; the
+-- 402-leaf corpus half when the yaml-test-suite data directory is passed).
+@[default_target]
+lean_exe declinereach where
+  root := `Tests.DeclineReachMain
+
+-- Item 220: the ARM census (the row x park matrix, the synthetic-state
+-- lattice, and one alphabet per residual zero; the corpus when a data
+-- directory is passed).
+@[default_target]
+lean_exe declinearm where
+  root := `Tests.DeclineArmMain
+
+-- Item 221: the MINIMAL-ZERO search — the six-atom histogram over the walk,
+-- and for each of item 220's five residual containments the smallest
+-- sub-conjunction of its separator profile that still reads zero.
+@[default_target]
+lean_exe declinecorner where
+  root := `Tests.DeclineCornerMain
 
 @[default_target]
 lean_exe tryroundtrip where

@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch.StructFlow
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch.BlockContent
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch.StructFlow
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch.BlockContent
+
+@[expose] public section Blanket
 
 /-! # `FilteredGrowth.PerDispatch` — re-export shim
 
@@ -37,3 +42,5 @@ With both sub-files landed, `.perdispatch` closes: 2/2 sub-sessions.
 
 See `Basic.lean` for the directory-wide cutover plan.
 -/
+
+end Blanket

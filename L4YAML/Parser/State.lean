@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Token.Token
-import L4YAML.Spec.YamlSpec
+
+module
+
+public import L4YAML.Token.Token
+public import L4YAML.Spec.YamlSpec
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Parser State
@@ -293,3 +299,5 @@ def validateNodeProps (ps : ParseState) (prePropPos : Nat)
     | _ => throw (.duplicateAnchor ps.currentLine)
 
 end L4YAML.TokenParser
+
+end Blanket

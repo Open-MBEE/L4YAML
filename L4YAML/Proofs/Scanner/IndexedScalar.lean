@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedIndent
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerPlainScalar
-import L4YAML.Proofs.Foundation.StringProperties
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedIndent
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerPlainScalar
+public import L4YAML.Proofs.Foundation.StringProperties
+
+@[expose] public section Blanket
 
 /-! # `IndexedScalar` — Phase 3 Step 4a scalar-layer proofs (staging)
 
@@ -193,18 +198,51 @@ lemma skipBlankLinesLoopIx_offset_monotonic {input : String} (c : IxCursor input
     split
     · -- some ch
       split
-      · -- isLineBreakBool ch = true: recurse on consumeLineBreak (skipSpaces c).1
-        have hSP : c.pos.offset ≤ (skipSpaces c).1.pos.offset :=
-          skipSpaces_offset_monotonic c
-        have hCLB : (skipSpaces c).1.pos.offset ≤
-                    (consumeLineBreak (skipSpaces c).1).pos.offset :=
+      · -- isLineBreakBool ch = true: recurse on consumeLineBreak (skipWhitespace c)
+        have hSP : c.pos.offset ≤ (skipWhitespace c).pos.offset :=
+          skipWhitespace_offset_monotonic c
+        have hCLB : (skipWhitespace c).pos.offset ≤
+                    (consumeLineBreak (skipWhitespace c)).pos.offset :=
           consumeLineBreak_offset_monotonic _
         have hRec :
-            (consumeLineBreak (skipSpaces c).1).pos.offset ≤
-            (skipBlankLinesLoopIx (consumeLineBreak (skipSpaces c).1)
+            (consumeLineBreak (skipWhitespace c)).pos.offset ≤
+            (skipBlankLinesLoopIx (consumeLineBreak (skipWhitespace c))
               (emptyCount + 1) fuel).1.pos.offset :=
-          ih (consumeLineBreak (skipSpaces c).1) (emptyCount + 1)
+          ih (consumeLineBreak (skipWhitespace c)) (emptyCount + 1)
         exact Nat.le_trans hSP (Nat.le_trans hCLB hRec)
+      · -- isLineBreakBool ch = false: yields (c, _)
+        exact Nat.le_refl _
+    · -- peek? = none: yields (c, _)
+      exact Nat.le_refl _
+
+/-- Item 100's gated twin: the plain walk's blank-line skipper is monotone for
+    the same reason, the gate's arm returning the entry cursor. -/
+lemma skipBlankLinesPlainIx_offset_monotonic {input : String} (c : IxCursor input)
+    (emptyCount : Nat) (contentIndent : Nat) (fuel : Nat) :
+    c.pos.offset ≤ (skipBlankLinesPlainIx c emptyCount contentIndent fuel).1.pos.offset := by
+  induction fuel generalizing c emptyCount with
+  | zero => unfold skipBlankLinesPlainIx; exact Nat.le_refl _
+  | succ fuel ih =>
+    unfold skipBlankLinesPlainIx
+    split
+    · -- some ch
+      split
+      · -- isLineBreakBool ch = true: the gate's arm rests at the entry cursor,
+        -- the fold's arm steps forward (the `&&` splits into both tests)
+        have hSP : c.pos.offset ≤ (skipWhitespace c).pos.offset :=
+          skipWhitespace_offset_monotonic c
+        have hCLB : (skipWhitespace c).pos.offset ≤
+                    (consumeLineBreak (skipWhitespace c)).pos.offset :=
+          consumeLineBreak_offset_monotonic _
+        have hRec :
+            (consumeLineBreak (skipWhitespace c)).pos.offset ≤
+            (skipBlankLinesPlainIx (consumeLineBreak (skipWhitespace c))
+              (emptyCount + 1) contentIndent fuel).1.pos.offset :=
+          ih (consumeLineBreak (skipWhitespace c)) (emptyCount + 1)
+        repeat' split
+        all_goals first
+          | exact Nat.le_refl _
+          | exact Nat.le_trans hSP (Nat.le_trans hCLB hRec)
       · -- isLineBreakBool ch = false: yields (c, _)
         exact Nat.le_refl _
     · -- peek? = none: yields (c, _)
@@ -244,17 +282,25 @@ lemma handleBlockLineBreakIx_offset_monotonic {input : String} (c : IxCursor inp
     consumeLineBreak_offset_monotonic c
   have hBL :
       (consumeLineBreak c).pos.offset ≤
-      (skipBlankLinesLoopIx (consumeLineBreak c) 0 input.utf8ByteSize).1.pos.offset :=
-    skipBlankLinesLoopIx_offset_monotonic _ _ _
+      (skipBlankLinesPlainIx (consumeLineBreak c) 0 contentIndent input.utf8ByteSize).1.pos.offset :=
+    skipBlankLinesPlainIx_offset_monotonic _ _ _ _
   have hSP :
-      (skipBlankLinesLoopIx (consumeLineBreak c) 0 input.utf8ByteSize).1.pos.offset ≤
+      (skipBlankLinesPlainIx (consumeLineBreak c) 0 contentIndent input.utf8ByteSize).1.pos.offset ≤
       (skipSpaces
-        (skipBlankLinesLoopIx (consumeLineBreak c) 0 input.utf8ByteSize).1).1.pos.offset :=
+        (skipBlankLinesPlainIx (consumeLineBreak c) 0 contentIndent input.utf8ByteSize).1).1.pos.offset :=
     skipSpaces_offset_monotonic _
-  have hChain : c.pos.offset ≤
+  have hSW :
       (skipSpaces
-        (skipBlankLinesLoopIx (consumeLineBreak c) 0 input.utf8ByteSize).1).1.pos.offset :=
-    Nat.le_trans hCLB (Nat.le_trans hBL hSP)
+        (skipBlankLinesPlainIx (consumeLineBreak c) 0 contentIndent input.utf8ByteSize).1).1.pos.offset ≤
+      (skipWhitespace
+        (skipSpaces
+          (skipBlankLinesPlainIx (consumeLineBreak c) 0 contentIndent input.utf8ByteSize).1).1).pos.offset :=
+    skipWhitespace_offset_monotonic _
+  have hChain : c.pos.offset ≤
+      (skipWhitespace
+        (skipSpaces
+          (skipBlankLinesPlainIx (consumeLineBreak c) 0 contentIndent input.utf8ByteSize).1).1).pos.offset :=
+    Nat.le_trans hCLB (Nat.le_trans hBL (Nat.le_trans hSP hSW))
   split at h
   · contradiction                 -- col < contentIndent → none
   · split at h
@@ -288,10 +334,10 @@ We use the first pattern below (less re-naming).
 /-! ## Layer E2 — double-quoted offset monotonicity & strict progress -/
 
 lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor input)
-    (content : String) (fuel : Nat) {result : String × IxCursor input}
-    (h : collectDoubleQuotedLoopIx c content fuel = some result) :
+    (content : String) (protectedLen : Nat) (fuel : Nat) {result : String × IxCursor input}
+    (h : collectDoubleQuotedLoopIx c content protectedLen fuel = some result) :
     c.pos.offset ≤ result.2.pos.offset := by
-  induction fuel generalizing c content with
+  induction fuel generalizing c content protectedLen with
   | zero => unfold collectDoubleQuotedLoopIx at h; contradiction
   | succ fuel ih =>
     unfold collectDoubleQuotedLoopIx at h
@@ -308,17 +354,16 @@ lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
           split at h
           · -- some lbCh
             split at h
-            · -- isLineBreakBool lbCh = true: line-continuation
+            · -- isLineBreakBool lbCh = true: line-continuation lands through
+              -- the fold (item 87)
               have hAdv : c.pos.offset ≤ c.advance.pos.offset :=
                 IxCursor.advance_offset_monotonic c
-              have hCLB : c.advance.pos.offset ≤ (consumeLineBreak c.advance).pos.offset :=
-                consumeLineBreak_offset_monotonic _
-              have hSW : (consumeLineBreak c.advance).pos.offset ≤
-                         (skipWhitespace (consumeLineBreak c.advance)).pos.offset :=
-                skipWhitespace_offset_monotonic _
-              have hRec : (skipWhitespace (consumeLineBreak c.advance)).pos.offset ≤
-                          result.2.pos.offset := ih _ _ h
-              exact Nat.le_trans hAdv (Nat.le_trans hCLB (Nat.le_trans hSW hRec))
+              have hFold : c.advance.pos.offset ≤
+                           (foldQuotedNewlinesIx c.advance).2.pos.offset :=
+                foldQuotedNewlinesIx_offset_monotonic c.advance
+              have hRec : (foldQuotedNewlinesIx c.advance).2.pos.offset ≤
+                          result.2.pos.offset := ih _ _ _ h
+              exact Nat.le_trans hAdv (Nat.le_trans hFold hRec)
             · -- isLineBreakBool lbCh = false: normal escape
               split at h
               · rename_i _ _ _ decodedCh cAfterEsc hEsc
@@ -326,7 +371,7 @@ lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
                   IxCursor.advance_offset_monotonic c
                 have hEscMono : c.advance.pos.offset ≤ cAfterEsc.pos.offset :=
                   processEscapeIx_offset_monotonic c.advance hEsc
-                have hRec : cAfterEsc.pos.offset ≤ result.2.pos.offset := ih _ _ h
+                have hRec : cAfterEsc.pos.offset ≤ result.2.pos.offset := ih _ _ _ h
                 exact Nat.le_trans hAdvMono (Nat.le_trans hEscMono hRec)
               · contradiction
           · contradiction
@@ -335,10 +380,10 @@ lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
             have hFoldMono : c.pos.offset ≤ (foldQuotedNewlinesIx c).2.pos.offset :=
               foldQuotedNewlinesIx_offset_monotonic c
             have hRec : (foldQuotedNewlinesIx c).2.pos.offset ≤ result.2.pos.offset :=
-              ih _ _ h
+              ih _ _ _ h
             exact Nat.le_trans hFoldMono hRec
           · -- regular char: advance and recurse
-            have hRec : c.advance.pos.offset ≤ result.2.pos.offset := ih _ _ h
+            have hRec : c.advance.pos.offset ≤ result.2.pos.offset := ih _ _ _ h
             exact Nat.le_trans (IxCursor.advance_offset_monotonic c) hRec
 
 lemma scanDoubleQuotedIx_offset_lt {input : String} (c : IxCursor input)
@@ -361,7 +406,7 @@ lemma scanDoubleQuotedIx_offset_lt {input : String} (c : IxCursor input)
       have hAdv : c.pos.offset < c.advance.pos.offset :=
         IxCursor.advance_offset_lt_of_hasMore c hMore
       have hRec : c.advance.pos.offset ≤ result.2.pos.offset :=
-        collectDoubleQuotedLoopIx_offset_monotonic c.advance "" _ h
+        collectDoubleQuotedLoopIx_offset_monotonic c.advance "" _ _ h
       exact Nat.lt_of_lt_of_le hAdv hRec
     · contradiction
   · contradiction
@@ -469,7 +514,10 @@ lemma collectPlainScalarLoopIx_offset_monotonic {input : String} (c : IxCursor i
         · -- inFlow: foldQuotedNewlinesIx + post-fold `#` check
           split
           · exact Nat.le_refl _                            -- post-fold peek = some '#'
-          · exact Nat.le_trans (foldQuotedNewlinesIx_offset_monotonic c) (ih _ _ _)
+          · unfold backtrackIfNoGain
+            split
+            · exact Nat.le_refl _                          -- no-gain rewind: cursor = c
+            · exact Nat.le_trans (foldQuotedNewlinesIx_offset_monotonic c) (ih _ _ _)
         · -- block: handleBlockLineBreakIx + post-fold `#` check
           split
           · exact Nat.le_refl _                            -- handleBlockLineBreakIx = none
@@ -478,7 +526,10 @@ lemma collectPlainScalarLoopIx_offset_monotonic {input : String} (c : IxCursor i
               handleBlockLineBreakIx_offset_monotonic c contentIndent hHandle
             split
             · exact Nat.le_refl _                          -- post-fold peek = some '#'
-            · exact Nat.le_trans hHandleMono (ih _ _ _)
+            · unfold backtrackIfNoGain
+              split
+              · exact Nat.le_refl _                        -- no-gain rewind: cursor = c
+              · exact Nat.le_trans hHandleMono (ih _ _ _)
       split
       · exact Nat.le_trans (IxCursor.advance_offset_monotonic c) (ih _ _ _)  -- whitespace
       split
@@ -636,8 +687,8 @@ lemma blockHeaderToBodyIx_offset_monotonic {input : String} (c : IxCursor input)
     (Nat.le_trans hComm hCLB)))
 
 lemma scanBlockScalarIx_offset_monotonic {input : String} (c : IxCursor input)
-    (parentIndent : Nat) {result : String × ScalarStyle × IxCursor input}
-    (h : scanBlockScalarIx c parentIndent = some result) :
+    (indentFloor : Nat) {result : String × ScalarStyle × IxCursor input}
+    (h : scanBlockScalarIx c indentFloor = some result) :
     c.pos.offset ≤ result.2.2.pos.offset := by
   unfold scanBlockScalarIx at h
   split at h
@@ -649,9 +700,9 @@ lemma scanBlockScalarIx_offset_monotonic {input : String} (c : IxCursor input)
       have hBody : (blockHeaderToBodyIx c).pos.offset ≤
         (collectBlockScalarLoopIx (blockHeaderToBodyIx c) ""
           (match (parseBlockHeaderLoopIx c.advance .clip none 2).2.1 with
-            | some m => parentIndent + m
+            | some m => indentFloor + m - 1
             | none   =>
-              autoDetectBlockScalarIndentIx (blockHeaderToBodyIx c) (parentIndent + 1))
+              autoDetectBlockScalarIndentIx (blockHeaderToBodyIx c) indentFloor)
           input.utf8ByteSize).2.pos.offset :=
         collectBlockScalarLoopIx_offset_monotonic _ _ _ _
       simp only [Option.some.injEq] at h
@@ -678,8 +729,12 @@ Decomposed into four layers:
    `String.push_induction` chaining (1) and (2).
 4. **Escape spec** — `parseHexEscapeIx_decoded`: on success,
    `parseHexEscapeIx c n` returns `Char.ofNat
-   (hexStringValue digits)` with the value-range guard
-   `< 0x110000` already discharged. -/
+   (hexStringValue digits)` with the validity guard
+   `Nat.isValidChar` already discharged, and — the point of stating it —
+   the decoded character's code point *is* the digits' value. The guard
+   was `< 0x110000` until 2026-08-11, which admitted lone surrogates and
+   decoded them to NUL through `Char.ofNat`'s substituting else-branch;
+   the faithfulness conjunct is what now makes that unstatable. -/
 
 lemma hexDigitValue_lt_16 {ch : Char} (h : isHexDigitBool ch = true) :
     hexDigitValue ch < 16 := by
@@ -767,18 +822,21 @@ lemma hexStringValue_lt_pow {s : String}
 lemma parseHexEscapeIx_decoded {input : String} (c : IxCursor input) (n : Nat)
     {ch : Char} {c' : IxCursor input}
     (h : parseHexEscapeIx c n = some (ch, c')) :
-    hexStringValue (collectHexDigitsLoopIx c "" n).1 < 0x110000
+    (hexStringValue (collectHexDigitsLoopIx c "" n).1).isValidChar
     ∧ ch = Char.ofNat (hexStringValue (collectHexDigitsLoopIx c "" n).1)
+    ∧ ch.toNat = hexStringValue (collectHexDigitsLoopIx c "" n).1
     ∧ c' = (collectHexDigitsLoopIx c "" n).2 := by
   unfold parseHexEscapeIx at h
   split at h
   · contradiction                                        -- length ≠ n
   · split at h
-    · rename_i hLt
+    · rename_i hValid
       simp only [Option.some.injEq, Prod.mk.injEq] at h
       obtain ⟨hcEq, hc'Eq⟩ := h
-      exact ⟨hLt, hcEq.symm, hc'Eq.symm⟩
-    · contradiction                                      -- value ≥ 0x110000
+      refine ⟨hValid, hcEq.symm, ?_, hc'Eq.symm⟩
+      rw [← hcEq]
+      exact L4YAML.Proofs.CharClass.toNat_ofNat_of_isValidChar hValid
+    · contradiction                                      -- not a scalar value
 
 /-! ## Layer F.1 — Auto-detected block-scalar indent ≥ `minContentIndent` (Step 5b.5)
 
@@ -871,9 +929,25 @@ lemma applyChomp_clip_of_not_endsWith {raw : String}
     applyChomp .clip raw = stripTrailingNewlines raw := by
   simp [applyChomp, h]
 
-lemma foldBlockContentGo_nil (acc : String) (st : FoldState) (pending : Nat) :
-    foldBlockContentGo [] acc st pending = acc :=
+/-- End of input in `.start`: no content char was ever seen, so the accumulator
+    is returned as-is (an all-blank `>` / `>-` body folds to `""`). -/
+lemma foldBlockContentGo_nil_start (acc : String) (pending : Nat) :
+    foldBlockContentGo [] acc .start pending = acc :=
   rfl
+
+/-- End of input after content: the pending run of line breaks is re-emitted.
+    Folding runs after chomping, so that run *is* the chomped tail — `.strip`
+    already reduced it to none, `.clip` to one, `.keep` left it whole — and
+    dropping it would collapse every chomp style onto `.strip` (§8.1.1 [165]
+    `b-chomped-last(t)` / [166] `l-chomped-empty(n,t)`). -/
+lemma foldBlockContentGo_nil_of_ne_start {st : FoldState} (h : st ≠ .start)
+    (acc : String) (pending : Nat) :
+    foldBlockContentGo [] acc st pending = appendNewlines acc pending := by
+  cases st with
+  | start => exact absurd rfl h
+  | content => rfl
+  | empty => rfl
+  | more => rfl
 
 lemma foldBlockContent_empty :
     foldBlockContent "" = "" :=
@@ -923,28 +997,33 @@ lemma foldQuotedNewlinesIx_of_single_break {input : String} (c : IxCursor input)
   simp [h]
 
 lemma collectDoubleQuotedLoopIx_zero {input : String}
-    (c : IxCursor input) (content : String) :
-    collectDoubleQuotedLoopIx c content 0 = none :=
+    (c : IxCursor input) (content : String) (protectedLen : Nat) :
+    collectDoubleQuotedLoopIx c content protectedLen 0 = none :=
   rfl
 
 lemma collectDoubleQuotedLoopIx_closing {input : String}
-    (c : IxCursor input) (content : String) (fuel : Nat)
+    (c : IxCursor input) (content : String) (protectedLen : Nat) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hQuote : isDoubleQuoteBool ch = true) :
-    collectDoubleQuotedLoopIx c content (fuel + 1) = some (content, c.advance) := by
+    collectDoubleQuotedLoopIx c content protectedLen (fuel + 1)
+      = some (content, c.advance) := by
   unfold collectDoubleQuotedLoopIx
   rw [hPeek]
   simp [hQuote]
 
 lemma collectDoubleQuotedLoopIx_linebreak {input : String}
-    (c : IxCursor input) (content : String) (fuel : Nat)
+    (c : IxCursor input) (content : String) (protectedLen : Nat) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hNotQuote : isDoubleQuoteBool ch = false)
     (hNotEscape : isEscapeBool ch = false)
     (hLineBreak : isLineBreakBool ch = true) :
-    collectDoubleQuotedLoopIx c content (fuel + 1) =
+    collectDoubleQuotedLoopIx c content protectedLen (fuel + 1) =
       collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2
-        (trimTrailingWSIx content ++ (foldQuotedNewlinesIx c).1) fuel := by
+        (String.ofList (content.toList.take protectedLen) ++ (foldQuotedNewlinesIx c).1)
+        ((String.ofList (content.toList.take protectedLen)).length
+          + (if (foldQuotedNewlinesIx c).1 == " " then 0
+             else (foldQuotedNewlinesIx c).1.length))
+        fuel := by
   conv => lhs; unfold collectDoubleQuotedLoopIx
   rw [hPeek]
   simp [hNotQuote, hNotEscape, hLineBreak]
@@ -1089,7 +1168,9 @@ lemma collectPlainScalarLoopIx_flow_indicator {input : String} (c : IxCursor inp
 /-- `_linebreak_flow_continue`: flow-context line break where the
     post-fold cursor does NOT peek `#` (continues into the next line).
     With the `#`-after-fold termination added in Phase 3 Step 6d.1e.11,
-    this requires the precondition `cAfterFold.peek? ≠ some '#'`. -/
+    this requires the precondition `cAfterFold.peek? ≠ some '#'`.
+    The continuation stands under the no-gain rewind (item 14): the arm
+    is the recursion wrapped in `backtrackIfNoGain`. -/
 lemma collectPlainScalarLoopIx_linebreak_flow_continue {input : String} (c : IxCursor input)
     (content spaces : String) (contentIndent : Nat) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
@@ -1099,8 +1180,9 @@ lemma collectPlainScalarLoopIx_linebreak_flow_continue {input : String} (c : IxC
     (hLineBreak : isLineBreakBool ch = true)
     (hNotHash : (foldQuotedNewlinesIx c).2.peek? ≠ some '#') :
     collectPlainScalarLoopIx c content spaces true contentIndent (fuel + 1) =
-      collectPlainScalarLoopIx (foldQuotedNewlinesIx c).2
-        (content ++ (foldQuotedNewlinesIx c).1) "" true contentIndent fuel := by
+      backtrackIfNoGain (content, c) (content ++ (foldQuotedNewlinesIx c).1).length
+        (collectPlainScalarLoopIx (foldQuotedNewlinesIx c).2
+          (content ++ (foldQuotedNewlinesIx c).1) "" true contentIndent fuel) := by
   conv => lhs; unfold collectPlainScalarLoopIx
   rw [hPeek]
   cases hp : (foldQuotedNewlinesIx c).2.peek? with
@@ -1139,7 +1221,9 @@ lemma collectPlainScalarLoopIx_linebreak_block_none {input : String} (c : IxCurs
   simp [hNotComment, hNotMapVal, hLineBreak, hHandle]
 
 /-- `_linebreak_block_some_continue`: block-context line break where the
-    post-fold cursor does NOT peek `#`. -/
+    post-fold cursor does NOT peek `#`.
+    The continuation stands under the no-gain rewind (item 14): the arm
+    is the recursion wrapped in `backtrackIfNoGain`. -/
 lemma collectPlainScalarLoopIx_linebreak_block_some_continue {input : String} (c : IxCursor input)
     (content spaces : String) (contentIndent : Nat) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
@@ -1150,7 +1234,8 @@ lemma collectPlainScalarLoopIx_linebreak_block_some_continue {input : String} (c
     (hHandle : handleBlockLineBreakIx c contentIndent = some (folded, cAfterFold))
     (hNotHash : cAfterFold.peek? ≠ some '#') :
     collectPlainScalarLoopIx c content spaces false contentIndent (fuel + 1) =
-      collectPlainScalarLoopIx cAfterFold (content ++ folded) "" false contentIndent fuel := by
+      backtrackIfNoGain (content, c) (content ++ folded).length
+        (collectPlainScalarLoopIx cAfterFold (content ++ folded) "" false contentIndent fuel) := by
   conv => lhs; unfold collectPlainScalarLoopIx
   rw [hPeek]
   cases hp : cAfterFold.peek? with
@@ -1644,20 +1729,26 @@ lemma collectPlainScalarLoopIx_content_isPrefix {input : String}
         · -- inFlow: flow line break
           split
           · exact List.prefix_rfl                          -- post-fold peek = some '#'
-          · -- recurse with content ++ folded
-            exact List.IsPrefix.trans
-              (prefix_of_append_string content (foldQuotedNewlinesIx c).1)
-              (ih _ _ _)
+          · -- recurse with content ++ folded (under the no-gain rewind)
+            unfold backtrackIfNoGain
+            split
+            · exact List.prefix_rfl                        -- no-gain rewind: content kept
+            · exact List.IsPrefix.trans
+                (prefix_of_append_string content (foldQuotedNewlinesIx c).1)
+                (ih _ _ _)
         · -- !inFlow: block line break
           split
           · exact List.prefix_rfl                          -- handleBlock = none
           · rename_i folded cAfterFold _
             split
             · exact List.prefix_rfl                        -- post-fold peek = some '#'
-            · -- recurse with content ++ folded
-              exact List.IsPrefix.trans
-                (prefix_of_append_string content folded)
-                (ih cAfterFold (content ++ folded) "")
+            · -- recurse with content ++ folded (under the no-gain rewind)
+              unfold backtrackIfNoGain
+              split
+              · exact List.prefix_rfl                      -- no-gain rewind: content kept
+              · exact List.IsPrefix.trans
+                  (prefix_of_append_string content folded)
+                  (ih cAfterFold (content ++ folded) "")
       split
       · exact ih c.advance content (spaces.push ch)        -- whitespace
       split
@@ -1808,8 +1899,11 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
           split
           · -- (T4) foldPeek = some '#' → terminate
             exact term inv
-          · -- (R2) recurse with content ++ folded
+          · -- (R2) recurse with content ++ folded (under the no-gain rewind)
             rename_i h_foldPeek
+            unfold backtrackIfNoGain
+            split
+            case isTrue => exact term inv
             have h_notHash : ∀ n, (foldQuotedNewlinesIx c).2.peek? = some n → n ≠ '#' := by
               intro n hn heq
               subst heq
@@ -1843,8 +1937,11 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
             split
             · -- (T6) cAfterFold.peek? = some '#' → terminate
               exact term inv
-            · -- (R3) recurse with content ++ folded
+            · -- (R3) recurse with content ++ folded (under the no-gain rewind)
               rename_i h_blockPeek
+              unfold backtrackIfNoGain
+              split
+              case isTrue => exact term inv
               have h_notHash : ∀ n, cAfterFold.peek? = some n → n ≠ '#' := by
                 intro n hn heq
                 subst heq
@@ -2422,3 +2519,5 @@ lemma scanPlainScalarIx_content_valid {input : String} (c : IxCursor input)
     exact trimTrailingWSIx_noFlowIndicators content' (inv.content_noFlowIndicators hflow)
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

@@ -16,10 +16,15 @@ Released under Apache 2.0 license as described in the file LICENSE.
 
   See `C_PYTHON_APIs.md` for the full design.
 -/
-import L4YAML.Spec.Types
-import L4YAML.Config.Limits
-import L4YAML.Output.Dump
-import L4YAML.Config.Config
+
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Config.Limits
+public import L4YAML.Output.Dump
+public import L4YAML.Config.Config
+
+@[expose] public section Blanket
 
 set_option autoImplicit false
 set_option compiler.ignoreBorrowAnnotation true
@@ -341,3 +346,5 @@ def dumpWithYamlConfig (val : @& YamlValue) (configYaml : @& String) : String :=
   dump val cfg
 
 end L4YAML.FFI
+
+end Blanket

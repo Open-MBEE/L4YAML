@@ -2,18 +2,27 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Spec.CharPredicates
-import L4YAML.Proofs.Output.ScannerEmitBridge
-import L4YAML.Proofs.RoundTrip.RoundTrip
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Coupling.ScalarCoupling
-import L4YAML.Proofs.Parser.ParserGrammable
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerBound
+
+module
+
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Spec.CharPredicates
+public import L4YAML.Proofs.Output.ScannerEmitBridge
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+public meta import L4YAML.Proofs.RoundTrip.RoundTrip
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Parser.ParserGrammable
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerBound
+
+-- `String.foldl` is sealed by its producer; `import all` of its
+-- declaring module unseals the body this file reduces through.
+import all Init.Data.String.Iterate
+@[expose] public section Blanket
 
 /-! # Escape & emitter-output string properties (foundation for emitter scannability)
 
@@ -391,14 +400,19 @@ lemma hexNibble_lt128 : ∀ n : Fin 16, (hexNibble n.val).toNat < 128 := by
   native_decide
 
 /-- For any two hex chars (each with toNat < 128 and scannerHexCheck = true),
-    the 2-digit hex foldl value is < 0x110000. -/
+    the 2-digit hex foldl value is a Unicode scalar value.
+
+    This is `parseHexEscape`'s guard verbatim. It was `< 0x110000` until
+    2026-08-11, when the guard was strengthened to `Nat.isValidChar` to close
+    the surrogate hole; a 2-digit value is ≤ 0xFF, so it satisfies the
+    `< 0xD800` disjunct and the strengthening is free here. -/
 lemma hex_two_foldl_bound : ∀ (n1 n2 : Fin 128),
     scannerHexCheck (Char.ofNat n1.val) = true →
     scannerHexCheck (Char.ofNat n2.val) = true →
-    (("".push (Char.ofNat n1.val)).push (Char.ofNat n2.val)).foldl (fun acc c =>
+    Nat.isValidChar ((("".push (Char.ofNat n1.val)).push (Char.ofNat n2.val)).foldl (fun acc c =>
       acc * 16 + if c.isDigit then c.toNat - '0'.toNat
                  else if c >= 'a' then c.toNat - 'a'.toNat + 10
-                 else c.toNat - 'A'.toNat + 10) 0 < 0x110000 := by native_decide
+                 else c.toNat - 'A'.toNat + 10) 0) := by native_decide
 
 /-- `escapeChar` output for hex-escaped characters (C0 controls with no named tag)
     has the form `['\\', 'x', h1, h2]` where h1, h2 are hex digits with toNat < 128. -/
@@ -828,3 +842,5 @@ lemma collectDoubleQuotedLoop_escapeString_succeeds
             h_line_s'.trans (advance_line_of_peek sc c h_lt_c h_peek_c h_ne_nl h_ne_cr)⟩
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

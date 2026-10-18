@@ -2,12 +2,27 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Parser.ParseStateIx
-import L4YAML.Parser.FuelIx
-import L4YAML.Parser.TokenParserIx
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Parser.ParseStateIx
+public import L4YAML.Parser.FuelIx
+public import L4YAML.Parser.TokenParserIx
+
+-- `unfold Std.Legacy.Range.forIn'` needs that body, which core does not expose
+-- to a module consumer.  `import all` of its DECLARING module unseals it and
+-- is private in scope, so nothing reaches this module's own importers.
+import all Init.Data.Range.Basic
+-- This module's `elab` bodies are `meta` definitions, while the helpers they
+-- call are ordinary code that the library also uses at runtime.  A declaration
+-- carries one phase and the `meta` modifier cannot be dropped retroactively,
+-- so mixed references inside this module need to be permitted explicitly.
+set_option compiler.relaxedMetaCheck true
+
+@[expose] public section Blanket
 
 /-! # `IndexedNodeProofs` — Phase 3 Step 6c indexed AG + AAR proofs (staging)
 
@@ -308,8 +323,17 @@ lemma parseBlockMappingEntryValue_ag (h_ih : ParseNodeAG input n)
     all_goals try (obtain ⟨rfl, rfl⟩ := h_ok; exact h_tc)
     -- parseNode: h_ok = parseNode ps_tc fuel = .ok (val, ps')
     all_goals exact AG.trans h_tc (h_ih _ fuel _ _ h_fuel h_ok)
-  · -- consumed = false
-    obtain ⟨rfl, rfl⟩ := h_ok; exact h_tc
+  · -- consumed = false: retroactive-key skip (V9D5) or empty value.
+    -- Prefix AG across the skipped retroactive `key` + consumed `:` — both are
+    -- pure position advances, so anchors are preserved.
+    have h_pre : AG ps (((ps.tryConsume .value).2.tryConsume .key).2.tryConsume .value).2 :=
+      AG.trans h_tc (AG.trans (AG.tryConsume _ _) (AG.tryConsume _ _))
+    split at h_ok                    -- outer: peek?, peekNext?
+    all_goals (try (split at h_ok))  -- inner: peek? dispatch in the retroactive arm
+    all_goals (first
+      | (obtain ⟨rfl, rfl⟩ := h_ok; exact h_tc)
+      | (obtain ⟨rfl, rfl⟩ := h_ok; exact h_pre)
+      | exact AG.trans h_pre (h_ih _ fuel _ _ h_fuel h_ok))
 
 -- handleBlockMappingKeyEntry: advance → if keyHasContent → parseNode/emptyNode → BEV → restore path
 set_option maxHeartbeats 400000 in
@@ -829,8 +853,8 @@ lemma parseNodeProperties_ag
 
 lemma parseNodeContent_ag (h_ih : ParseNodeAG input n)
     (ps : ParseStateIx input) (fuel : Nat) (h_fuel : fuel ≤ n)
-    (props : NodeProperties) (val : YamlValue) (ps' : ParseStateIx input)
-    (h_ok : parseNodeContent ps fuel props = .ok (val, ps')) :
+    (props : NodeProperties) (isSeqEntry : Bool) (val : YamlValue) (ps' : ParseStateIx input)
+    (h_ok : parseNodeContent ps fuel props isSeqEntry = .ok (val, ps')) :
     AG ps ps' := by
   unfold parseNodeContent at h_ok
   split at h_ok
@@ -842,8 +866,14 @@ lemma parseNodeContent_ag (h_ih : ParseNodeAG input n)
     exact parseBlockSequence_ag h_ih ps fuel (by omega) val ps' h_ok
   · -- blockMappingStart
     exact parseBlockMapping_ag h_ih ps fuel (by omega) val ps' h_ok
-  · -- blockEntry (implicit block sequence)
-    exact parseImplicitBlockSequence_ag h_ih ps fuel (by omega) val ps' h_ok
+  · -- blockEntry: empty scalar (seq-entry context, C2) or implicit block sequence
+    split at h_ok
+    · -- isSeqEntry: empty scalar, no state change (C2)
+      simp only [Except.ok.injEq] at h_ok
+      obtain ⟨_, rfl⟩ := Prod.mk.inj h_ok
+      exact AG.refl
+    · -- otherwise: implicit block sequence
+      exact parseImplicitBlockSequence_ag h_ih ps fuel (by omega) val ps' h_ok
   · -- flowSequenceStart
     exact parseFlowSequence_ag h_ih ps fuel (by omega) val ps' h_ok
   · -- flowMappingStart
@@ -900,7 +930,7 @@ lemma parseNode_ag_all : ∀ n, ParseNodeAG input n := by
           · rename_i content_res heq_content
             obtain ⟨val_c, ps_c⟩ := content_res
             dsimp only [] at h_ok
-            have h_ag_content := parseNodeContent_ag h_pnag ps_props k h_k_le props val_c ps_c heq_content
+            have h_ag_content := parseNodeContent_ag h_pnag ps_props k h_k_le props _ val_c ps_c heq_content
             -- applyNodeFinalization: h_ok now says .ok (finalize ...) = .ok (val, ps')
             simp only [Except.ok.injEq] at h_ok
             obtain ⟨_, rfl⟩ := Prod.mk.inj h_ok
@@ -1212,8 +1242,14 @@ lemma parseBlockMappingEntryValue_aar (h_ih_aar : ParseNodeAAR input n)
     all_goals try (obtain ⟨rfl, rfl⟩ := h_ok; exact emptyNode_aar _)
     -- parseNode case: val from parseNode
     all_goals exact h_ih_aar _ fuel _ _ h_fuel h_ok
-  · -- consumed = false: val = emptyNode
-    obtain ⟨rfl, rfl⟩ := h_ok; exact emptyNode_aar _
+  · -- consumed = false: retroactive-key skip (V9D5) or empty value.
+    -- Value is either emptyNode (both fallback and retroactive empty cases) or a
+    -- parseNode result (retroactive collection value) — AAR holds for both.
+    split at h_ok                    -- outer: peek?, peekNext?
+    all_goals (try (split at h_ok))  -- inner: peek? dispatch in the retroactive arm
+    all_goals (first
+      | (obtain ⟨rfl, rfl⟩ := h_ok; exact emptyNode_aar _)
+      | exact h_ih_aar _ fuel _ _ h_fuel h_ok)
 
 -- handleBlockMappingKeyEntry: (key, val, ps') — both key and val AAR
 set_option maxHeartbeats 400000 in
@@ -1733,8 +1769,8 @@ lemma parseFlowMapping_aar (h_ih_aar : ParseNodeAAR input n) (h_ih_ag : ParseNod
 
 lemma parseNodeContent_aar (h_ih_aar : ParseNodeAAR input n) (h_ih_ag : ParseNodeAG input n)
     (ps : ParseStateIx input) (fuel : Nat) (h_fuel : fuel ≤ n + 1) (props : NodeProperties)
-    (val : YamlValue) (ps' : ParseStateIx input)
-    (h_ok : parseNodeContent ps fuel props = .ok (val, ps')) :
+    (isSeqEntry : Bool) (val : YamlValue) (ps' : ParseStateIx input)
+    (h_ok : parseNodeContent ps fuel props isSeqEntry = .ok (val, ps')) :
     AllAliasesResolve val ps'.anchors := by
   unfold parseNodeContent at h_ok
   split at h_ok
@@ -1744,7 +1780,14 @@ lemma parseNodeContent_aar (h_ih_aar : ParseNodeAAR input n) (h_ih_ag : ParseNod
     exact .scalar _ _
   · exact parseBlockSequence_aar h_ih_aar h_ih_ag ps fuel (by omega) val ps' h_ok
   · exact parseBlockMapping_aar h_ih_aar h_ih_ag ps fuel (by omega) val ps' h_ok
-  · exact parseImplicitBlockSequence_aar h_ih_aar h_ih_ag ps fuel (by omega) val ps' h_ok
+  · -- blockEntry: empty scalar (seq-entry context, C2) or implicit block sequence
+    split at h_ok
+    · -- isSeqEntry: empty scalar (C2)
+      simp only [Except.ok.injEq] at h_ok
+      obtain ⟨rfl, rfl⟩ := Prod.mk.inj h_ok
+      exact .scalar _ _
+    · -- otherwise: implicit block sequence
+      exact parseImplicitBlockSequence_aar h_ih_aar h_ih_ag ps fuel (by omega) val ps' h_ok
   · exact parseFlowSequence_aar h_ih_aar h_ih_ag ps fuel (by omega) val ps' h_ok
   · exact parseFlowMapping_aar h_ih_aar h_ih_ag ps fuel (by omega) val ps' h_ok
   · -- empty scalar
@@ -1805,7 +1848,7 @@ lemma parseNode_aar_all : ∀ n, ParseNodeAAR input n := by
             simp only [Except.ok.injEq] at h_ok
             obtain ⟨rfl, rfl⟩ := Prod.mk.inj h_ok
             exact applyNodeFinalization_aar val_c ps_c props _
-              (parseNodeContent_aar ih_aar h_ih_ag ps_props k (by omega) props val_c ps_c heq_content)
+              (parseNodeContent_aar ih_aar h_ih_ag ps_props k (by omega) props _ val_c ps_c heq_content)
 
 -- Extraction
 lemma parseNode_aliases_resolve'
@@ -1815,3 +1858,5 @@ lemma parseNode_aliases_resolve'
   parseNode_aar_all fuel ps fuel val ps' Nat.le.refl h
 
 end L4YAML.Proofs.Indexed.NodeProofs
+
+end Blanket

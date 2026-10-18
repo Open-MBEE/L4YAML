@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Parser.IndexedWellBehaved
-import L4YAML.Proofs.Scanner.IndexedDispatch
+
+module
+
+public import L4YAML.Proofs.Parser.IndexedWellBehaved
+public import L4YAML.Proofs.Scanner.IndexedDispatch
+public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerPlainScalarValid` — Phase 3 Step 6d.1e foundation (staging)
 
@@ -158,6 +164,7 @@ open L4YAML.Scanner.Indexed
 open L4YAML.Scanner.Indexed.ScannerStateIx
 open L4YAML.Proofs.ScannerPlainScalarValid
 open L4YAML.Proofs.Indexed.WellBehaved
+open L4YAML.Proofs.FlowAdjacencyIx
 
 variable {input : String}
 
@@ -1866,8 +1873,14 @@ lemma scanBlockEntryIx_preserves_PlainScalarsValidIx {input : String}
     by_cases ht : s.hasTabInPrecedingWhitespace = true
     · rw [ite_eq_left ht] at h_ok; simp [Bind.bind, Except.bind] at h_ok
     · rw [ite_eq_right ht] at h_ok
-      simp only [] at h_ok
-      rw [ite_eq_left hi] at h_ok
+      -- Item 48 same-line check: the throw branch contradicts `.ok s'`;
+      -- `split` resolves the `!s.inFlow` let-if by assumption `hi`.
+      split at h_ok
+      · simp [Bind.bind, Except.bind] at h_ok
+      -- `scanBlockEntryValidateIx` (item 134): its throw arm contradicts `.ok s'`.
+      simp only [Bind.bind, Except.bind] at h_ok
+      split at h_ok
+      · simp at h_ok
       simp only [Except.ok.injEq] at h_ok
       subst h_ok
       show PlainScalarsValidIx
@@ -1897,8 +1910,14 @@ lemma scanBlockEntryIx_preserves_FlowContextPSVIx {input : String}
     by_cases ht : s.hasTabInPrecedingWhitespace = true
     · rw [ite_eq_left ht] at h_ok; simp [Bind.bind, Except.bind] at h_ok
     · rw [ite_eq_right ht] at h_ok
-      simp only [] at h_ok
-      rw [ite_eq_left hi] at h_ok
+      -- Item 48 same-line check: the throw branch contradicts `.ok s'`;
+      -- `split` resolves the `!s.inFlow` let-if by assumption `hi`.
+      split at h_ok
+      · simp [Bind.bind, Except.bind] at h_ok
+      -- `scanBlockEntryValidateIx` (item 134): its throw arm contradicts `.ok s'`.
+      simp only [Bind.bind, Except.bind] at h_ok
+      split at h_ok
+      · simp at h_ok
       simp only [Except.ok.injEq] at h_ok
       subst h_ok
       show FlowContextPSVIx
@@ -1930,8 +1949,14 @@ lemma scanBlockEntryIx_preserves_FlowNestingInvIx {input : String}
     by_cases ht : s.hasTabInPrecedingWhitespace = true
     · rw [ite_eq_left ht] at h_ok; simp [Bind.bind, Except.bind] at h_ok
     · rw [ite_eq_right ht] at h_ok
-      simp only [] at h_ok
-      rw [ite_eq_left hi] at h_ok
+      -- Item 48 same-line check: the throw branch contradicts `.ok s'`;
+      -- `split` resolves the `!s.inFlow` let-if by assumption `hi`.
+      split at h_ok
+      · simp [Bind.bind, Except.bind] at h_ok
+      -- `scanBlockEntryValidateIx` (item 134): its throw arm contradicts `.ok s'`.
+      simp only [Bind.bind, Except.bind] at h_ok
+      split at h_ok
+      · simp at h_ok
       simp only [Except.ok.injEq] at h_ok
       subst h_ok
       have h_step1 := pushSequenceIndentIx_preserves_FlowNestingInvIx
@@ -1964,13 +1989,26 @@ lemma scanKeyIx_preserves_PlainScalarsValidIx {input : String}
     (s s' : ScannerStateIx input) (h_ok : scanKeyIx s = .ok s')
     (h_old : PlainScalarsValidIx s.tokens) :
     PlainScalarsValidIx s'.tokens := by
-  unfold scanKeyIx at h_ok
+  unfold scanKeyIx scanKeyValidateIx at h_ok
   by_cases hi : (!s.inFlow) = true
-  · simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
+  · -- Item 31's preceding-whitespace tab check, under the same `!inFlow` guard
+    rw [ite_eq_left hi] at h_ok
+    by_cases ht : s.hasTabInPrecedingWhitespace = true
+    · rw [ite_eq_left ht] at h_ok
+      simp [Bind.bind, Except.bind] at h_ok
+    rw [ite_eq_right ht] at h_ok
+    -- §8.2.1's check (item 131), then item 48's same-line check, then the
+    -- post-`?` tab peek: every throw branch contradicts `.ok s'`.
+    split at h_ok
+    · split at h_ok <;> simp [Bind.bind, Except.bind] at h_ok
+    split at h_ok
+    · simp [Bind.bind, Except.bind] at h_ok
+    simp only [pure, Except.pure] at h_ok
+    simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
       pushMappingIndentIx_inFlow] at h_ok
     split at h_ok
     · simp [Bind.bind, Except.bind] at h_ok
-    · simp only [Except.ok.injEq] at h_ok
+    · simp only [Bind.bind, Except.bind, Except.ok.injEq] at h_ok
       subst h_ok
       show PlainScalarsValidIx
         { ((pushMappingIndentIx s s.cursor.pos.col).emit .key).advance with .. }.tokens
@@ -1990,13 +2028,26 @@ lemma scanKeyIx_preserves_FlowContextPSVIx {input : String}
     (s s' : ScannerStateIx input) (h_ok : scanKeyIx s = .ok s')
     (h_old : FlowContextPSVIx s.tokens) :
     FlowContextPSVIx s'.tokens := by
-  unfold scanKeyIx at h_ok
+  unfold scanKeyIx scanKeyValidateIx at h_ok
   by_cases hi : (!s.inFlow) = true
-  · simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
+  · -- Item 31's preceding-whitespace tab check, under the same `!inFlow` guard
+    rw [ite_eq_left hi] at h_ok
+    by_cases ht : s.hasTabInPrecedingWhitespace = true
+    · rw [ite_eq_left ht] at h_ok
+      simp [Bind.bind, Except.bind] at h_ok
+    rw [ite_eq_right ht] at h_ok
+    -- §8.2.1's check (item 131), then item 48's same-line check, then the
+    -- post-`?` tab peek: every throw branch contradicts `.ok s'`.
+    split at h_ok
+    · split at h_ok <;> simp [Bind.bind, Except.bind] at h_ok
+    split at h_ok
+    · simp [Bind.bind, Except.bind] at h_ok
+    simp only [pure, Except.pure] at h_ok
+    simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
       pushMappingIndentIx_inFlow] at h_ok
     split at h_ok
     · simp [Bind.bind, Except.bind] at h_ok
-    · simp only [Except.ok.injEq] at h_ok
+    · simp only [Bind.bind, Except.bind, Except.ok.injEq] at h_ok
       subst h_ok
       show FlowContextPSVIx
         { ((pushMappingIndentIx s s.cursor.pos.col).emit .key).advance with .. }.tokens
@@ -2018,13 +2069,26 @@ lemma scanKeyIx_preserves_FlowNestingInvIx {input : String}
     (s s' : ScannerStateIx input) (h_ok : scanKeyIx s = .ok s')
     (h_fni : FlowNestingInvIx s) :
     FlowNestingInvIx s' := by
-  unfold scanKeyIx at h_ok
+  unfold scanKeyIx scanKeyValidateIx at h_ok
   by_cases hi : (!s.inFlow) = true
-  · simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
+  · -- Item 31's preceding-whitespace tab check, under the same `!inFlow` guard
+    rw [ite_eq_left hi] at h_ok
+    by_cases ht : s.hasTabInPrecedingWhitespace = true
+    · rw [ite_eq_left ht] at h_ok
+      simp [Bind.bind, Except.bind] at h_ok
+    rw [ite_eq_right ht] at h_ok
+    -- §8.2.1's check (item 131), then item 48's same-line check, then the
+    -- post-`?` tab peek: every throw branch contradicts `.ok s'`.
+    split at h_ok
+    · split at h_ok <;> simp [Bind.bind, Except.bind] at h_ok
+    split at h_ok
+    · simp [Bind.bind, Except.bind] at h_ok
+    simp only [pure, Except.pure] at h_ok
+    simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
       pushMappingIndentIx_inFlow] at h_ok
     split at h_ok
     · simp [Bind.bind, Except.bind] at h_ok
-    · simp only [Except.ok.injEq] at h_ok
+    · simp only [Bind.bind, Except.bind, Except.ok.injEq] at h_ok
       subst h_ok
       have h_step1 := pushMappingIndentIx_preserves_FlowNestingInvIx
         s s.cursor.pos.col h_fni
@@ -2512,6 +2576,8 @@ lemma scanValueIx_preserves_PlainScalarsValidIx {input : String}
   split at h_ok
   · cases h_ok                       -- validate threw
   · split at h_ok
+    · cases h_ok                     -- indent-tab check threw (item 31)
+    split at h_ok
     · cases h_ok                     -- tab-check threw
     · simp only [Except.ok.injEq] at h_ok
       subst h_ok
@@ -2549,6 +2615,8 @@ lemma scanValueIx_preserves_FlowContextPSVIx {input : String}
   split at h_ok
   · cases h_ok
   · split at h_ok
+    · cases h_ok                     -- indent-tab check threw (item 31)
+    split at h_ok
     · cases h_ok
     · simp only [Except.ok.injEq] at h_ok
       subst h_ok
@@ -2572,6 +2640,8 @@ lemma scanValueIx_preserves_FlowNestingInvIx {input : String}
   split at h_ok
   · cases h_ok
   · split at h_ok
+    · cases h_ok                     -- indent-tab check threw (item 31)
+    split at h_ok
     · cases h_ok
     · simp only [Except.ok.injEq] at h_ok
       subst h_ok
@@ -2935,7 +3005,7 @@ lemma scanFlowMappingEndIx_preserves_FlowNestingInvIx {input : String}
 After Step 6f.0, `scanFlowEntryIx s` is a `do`-block: it first checks
 `lastRealTokenValIx? s.tokens` and throws `invalidFlowEntry` on a
 leading or consecutive `,`; otherwise it succeeds with
-`s' = { (s.emit .flowEntry).advance with simpleKeyAllowed := true }`.
+`s' = { (s.emit .flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none }`.
 The earlier accidental `scanValuePrepareIx s` call was removed (the
 `,` boundary does not retroactively confirm the pending simple key).
 
@@ -2958,13 +3028,13 @@ lemma scanFlowEntryIx_preserves_PlainScalarsValidIx {input : String}
     · injection h_ok with h_ok
       subst h_ok
       show PlainScalarsValidIx
-        { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }.tokens
+        { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }.tokens
       simp only [advance_tokens]
       exact h_psv_emit
   · injection h_ok with h_ok
     subst h_ok
     show PlainScalarsValidIx
-      { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }.tokens
+      { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }.tokens
     simp only [advance_tokens]
     exact h_psv_emit
 
@@ -2983,13 +3053,13 @@ lemma scanFlowEntryIx_preserves_FlowContextPSVIx {input : String}
     · injection h_ok with h_ok
       subst h_ok
       show FlowContextPSVIx
-        { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }.tokens
+        { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }.tokens
       simp only [advance_tokens]
       exact h_fcpsv_emit
   · injection h_ok with h_ok
     subst h_ok
     show FlowContextPSVIx
-      { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }.tokens
+      { (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }.tokens
     simp only [advance_tokens]
     exact h_fcpsv_emit
 
@@ -3028,38 +3098,16 @@ lemma scanNextTokenIx_dispatchFlowIndicators_preserves_PlainScalarsValidIx
     (h_ok : scanNextTokenIx_dispatchFlowIndicators s c = .ok (some s'))
     (h_old : PlainScalarsValidIx s.tokens) :
     PlainScalarsValidIx s'.tokens := by
-  unfold scanNextTokenIx_dispatchFlowIndicators at h_ok
-  simp only [bind, Except.bind, pure, Except.pure] at h_ok
-  split at h_ok
-  · -- c == '['
-    simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-    exact scanFlowSequenceStartIx_preserves_PlainScalarsValidIx s h_old
-  · split at h_ok
-    · -- c == ']'
-      split at h_ok
-      · cases h_ok                       -- flowLevel == 0 error
-      · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-        exact scanFlowSequenceEndIx_preserves_PlainScalarsValidIx s h_old
-    · split at h_ok
-      · -- c == '{'
-        simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-        exact scanFlowMappingStartIx_preserves_PlainScalarsValidIx s h_old
-      · split at h_ok
-        · -- c == '}'
-          split at h_ok
-          · cases h_ok
-          · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-            exact scanFlowMappingEndIx_preserves_PlainScalarsValidIx s h_old
-        · split at h_ok
-          · -- c == ','
-            split at h_ok
-            · cases h_ok
-            · split at h_ok
-              · cases h_ok               -- scanFlowEntryIx error (cannot happen)
-              · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-                exact scanFlowEntryIx_preserves_PlainScalarsValidIx s _
-                  (by assumption) h_old
-          · cases h_ok                   -- fall-through .ok none
+  -- Invert via the enumeration lemma (robust to dispatcher-shape changes —
+  -- the direct `split` walk exceeded simp's step budget after the 9a
+  -- flow-close kind check grew the `]`/`}` arms).
+  rcases scanNextTokenIx_dispatchFlowIndicators_ok_some_cases h_ok with
+    heq | heq | heq | heq | hOk
+  · subst heq; exact scanFlowSequenceStartIx_preserves_PlainScalarsValidIx s h_old
+  · subst heq; exact scanFlowSequenceEndIx_preserves_PlainScalarsValidIx s h_old
+  · subst heq; exact scanFlowMappingStartIx_preserves_PlainScalarsValidIx s h_old
+  · subst heq; exact scanFlowMappingEndIx_preserves_PlainScalarsValidIx s h_old
+  · exact scanFlowEntryIx_preserves_PlainScalarsValidIx s _ hOk h_old
 
 lemma scanNextTokenIx_dispatchFlowIndicators_preserves_FlowContextPSVIx
     {input : String} (s : ScannerStateIx input) (c : Char)
@@ -3067,33 +3115,13 @@ lemma scanNextTokenIx_dispatchFlowIndicators_preserves_FlowContextPSVIx
     (h_ok : scanNextTokenIx_dispatchFlowIndicators s c = .ok (some s'))
     (h_old : FlowContextPSVIx s.tokens) (h_pl : SimpleKeyPlaceholderInvIx s) :
     FlowContextPSVIx s'.tokens := by
-  unfold scanNextTokenIx_dispatchFlowIndicators at h_ok
-  simp only [bind, Except.bind, pure, Except.pure] at h_ok
-  split at h_ok
-  · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-    exact scanFlowSequenceStartIx_preserves_FlowContextPSVIx s h_old
-  · split at h_ok
-    · split at h_ok
-      · cases h_ok
-      · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-        exact scanFlowSequenceEndIx_preserves_FlowContextPSVIx s h_old
-    · split at h_ok
-      · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-        exact scanFlowMappingStartIx_preserves_FlowContextPSVIx s h_old
-      · split at h_ok
-        · split at h_ok
-          · cases h_ok
-          · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-            exact scanFlowMappingEndIx_preserves_FlowContextPSVIx s h_old
-        · split at h_ok
-          · split at h_ok
-            · cases h_ok
-            · split at h_ok
-              · cases h_ok
-              · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-                exact scanFlowEntryIx_preserves_FlowContextPSVIx s _
-                  (by assumption) h_old h_pl
-          · cases h_ok
+  rcases scanNextTokenIx_dispatchFlowIndicators_ok_some_cases h_ok with
+    heq | heq | heq | heq | hOk
+  · subst heq; exact scanFlowSequenceStartIx_preserves_FlowContextPSVIx s h_old
+  · subst heq; exact scanFlowSequenceEndIx_preserves_FlowContextPSVIx s h_old
+  · subst heq; exact scanFlowMappingStartIx_preserves_FlowContextPSVIx s h_old
+  · subst heq; exact scanFlowMappingEndIx_preserves_FlowContextPSVIx s h_old
+  · exact scanFlowEntryIx_preserves_FlowContextPSVIx s _ hOk h_old h_pl
 
 lemma scanNextTokenIx_dispatchFlowIndicators_preserves_FlowNestingInvIx
     {input : String} (s : ScannerStateIx input) (c : Char)
@@ -3101,33 +3129,13 @@ lemma scanNextTokenIx_dispatchFlowIndicators_preserves_FlowNestingInvIx
     (h_ok : scanNextTokenIx_dispatchFlowIndicators s c = .ok (some s'))
     (h_fni : FlowNestingInvIx s) (h_pl : SimpleKeyPlaceholderInvIx s) :
     FlowNestingInvIx s' := by
-  unfold scanNextTokenIx_dispatchFlowIndicators at h_ok
-  simp only [bind, Except.bind, pure, Except.pure] at h_ok
-  split at h_ok
-  · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-    exact scanFlowSequenceStartIx_preserves_FlowNestingInvIx s h_fni
-  · split at h_ok
-    · split at h_ok
-      · cases h_ok
-      · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-        exact scanFlowSequenceEndIx_preserves_FlowNestingInvIx s h_fni
-    · split at h_ok
-      · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-        exact scanFlowMappingStartIx_preserves_FlowNestingInvIx s h_fni
-      · split at h_ok
-        · split at h_ok
-          · cases h_ok
-          · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-            exact scanFlowMappingEndIx_preserves_FlowNestingInvIx s h_fni
-        · split at h_ok
-          · split at h_ok
-            · cases h_ok
-            · split at h_ok
-              · cases h_ok
-              · simp only [Except.ok.injEq, Option.some.injEq] at h_ok; subst h_ok
-                exact scanFlowEntryIx_preserves_FlowNestingInvIx s _
-                  (by assumption) h_fni h_pl
-          · cases h_ok
+  rcases scanNextTokenIx_dispatchFlowIndicators_ok_some_cases h_ok with
+    heq | heq | heq | heq | hOk
+  · subst heq; exact scanFlowSequenceStartIx_preserves_FlowNestingInvIx s h_fni
+  · subst heq; exact scanFlowSequenceEndIx_preserves_FlowNestingInvIx s h_fni
+  · subst heq; exact scanFlowMappingStartIx_preserves_FlowNestingInvIx s h_fni
+  · subst heq; exact scanFlowMappingEndIx_preserves_FlowNestingInvIx s h_fni
+  · exact scanFlowEntryIx_preserves_FlowNestingInvIx s _ hOk h_fni h_pl
 
 
 /-! ## §11  Document/directive + top-level dispatch composition (Step 6d.1e.6)
@@ -3804,7 +3812,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
   unfold scanNextTokenIx_dispatchContent at h_ok
   by_cases hg1 : (c == '&') = true
   · rw [ite_eq_left hg1] at h_ok
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
+    try simp only [Bind.bind, Except.bind] at h_ok
+    split at h_ok   -- item 9e: the property-run guard
+    · cases h_ok
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h_ok; cases h_ok
     | ok v =>
@@ -3816,16 +3826,24 @@ lemma scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
     simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
     by_cases hg2 : (c == '*') = true
     · rw [ite_eq_left hg2] at h_ok
+      split at h_ok   -- item 9e: the property-run guard
+      · cases h_ok
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h_ok; cases h_ok
       | ok v =>
         rw [hA] at h_ok
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h_ok
+        split at h_ok
+        · cases h_ok
         simp only [Except.ok.injEq] at h_ok
         subst h_ok
         exact scanAnchorOrAliasIx_preserves_PlainScalarsValidIx s false v hA h_old
     · rw [ite_eq_right hg2] at h_ok
       by_cases hg3 : (c == '!') = true
       · rw [ite_eq_left hg3] at h_ok
+        split at h_ok   -- item 9e: the property-run guard
+        · cases h_ok
         cases hT : scanTagIx s with
         | error e => rw [hT] at h_ok; cases h_ok
         | ok v =>
@@ -3836,24 +3854,36 @@ lemma scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
       · rw [ite_eq_right hg3] at h_ok
         by_cases hg4 : (c == '|' || c == '>') = true
         · rw [ite_eq_left hg4] at h_ok
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
           split at h_ok
-          · rename_i r hBS
-            simp only [Except.ok.injEq] at h_ok
-            subst h_ok
-            -- Block scalar — style is .literal or .folded (non-plain)
-            have h_style_ne_plain : r.2.1 ≠ .plain := scanBlockScalarIx_style_not_plain hBS
-            exact emitAt_non_plain_preserves_PlainScalarsValidIx _ _ _ _ h_old (by
-              cases r with
-              | mk content rest => cases rest with
-                | mk style _ =>
-                  simp at h_style_ne_plain
-                  show match (YamlToken.scalar content style) with
-                    | .scalar _ .plain => False | _ => True
-                  cases style <;> first | trivial | exact absurd rfl h_style_ne_plain)
           · cases h_ok
+          · -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+            split at h_ok
+            · cases h_ok
+            -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+            split at h_ok
+            · cases h_ok
+            split at h_ok
+            · rename_i r hBS
+              simp only [Except.ok.injEq] at h_ok
+              subst h_ok
+              -- Block scalar — style is .literal or .folded (non-plain)
+              have h_style_ne_plain : r.2.1 ≠ .plain := scanBlockScalarIx_style_not_plain hBS
+              exact emitAt_non_plain_preserves_PlainScalarsValidIx _ _ _ _ h_old (by
+                cases r with
+                | mk content rest => cases rest with
+                  | mk style _ =>
+                    simp at h_style_ne_plain
+                    show match (YamlToken.scalar content style) with
+                      | .scalar _ .plain => False | _ => True
+                    cases style <;> first | trivial | exact absurd rfl h_style_ne_plain)
+            · cases h_ok
         · rw [ite_eq_right hg4] at h_ok
           by_cases hg5 : (c == '"') = true
           · rw [ite_eq_left hg5] at h_ok
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h_ok
+            · cases h_ok
             split at h_ok
             · rename_i r hDQ
               simp only [Except.ok.injEq] at h_ok
@@ -3863,6 +3893,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
           · rw [ite_eq_right hg5] at h_ok
             by_cases hg6 : (c == '\'') = true
             · rw [ite_eq_left hg6] at h_ok
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h_ok
+              · cases h_ok
               split at h_ok
               · rename_i r hSQ
                 simp only [Except.ok.injEq] at h_ok
@@ -3872,6 +3905,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
             · rw [ite_eq_right hg6] at h_ok
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
               · rw [ite_eq_left hg7] at h_ok
+                -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h_ok
+                · simp at h_ok
                 simp only [Except.ok.injEq] at h_ok
                 subst h_ok
                 -- Plain arm: prove the new token is ScalarScannable _ false.
@@ -3915,7 +3951,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
   unfold scanNextTokenIx_dispatchContent at h_ok
   by_cases hg1 : (c == '&') = true
   · rw [ite_eq_left hg1] at h_ok
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
+    try simp only [Bind.bind, Except.bind] at h_ok
+    split at h_ok   -- item 9e: the property-run guard
+    · cases h_ok
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h_ok; cases h_ok
     | ok v =>
@@ -3927,16 +3965,24 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
     simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
     by_cases hg2 : (c == '*') = true
     · rw [ite_eq_left hg2] at h_ok
+      split at h_ok   -- item 9e: the property-run guard
+      · cases h_ok
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h_ok; cases h_ok
       | ok v =>
         rw [hA] at h_ok
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h_ok
+        split at h_ok
+        · cases h_ok
         simp only [Except.ok.injEq] at h_ok
         subst h_ok
         exact scanAnchorOrAliasIx_preserves_FlowContextPSVIx s false v hA h_old
     · rw [ite_eq_right hg2] at h_ok
       by_cases hg3 : (c == '!') = true
       · rw [ite_eq_left hg3] at h_ok
+        split at h_ok   -- item 9e: the property-run guard
+        · cases h_ok
         cases hT : scanTagIx s with
         | error e => rw [hT] at h_ok; cases h_ok
         | ok v =>
@@ -3947,23 +3993,35 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
       · rw [ite_eq_right hg3] at h_ok
         by_cases hg4 : (c == '|' || c == '>') = true
         · rw [ite_eq_left hg4] at h_ok
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
           split at h_ok
-          · rename_i r hBS
-            simp only [Except.ok.injEq] at h_ok
-            subst h_ok
-            have h_style_ne_plain : r.2.1 ≠ .plain := scanBlockScalarIx_style_not_plain hBS
-            exact emitAt_non_flow_non_plain_preserves_FlowContextPSVIx _ _ _ _ h_old (by
-              cases r with
-              | mk content rest => cases rest with
-                | mk style _ =>
-                  simp at h_style_ne_plain
-                  show match (YamlToken.scalar content style) with
-                    | .scalar _ .plain => False | _ => True
-                  cases style <;> first | trivial | exact absurd rfl h_style_ne_plain)
           · cases h_ok
+          · -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+            split at h_ok
+            · cases h_ok
+            -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+            split at h_ok
+            · cases h_ok
+            split at h_ok
+            · rename_i r hBS
+              simp only [Except.ok.injEq] at h_ok
+              subst h_ok
+              have h_style_ne_plain : r.2.1 ≠ .plain := scanBlockScalarIx_style_not_plain hBS
+              exact emitAt_non_flow_non_plain_preserves_FlowContextPSVIx _ _ _ _ h_old (by
+                cases r with
+                | mk content rest => cases rest with
+                  | mk style _ =>
+                    simp at h_style_ne_plain
+                    show match (YamlToken.scalar content style) with
+                      | .scalar _ .plain => False | _ => True
+                    cases style <;> first | trivial | exact absurd rfl h_style_ne_plain)
+            · cases h_ok
         · rw [ite_eq_right hg4] at h_ok
           by_cases hg5 : (c == '"') = true
           · rw [ite_eq_left hg5] at h_ok
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h_ok
+            · cases h_ok
             split at h_ok
             · rename_i r hDQ
               simp only [Except.ok.injEq] at h_ok
@@ -3973,6 +4031,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
           · rw [ite_eq_right hg5] at h_ok
             by_cases hg6 : (c == '\'') = true
             · rw [ite_eq_left hg6] at h_ok
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h_ok
+              · cases h_ok
               split at h_ok
               · rename_i r hSQ
                 simp only [Except.ok.injEq] at h_ok
@@ -3982,6 +4043,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
             · rw [ite_eq_right hg6] at h_ok
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
               · rw [ite_eq_left hg7] at h_ok
+                -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h_ok
+                · simp at h_ok
                 simp only [Except.ok.injEq] at h_ok
                 subst h_ok
                 -- Plain arm: conditional ScalarScannable at inFlow = true when flowLevel > 0
@@ -4027,7 +4091,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
   unfold scanNextTokenIx_dispatchContent at h_ok
   by_cases hg1 : (c == '&') = true
   · rw [ite_eq_left hg1] at h_ok
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
+    try simp only [Bind.bind, Except.bind] at h_ok
+    split at h_ok   -- item 9e: the property-run guard
+    · cases h_ok
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h_ok; cases h_ok
     | ok v =>
@@ -4039,16 +4105,24 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
     simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
     by_cases hg2 : (c == '*') = true
     · rw [ite_eq_left hg2] at h_ok
+      split at h_ok   -- item 9e: the property-run guard
+      · cases h_ok
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h_ok; cases h_ok
       | ok v =>
         rw [hA] at h_ok
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h_ok
+        split at h_ok
+        · cases h_ok
         simp only [Except.ok.injEq] at h_ok
         subst h_ok
         exact scanAnchorOrAliasIx_preserves_FlowNestingInvIx s false v hA h_fni
     · rw [ite_eq_right hg2] at h_ok
       by_cases hg3 : (c == '!') = true
       · rw [ite_eq_left hg3] at h_ok
+        split at h_ok   -- item 9e: the property-run guard
+        · cases h_ok
         cases hT : scanTagIx s with
         | error e => rw [hT] at h_ok; cases h_ok
         | ok v =>
@@ -4059,19 +4133,31 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
       · rw [ite_eq_right hg3] at h_ok
         by_cases hg4 : (c == '|' || c == '>') = true
         · rw [ite_eq_left hg4] at h_ok
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
           split at h_ok
-          · rename_i r hBS
-            simp only [Except.ok.injEq] at h_ok
-            subst h_ok
-            -- s' = { sAfter.emitAt startPos (.scalar content style) hBound with simpleKeyAllowed := false }
-            -- where sAfter = { s with cursor := r.2.2 } — cursor-only update preserves FNI.
-            exact emitAt_non_flow_preserves_FlowNestingInvIx _ _ _ _ h_fni
-              (by intro h; cases h) (by intro h; cases h)
-              (by intro h; cases h) (by intro h; cases h)
           · cases h_ok
+          · -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+            split at h_ok
+            · cases h_ok
+            -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+            split at h_ok
+            · cases h_ok
+            split at h_ok
+            · rename_i r hBS
+              simp only [Except.ok.injEq] at h_ok
+              subst h_ok
+              -- s' = { sAfter.emitAt startPos (.scalar content style) hBound with simpleKeyAllowed := false }
+              -- where sAfter = { s with cursor := r.2.2 } — cursor-only update preserves FNI.
+              exact emitAt_non_flow_preserves_FlowNestingInvIx _ _ _ _ h_fni
+                (by intro h; cases h) (by intro h; cases h)
+                (by intro h; cases h) (by intro h; cases h)
+            · cases h_ok
         · rw [ite_eq_right hg4] at h_ok
           by_cases hg5 : (c == '"') = true
           · rw [ite_eq_left hg5] at h_ok
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h_ok
+            · cases h_ok
             split at h_ok
             · rename_i r hDQ
               simp only [Except.ok.injEq] at h_ok
@@ -4083,6 +4169,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
           · rw [ite_eq_right hg5] at h_ok
             by_cases hg6 : (c == '\'') = true
             · rw [ite_eq_left hg6] at h_ok
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h_ok
+              · cases h_ok
               split at h_ok
               · rename_i r hSQ
                 simp only [Except.ok.injEq] at h_ok
@@ -4094,6 +4183,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
             · rw [ite_eq_right hg6] at h_ok
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
               · rw [ite_eq_left hg7] at h_ok
+                -- item 50: the plain strictness walker's throw contradicts `.ok`
+                split at h_ok
+                · simp at h_ok
                 simp only [Except.ok.injEq] at h_ok
                 subst h_ok
                 exact emitAt_non_flow_preserves_FlowNestingInvIx _ _ _ _ h_fni
@@ -4106,12 +4198,12 @@ lemma scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
 
 Top-level composition over preprocess + dispatchStructural +
 dispatchFlowIndicators + dispatchBlockIndicators + dispatchContent
-+ `allowDirectives`/`checkBlockFlowIndent` record updates.
++ `allowDirectives` record updates.
 
 **Discharge strategy** (Step 6d.1e.9, Reflection 77): chain
 `generalize h_layer : f_layer s = res at h_ok` + `cases res with
 | error => simp at h_ok | ok inner => cases inner with ...` per
-dispatcher layer (preprocess → dispatchStructural → checkBlockFlowIndent →
+dispatcher layer (preprocess → dispatchStructural →
 dispatchFlowIndicators → dispatchBlockIndicators → dispatchContent).
 `cases pair with | mk s_pp c` cleanly extracts pair components without
 hitting Reflection 73's `ScannerStateIx` over-destructure. The
@@ -4192,6 +4284,22 @@ lemma scanNextTokenIx_preserves_PlainScalarsValidIx {input : String}
         have h_psv_pp : PlainScalarsValidIx s_pp.tokens :=
           scanNextTokenIx_preprocess_preserves_PlainScalarsValidIx s s_pp c h_pp h_old
         dsimp only [] at h_ok
+        -- §9.2 dangling-node check (item 133)
+        have h_dn : ∃ u, scanNextTokenIx_checkDanglingNode s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkDanglingNode s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uDN, h_dn⟩ := h_dn
+        rw [h_dn] at h_ok
+        dsimp only [] at h_ok
+        -- §8.1 flow-value floor (item 172): peeled the same way.
+        have h_fvp : ∃ u, scanNextTokenIx_checkFlowValueIndent s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkFlowValueIndent s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uFV, h_fvp⟩ := h_fvp
+        rw [h_fvp] at h_ok
+        dsimp only [] at h_ok
         generalize h_ds : scanNextTokenIx_dispatchStructural s_pp c = ds_res at h_ok
         cases ds_res with
         | error e => simp at h_ok
@@ -4211,53 +4319,60 @@ lemma scanNextTokenIx_preserves_PlainScalarsValidIx {input : String}
               | ok u => exact ⟨u, rfl⟩
             obtain ⟨u, h_npd⟩ := h_npd
             rw [h_npd] at h_ok
+            -- §9.2 bare-document check (item 132)
+            have h_bd : ∃ u, scanNextTokenIx_checkBareDocument s_pp = .ok u := by
+              cases hx : scanNextTokenIx_checkBareDocument s_pp with
+              | error e => rw [hx] at h_ok; simp at h_ok
+              | ok u => exact ⟨u, rfl⟩
+            obtain ⟨u2, h_bd⟩ := h_bd
+            rw [h_bd] at h_ok
             dsimp only [] at h_ok
             generalize h_dir_def : (if s_pp.allowDirectives = true then
                 { s_pp with allowDirectives := false, documentEverStarted := true }
               else s_pp) = s_dir at h_ok
             have h_psv_dir : PlainScalarsValidIx s_dir.tokens := by
               rw [← h_dir_def, allowDirectives_update_tokens]; exact h_psv_pp
-            generalize h_ck : scanNextTokenIx_checkBlockFlowIndent s_dir c = ck_res at h_ok
-            cases ck_res with
+            generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
+            cases df_res with
             | error e => simp at h_ok
-            | ok _ =>
-              dsimp only [] at h_ok
-              generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
-              cases df_res with
-              | error e => simp at h_ok
-              | ok df_inner =>
-                cases df_inner with
-                | some s_flow =>
-                  simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                  subst h_ok
-                  exact scanNextTokenIx_dispatchFlowIndicators_preserves_PlainScalarsValidIx
-                    s_dir c s_flow h_df h_psv_dir
-                | none =>
-                  dsimp only [] at h_ok
-                  generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
-                  cases db_res with
-                  | error e => simp at h_ok
-                  | ok db_inner =>
-                    cases db_inner with
-                    | some s_blk =>
+            | ok df_inner =>
+              cases df_inner with
+              | some s_flow =>
+                simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                subst h_ok
+                exact scanNextTokenIx_dispatchFlowIndicators_preserves_PlainScalarsValidIx
+                  s_dir c s_flow h_df h_psv_dir
+              | none =>
+                dsimp only [] at h_ok
+                generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
+                cases db_res with
+                | error e => simp at h_ok
+                | ok db_inner =>
+                  cases db_inner with
+                  | some s_blk =>
+                    simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                    subst h_ok
+                    exact scanNextTokenIx_dispatchBlockIndicators_preserves_PlainScalarsValidIx
+                      s_dir c s_blk h_db h_psv_dir
+                  | none =>
+                    dsimp only [] at h_ok
+                    -- item 47: adjacent-value check (pure, no state change)
+                    generalize h_av : scanNextTokenIx_checkAdjacentValue s_dir c = av_res at h_ok
+                    cases av_res with
+                    | error e => simp at h_ok
+                    | ok _ =>
+                    generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
+                    cases dc_res with
+                    | error e => simp at h_ok
+                    | ok s_ct =>
                       simp only [Except.ok.injEq, Option.some.injEq] at h_ok
                       subst h_ok
-                      exact scanNextTokenIx_dispatchBlockIndicators_preserves_PlainScalarsValidIx
-                        s_dir c s_blk h_db h_psv_dir
-                    | none =>
-                      dsimp only [] at h_ok
-                      generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
-                      cases dc_res with
-                      | error e => simp at h_ok
-                      | ok s_ct =>
-                        simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                        subst h_ok
-                        have h_peek_pp : s_pp.cursor.peek? = some c :=
-                          scanNextTokenIx_preprocess_peek_eq h_pp
-                        have h_peek_dir : s_dir.cursor.peek? = some c := by
-                          rw [← h_dir_def, allowDirectives_update_cursor]; exact h_peek_pp
-                        exact scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
-                          s_dir c s_ct h_dc h_peek_dir h_psv_dir
+                      have h_peek_pp : s_pp.cursor.peek? = some c :=
+                        scanNextTokenIx_preprocess_peek_eq h_pp
+                      have h_peek_dir : s_dir.cursor.peek? = some c := by
+                        rw [← h_dir_def, allowDirectives_update_cursor]; exact h_peek_pp
+                      exact scanNextTokenIx_dispatchContent_preserves_PlainScalarsValidIx
+                        s_dir c s_ct h_dc h_peek_dir h_psv_dir
 
 /-! **Note (Step 6d.1e.12d)**: `scanNextTokenIx_preserves_FlowContextPSVIx`
     and `_FlowNestingInvIx` previously lived here as theorems taking
@@ -4310,6 +4425,12 @@ lemma scanLoopIx_preserves_PlainScalarsValidIx {input : String}
     · split at h_ok
       · cases h_ok
       · split at h_ok
+        · cases h_ok
+        -- §9.2 dangling-node check (item 133)
+        split at h_ok
+        · cases h_ok
+        -- §8.1 flow-value floor (item 172)
+        split at h_ok
         · cases h_ok
         · simp only [Except.ok.injEq] at h_ok
           subst h_ok
@@ -4729,6 +4850,8 @@ lemma scanValueIx_clears_simpleKey {input : String}
     s'.simpleKey.possible = false := by
   unfold scanValueIx at h
   simp only [bind, Except.bind] at h
+  -- Three guards since item 31: validate, indent-tab check, tab check
+  split at h <;> try contradiction
   split at h <;> try contradiction
   split at h <;> try contradiction
   simp only [Except.ok.injEq] at h; subst h
@@ -4742,6 +4865,8 @@ lemma scanValueIx_preserves_simpleKeyStack {input : String}
     s'.simpleKeyStack = s.simpleKeyStack := by
   unfold scanValueIx at h
   simp only [bind, Except.bind] at h
+  -- Three guards since item 31: validate, indent-tab check, tab check
+  split at h <;> try contradiction
   split at h <;> try contradiction
   split at h <;> try contradiction
   simp only [Except.ok.injEq] at h; subst h
@@ -4855,19 +4980,46 @@ lemma scanFlowMappingEndIx_stack_popped {input : String}
     (scanFlowMappingEndIx s).simpleKeyStack = s.simpleKeyStack.pop := by
   unfold scanFlowMappingEndIx; rfl
 
-/-- After Step 6f.0, `scanFlowEntryIx` preserves (does NOT clear)
-    `simpleKey`: the `,` boundary doesn't retroactively confirm the
-    pending simple key. Indexed twin of legacy
-    `scanFlowEntry_preserves_simpleKey`. -/
-lemma scanFlowEntryIx_preserves_simpleKey {input : String}
+-- Item 98: the explicit-key stamp rides the same open/close discipline —
+-- Ix twins of the `ScannerCorrectness` `_ek_pushed` / `_ek_restored` /
+-- `_ekstack_popped` suite.
+
+lemma scanFlowSequenceStartIx_ek_pushed {input : String}
+    (s : ScannerStateIx input) :
+    (scanFlowSequenceStartIx s).explicitKeyStack
+      = s.explicitKeyStack.push (s.explicitKeyLine, s.explicitKeyCol) := by
+  unfold scanFlowSequenceStartIx; rfl
+
+lemma scanFlowMappingStartIx_ek_pushed {input : String}
+    (s : ScannerStateIx input) :
+    (scanFlowMappingStartIx s).explicitKeyStack
+      = s.explicitKeyStack.push (s.explicitKeyLine, s.explicitKeyCol) := by
+  unfold scanFlowMappingStartIx; rfl
+
+lemma scanFlowSequenceEndIx_ekstack_popped {input : String}
+    (s : ScannerStateIx input) :
+    (scanFlowSequenceEndIx s).explicitKeyStack = s.explicitKeyStack.pop := by
+  unfold scanFlowSequenceEndIx; rfl
+
+lemma scanFlowMappingEndIx_ekstack_popped {input : String}
+    (s : ScannerStateIx input) :
+    (scanFlowMappingEndIx s).explicitKeyStack = s.explicitKeyStack.pop := by
+  unfold scanFlowMappingEndIx; rfl
+
+/-- Item 9q: `scanFlowEntryIx` CLEARS the pending simple key.  The `,` never
+    confirmed it — it re-enables reservation, so preprocessing overwrites the
+    field before any dispatcher reads it — but leaving it set pointed at the
+    previous entry's reservation, below the incoming array's end.  Indexed twin
+    of legacy `scanFlowEntry_clears_simpleKey`. -/
+lemma scanFlowEntryIx_clears_simpleKey {input : String}
     (s s' : ScannerStateIx input) (h : scanFlowEntryIx s = .ok s') :
-    s'.simpleKey = s.simpleKey := by
+    s'.simpleKey.possible = false := by
   unfold scanFlowEntryIx at h
   simp only [bind, Except.bind] at h
   repeat (any_goals (split at h))
   all_goals (try contradiction)
   all_goals (simp only [Except.ok.injEq] at h; subst h)
-  all_goals simp [advance_preserves_simpleKey, emit_preserves_simpleKey]
+  all_goals rfl
 
 lemma scanFlowEntryIx_preserves_simpleKeyStack {input : String}
     (s s' : ScannerStateIx input) (h : scanFlowEntryIx s = .ok s') :
@@ -4999,8 +5151,14 @@ lemma scanBlockEntryIx_preserves_prefix {input : String}
     · rw [ite_eq_left ht] at h_ok
       simp [Bind.bind, Except.bind] at h_ok
     · rw [ite_eq_right ht] at h_ok
-      simp only [] at h_ok
-      rw [ite_eq_left hi] at h_ok
+      -- Item 48 same-line check: the throw branch contradicts `.ok s'`;
+      -- `split` resolves the `!s.inFlow` let-if by assumption `hi`.
+      split at h_ok
+      · simp [Bind.bind, Except.bind] at h_ok
+      -- `scanBlockEntryValidateIx` (item 134): its throw arm contradicts `.ok s'`.
+      simp only [Bind.bind, Except.bind] at h_ok
+      split at h_ok
+      · simp at h_ok
       simp only [Except.ok.injEq] at h_ok
       subst h_ok
       show ((pushSequenceIndentIx s s.cursor.pos.col).emit YamlToken.blockEntry).tokens[i]'_ =
@@ -5025,13 +5183,26 @@ lemma scanKeyIx_preserves_prefix {input : String}
     s'.tokens[i]'(by
       have := scanKeyIx_tokens_size_le h_ok; omega) =
     s.tokens[i]'h_bound := by
-  unfold scanKeyIx at h_ok
+  unfold scanKeyIx scanKeyValidateIx at h_ok
   by_cases hi : (!s.inFlow) = true
-  · simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
+  · -- Item 31's preceding-whitespace tab check, under the same `!inFlow` guard
+    rw [ite_eq_left hi] at h_ok
+    by_cases ht : s.hasTabInPrecedingWhitespace = true
+    · rw [ite_eq_left ht] at h_ok
+      simp [Bind.bind, Except.bind] at h_ok
+    rw [ite_eq_right ht] at h_ok
+    -- §8.2.1's check (item 131), then item 48's same-line check, then the
+    -- post-`?` tab peek: every throw branch contradicts `.ok s'`.
+    split at h_ok
+    · split at h_ok <;> simp [Bind.bind, Except.bind] at h_ok
+    split at h_ok
+    · simp [Bind.bind, Except.bind] at h_ok
+    simp only [pure, Except.pure] at h_ok
+    simp only [ite_eq_left hi, advance_inFlow, emit_inFlow,
       pushMappingIndentIx_inFlow] at h_ok
     split at h_ok
     · simp [Bind.bind, Except.bind] at h_ok
-    · simp only [Except.ok.injEq] at h_ok
+    · simp only [Bind.bind, Except.bind, Except.ok.injEq] at h_ok
       subst h_ok
       show ((pushMappingIndentIx s s.cursor.pos.col).emit YamlToken.key).tokens[i]'_ =
         s.tokens[i]'h_bound
@@ -5270,6 +5441,8 @@ lemma scanValueIx_preserves_prefix {input : String}
   split at h_ok
   · cases h_ok
   · split at h_ok
+    · cases h_ok                     -- indent-tab check threw (item 31)
+    split at h_ok
     · cases h_ok
     · simp only [Except.ok.injEq] at h_ok
       subst h_ok
@@ -5320,7 +5493,7 @@ lemma scanFlowEntryIx_preserves_prefix {input : String}
   all_goals (try contradiction)
   all_goals (simp only [Except.ok.injEq] at h_ok; subst h_ok)
   all_goals (
-    show ({ (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true }).tokens[i]'_ =
+    show ({ (s.emit YamlToken.flowEntry).advance with simpleKeyAllowed := true, explicitKeyLine := none, simpleKey := { possible := false } }).tokens[i]'_ =
       s.tokens[i]'h_bound
     simp only [advance_tokens]
     exact h_emit)
@@ -5491,6 +5664,9 @@ lemma scanNextTokenIx_preprocess_preserves_AllKeysPlaceholderInvIx {input : Stri
       h_skip_sk h_skip_stack h_skip_mono h_skip_pref
   unfold scanNextTokenIx_preprocess at h_pre
   simp only at h_pre
+  -- Peel the §6.1/§6.6 strictness-walker guard (item 7).
+  split at h_pre
+  · simp at h_pre
   split at h_pre
   · simp at h_pre
   · split at h_pre
@@ -5724,12 +5900,12 @@ lemma scanNextTokenIx_dispatchFlowIndicators_preserves_AllKeysPlaceholderInvIx {
       (scanFlowMappingEndIx_stack_popped s)
       (scanFlowMappingEndIx_tokens_size_le s)
       (fun i hi => scanFlowMappingEndIx_preserves_prefix s i hi)
-  · -- scanFlowEntryIx (after Step 6f.0): mono — preserves simpleKey,
+  · -- scanFlowEntryIx: CLEARS the current key (item 9q), preserves
     -- simpleKeyStack, and adds one token (`.flowEntry`), so prefix is
     -- preserved by `emit_preserves_tokens_at`. The `,` boundary no
     -- longer calls `scanValuePrepareIx`, matching the legacy.
-    exact AllKeysPlaceholderInvIx_mono s s' h_akpi
-      (scanFlowEntryIx_preserves_simpleKey s s' hOk)
+    exact AllKeysPlaceholderInvIx_of_cleared_mono s s' h_akpi
+      (scanFlowEntryIx_clears_simpleKey s s' hOk)
       (scanFlowEntryIx_preserves_simpleKeyStack s s' hOk)
       (scanFlowEntryIx_tokens_size_le hOk)
       (fun i hi => scanFlowEntryIx_preserves_prefix s s' hOk i hi)
@@ -5828,6 +6004,57 @@ lemma _inline_scalar_preserves_AllKeysPlaceholderInvIx {input : String}
       startPos tok hBound i hi
   exact AllKeysPlaceholderInvIx_mono s _ h_akpi h_sk h_stack h_mono h_pref
 
+/-- Helper for the **block-scalar** arm of `scanNextTokenIx_dispatchContent`.
+
+    Its post-state differs from the inline-scalar arms in more than the flag:
+    a block scalar ends at the start of a line, so it *clears* the pending
+    simple key (`simpleKey := { cursor := … }`, i.e. `possible = false`) and
+    re-allows one, exactly as the legacy `scanBlockScalarBody` does. `simpleKey`
+    is therefore not preserved and `_inline_scalar_preserves_AllKeysPlaceholderInvIx`
+    does not apply — but a *cleared* key satisfies the current-key conjuncts
+    vacuously, and `simpleKeyStack` plus the token prefix are untouched, which is
+    what `AllKeysPlaceholderInvIx_of_cleared_mono` asks for. -/
+lemma _block_scalar_preserves_AllKeysPlaceholderInvIx {input : String}
+    (s : ScannerStateIx input) (cAfter : IxCursor input)
+    (startPos : YamlPos) (tok : YamlToken)
+    (hBound : startPos.offset ≤ cAfter.pos.offset)
+    (h_akpi : AllKeysPlaceholderInvIx s) :
+    AllKeysPlaceholderInvIx
+      { ({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound with
+          simpleKeyAllowed := true,
+          simpleKey := { cursor := IxCursor.start input } } := by
+  have h_clears :
+      ({ ({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound with
+          simpleKeyAllowed := true,
+          simpleKey := { cursor := IxCursor.start input } }
+        : ScannerStateIx input).simpleKey.possible = false := rfl
+  have h_stack :
+      ({ ({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound with
+          simpleKeyAllowed := true,
+          simpleKey := { cursor := IxCursor.start input } }
+        : ScannerStateIx input).simpleKeyStack = s.simpleKeyStack := by simp
+  have h_mono : s.tokens.size ≤
+      ({ ({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound with
+          simpleKeyAllowed := true,
+          simpleKey := { cursor := IxCursor.start input } }
+        : ScannerStateIx input).tokens.size := by
+    show s.tokens.size ≤
+      (({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound).tokens.size
+    rw [emitAt_tokens_size]
+    have h_eq : ({ s with cursor := cAfter } : ScannerStateIx input).tokens.size = s.tokens.size := rfl
+    omega
+  have h_pref : ∀ i (h : i < s.tokens.size),
+      ({ ({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound with
+          simpleKeyAllowed := true,
+          simpleKey := { cursor := IxCursor.start input } }
+        : ScannerStateIx input).tokens[i]'(by omega) = s.tokens[i] := by
+    intro i hi
+    show (({ s with cursor := cAfter } : ScannerStateIx input).emitAt startPos tok hBound).tokens[i]'_ =
+      s.tokens[i]'hi
+    exact emitAt_preserves_tokens_at ({ s with cursor := cAfter } : ScannerStateIx input)
+      startPos tok hBound i hi
+  exact AllKeysPlaceholderInvIx_of_cleared_mono s _ h_akpi h_clears h_stack h_mono h_pref
+
 /-- `scanNextTokenIx_dispatchContent` preserves `AllKeysPlaceholderInvIx`.
     7 productions: `&`/`*` (anchor/alias via `scanAnchorOrAliasIx`),
     `!` (tag), `|`/`>` (block scalar), `"` (double-quoted),
@@ -5846,7 +6073,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx {input :
   by_cases hg1 : (c == '&') = true
   · -- c == '&': anchor
     rw [ite_eq_left hg1] at h_ok
-    try simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h_ok
+    try simp only [Bind.bind, Except.bind] at h_ok
+    split at h_ok   -- item 9e: the property-run guard
+    · cases h_ok
     cases hA : scanAnchorOrAliasIx s true with
     | error e => rw [hA] at h_ok; cases h_ok
     | ok v =>
@@ -5863,10 +6092,16 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx {input :
     by_cases hg2 : (c == '*') = true
     · -- c == '*': alias
       rw [ite_eq_left hg2] at h_ok
+      split at h_ok   -- item 9e: the property-run guard
+      · cases h_ok
       cases hA : scanAnchorOrAliasIx s false with
       | error e => rw [hA] at h_ok; cases h_ok
       | ok v =>
         rw [hA] at h_ok
+        -- item 9h: `aliasTrailingErrIx` is a CHECK — the state is untouched.
+        dsimp only [] at h_ok
+        split at h_ok
+        · cases h_ok
         simp only [Except.ok.injEq] at h_ok
         subst h_ok
         exact AllKeysPlaceholderInvIx_mono s v h_akpi
@@ -5878,6 +6113,8 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx {input :
       by_cases hg3 : (c == '!') = true
       · -- c == '!': tag
         rw [ite_eq_left hg3] at h_ok
+        split at h_ok   -- item 9e: the property-run guard
+        · cases h_ok
         cases hT : scanTagIx s with
         | error e => rw [hT] at h_ok; cases h_ok
         | ok v =>
@@ -5891,17 +6128,30 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx {input :
             (fun i hi => scanTagIx_preserves_prefix s v hT i hi)
       · rw [ite_eq_right hg3] at h_ok
         by_cases hg4 : (c == '|' || c == '>') = true
-        · -- c == '|' || c == '>': block scalar (inline match)
+        · -- c == '|' || c == '>': block scalar (inline match). Unlike the
+          -- inline-scalar arms this one clears the pending simple key.
           rw [ite_eq_left hg4] at h_ok
+          -- Peel the §6.7 header-newline guard: its throw arm cannot be `.ok`.
           split at h_ok
-          · simp only [Except.ok.injEq] at h_ok
-            subst h_ok
-            exact _inline_scalar_preserves_AllKeysPlaceholderInvIx s _ _ _ _ h_akpi
           · cases h_ok
+          · -- Peel the §6.1/§8.1.3 body-validator guard (item 7 strictness).
+            split at h_ok
+            · cases h_ok
+            -- Peel the §6.1/§8.1.1 tab-stop guard (`blockScalarTabStopErrIx`).
+            split at h_ok
+            · cases h_ok
+            split at h_ok
+            · simp only [Except.ok.injEq] at h_ok
+              subst h_ok
+              exact _block_scalar_preserves_AllKeysPlaceholderInvIx s _ _ _ _ h_akpi
+            · cases h_ok
         · rw [ite_eq_right hg4] at h_ok
           by_cases hg5 : (c == '"') = true
           · -- c == '"': double quoted
             rw [ite_eq_left hg5] at h_ok
+            -- Peel the quoted-scalar strictness guard (item 7).
+            split at h_ok
+            · cases h_ok
             split at h_ok
             · simp only [Except.ok.injEq] at h_ok
               subst h_ok
@@ -5911,6 +6161,9 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx {input :
             by_cases hg6 : (c == '\'') = true
             · -- c == '\'': single quoted
               rw [ite_eq_left hg6] at h_ok
+              -- Peel the quoted-scalar strictness guard (item 7).
+              split at h_ok
+              · cases h_ok
               split at h_ok
               · simp only [Except.ok.injEq] at h_ok
                 subst h_ok
@@ -5918,8 +6171,10 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx {input :
               · cases h_ok
             · rw [ite_eq_right hg6] at h_ok
               by_cases hg7 : canStartPlainScalarBool c (s.peekAt? 1) s.inFlow = true
-              · -- plain scalar (always succeeds)
+              · -- plain scalar (item 50: the strictness walker may refuse first)
                 rw [ite_eq_left hg7] at h_ok
+                split at h_ok
+                · simp at h_ok
                 simp only [Except.ok.injEq] at h_ok
                 subst h_ok
                 exact _inline_scalar_preserves_AllKeysPlaceholderInvIx s _ _ _ _ h_akpi
@@ -6010,6 +6265,22 @@ lemma scanNextTokenIx_preserves_AllKeysPlaceholderInvIx {input : String}
         have h_akpi_pp : AllKeysPlaceholderInvIx s_pp :=
           scanNextTokenIx_preprocess_preserves_AllKeysPlaceholderInvIx s s_pp c h_pp h_akpi
         dsimp only [] at h_ok
+        -- §9.2 dangling-node check (item 133)
+        have h_dn : ∃ u, scanNextTokenIx_checkDanglingNode s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkDanglingNode s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uDN, h_dn⟩ := h_dn
+        rw [h_dn] at h_ok
+        dsimp only [] at h_ok
+        -- §8.1 flow-value floor (item 172): peeled the same way.
+        have h_fvp : ∃ u, scanNextTokenIx_checkFlowValueIndent s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkFlowValueIndent s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uFV, h_fvp⟩ := h_fvp
+        rw [h_fvp] at h_ok
+        dsimp only [] at h_ok
         generalize h_ds : scanNextTokenIx_dispatchStructural s_pp c = ds_res at h_ok
         cases ds_res with
         | error e => simp at h_ok
@@ -6029,6 +6300,13 @@ lemma scanNextTokenIx_preserves_AllKeysPlaceholderInvIx {input : String}
               | ok u => exact ⟨u, rfl⟩
             obtain ⟨u, h_npd⟩ := h_npd
             rw [h_npd] at h_ok
+            -- §9.2 bare-document check (item 132)
+            have h_bd : ∃ u, scanNextTokenIx_checkBareDocument s_pp = .ok u := by
+              cases hx : scanNextTokenIx_checkBareDocument s_pp with
+              | error e => rw [hx] at h_ok; simp at h_ok
+              | ok u => exact ⟨u, rfl⟩
+            obtain ⟨u2, h_bd⟩ := h_bd
+            rw [h_bd] at h_ok
             dsimp only [] at h_ok
             generalize h_dir_def : (if s_pp.allowDirectives = true then
                 { s_pp with allowDirectives := false, documentEverStarted := true }
@@ -6036,43 +6314,43 @@ lemma scanNextTokenIx_preserves_AllKeysPlaceholderInvIx {input : String}
             have h_akpi_dir : AllKeysPlaceholderInvIx s_dir := by
               rw [← h_dir_def]
               exact allowDirectives_update_AllKeysPlaceholderInvIx s_pp h_akpi_pp
-            generalize h_ck : scanNextTokenIx_checkBlockFlowIndent s_dir c = ck_res at h_ok
-            cases ck_res with
+            generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
+            cases df_res with
             | error e => simp at h_ok
-            | ok _ =>
-              dsimp only [] at h_ok
-              generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
-              cases df_res with
-              | error e => simp at h_ok
-              | ok df_inner =>
-                cases df_inner with
-                | some s_flow =>
-                  simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                  subst h_ok
-                  exact scanNextTokenIx_dispatchFlowIndicators_preserves_AllKeysPlaceholderInvIx
-                    s_dir s_flow c h_akpi_dir h_df
-                | none =>
-                  dsimp only [] at h_ok
-                  generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
-                  cases db_res with
-                  | error e => simp at h_ok
-                  | ok db_inner =>
-                    cases db_inner with
-                    | some s_blk =>
+            | ok df_inner =>
+              cases df_inner with
+              | some s_flow =>
+                simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                subst h_ok
+                exact scanNextTokenIx_dispatchFlowIndicators_preserves_AllKeysPlaceholderInvIx
+                  s_dir s_flow c h_akpi_dir h_df
+              | none =>
+                dsimp only [] at h_ok
+                generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
+                cases db_res with
+                | error e => simp at h_ok
+                | ok db_inner =>
+                  cases db_inner with
+                  | some s_blk =>
+                    simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                    subst h_ok
+                    exact scanNextTokenIx_dispatchBlockIndicators_preserves_AllKeysPlaceholderInvIx
+                      s_dir s_blk c h_akpi_dir h_db
+                  | none =>
+                    dsimp only [] at h_ok
+                    -- item 47: adjacent-value check (pure, no state change)
+                    generalize h_av : scanNextTokenIx_checkAdjacentValue s_dir c = av_res at h_ok
+                    cases av_res with
+                    | error e => simp at h_ok
+                    | ok _ =>
+                    generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
+                    cases dc_res with
+                    | error e => simp at h_ok
+                    | ok s_ct =>
                       simp only [Except.ok.injEq, Option.some.injEq] at h_ok
                       subst h_ok
-                      exact scanNextTokenIx_dispatchBlockIndicators_preserves_AllKeysPlaceholderInvIx
-                        s_dir s_blk c h_akpi_dir h_db
-                    | none =>
-                      dsimp only [] at h_ok
-                      generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
-                      cases dc_res with
-                      | error e => simp at h_ok
-                      | ok s_ct =>
-                        simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                        subst h_ok
-                        exact scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx
-                          s_dir s_ct c h_akpi_dir h_dc
+                      exact scanNextTokenIx_dispatchContent_preserves_AllKeysPlaceholderInvIx
+                        s_dir s_ct c h_akpi_dir h_dc
 
 /-- Refactored §11i theorem (Step 6d.1e.12d): now threads
     `AllKeysPlaceholderInvIx` and projects `.1` for the sub-dispatcher
@@ -6102,6 +6380,22 @@ lemma scanNextTokenIx_preserves_FlowContextPSVIx {input : String}
           scanNextTokenIx_preprocess_preserves_AllKeysPlaceholderInvIx s s_pp c h_pp h_akpi
         have h_pl_pp : SimpleKeyPlaceholderInvIx s_pp := h_akpi_pp.1
         dsimp only [] at h_ok
+        -- §9.2 dangling-node check (item 133)
+        have h_dn : ∃ u, scanNextTokenIx_checkDanglingNode s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkDanglingNode s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uDN, h_dn⟩ := h_dn
+        rw [h_dn] at h_ok
+        dsimp only [] at h_ok
+        -- §8.1 flow-value floor (item 172): peeled the same way.
+        have h_fvp : ∃ u, scanNextTokenIx_checkFlowValueIndent s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkFlowValueIndent s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uFV, h_fvp⟩ := h_fvp
+        rw [h_fvp] at h_ok
+        dsimp only [] at h_ok
         generalize h_ds : scanNextTokenIx_dispatchStructural s_pp c = ds_res at h_ok
         cases ds_res with
         | error e => simp at h_ok
@@ -6121,6 +6415,13 @@ lemma scanNextTokenIx_preserves_FlowContextPSVIx {input : String}
               | ok u => exact ⟨u, rfl⟩
             obtain ⟨u, h_npd⟩ := h_npd
             rw [h_npd] at h_ok
+            -- §9.2 bare-document check (item 132)
+            have h_bd : ∃ u, scanNextTokenIx_checkBareDocument s_pp = .ok u := by
+              cases hx : scanNextTokenIx_checkBareDocument s_pp with
+              | error e => rw [hx] at h_ok; simp at h_ok
+              | ok u => exact ⟨u, rfl⟩
+            obtain ⟨u2, h_bd⟩ := h_bd
+            rw [h_bd] at h_ok
             dsimp only [] at h_ok
             generalize h_dir_def : (if s_pp.allowDirectives = true then
                 { s_pp with allowDirectives := false, documentEverStarted := true }
@@ -6135,47 +6436,47 @@ lemma scanNextTokenIx_preserves_FlowContextPSVIx {input : String}
             have h_pl_dir : SimpleKeyPlaceholderInvIx s_dir := by
               rw [← h_dir_def]
               exact allowDirectives_update_SimpleKeyPlaceholderInvIx s_pp h_pl_pp
-            generalize h_ck : scanNextTokenIx_checkBlockFlowIndent s_dir c = ck_res at h_ok
-            cases ck_res with
+            generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
+            cases df_res with
             | error e => simp at h_ok
-            | ok _ =>
-              dsimp only [] at h_ok
-              generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
-              cases df_res with
-              | error e => simp at h_ok
-              | ok df_inner =>
-                cases df_inner with
-                | some s_flow =>
-                  simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                  subst h_ok
-                  exact scanNextTokenIx_dispatchFlowIndicators_preserves_FlowContextPSVIx
-                    s_dir c s_flow h_df h_old_dir h_pl_dir
-                | none =>
-                  dsimp only [] at h_ok
-                  generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
-                  cases db_res with
-                  | error e => simp at h_ok
-                  | ok db_inner =>
-                    cases db_inner with
-                    | some s_blk =>
+            | ok df_inner =>
+              cases df_inner with
+              | some s_flow =>
+                simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                subst h_ok
+                exact scanNextTokenIx_dispatchFlowIndicators_preserves_FlowContextPSVIx
+                  s_dir c s_flow h_df h_old_dir h_pl_dir
+              | none =>
+                dsimp only [] at h_ok
+                generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
+                cases db_res with
+                | error e => simp at h_ok
+                | ok db_inner =>
+                  cases db_inner with
+                  | some s_blk =>
+                    simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                    subst h_ok
+                    exact scanNextTokenIx_dispatchBlockIndicators_preserves_FlowContextPSVIx
+                      s_dir c s_blk h_db h_old_dir h_pl_dir
+                  | none =>
+                    dsimp only [] at h_ok
+                    -- item 47: adjacent-value check (pure, no state change)
+                    generalize h_av : scanNextTokenIx_checkAdjacentValue s_dir c = av_res at h_ok
+                    cases av_res with
+                    | error e => simp at h_ok
+                    | ok _ =>
+                    generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
+                    cases dc_res with
+                    | error e => simp at h_ok
+                    | ok s_ct =>
                       simp only [Except.ok.injEq, Option.some.injEq] at h_ok
                       subst h_ok
-                      exact scanNextTokenIx_dispatchBlockIndicators_preserves_FlowContextPSVIx
-                        s_dir c s_blk h_db h_old_dir h_pl_dir
-                    | none =>
-                      dsimp only [] at h_ok
-                      generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
-                      cases dc_res with
-                      | error e => simp at h_ok
-                      | ok s_ct =>
-                        simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                        subst h_ok
-                        have h_peek_pp : s_pp.cursor.peek? = some c :=
-                          scanNextTokenIx_preprocess_peek_eq h_pp
-                        have h_peek_dir : s_dir.cursor.peek? = some c := by
-                          rw [← h_dir_def, allowDirectives_update_cursor]; exact h_peek_pp
-                        exact scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
-                          s_dir c s_ct h_dc h_peek_dir h_fni_dir h_old_dir
+                      have h_peek_pp : s_pp.cursor.peek? = some c :=
+                        scanNextTokenIx_preprocess_peek_eq h_pp
+                      have h_peek_dir : s_dir.cursor.peek? = some c := by
+                        rw [← h_dir_def, allowDirectives_update_cursor]; exact h_peek_pp
+                      exact scanNextTokenIx_dispatchContent_preserves_FlowContextPSVIx
+                        s_dir c s_ct h_dc h_peek_dir h_fni_dir h_old_dir
 
 /-- Refactored §11i theorem (Step 6d.1e.12d): mirrors
     `_FlowContextPSVIx` above. -/
@@ -6201,6 +6502,22 @@ lemma scanNextTokenIx_preserves_FlowNestingInvIx {input : String}
           scanNextTokenIx_preprocess_preserves_AllKeysPlaceholderInvIx s s_pp c h_pp h_akpi
         have h_pl_pp : SimpleKeyPlaceholderInvIx s_pp := h_akpi_pp.1
         dsimp only [] at h_ok
+        -- §9.2 dangling-node check (item 133)
+        have h_dn : ∃ u, scanNextTokenIx_checkDanglingNode s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkDanglingNode s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uDN, h_dn⟩ := h_dn
+        rw [h_dn] at h_ok
+        dsimp only [] at h_ok
+        -- §8.1 flow-value floor (item 172): peeled the same way.
+        have h_fvp : ∃ u, scanNextTokenIx_checkFlowValueIndent s s_pp = .ok u := by
+          cases hx : scanNextTokenIx_checkFlowValueIndent s s_pp with
+          | error e => rw [hx] at h_ok; simp at h_ok
+          | ok u => exact ⟨u, rfl⟩
+        obtain ⟨uFV, h_fvp⟩ := h_fvp
+        rw [h_fvp] at h_ok
+        dsimp only [] at h_ok
         generalize h_ds : scanNextTokenIx_dispatchStructural s_pp c = ds_res at h_ok
         cases ds_res with
         | error e => simp at h_ok
@@ -6220,6 +6537,13 @@ lemma scanNextTokenIx_preserves_FlowNestingInvIx {input : String}
               | ok u => exact ⟨u, rfl⟩
             obtain ⟨u, h_npd⟩ := h_npd
             rw [h_npd] at h_ok
+            -- §9.2 bare-document check (item 132)
+            have h_bd : ∃ u, scanNextTokenIx_checkBareDocument s_pp = .ok u := by
+              cases hx : scanNextTokenIx_checkBareDocument s_pp with
+              | error e => rw [hx] at h_ok; simp at h_ok
+              | ok u => exact ⟨u, rfl⟩
+            obtain ⟨u2, h_bd⟩ := h_bd
+            rw [h_bd] at h_ok
             dsimp only [] at h_ok
             generalize h_dir_def : (if s_pp.allowDirectives = true then
                 { s_pp with allowDirectives := false, documentEverStarted := true }
@@ -6232,43 +6556,43 @@ lemma scanNextTokenIx_preserves_FlowNestingInvIx {input : String}
             have h_pl_dir : SimpleKeyPlaceholderInvIx s_dir := by
               rw [← h_dir_def]
               exact allowDirectives_update_SimpleKeyPlaceholderInvIx s_pp h_pl_pp
-            generalize h_ck : scanNextTokenIx_checkBlockFlowIndent s_dir c = ck_res at h_ok
-            cases ck_res with
+            generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
+            cases df_res with
             | error e => simp at h_ok
-            | ok _ =>
-              dsimp only [] at h_ok
-              generalize h_df : scanNextTokenIx_dispatchFlowIndicators s_dir c = df_res at h_ok
-              cases df_res with
-              | error e => simp at h_ok
-              | ok df_inner =>
-                cases df_inner with
-                | some s_flow =>
-                  simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                  subst h_ok
-                  exact scanNextTokenIx_dispatchFlowIndicators_preserves_FlowNestingInvIx
-                    s_dir c s_flow h_df h_fni_dir h_pl_dir
-                | none =>
-                  dsimp only [] at h_ok
-                  generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
-                  cases db_res with
-                  | error e => simp at h_ok
-                  | ok db_inner =>
-                    cases db_inner with
-                    | some s_blk =>
+            | ok df_inner =>
+              cases df_inner with
+              | some s_flow =>
+                simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                subst h_ok
+                exact scanNextTokenIx_dispatchFlowIndicators_preserves_FlowNestingInvIx
+                  s_dir c s_flow h_df h_fni_dir h_pl_dir
+              | none =>
+                dsimp only [] at h_ok
+                generalize h_db : scanNextTokenIx_dispatchBlockIndicators s_dir c = db_res at h_ok
+                cases db_res with
+                | error e => simp at h_ok
+                | ok db_inner =>
+                  cases db_inner with
+                  | some s_blk =>
+                    simp only [Except.ok.injEq, Option.some.injEq] at h_ok
+                    subst h_ok
+                    exact scanNextTokenIx_dispatchBlockIndicators_preserves_FlowNestingInvIx
+                      s_dir c s_blk h_db h_fni_dir h_pl_dir
+                  | none =>
+                    dsimp only [] at h_ok
+                    -- item 47: adjacent-value check (pure, no state change)
+                    generalize h_av : scanNextTokenIx_checkAdjacentValue s_dir c = av_res at h_ok
+                    cases av_res with
+                    | error e => simp at h_ok
+                    | ok _ =>
+                    generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
+                    cases dc_res with
+                    | error e => simp at h_ok
+                    | ok s_ct =>
                       simp only [Except.ok.injEq, Option.some.injEq] at h_ok
                       subst h_ok
-                      exact scanNextTokenIx_dispatchBlockIndicators_preserves_FlowNestingInvIx
-                        s_dir c s_blk h_db h_fni_dir h_pl_dir
-                    | none =>
-                      dsimp only [] at h_ok
-                      generalize h_dc : scanNextTokenIx_dispatchContent s_dir c = dc_res at h_ok
-                      cases dc_res with
-                      | error e => simp at h_ok
-                      | ok s_ct =>
-                        simp only [Except.ok.injEq, Option.some.injEq] at h_ok
-                        subst h_ok
-                        exact scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
-                          s_dir c s_ct h_dc h_fni_dir
+                      exact scanNextTokenIx_dispatchContent_preserves_FlowNestingInvIx
+                        s_dir c s_ct h_dc h_fni_dir
 
 /-- Refactored §11j theorem (Step 6d.1e.12d): threads
     `AllKeysPlaceholderInvIx` through the induction step. The recursive
@@ -6291,6 +6615,12 @@ lemma scanLoopIx_preserves_FlowContextPSVIx {input : String}
     · split at h_ok
       · cases h_ok
       · split at h_ok
+        · cases h_ok
+        -- §9.2 dangling-node check (item 133)
+        split at h_ok
+        · cases h_ok
+        -- §8.1 flow-value floor (item 172)
+        split at h_ok
         · cases h_ok
         · simp only [Except.ok.injEq] at h_ok
           subst h_ok
@@ -6321,10 +6651,19 @@ lemma scanLoopIx_preserves_FlowNestingInvIx {input : String}
       · cases h_ok
       · split at h_ok
         · cases h_ok
+        -- §9.2 dangling-node check (item 133)
+        split at h_ok
+        · cases h_ok
+        -- §8.1 flow-value floor (item 172)
+        split at h_ok
+        · cases h_ok
         · simp only [Except.ok.injEq] at h_ok
           subst h_ok
-          rename_i h_flow0 _h_dirOK
           have h_flowEq0 : s.flowLevel = 0 := by
+            -- The dangling-node split (item 133) and the flow-value floor
+            -- split (item 172) both add anonymous binders, so name the
+            -- flow-level hypothesis by its TYPE rather than its position.
+            have h_flow0 : ¬ s.flowLevel > 0 := by assumption
             simp only [Nat.not_lt, Nat.le_zero] at h_flow0
             exact h_flow0
           have h_final := finalEmit_preserves_FlowNestingInvIx s h_fni
@@ -6397,3 +6736,5 @@ lemma scan_flow_brackets_matched_ix_axiom
     (by split <;> exact h_akpi_after_emit) h_scan
 
 end L4YAML.Proofs.Indexed.ScannerPlainScalarValid
+
+end Blanket

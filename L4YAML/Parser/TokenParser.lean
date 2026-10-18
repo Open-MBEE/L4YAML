@@ -2,10 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Token.Token
-import L4YAML.Spec.YamlSpec
-import L4YAML.Parser.State
-import L4YAML.Parser.Fuel
+
+module
+
+public import L4YAML.Token.Token
+public import L4YAML.Spec.YamlSpec
+public meta import L4YAML.Spec.YamlSpec
+public import L4YAML.Parser.State
+public import L4YAML.Parser.Fuel
+
+@[expose] public section Blanket
 
 /-!
 # YAML Grammar Parser (Token → AST) — Mutual Block
@@ -832,3 +838,5 @@ def parseStream (tokens : Array (Positioned YamlToken))
   parseStreamLoop ps #[] .initial tokens.size
 
 end L4YAML.TokenParser
+
+end Blanket

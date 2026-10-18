@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 490 — a guard RE-SCOPE that demotes a PROJECTED field to a UNIFIED residual can SIMPLIFY the
 downstream consumer: the unified residual routes through ONE invariant the consumer already holds, shedding
@@ -117,3 +122,5 @@ theorem weak_feContent :
 example : ∀ k', 0 ≤ k' → k' < 4 → Sep k' → bal k' = 0 → CS (k' + 1) := weak_feContent
 
 end UnifiedResidualRoutesThroughOneInvariant
+
+end Blanket

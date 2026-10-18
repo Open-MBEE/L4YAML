@@ -2,7 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.StructureCoupling
+
+module
+
+public import L4YAML.Proofs.Coupling.StructureCoupling
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-!
 # Scan-Strict Coupling: Full-Consumption Infrastructure
@@ -41,10 +50,12 @@ namespace L4YAML.Proofs.ScanStrictCoupling
 
 open L4YAML.Surface
 open L4YAML.Scanner
+open L4YAML.Proofs.BlockScalarFlowGuard
 open L4YAML.Proofs.CouplingBridge
 open L4YAML.Proofs.ScannerCoupling
 open L4YAML.Proofs.ScalarCoupling
 open L4YAML.Proofs.StructureCoupling
+open L4YAML.Proofs.FlowAdjacency
 
 /-! ## §1 CharsFromOffset–toList Bridge -/
 
@@ -122,24 +133,8 @@ lemma scanNextToken_dispatchStructural_corr (sc : ScannerState) (sp : SurfPos) (
   unfold scanNextToken_dispatchStructural at hok
   simp only [bind, Except.bind, pure, Except.pure] at hok
   split at hok
-  · split at hok
-    · simp at hok
-    · split at hok
-      · simp at hok
-      · split at hok
-        · have h := Except.ok.inj hok; injection h with h; subst h
-          exact scanDocumentStart_corr sc sp hcorr
-        · split at hok
-          · split at hok
-            · simp at hok
-            · have h := Except.ok.inj hok; injection h with h; subst h
-              exact scanDocumentEnd_corr sc sp hcorr _ ‹_›
-          · split at hok
-            · split at hok
-              · simp at hok
-              · have h := Except.ok.inj hok; injection h with h; subst h
-                exact scanDirective_corr sc sp hcorr _ ‹_›
-            · simp at hok
+  · -- item 50: the floor refuses outright (the `]`/`}` exemption is gone)
+    simp at hok
   · split at hok
     · simp at hok
     · split at hok
@@ -163,6 +158,7 @@ lemma scanNextToken_dispatchFlowIndicators_corr (sc : ScannerState) (sp : SurfPo
     (hok : scanNextToken_dispatchFlowIndicators sc c = .ok (some s')) :
     ∃ sp', ScannerSurfCorr s' sp' := by
   unfold scanNextToken_dispatchFlowIndicators at hok
+  replace hok := peel_flowAdj hok
   simp only [bind, Except.bind, pure, Except.pure] at hok
   split at hok
   · have h := Except.ok.inj hok; injection h with h; subst h
@@ -172,8 +168,10 @@ lemma scanNextToken_dispatchFlowIndicators_corr (sc : ScannerState) (sp : SurfPo
       · simp at hok
       · split at hok
         · simp at hok
-        · have h := Except.ok.inj hok; injection h with h; subst h
-          exact scanFlowSequenceEnd_corr sc sp hcorr
+        · split at hok
+          · simp at hok
+          · have h := Except.ok.inj hok; injection h with h; subst h
+            exact scanFlowSequenceEnd_corr sc sp hcorr
     · split at hok
       · have h := Except.ok.inj hok; injection h with h; subst h
         exact scanFlowMappingStart_corr sc sp hcorr
@@ -182,8 +180,10 @@ lemma scanNextToken_dispatchFlowIndicators_corr (sc : ScannerState) (sp : SurfPo
           · simp at hok
           · split at hok
             · simp at hok
-            · have h := Except.ok.inj hok; injection h with h; subst h
-              exact scanFlowMappingEnd_corr sc sp hcorr
+            · split at hok
+              · simp at hok
+              · have h := Except.ok.inj hok; injection h with h; subst h
+                exact scanFlowMappingEnd_corr sc sp hcorr
         · split at hok
           · split at hok
             · simp at hok
@@ -225,7 +225,9 @@ lemma scanNextToken_dispatchContent_corr (sc : ScannerState) (sp : SurfPos) (c :
   unfold scanNextToken_dispatchContent at hok
   simp only [bind, Except.bind, pure, Except.pure] at hok
   split at hok
-  · -- '&': scanAnchorOrAlias bind
+  · -- '&': item-9e property-run guard, then the scanAnchorOrAlias bind
+    split at hok
+    · simp at hok
     generalize h_anch : scanAnchorOrAlias sc true = result at hok
     cases result with
     | error e => simp at hok
@@ -234,17 +236,16 @@ lemma scanNextToken_dispatchContent_corr (sc : ScannerState) (sp : SurfPos) (c :
       obtain ⟨sp', hcorr'⟩ := scanAnchorOrAlias_corr sc sp hcorr true s_a h_anch
       exact ⟨sp', ⟨hcorr'.chars_from, hcorr'.col_eq, hcorr'.end_eq, hcorr'.input_prefix, hcorr'.indent_cols_nonneg⟩⟩
   · split at hok
-    · split at hok
+    · split at hok   -- item 9e: the property-run guard
       · simp at hok
-      · -- '*': scanAnchorOrAlias bind
-        generalize h_anch : scanAnchorOrAlias sc false = result at hok
-        cases result with
-        | error e => simp at hok
-        | ok s_a =>
-          have h := Except.ok.inj hok; subst h
-          exact scanAnchorOrAlias_corr sc sp hcorr false s_a h_anch
+      split at hok
+      · simp at hok
+      · -- '*': item 9h peels `validateAliasClose`, then the alias bind.
+        exact scanAnchorOrAlias_corr sc sp hcorr false _ (aliasArm_scan_ok hok)
     · split at hok
-      · -- '!': scanTag bind
+      · -- '!': item-9e property-run guard, then the scanTag bind
+        split at hok
+        · simp at hok
         generalize h_tag : scanTag sc = result at hok
         cases result with
         | error e => simp at hok
@@ -252,8 +253,9 @@ lemma scanNextToken_dispatchContent_corr (sc : ScannerState) (sp : SurfPos) (c :
           have h := Except.ok.inj hok; subst h
           exact scanTag_corr sc sp hcorr s_t h_tag
       · split at hok
-        · -- '|' or '>': scanBlockScalar returns directly
-          exact scanBlockScalar_corr sc sp hcorr hok
+        · -- '|' or '>': scanBlockScalar returns directly, under the item-9c
+          -- `!inFlow` guard (peeled: `.error` cannot equal `.ok`)
+          exact scanBlockScalar_corr sc sp hcorr (peel_blockScalarGuard hok)
         · split at hok
           · split at hok
             · simp at hok
@@ -372,6 +374,12 @@ lemma scanNextToken_corr (sc : ScannerState) (sp : SurfPos)
     · exact absurd (Except.ok.inj hok) nofun
     · rename_i s_pre c_pre h_pre
       obtain ⟨sp_pre, hcorr_pre⟩ := scanNextToken_preprocess_corr sc sp hcorr s_pre c_pre h_pre
+      -- §9.2 dangling-node check (item 133)
+      split at hok
+      · simp at hok
+      -- §8.1 flow-value floor (item 172)
+      split at hok
+      · simp at hok
       split at hok
       · simp at hok
       · split at hok
@@ -383,6 +391,9 @@ lemma scanNextToken_corr (sc : ScannerState) (sp : SurfPos)
           · -- pending-directives check (Fix B)
             split at hok
             · simp at hok
+            -- §9.2 bare-document check (item 132)
+            split at hok
+            · simp at hok
             · have hcorr_ad : ScannerSurfCorr
                   (if s_pre.allowDirectives then
                     { s_pre with allowDirectives := false, documentEverStarted := true }
@@ -391,17 +402,18 @@ lemma scanNextToken_corr (sc : ScannerState) (sp : SurfPos)
                 · exact ⟨hcorr_pre.chars_from, hcorr_pre.col_eq, hcorr_pre.end_eq, hcorr_pre.input_prefix, hcorr_pre.indent_cols_nonneg⟩
                 · exact hcorr_pre
               split at hok
-              · simp at hok
+              · rename_i s_flow h_flow
+                have h := Except.ok.inj hok; injection h with h; subst h
+                exact scanNextToken_dispatchFlowIndicators_corr _ sp_pre c_pre hcorr_ad s_flow h_flow
               · split at hok
-                · rename_i s_flow h_flow
-                  have h := Except.ok.inj hok; injection h with h; subst h
-                  exact scanNextToken_dispatchFlowIndicators_corr _ sp_pre c_pre hcorr_ad s_flow h_flow
+                · simp at hok
                 · split at hok
-                  · simp at hok
-                  · split at hok
-                    · rename_i s_blk h_blk
-                      have h := Except.ok.inj hok; injection h with h; subst h
-                      exact scanNextToken_dispatchBlockIndicators_corr _ sp_pre c_pre hcorr_ad s_blk h_blk
+                  · rename_i s_blk h_blk
+                    have h := Except.ok.inj hok; injection h with h; subst h
+                    exact scanNextToken_dispatchBlockIndicators_corr _ sp_pre c_pre hcorr_ad s_blk h_blk
+                  · -- adjacent-value check (item 47)
+                    split at hok
+                    · simp at hok
                     · split at hok
                       · simp at hok
                       · rename_i s_cnt h_cnt
@@ -420,23 +432,33 @@ lemma scanNextToken_none_consumed (sc : ScannerState) (sp : SurfPos)
   · split at hok
     · rename_i h_pre
       exact scanNextToken_preprocess_none_consumed sc sp hcorr h_pre
-    · split at hok
+    · -- §9.2 dangling-node check (item 133)
+      split at hok
+      · simp at hok
+      -- §8.1 flow-value floor (item 172)
+      split at hok
+      · simp at hok
+      split at hok
       · simp at hok
       · split at hok
         · exact absurd (Except.ok.inj hok) nofun
         · -- pending-directives check (Fix B)
           split at hok
           · simp at hok
+          -- §9.2 bare-document check (item 132)
+          split at hok
+          · simp at hok
           · split at hok
             · simp at hok
             · split at hok
-              · simp at hok
+              · exact absurd (Except.ok.inj hok) nofun
               · split at hok
-                · exact absurd (Except.ok.inj hok) nofun
+                · simp at hok
                 · split at hok
-                  · simp at hok
-                  · split at hok
-                    · exact absurd (Except.ok.inj hok) nofun
+                  · exact absurd (Except.ok.inj hok) nofun
+                  · -- adjacent-value check (item 47)
+                    split at hok
+                    · simp at hok
                     · split at hok
                       · simp at hok
                       · exact absurd (Except.ok.inj hok) nofun
@@ -492,10 +514,10 @@ theorem scan_full_consumption (input : String)
   -- BOM handling preserves ScannerSurfCorr
   have h_bom : ∃ sp, ScannerSurfCorr
       (match (ScannerState.mk' input |>.emit .streamStart).peek? with
-       | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).advance
+       | some '\uFEFF' => (ScannerState.mk' input |>.emit .streamStart).consumeBOM
        | _ => ScannerState.mk' input |>.emit .streamStart) sp := by
     split
-    · exact advance_corr _ _ h_emit
+    · exact (consumeBOM_corr _ _ h_emit).imp fun _ h => h.1
     · exact ⟨_, h_emit⟩
   obtain ⟨sp_bom, h_bom⟩ := h_bom
   exact scanLoop_full_consumption _ sp_bom _ tokens h_bom h
@@ -786,3 +808,5 @@ lemma GPlus_snoc {P : SurfPos → SurfPos → Prop} {a b c : SurfPos}
       (GStar_trans hrest (GStar.cons _ _ _ hlast (GStar.nil _)))
 
 end L4YAML.Proofs.ScanStrictCoupling
+
+end Blanket

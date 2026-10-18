@@ -2,9 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedState
-import L4YAML.Proofs.Scanner.IndexedWhitespace
-import L4YAML.Proofs.Scanner.IndexedScalar
+
+module
+
+public import L4YAML.Scanner.IndexedState
+public import L4YAML.Proofs.Scanner.IndexedWhitespace
+public import L4YAML.Proofs.Scanner.IndexedScalar
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `IndexedDispatch` — Phase 3 top-level scanner (staging)
 
@@ -480,8 +486,194 @@ def isValueCandidateIx {input : String} (s : ScannerStateIx input) : Bool :=
 /-! ## Block-indicator scanners
 
 `scanBlockEntryIx` (`-`), `scanKeyIx` (`?`), `scanValueIx` (`:`).
-Both `scanBlockEntryIx` and `scanKeyIx` carry the legacy tab-in-
-indentation check (§6.1 [187] hardening — landed in Step 5b.2). -/
+All three carry the legacy tab-in-indentation check (§6.1 [187] hardening —
+`-` landed in Step 5b.2, `?` and `:` with DOCS item 31, which found that the
+whitespace in front of a block indicator was only checked for the `-`).  DOCS
+item 32 added `:`'s second reading, `tabInLineIndent`: when the whole line in
+front of the `:` is whitespace there is no key on it, so the run IS
+`[63] s-indent(n)` — the same verdict, taken from the line rather than from
+where a key happens to have been recorded. -/
+
+/-- Look back through trailing `.placeholder` reservation slots to find
+    the last real token value (indexed twin of
+    `L4YAML.Scanner.lastRealTokenVal?`). Returns `none` if the stream
+    contains no real token yet. -/
+def lastRealTokenValIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option YamlToken :=
+  let arr := ts.tokens
+  if arr.size > 0 then
+    let lastIdx := arr.size - 1
+    let tok1 := arr[lastIdx]!.token
+    if tok1 == YamlToken.placeholder && lastIdx > 0 then
+      let tok2 := arr[lastIdx - 1]!.token
+      if tok2 == YamlToken.placeholder && lastIdx > 1 then
+        some arr[lastIdx - 2]!.token
+      else some tok2
+    else some tok1
+  else none
+
+/-- Index of the token `lastRealTokenValIx?` reads (indexed twin of
+    `L4YAML.Scanner.lastRealTokenIdx?`). -/
+def lastRealTokenIdxIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option Nat :=
+  let arr := ts.tokens
+  if arr.size > 0 then
+    let lastIdx := arr.size - 1
+    if arr[lastIdx]!.token == YamlToken.placeholder && lastIdx > 0 then
+      if arr[lastIdx - 1]!.token == YamlToken.placeholder && lastIdx > 1 then
+        some (lastIdx - 2)
+      else some (lastIdx - 1)
+    else some lastIdx
+  else none
+
+/-- Walk this line's tokens backwards looking for a `---` — the indexed twin
+    of `docStartOnLine` (item 48). -/
+def docStartOnLineLoopIx {input : String} (ts : Indexed.TokenStream input)
+    (i : Nat) (line : Nat) : Bool :=
+  match i with
+  | 0 => false
+  | j + 1 =>
+    match ts.tokens[j]? with
+    | none => false
+    | some t =>
+      if t.token == .documentStart && t.start.line == line then true
+      else if t.start.line == line || t.token == .placeholder then
+        docStartOnLineLoopIx ts j line
+      else false
+
+def docStartOnLineIx {input : String} (ts : Indexed.TokenStream input)
+    (line : Nat) : Bool :=
+  docStartOnLineLoopIx ts ts.size line
+
+/-- The real token *before* the one `lastRealTokenValIx?` reads (indexed twin of
+    `L4YAML.Scanner.penultRealTokenVal?`). -/
+def penultRealTokenValIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option YamlToken :=
+  match lastRealTokenIdxIx? ts with
+  | some i => lastRealTokenValIx? { tokens := ts.tokens.extract 0 i }
+  | none => none
+
+/-- Trailing run of node-property tokens, most recent first (indexed twin of
+    `L4YAML.Scanner.trailingPropertyRun`). -/
+def trailingPropertyRunIx {input : String} (ts : Indexed.TokenStream input) :
+    List YamlToken :=
+  match lastRealTokenValIx? ts with
+  | some t1 =>
+    if t1.isNodeProperty then
+      match penultRealTokenValIx? ts with
+      | some t2 => if t2.isNodeProperty then [t1, t2] else [t1]
+      | none => [t1]
+    else []
+  | none => []
+
+/-- The last real token itself, not just its value (indexed twin of
+    `L4YAML.Scanner.lastRealToken?`). -/
+def lastRealTokenIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option (Indexed.IxToken input) :=
+  let arr := ts.tokens
+  if arr.size > 0 then
+    let lastIdx := arr.size - 1
+    let tok1 := arr[lastIdx]!
+    if tok1.token == YamlToken.placeholder && lastIdx > 0 then
+      let tok2 := arr[lastIdx - 1]!
+      if tok2.token == YamlToken.placeholder && lastIdx > 1 then
+        some arr[lastIdx - 2]!
+      else some tok2
+    else some tok1
+  else none
+
+/-- Indexed twin of `L4YAML.Scanner.penultRealToken?`. -/
+def penultRealTokenIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option (Indexed.IxToken input) :=
+  match lastRealTokenIdxIx? ts with
+  | some i => lastRealTokenIx? { tokens := ts.tokens.extract 0 i }
+  | none => none
+
+/-- The trailing property run truncated at a line change (indexed twin of
+    `L4YAML.Scanner.trailingPropertyRunOnLine`; see it for why a same-line run
+    is a sound reading in block context). -/
+def trailingPropertyRunOnLineIx {input : String} (ts : Indexed.TokenStream input)
+    (line : Nat) : List YamlToken :=
+  match lastRealTokenIx? ts with
+  | some t1 =>
+    if t1.token.isNodeProperty && t1.start.line == line then
+      match penultRealTokenIx? ts with
+      | some t2 =>
+        if t2.token.isNodeProperty && t2.start.line == line then [t1.token, t2.token]
+        else [t1.token]
+      | none => [t1.token]
+    else []
+  | none => []
+
+/-- Indexed twin of `L4YAML.Scanner.lastTokenIsNodePropertyOnLine`. -/
+def lastTokenIsNodePropertyOnLineIx {input : String} (ts : Indexed.TokenStream input)
+    (line : Nat) : Bool :=
+  match lastRealTokenIx? ts with
+  | some t => t.token.isNodeProperty && t.start.line == line
+  | none => false
+
+/-- Indexed twin of `L4YAML.Scanner.prevRealIdx?`. -/
+def prevRealIdxIx? {input : String} (ts : Indexed.TokenStream input) :
+    Nat → Option Nat
+  | 0 => none
+  | i + 1 =>
+    if ts.tokens[i]!.token == .placeholder then prevRealIdxIx? ts i else some i
+
+/-- Indexed twin of `L4YAML.Scanner.slotHolderIdx?`. -/
+@[yaml_spec "6.9" 96 "c-ns-properties"]
+def slotHolderIdxIx? {input : String} (ts : Indexed.TokenStream input) : Option Nat :=
+  match prevRealIdxIx? ts ts.tokens.size with
+  | none => none
+  | some i =>
+    if ts.tokens[i]!.token.isNodeProperty then
+      match prevRealIdxIx? ts i with
+      | none => none
+      | some j =>
+        if ts.tokens[j]!.token.isNodeProperty then prevRealIdxIx? ts j else some j
+    else some i
+
+/-- Indexed twin of `L4YAML.Scanner.nodeSlotAwaited`. -/
+@[yaml_spec "8.2.2" 187 "l+block-mapping",
+  yaml_spec "8.2.1" 183 "l+block-sequence"]
+def nodeSlotAwaitedIx {input : String} (ts : Indexed.TokenStream input) : Bool :=
+  match slotHolderIdxIx? ts with
+  | some i => ts.tokens[i]!.token.offersNodeSlot
+  | none => false
+
+/-- Indexed twin of `L4YAML.Scanner.sameIndentSequenceOpenLoop`. -/
+@[yaml_spec "8.2.1" 183 "l+block-sequence"]
+def sameIndentSequenceOpenLoopIx {input : String} (ts : Indexed.TokenStream input)
+    (c : Int) : Nat → Bool
+  | 0 => false
+  | j + 1 =>
+    let t := ts.tokens[j]!
+    if t.token == .blockEntry && (t.start.col : Int) == c then true
+    else if (t.token == .key || t.token == .value) && (t.start.col : Int) <= c then false
+    else sameIndentSequenceOpenLoopIx ts c j
+
+/-- Indexed twin of `L4YAML.Scanner.sameIndentSequenceOpen`. -/
+@[yaml_spec "8.2.1" 183 "l+block-sequence"]
+def sameIndentSequenceOpenIx {input : String} (ts : Indexed.TokenStream input)
+    (c : Int) : Bool :=
+  sameIndentSequenceOpenLoopIx ts c ts.tokens.size
+
+/-- Indexed twin of `L4YAML.Scanner.atMappingIndent`. -/
+def atMappingIndentIx {input : String} (s : ScannerStateIx input) : Bool :=
+  match s.indents.back? with
+  | some top => !top.isSequence && ((s.cursor.pos.col : Int) == top.column)
+  | none => false
+
+/-- Indexed twin of `L4YAML.Scanner.scanBlockEntryValidate`. -/
+@[yaml_spec "9.2" 211 "l-yaml-stream",
+  yaml_spec "8.2.1" 183 "l+block-sequence",
+  yaml_spec "8.2.1" 185 "s-l+block-indented"]
+def scanBlockEntryValidateIx {input : String} (s : ScannerStateIx input) :
+    Except ScanError Unit :=
+  if atMappingIndentIx s && !nodeSlotAwaitedIx s.tokens
+      && !sameIndentSequenceOpenIx s.tokens (s.cursor.pos.col : Int) then
+    .error (.invalidBareDocument s.cursor.pos.line s.cursor.pos.col)
+  else
+    .ok ()
 
 /-- Scan `-` block-entry indicator.
 
@@ -493,22 +685,60 @@ indentation check (§6.1 [187] hardening — landed in Step 5b.2). -/
 def scanBlockEntryIx {input : String} (s : ScannerStateIx input) :
     Except ScanError (ScannerStateIx input) := do
   if !s.inFlow then
+    -- Full `else`-chain, for the reason `scanBlockEntry` gives: with a check
+    -- after them the statement form desugars through `__do_jp` join points.
     if s.hasTabInPrecedingWhitespace then
       throw (.tabInIndentation s.cursor.pos.line s.cursor.pos.col)
+    -- Item 48: mirror of the legacy same-line check — see `scanBlockEntry`.
+    else if s.implicitValueLine == some s.cursor.pos.line
+        || lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
+        || docStartOnLineIx s.tokens s.cursor.pos.line then
+      throw (.sameLineBlockCollection s.cursor.pos.line s.cursor.pos.col)
+    -- §9.2 [211] (item 134): mirror of the legacy check — see
+    -- `scanBlockEntryValidate`.
+    else
+      scanBlockEntryValidateIx s
   let s := if !s.inFlow then pushSequenceIndentIx s s.cursor.pos.col else s
   let s := s.emit YamlToken.blockEntry
   let s := s.advance
   .ok { s with simpleKeyAllowed := true }
 
+/-- Indexed twin of `L4YAML.Scanner.atSequenceIndent`. -/
+def atSequenceIndentIx {input : String} (s : ScannerStateIx input) : Bool :=
+  match s.indents.back? with
+  | some top => top.isSequence && ((s.cursor.pos.col : Int) == top.column)
+  | none => false
+
+/-- Indexed twin of `L4YAML.Scanner.scanKeyValidate`. -/
+@[yaml_spec "8.2.2"]
+def scanKeyValidateIx {input : String} (s : ScannerStateIx input) :
+    Except ScanError Unit := do
+  if s.hasTabInPrecedingWhitespace then
+    throw (.tabInIndentation s.cursor.pos.line s.cursor.pos.col)
+  -- Item 48: mirror of the legacy same-line check — see `scanKey`.
+  if s.implicitValueLine == some s.cursor.pos.line
+      || lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
+      || docStartOnLineIx s.tokens s.cursor.pos.line then
+    throw (.sameLineBlockCollection s.cursor.pos.line s.cursor.pos.col)
+  -- §8.2.1: mirror of the legacy check — see `scanKey`.
+  if atSequenceIndentIx s then
+    throw (.trailingContent s.cursor.pos.line s.cursor.pos.col)
+
 /-- Scan `?` explicit-key indicator.
 
-    Throws `tabInIndentation` if a tab character immediately follows
-    the `?` indicator in block context — that tab would be
-    indentation for the key content (§6.1). -/
+    Throws `tabInIndentation` if a tab appears in the contiguous whitespace
+    immediately before the `?` — in block context the indicator stands directly
+    after `[63] s-indent(n)`, which is spaces only — or if a tab character
+    immediately follows it, which would be indentation for the key content
+    (§6.1) — or `trailingContent` if the `?` stands at a block sequence's own
+    indent (§8.2.1, `atSequenceIndentIx`). -/
 def scanKeyIx {input : String} (s : ScannerStateIx input) :
     Except ScanError (ScannerStateIx input) := do
+  if !s.inFlow then
+    scanKeyValidateIx s
   let s := if !s.inFlow then pushMappingIndentIx s s.cursor.pos.col else s
   let line := s.cursor.pos.line
+  let col := s.cursor.pos.col
   let s := s.emit YamlToken.key
   let s := s.advance
   if !s.inFlow then
@@ -516,6 +746,7 @@ def scanKeyIx {input : String} (s : ScannerStateIx input) :
       throw (.tabInIndentation s.cursor.pos.line s.cursor.pos.col)
   .ok { s with simpleKeyAllowed := true,
                 explicitKeyLine := some line,
+                explicitKeyCol := (col : Int),
                 simpleKey := { cursor := IxCursor.start input } }
 
 /-- Clear a spurious simple-key when an explicit `?` key is pending.
@@ -562,10 +793,18 @@ def scanValueValidateIx {input : String} (s : ScannerStateIx input) :
       if let some top := s.indents.back? then
         if top.isSequence && keyCol == top.column then
           throw (.trailingContent s.simpleKey.cursor.pos.line s.simpleKey.cursor.pos.col)
-  -- T833: missing comma in flow mapping
+  -- T833: missing comma in flow mapping (item 9r: line-independent).
+  -- Mirrors the legacy strictening (`Scanner/SimpleKey.lean`): the
+  -- reservation at `simpleKey.tokenIndex` is the entry's start, and a
+  -- `.value` in the slot directly below it means the previous entry was
+  -- already complete (`k: v`) — this `:` continues it with no separator,
+  -- invalid whatever the line. Rejects `[a: b: c]`, `{a: : b}`, `[: :]`,
+  -- `[a: &x : b]` and their neighbours at the scanner, closing the
+  -- deliberate legacy↔indexed divergence pinned in
+  -- `Tests/Guards/Proofs/ScannerFlowPropsColon.lean` §4.
   if s.simpleKey.possible && s.inFlow && s.simpleKey.tokenIndex > 0 then
     if let some prevTok := s.tokens.tokens[s.simpleKey.tokenIndex - 1]? then
-      if prevTok.token == .value && prevTok.start.line != s.cursor.pos.line then
+      if prevTok.token == .value then
         throw (.invalidFlowEntry s.cursor.pos.line s.cursor.pos.col)
   -- §8.2.2 [197]: explicit value `:` must be at mapping indent level
   if let some ekLine := s.explicitKeyLine then
@@ -574,6 +813,11 @@ def scanValueValidateIx {input : String} (s : ScannerStateIx input) :
         throw (.sameLineExplicitValue s.cursor.pos.line s.cursor.pos.col)
       else if (s.cursor.pos.col : Int) != s.currentIndent then
         throw (.misindentedExplicitValue s.cursor.pos.line s.cursor.pos.col s.currentIndent)
+  -- Item 48: mirror of the legacy same-line checks — see `scanValueValidate`.
+  if !s.inFlow && s.implicitValueLine == some s.cursor.pos.line then
+    throw (.nestedMappingOnLine s.cursor.pos.line s.cursor.pos.col)
+  if !s.inFlow && docStartOnLineIx s.tokens s.cursor.pos.line then
+    throw (.contentOnDocumentStartLine s.cursor.pos.line s.cursor.pos.col)
 
 /-- Resolve a pending simple key by overwriting placeholders at
     `simpleKey.tokenIndex`. Pure state update on the token stream
@@ -602,6 +846,28 @@ def scanValuePrepareIx {input : String} (s : ScannerStateIx input) :
   else
     if !s.inFlow then pushMappingIndentIx s s.cursor.pos.col else s
 
+/-- §6.1 for the `:` indicator: the whitespace run in front of the ENTRY must
+    carry no tab, and the entry starts at the implicit KEY when there is one —
+    the run between key and `:` is `[154]`'s own trailing `s-separate-in-line?`,
+    where a tab is legal.  With no key (`[192]`'s `e-node`, or the explicit value) the entry starts at the `:` and its own run is the indentation.
+
+    Indexed analogue of `L4YAML.Scanner.scanValueIndentTabCheck`; see there for
+    why following the entry start is what keeps `a:⏎␣␣→[1, 2]` legal. -/
+@[yaml_spec "6.1", yaml_spec "8.2.2" 187 "l+block-mapping"]
+def scanValueIndentTabCheckIx {input : String} (s : ScannerStateIx input) :
+    Except ScanError Unit :=
+  if s.inFlow then .ok ()
+  else if s.tabInLineIndent then
+    throw (.tabInIndentation s.cursor.pos.line s.cursor.pos.col)
+  else if s.simpleKey.possible then
+    if ScannerStateIx.hasTabInPrecedingWhitespaceLoop
+        input s.simpleKey.cursor.pos.offset s.simpleKey.cursor.pos.offset then
+      throw (.tabInIndentation s.simpleKey.cursor.pos.line s.simpleKey.cursor.pos.col)
+    else .ok ()
+  else if s.hasTabInPrecedingWhitespace then
+    throw (.tabInIndentation s.cursor.pos.line s.cursor.pos.col)
+  else .ok ()
+
 /-- §6.1 tab-after-`:` check: if the explicit value was at or below
     the current indent level and is in block context, the character
     immediately after the consumed `:` must not be a tab.
@@ -616,20 +882,41 @@ def scanValueTabCheckIx {input : String} (origCol : Int) (origIndent : Int)
     else .ok ()
   else .ok ()
 
-/-- Scan `:` value indicator. Mirrors the legacy four-stage chain
-    `scanValueClearKey` / `scanValueValidate` / `scanValuePrepare` /
-    `scanValueTabCheck` so each stage carries a single provable
-    property. -/
+/-- Scan `:` value indicator. Mirrors the legacy five-stage chain
+    `scanValueClearKey` / `scanValueValidate` / `scanValueIndentTabCheck` /
+    `scanValuePrepare` / `scanValueTabCheck` so each stage carries a single
+    provable property. -/
 @[yaml_spec "8.2.2" 6 "c-mapping-value"]
 def scanValueIx {input : String} (s : ScannerStateIx input) :
     Except ScanError (ScannerStateIx input) := do
   let s_kc := scanValueClearKeyIx s
   scanValueValidateIx s_kc
+  scanValueIndentTabCheckIx s_kc
   let s_prepared := scanValuePrepareIx s_kc
   let s_with_token := s_prepared.emit YamlToken.value
   let s_after_advance := s_with_token.advance
   scanValueTabCheckIx (s.cursor.pos.col : Int) s.currentIndent s_after_advance
-  .ok { s_after_advance with simpleKeyAllowed := true, explicitKeyLine := none }
+  -- Item 48: mirror of the legacy implicit-value recording and the pending
+  -- `?`'s survival through its key's own compact entries — see `scanValue`.
+  -- Item 51: the explicit value line is selected only AT the key's column
+  -- (`[197]`'s `s-indent(n)` is exact); any other live column stamps, and
+  -- a deeper entry (keyed or empty-key) keeps the `?` alive — see `scanValue`.
+  let explicitValue : Bool :=
+    s_kc.explicitKeyLine.isSome && !s_kc.simpleKey.possible
+      && (s.inFlow || (s.cursor.pos.col : Int) == s_kc.explicitKeyCol)
+  let ivl : Option Nat :=
+    if s.inFlow || explicitValue then
+      s_after_advance.implicitValueLine
+    else some s.cursor.pos.line
+  let ekl : Option Nat :=
+    if explicitValue then none
+    else if !s.inFlow
+        && (if s_kc.simpleKey.possible then (s_kc.simpleKey.cursor.pos.col : Int)
+            else (s.cursor.pos.col : Int)) > s_kc.explicitKeyCol then
+      s_kc.explicitKeyLine
+    else none
+  let ekc : Int := if ekl.isSome then s_kc.explicitKeyCol else -1
+  .ok { s_after_advance with simpleKeyAllowed := true, explicitKeyLine := ekl, explicitKeyCol := ekc, implicitValueLine := ivl }
 
 /-! ## Document-marker scanners -/
 
@@ -920,12 +1207,17 @@ def scanFlowSequenceStartIx {input : String} (s : ScannerStateIx input) :
     ScannerStateIx input :=
   let s := s.emit YamlToken.flowSequenceStart
   let s := s.advance
+  -- Item 98: the explicit-key stamp is per-flow-level state — save the outer
+  -- pair and clear it for the interior; mirror of `scanFlowSequenceStart`.
   { s with
       flowLevel := s.flowLevel + 1,
       flowStack := s.flowStack.push true,
       simpleKeyStack := s.simpleKeyStack.push s.simpleKey,
       simpleKey := { cursor := IxCursor.start input },
-      simpleKeyAllowed := true }
+      simpleKeyAllowed := true,
+      explicitKeyStack := s.explicitKeyStack.push (s.explicitKeyLine, s.explicitKeyCol),
+      explicitKeyLine := none,
+      explicitKeyCol := -1 }
 
 /-- Scan `]` flow-sequence end. -/
 def scanFlowSequenceEndIx {input : String} (s : ScannerStateIx input) :
@@ -933,24 +1225,36 @@ def scanFlowSequenceEndIx {input : String} (s : ScannerStateIx input) :
   let s := s.emit YamlToken.flowSequenceEnd
   let s := s.advance
   let restored := s.simpleKeyStack.back?.getD { cursor := IxCursor.start input }
+  -- Item 98: restore the outer explicit-key stamp — see `scanFlowSequenceStartIx`.
+  let restoredEk := s.explicitKeyStack.back?.getD (none, -1)
+  -- Item 47: the collection's interior breaks are the token's own — mirror of
+  -- the legacy `scanFlowSequenceEnd`.
   { s with
       flowLevel := s.flowLevel - 1,
       flowStack := s.flowStack.pop,
       simpleKeyStack := s.simpleKeyStack.pop,
       simpleKey := restored,
-      simpleKeyAllowed := false }
+      simpleKeyAllowed := false,
+      needIndentCheck := false,
+      explicitKeyLine := restoredEk.1,
+      explicitKeyCol := restoredEk.2,
+      explicitKeyStack := s.explicitKeyStack.pop }
 
 /-- Scan `{` flow-mapping start. -/
 def scanFlowMappingStartIx {input : String} (s : ScannerStateIx input) :
     ScannerStateIx input :=
   let s := s.emit YamlToken.flowMappingStart
   let s := s.advance
+  -- Item 98: save + clear the explicit-key stamp — see `scanFlowSequenceStartIx`.
   { s with
       flowLevel := s.flowLevel + 1,
       flowStack := s.flowStack.push false,
       simpleKeyStack := s.simpleKeyStack.push s.simpleKey,
       simpleKey := { cursor := IxCursor.start input },
-      simpleKeyAllowed := true }
+      simpleKeyAllowed := true,
+      explicitKeyStack := s.explicitKeyStack.push (s.explicitKeyLine, s.explicitKeyCol),
+      explicitKeyLine := none,
+      explicitKeyCol := -1 }
 
 /-- Scan `}` flow-mapping end. -/
 def scanFlowMappingEndIx {input : String} (s : ScannerStateIx input) :
@@ -958,30 +1262,111 @@ def scanFlowMappingEndIx {input : String} (s : ScannerStateIx input) :
   let s := s.emit YamlToken.flowMappingEnd
   let s := s.advance
   let restored := s.simpleKeyStack.back?.getD { cursor := IxCursor.start input }
+  -- Item 98: restore the outer explicit-key stamp — see `scanFlowSequenceStartIx`.
+  let restoredEk := s.explicitKeyStack.back?.getD (none, -1)
+  -- Item 47: interior breaks are the token's own — see `scanFlowSequenceEndIx`.
   { s with
       flowLevel := s.flowLevel - 1,
       flowStack := s.flowStack.pop,
       simpleKeyStack := s.simpleKeyStack.pop,
       simpleKey := restored,
-      simpleKeyAllowed := false }
+      simpleKeyAllowed := false,
+      needIndentCheck := false,
+      explicitKeyLine := restoredEk.1,
+      explicitKeyCol := restoredEk.2,
+      explicitKeyStack := s.explicitKeyStack.pop }
 
-/-- Look back through trailing `.placeholder` reservation slots to find
-    the last real token value (indexed twin of
-    `L4YAML.Scanner.lastRealTokenVal?`). Returns `none` if the stream
-    contains no real token yet. -/
-def lastRealTokenValIx? {input : String} (ts : Indexed.TokenStream input) :
-    Option YamlToken :=
-  let arr := ts.tokens
-  if arr.size > 0 then
-    let lastIdx := arr.size - 1
-    let tok1 := arr[lastIdx]!.token
-    if tok1 == YamlToken.placeholder && lastIdx > 0 then
-      let tok2 := arr[lastIdx - 1]!.token
-      if tok2 == YamlToken.placeholder && lastIdx > 1 then
-        some arr[lastIdx - 2]!.token
-      else some tok2
-    else some tok1
-  else none
+
+
+/-- §6.9 [96]: does the property run ending at the cursor already carry an
+    anchor?  (Indexed twin of `L4YAML.Scanner.propertyRunHasAnchor`; see its
+    docstring for the two contexts in which token adjacency means "same
+    node".) -/
+def propertyRunHasAnchorIx {input : String} (s : ScannerStateIx input) : Bool :=
+  (s.inFlow && (trailingPropertyRunIx s.tokens).any YamlToken.isAnchorProperty) ||
+    (trailingPropertyRunOnLineIx s.tokens s.cursor.pos.line).any YamlToken.isAnchorProperty
+
+/-- §6.9 [96]: does the property run ending at the cursor already carry a tag?
+    (Indexed twin of `L4YAML.Scanner.propertyRunHasTag`.) -/
+def propertyRunHasTagIx {input : String} (s : ScannerStateIx input) : Bool :=
+  (s.inFlow && (trailingPropertyRunIx s.tokens).any YamlToken.isTagProperty) ||
+    (trailingPropertyRunOnLineIx s.tokens s.cursor.pos.line).any YamlToken.isTagProperty
+
+/-- §6.9 [96]: is the property run ending at the cursor already FULL — two
+    tokens, which is all `[96]` derives?  (Indexed twin of
+    `L4YAML.Scanner.propertyRunFull`; see its docstring for why the length
+    decides alone in a flow while block context also asks the run's TAIL to
+    share the cursor's line — a tail that closed on an earlier line may be a
+    parent node's completed run, 9KAX's shape.) -/
+def propertyRunFullIx {input : String} (s : ScannerStateIx input) : Bool :=
+  match prevRealIdxIx? s.tokens s.tokens.tokens.size with
+  | none => false
+  | some i =>
+    s.tokens.tokens[i]!.token.isNodeProperty &&
+      (match prevRealIdxIx? s.tokens i with
+       | none => false
+       | some j =>
+         s.tokens.tokens[j]!.token.isNodeProperty &&
+           (s.inFlow ||
+             (s.tokens.tokens[i]!.start.line == s.cursor.pos.line &&
+              s.tokens.tokens[j]!.start.line == s.tokens.tokens[i]!.start.line)))
+
+/-- §6.9 [104]: is the cursor directly after a node property?  (Indexed twin of
+    `L4YAML.Scanner.lastTokenIsNodeProperty`.) -/
+def lastTokenIsNodePropertyIx {input : String} (s : ScannerStateIx input) : Bool :=
+  (s.inFlow &&
+    (match lastRealTokenValIx? s.tokens with
+     | some t => t.isNodeProperty
+     | none => false)) ||
+    lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
+
+/-- §7.5 [161] (item 9f): the characters that may directly follow a node property
+    or an alias.  (Indexed twin of `L4YAML.Scanner.propertyFollowerOk`; see it for
+    why this one needs no `s.inFlow` gate.) -/
+def propertyFollowerOkIx {input : String} (c : IxCursor input) : Bool :=
+  match c.peek? with
+  | none => true
+  | some ch =>
+    isWhiteSpaceBool ch || isLineBreakBool ch || ch == ',' || ch == ']' || ch == '}'
+
+/-- `propertyFollowerOkIx` read off the state a property scan produced; vacuous on
+    a failed scan.  (Twin of `L4YAML.Scanner.propertyScanFollowerOk`.) -/
+def propertyScanFollowerOkIx {input : String}
+    (r : Except ScanError (ScannerStateIx input)) : Bool :=
+  match r with
+  | .ok s' => propertyFollowerOkIx s'.cursor
+  | .error _ => true
+
+/-- Where an anchor or alias name ends, without emitting anything — the same
+    `collectAnchorNameLoopIx` walk `scanAnchorOrAliasIx` runs.  (Twin of
+    `L4YAML.Scanner.anchorNameEnd`.) -/
+def anchorNameEndIx {input : String} (s : ScannerStateIx input) : IxCursor input :=
+  (collectAnchorNameLoopIx s.advance.cursor ""
+    (input.utf8ByteSize - s.advance.cursor.pos.offset)).2
+
+/-- §7.4 [150] (item 9g): inside a flow collection, is the cursor at an entry
+    boundary, where a `?` may open an `ns-flow-pair`?  (Indexed twin of
+    `L4YAML.Scanner.flowKeyPredecessorOk`; see it for the derivation argument
+    and for why the test rides on the dispatch condition.) -/
+@[yaml_spec "7.4.1" 150 "ns-flow-pair(n,c)",
+  yaml_spec "7.4.1" 138 "ns-s-flow-seq-entries(n,c)",
+  yaml_spec "7.4.2" 141 "ns-s-flow-map-entries(n,c)"]
+def flowKeyPredecessorOkIx {input : String} (s : ScannerStateIx input) : Bool :=
+  !s.inFlow ||
+    (match lastRealTokenValIx? s.tokens with
+     | some t => t.opensFlowEntry
+     | none => false)
+
+/-- §7.4.1 [150] (item 9j): inside a flow collection, is the `?` followed by the
+    `s-separate` its production requires?  (Indexed twin of
+    `L4YAML.Scanner.flowKeyFollowerOk`; see it for the derivation argument.) -/
+@[yaml_spec "7.4.1" 150 "ns-flow-pair(n,c)",
+  yaml_spec "6.7" 81 "s-separate-lines(n)"]
+def flowKeyFollowerOkIx {input : String} (s : ScannerStateIx input) : Bool :=
+  !s.inFlow ||
+    (match s.peekAt? 1 with
+     | some n => isBlankBool n
+     | none => true)
 
 /-- Scan `,` flow entry separator. Mirrors `L4YAML.Scanner.scanFlowEntry`:
     emits `.flowEntry` and sets `simpleKeyAllowed := true` so the next
@@ -1006,7 +1391,14 @@ def scanFlowEntryIx {input : String} (s : ScannerStateIx input) :
       throw (.invalidFlowEntry s.cursor.pos.line s.cursor.pos.col)
   let s_with_token := s.emit YamlToken.flowEntry
   let s_after_advance := s_with_token.advance
-  .ok { s_after_advance with simpleKeyAllowed := true }
+  -- §7.4.1 [150] (item 9l): the `,` ENDS the explicit-key entry, so the `?`'s
+  -- line no longer suppresses simple-key reservation — see `scanFlowEntry`.
+  -- Item 9q: the pending simple key is dead here and clearing it is
+  -- behaviour-preserving — see `scanFlowEntry` for the argument.
+  .ok { s_after_advance with
+        simpleKeyAllowed := true
+        explicitKeyLine := none
+        simpleKey := { possible := false } }
 
 /-! ## Dispatcher
 
@@ -1019,6 +1411,14 @@ remain tractable (≤ 7 branch points each). -/
     simple key, peek next character. Returns `none` at EOF. -/
 def scanNextTokenIx_preprocess {input : String} (s : ScannerStateIx input) :
     Except ScanError (Option (ScannerStateIx input × Char)) :=
+  -- §6.1 / §6.6 strictness: the cursor-level `skipToContent` has no
+  -- error channel, so the legacy skip-time rejections (tab as
+  -- indentation; `#` without preceding `s-separate-in-line`) are
+  -- reproduced by a read-only walker over the same region (4EJS,
+  -- Y79Y/003, 9JBA, CVW2, SU5Z).
+  match skipToContentErrIx s.cursor s.inFlow s.currentIndent s.needIndentCheck with
+  | some e => .error e
+  | none =>
   let s := s.skipToContentS
   if !s.hasMore then .ok none
   else
@@ -1039,9 +1439,10 @@ def scanNextTokenIx_preprocess {input : String} (s : ScannerStateIx input) :
     directives. Returns `some s'` if handled, `none` to fall through. -/
 def scanNextTokenIx_dispatchStructural {input : String} (s : ScannerStateIx input)
     (c : Char) : Except ScanError (Option (ScannerStateIx input)) := do
+  -- Item 50: `]`/`}` clear the same floor — the old exemption was an
+  -- over-acceptance (see `scanNextToken_dispatchStructural`).
   if s.inFlow && s.currentIndent >= 0 && (s.cursor.pos.col : Int) <= s.currentIndent then
-    if c != ']' && c != '}' then
-      throw (.underIndentedFlowContent s.cursor.pos.line s.cursor.pos.col)
+    throw (.underIndentedFlowContent s.cursor.pos.line s.cursor.pos.col)
   if s.cursor.pos.col == 0 && s.inFlow
       && (atDocumentStartIx s.cursor || atDocumentEndIx s.cursor) then
     throw (.documentMarkerInFlow s.cursor.pos.line)
@@ -1055,20 +1456,59 @@ def scanNextTokenIx_dispatchStructural {input : String} (s : ScannerStateIx inpu
     return some s'
   return none
 
+/-- §7.4 [137]/[140]: flow-entry adjacency guard.  Indexed twin of
+    `scanNextToken_checkFlowAdjacency`.  Inside a flow collection, a new
+    node may not immediately follow a completed value
+    (`YamlToken.completesFlowValue`) without a `,`/`:` separator or the
+    matching close (`]`/`}`).  Called at the entry of
+    `scanNextTokenIx_dispatchFlowIndicators`.
+
+    Item 9d: the `:` exemption is conditional on `isValueCandidateIx` — a
+    `:` that is not a value indicator falls through to content dispatch and
+    starts a plain scalar, so it is a node start.  See the legacy docstring
+    for the spec argument and the `[a #c⏎ :b]` counterexample. -/
+def scanNextTokenIx_checkFlowAdjacency {input : String}
+    (s : ScannerStateIx input) (c : Char) : Except ScanError Unit :=
+  if s.inFlow then
+    match lastRealTokenValIx? s.tokens with
+    | some lastTok =>
+      if lastTok.completesFlowValue
+          && c != ',' && !(c == ':' && isValueCandidateIx s) && c != ']' && c != '}' then
+        .error (.invalidFlowEntry s.cursor.pos.line s.cursor.pos.col)
+      else .ok ()
+    | none => .ok ()
+  else .ok ()
+
 /-- Flow indicator dispatch: `[`, `]`, `{`, `}`, `,`. -/
 def scanNextTokenIx_dispatchFlowIndicators {input : String}
     (s : ScannerStateIx input) (c : Char) :
     Except ScanError (Option (ScannerStateIx input)) := do
+  -- §7.4 [137]/[140]: reject separator-less adjacent flow entries.
+  scanNextTokenIx_checkFlowAdjacency s c
   if c == '[' then return some (scanFlowSequenceStartIx s)
   if c == ']' then
+    -- Full `else`-chain (not early-exit statements) so the desugaring is a
+    -- plain nested `ite` with closed branches — no `__do_jp` join points,
+    -- keeping both `split`- and `rw [if_pos/if_neg]`-style proofs workable.
     if s.flowLevel == 0 then
       throw (.flowEndOutsideFlow ']' s.cursor.pos.line s.cursor.pos.col)
-    return some (scanFlowSequenceEndIx s)
+    -- §7.4 [137]: `]` must close the innermost open, which must be a
+    -- sequence (`flowStack` top pushed `true` by `[`) — rejects `{a]`.
+    else if s.flowStack.back? != some true then
+      throw (.mismatchedFlowClose ']' s.cursor.pos.line s.cursor.pos.col)
+    else
+      return some (scanFlowSequenceEndIx s)
   if c == '{' then return some (scanFlowMappingStartIx s)
   if c == '}' then
+    -- Full `else`-chain for the same join-point-free desugaring as `]`.
     if s.flowLevel == 0 then
       throw (.flowEndOutsideFlow '}' s.cursor.pos.line s.cursor.pos.col)
-    return some (scanFlowMappingEndIx s)
+    -- §7.4 [140]: `}` must close the innermost open, which must be a
+    -- mapping (`flowStack` top pushed `false` by `{`) — rejects `[a}`.
+    else if s.flowStack.back? != some false then
+      throw (.mismatchedFlowClose '}' s.cursor.pos.line s.cursor.pos.col)
+    else
+      return some (scanFlowMappingEndIx s)
   if c == ',' then
     if s.flowLevel == 0 then
       throw (.flowEndOutsideFlow ',' s.cursor.pos.line s.cursor.pos.col)
@@ -1083,13 +1523,65 @@ def scanNextTokenIx_dispatchBlockIndicators {input : String}
   if c == '-' && !s.inFlow && isBlockEntryCandidateIx s then
     let s' ← scanBlockEntryIx s
     return some s'
-  if c == '?' && isKeyCandidateIx s then
+  -- §7.4 [150] (item 9g): the `?` opens a flow entry, so it stands only after
+  -- `[`, `{` or `,` — see `flowKeyPredecessorOkIx`.
+  -- §7.4.1 [150] (item 9j): …and its `s-separate` is mandatory — see
+  -- `flowKeyFollowerOkIx`.
+  if c == '?' && isKeyCandidateIx s && flowKeyPredecessorOkIx s && flowKeyFollowerOkIx s then
     let s' ← scanKeyIx s
     return some s'
   if c == ':' && isValueCandidateIx s then
     let s' ← scanValueIx s
     return some s'
   return none
+
+/-- Pre-`scanBlockScalarIx` rejections for a `|`/`>` header, in the order
+    legacy `scanNextToken_dispatchContent` applies them:
+
+* **§8.1 [170]/[174] — DOCS item 9c.**  `c-l+literal` and `c-l+folded` are
+  reachable only through `s-l+block-node` [196]; `ns-flow-content` [158] offers
+  plain, flow-seq, flow-map, single- and double-quoted only.  A block-scalar
+  header inside a flow collection therefore has no derivation.
+* **§6.7 [76] `b-comment`.**  The header line must end in a line break or EOF —
+  see `blockScalarHeaderEndsLineIx` (mirrors legacy
+  `scanBlockScalarConsumeNewline`'s `expectedNewline` throw).
+
+Folded into **one** guard rather than two consecutive `if … then throw`
+statements.  Each early-exit statement in a `do` block duplicates the block's
+continuation into both branches; a second one puts four copies of the
+block-scalar body in the elaborated term, and `split`'s `simp` then exceeds its
+step limit in every downstream inversion proof.  One guard keeps the arm's
+`split` sequence exactly as it was before item 9c. -/
+def blockScalarPreErrIx {input : String} (s : ScannerStateIx input) (c : Char) :
+    Option ScanError :=
+  if s.inFlow then
+    some (.blockScalarInFlow c s.cursor.pos.line s.cursor.pos.col)
+  else if !blockScalarHeaderEndsLineIx s.cursor then
+    some (.expectedNewline s.cursor.pos.line)
+  else
+    none
+
+/-- §7.1 [104] (item 9h): cursor-level twin of legacy `validateAliasClose`.
+
+    `[104] c-ns-alias-node` is a complete node, so in BLOCK context what follows
+    it on the line must end that node: a line break, a `#` comment, or the `:`
+    that makes the alias an implicit key.  Same allow-list as legacy
+    `validateTrailingContent`, and `skipWhitespace` is the cursor twin of
+    `skipTrailingSpaces` (both are `s-white` [33] = space or tab).
+
+    Inside a flow collection this is a no-op — `.alias` completes a flow value,
+    so `scanNextTokenIx_checkFlowAdjacency` (item 9b) has already rejected
+    `[*a *b]`. -/
+def aliasTrailingErrIx {input : String} (s : ScannerStateIx input) :
+    Option ScanError :=
+  if s.inFlow then none
+  else
+    let probe := skipWhitespace s.cursor
+    match probe.peek? with
+    | none => none
+    | some ch =>
+      if isLineBreakBool ch || ch == '#' || ch == ':' then none
+      else some (.trailingContent probe.pos.line probe.pos.col)
 
 /-- Content dispatch: scalars + anchors + tags.
 
@@ -1101,18 +1593,59 @@ def scanNextTokenIx_dispatchBlockIndicators {input : String}
 def scanNextTokenIx_dispatchContent {input : String} (s : ScannerStateIx input)
     (c : Char) : Except ScanError (ScannerStateIx input) := do
   if c == '&' then
-    let s' ← scanAnchorOrAliasIx s true
-    return s'
+    -- Item 9e (§6.9 [96]): one anchor per node.  Full `else`-chain, as for the
+    -- `|`/`>` guard below — no `__do_jp` join points.
+    -- Item 9f (§7.5 [161]): and the anchor is delimited — `&a[b]`.  Same `if`,
+    -- so the dispatcher's shape is unchanged (Reflection 613).
+    -- Item 165 (§6.9 [96]): and the run is at most two properties long.
+    if propertyRunHasAnchorIx s || propertyRunFullIx s ||
+        !propertyFollowerOkIx (anchorNameEndIx s) then
+      .error (.invalidNodeProperties c s.cursor.pos.line s.cursor.pos.col)
+    else do
+      let s' ← scanAnchorOrAliasIx s true
+      return s'
   if c == '*' then
-    let s' ← scanAnchorOrAliasIx s false
-    return s'
+    -- Item 9e (§6.9 [104]): an alias node carries no properties.
+    -- Item 9f (§7.5 [161]/[104]): and it is delimited — `*a[b]`.
+    if lastTokenIsNodePropertyIx s || !propertyFollowerOkIx (anchorNameEndIx s) then
+      .error (.invalidNodeProperties c s.cursor.pos.line s.cursor.pos.col)
+    else do
+      let s' ← scanAnchorOrAliasIx s false
+      -- §7.1 [104] (item 9h) — see `aliasTrailingErrIx`.
+      if let some e := aliasTrailingErrIx s' then throw e
+      return s'
   if c == '!' then
-    let s' ← scanTagIx s
-    return s'
+    -- Item 9e (§6.9 [96]): one tag per node.
+    -- Item 9f (§7.5 [161]): and the tag is delimited — `!t"x"`, `!t[b]`.
+    if propertyRunHasTagIx s || propertyRunFullIx s ||
+        !propertyScanFollowerOkIx (scanTagIx s) then
+      .error (.invalidNodeProperties c s.cursor.pos.line s.cursor.pos.col)
+    else do
+      let s' ← scanTagIx s
+      return s'
   if c == '|' || c == '>' then
-    let parentIndent := (max 0 s.currentIndent).toNat
+    -- Item 9c (§8.1) then §6.7 [76], in legacy's order — see
+    -- `blockScalarPreErrIx`.  ONE guard, not two consecutive ones.
+    if let some e := blockScalarPreErrIx s c then
+      throw e
+    -- The *indent floor*, not the clamped parent column: at top level
+    -- `currentIndent = -1` and zero-indented content is legal (DK3J, FP8R).
+    -- See `scanBlockScalarIx`'s docstring.
+    let indentFloor := (max 0 (s.currentIndent + 1)).toNat
+    -- §6.1 / §8.1.3 strictness: the auto-detect probe's legacy error
+    -- channel (tab in the indentation zone — Y79Y/000; whitespace-only
+    -- line wider than the detected content indent — 5LLU, S98Z, W9L4)
+    -- is reproduced by `blockScalarBodyErrIx`; the cursor-level
+    -- recogniser cannot throw.
+    if let some e := blockScalarBodyErrIx s.cursor indentFloor then
+      throw e
+    -- §6.1 / §8.1.1 strictness: a spaces-then-TAB line at the collection
+    -- loop's stop — no arm of `l-chomped-empty` derives it.  Twin of the
+    -- legacy gate in `scanBlockScalarBody`.
+    if let some e := blockScalarTabStopErrIx s.cursor indentFloor then
+      throw e
     let startPos := s.cursor.pos
-    match hBS : scanBlockScalarIx s.cursor parentIndent with
+    match hBS : scanBlockScalarIx s.cursor indentFloor with
     | some r =>
       let content := r.1
       let style := r.2.1
@@ -1120,12 +1653,35 @@ def scanNextTokenIx_dispatchContent {input : String} (s : ScannerStateIx input)
       let sAfter : ScannerStateIx input := { s with cursor := cAfter }
       let hBound : startPos.offset ≤ sAfter.cursor.pos.offset := by
         show s.cursor.pos.offset ≤ r.2.2.pos.offset
-        exact scanBlockScalarIx_offset_monotonic s.cursor parentIndent hBS
+        exact scanBlockScalarIx_offset_monotonic s.cursor indentFloor hBS
       let sEmit := sAfter.emitAt startPos (YamlToken.scalar content style) hBound
-      return { sEmit with simpleKeyAllowed := false }
+      -- A block scalar always ends at the start of a line, so the next line may
+      -- open a fresh simple key, and any key pending from before this scalar is
+      -- finished. Mirrors the legacy post-state, which `scanBlockScalarBody`
+      -- (Scanner/Scalar.lean) sets and the legacy dispatcher returns untouched.
+      -- `simpleKeyAllowed := false` — right for every *inline* scalar branch
+      -- below — left the pending key live here, so `a: |⏎  x⏎b: 1` was rejected
+      -- with `invalidImplicitKey` (DOCS.md § Indexed-pipeline parity gap, D3).
+      -- `needIndentCheck := true` — the block scalar is the one scalar that
+      -- consumes its terminating line breaks *inside* the cursor-level
+      -- recogniser (legacy sets the flag in `consumeNewline`, but `IxCursor`
+      -- carries no flags), so the next `scanNextTokenIx_preprocess` must
+      -- re-run the indent unwind.  Without it, a sibling after a block scalar
+      -- ending a nested mapping got no `blockEnd`/`blockMappingStart` and was
+      -- swallowed (D5: RZT7, KK5P; `- k: 1⏎  c: |⏎    x⏎- k: 2`).
+      return { sEmit with simpleKeyAllowed := true,
+                          simpleKey := { cursor := IxCursor.start input },
+                          needIndentCheck := true }
     | none =>
       throw (.unexpectedChar c s.cursor.pos.line s.cursor.pos.col)
   if c == '"' then
+    -- §6.1 / §8.1 / §9.1.2 strictness: legacy fold-time checks
+    -- (document marker at col 0 — 5TRB, 9MQT/01; under-indented
+    -- continuation — QB6E; tab-indented continuation — DK95/01) are
+    -- reproduced by `quotedScalarErrIx`; the cursor-level recogniser
+    -- cannot throw.
+    if let some e := quotedScalarErrIx s.cursor true s.inFlow s.currentIndent then
+      throw e
     let startPos := s.cursor.pos
     match hDQ : scanDoubleQuotedIx s.cursor with
     | some r =>
@@ -1141,6 +1697,10 @@ def scanNextTokenIx_dispatchContent {input : String} (s : ScannerStateIx input)
     | none =>
       throw (.unterminatedScalar ScalarStyle.doubleQuoted s.cursor.pos.line)
   if c == '\'' then
+    -- Same strictness walker as the `"` arm (single-quoted rules:
+    -- document marker — RXY3; under-indent; tab-indented continuation).
+    if let some e := quotedScalarErrIx s.cursor false s.inFlow s.currentIndent then
+      throw e
     let startPos := s.cursor.pos
     match hSQ : scanSingleQuotedIx s.cursor with
     | some r =>
@@ -1156,6 +1716,10 @@ def scanNextTokenIx_dispatchContent {input : String} (s : ScannerStateIx input)
     | none =>
       throw (.unterminatedScalar ScalarStyle.singleQuoted s.cursor.pos.line)
   if canStartPlainScalarBool c (s.peekAt? 1) s.inFlow then
+    -- Item 50: legacy's flow fold throws inside `collectPlainScalarLoop`;
+    -- reproduce with the strictness walker before the pure collection.
+    if let some e := plainScalarErrIx s.cursor s.inFlow s.currentIndent then
+      throw e
     let startPos := s.cursor.pos
     let contentIndent := if s.inFlow then s.cursor.pos.col
                           else (max 0 (s.currentIndent + 1)).toNat
@@ -1171,15 +1735,6 @@ def scanNextTokenIx_dispatchContent {input : String} (s : ScannerStateIx input)
     return { sEmit with simpleKeyAllowed := false }
   throw (.unexpectedChar c s.cursor.pos.line s.cursor.pos.col)
 
-/-- Flow-collection start indent guard (§8.1 [187]). -/
-def scanNextTokenIx_checkBlockFlowIndent {input : String}
-    (s : ScannerStateIx input) (c : Char) : Except ScanError Unit :=
-  if !s.inFlow && s.currentIndent >= 0 && (s.cursor.pos.col : Int) <= s.currentIndent
-      && (c == '[' || c == '{') then
-    .error (.underIndentedFlowContent s.cursor.pos.line s.cursor.pos.col)
-  else
-    .ok ()
-
 /-- §9.1.5 [209]: pending directives require `---` before content.
     Indexed twin of `scanNextToken_checkNoPendingDirectives`. -/
 def scanNextTokenIx_checkNoPendingDirectives {input : String}
@@ -1189,27 +1744,310 @@ def scanNextTokenIx_checkNoPendingDirectives {input : String}
   else
     .ok ()
 
+/-- Indexed twin of `L4YAML.Scanner.flowOpenIdxLoop`. -/
+def flowOpenIdxLoopIx {input : String} (ts : Indexed.TokenStream input) (d : Nat) :
+    Nat → Option Nat
+  | 0 => none
+  | j + 1 =>
+    let t := ts.tokens[j]!.token
+    if t.isFlowClose then flowOpenIdxLoopIx ts (d + 1) j
+    else if t.isFlowOpen then
+      match d with
+      | 0 => some j
+      | d' + 1 => flowOpenIdxLoopIx ts d' j
+    else flowOpenIdxLoopIx ts d j
+
+/-- Indexed twin of `L4YAML.Scanner.flowOpenIdx?`. -/
+def flowOpenIdxIx? {input : String} (ts : Indexed.TokenStream input) (i : Nat) :
+    Option Nat :=
+  flowOpenIdxLoopIx ts 0 i
+
+/-- Indexed twin of `L4YAML.Scanner.propsRunStart`. -/
+def propsRunStartIx {input : String} (ts : Indexed.TokenStream input) (i : Nat) : Nat :=
+  match prevRealIdxIx? ts i with
+  | some j =>
+    if ts.tokens[j]!.token.isNodeProperty then
+      match prevRealIdxIx? ts j with
+      | some k => if ts.tokens[k]!.token.isNodeProperty then k else j
+      | none => j
+    else i
+  | none => i
+
+/-- Indexed twin of `L4YAML.Scanner.trailingNodeRun?`, item 159's flow arm
+    included. -/
+def trailingNodeRunIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option (Nat × Option Nat) :=
+  match prevRealIdxIx? ts ts.tokens.size with
+  | none => none
+  | some i =>
+    let t := ts.tokens[i]!.token
+    if t.isNodeProperty then
+      let st := match prevRealIdxIx? ts i with
+                | some j => if ts.tokens[j]!.token.isNodeProperty then j else i
+                | none => i
+      some (st, prevRealIdxIx? ts st)
+    else if t.isNodeBody then
+      let st := match prevRealIdxIx? ts i with
+                | some j =>
+                  if ts.tokens[j]!.token.isNodeProperty then
+                    match prevRealIdxIx? ts j with
+                    | some k => if ts.tokens[k]!.token.isNodeProperty then k else j
+                    | none => j
+                  else i
+                | none => i
+      some (st, prevRealIdxIx? ts st)
+    else if t.isFlowClose then
+      match flowOpenIdxIx? ts i with
+      | none => none
+      | some o =>
+        let st := propsRunStartIx ts o
+        some (st, prevRealIdxIx? ts st)
+    else none
+
+/-- Indexed twin of `L4YAML.Scanner.propsBlockScanLoop` (item 180). -/
+@[yaml_spec "6.9" 96 "c-ns-properties"]
+def propsBlockScanLoopIx {input : String} (ts : Indexed.TokenStream input) :
+    Nat → Bool × Bool × Option Nat
+  | 0 => (false, false, none)
+  | j + 1 =>
+    let t := ts.tokens[j]!.token
+    if t == .placeholder then propsBlockScanLoopIx ts j
+    else if t.isNodeProperty then
+      let (a, tg, e) := propsBlockScanLoopIx ts j
+      let e' := match e with
+        | some k => some k
+        | none =>
+          if t.isAnchorProperty && a then some j
+          else if t.isTagProperty && tg then some j
+          else none
+      (a || t.isAnchorProperty, tg || t.isTagProperty, e')
+    else (false, false, none)
+
+/-- Indexed twin of `L4YAML.Scanner.crossedPropsExcessIdx?` (item 180). -/
+@[yaml_spec "6.9" 96 "c-ns-properties", yaml_spec "9.2" 211 "l-yaml-stream"]
+def crossedPropsExcessIdxIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option Nat :=
+  match prevRealIdxIx? ts ts.tokens.size with
+  | none => none
+  | some i =>
+    let t := ts.tokens[i]!.token
+    if t.isNodeProperty then (propsBlockScanLoopIx ts (i + 1)).2.2
+    else if t.isNodeBody then (propsBlockScanLoopIx ts i).2.2
+    else if t.isFlowClose then
+      match flowOpenIdxIx? ts i with
+      | none => none
+      | some o => (propsBlockScanLoopIx ts o).2.2
+    else none
+
+/-- Indexed twin of `L4YAML.Scanner.crossedPropsExcessPos?` (item 180). -/
+@[yaml_spec "6.9" 96 "c-ns-properties", yaml_spec "9.2" 211 "l-yaml-stream"]
+def crossedPropsExcessPosIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option YamlPos :=
+  match crossedPropsExcessIdxIx? ts with
+  | some j => some ts.tokens[j]!.start
+  | none => none
+
+/-- Indexed twin of `L4YAML.Scanner.propsBlockLineCrossLoop` (item 182). -/
+@[yaml_spec "6.7" 80 "s-separate(n,c)", yaml_spec "6.9" 96 "c-ns-properties"]
+def propsBlockLineCrossLoopIx {input : String} (ts : Indexed.TokenStream input) :
+    Nat → Option YamlPos
+  | 0 => none
+  | j + 1 =>
+    let t := ts.tokens[j]!.token
+    if t == .placeholder then propsBlockLineCrossLoopIx ts j
+    else if t.isNodeProperty then
+      match propsBlockLineCrossLoopIx ts j with
+      | some q => some q
+      | none =>
+        match prevRealIdxIx? ts j with
+        | some p =>
+          if ts.tokens[p]!.token.isNodeProperty &&
+              ts.tokens[p]!.start.line < ts.tokens[j]!.start.line then
+            some ts.tokens[j]!.start
+          else none
+        | none => none
+    else none
+
+/-- Indexed twin of `L4YAML.Scanner.runLineCrossPos?` (item 182). -/
+@[yaml_spec "6.7" 80 "s-separate(n,c)", yaml_spec "9.2" 211 "l-yaml-stream"]
+def runLineCrossPosIx? {input : String} (ts : Indexed.TokenStream input) :
+    Option YamlPos :=
+  match prevRealIdxIx? ts ts.tokens.size with
+  | none => none
+  | some i =>
+    let t := ts.tokens[i]!.token
+    if t.isNodeProperty then propsBlockLineCrossLoopIx ts (i + 1)
+    else if t.isNodeBody then
+      match propsBlockLineCrossLoopIx ts i with
+      | some q => some q
+      | none =>
+        match prevRealIdxIx? ts i with
+        | some p =>
+          if ts.tokens[p]!.token.isNodeProperty &&
+              ts.tokens[p]!.start.line < ts.tokens[i]!.start.line then
+            some ts.tokens[i]!.start
+          else none
+        | none => none
+    else if t.isFlowClose then
+      match flowOpenIdxIx? ts i with
+      | none => none
+      | some o => propsBlockLineCrossLoopIx ts o
+    else none
+
+/-- Indexed twin of `L4YAML.Scanner.runLineCrossDanglingPos?` (item 182). -/
+@[yaml_spec "6.7" 80 "s-separate(n,c)", yaml_spec "9.2" 211 "l-yaml-stream"]
+def runLineCrossDanglingPosIx? {input : String} (ts : Indexed.TokenStream input)
+    (indents : Array IndentEntryIx) : Option YamlPos :=
+  match runLineCrossPosIx? ts with
+  | some q => if indents.any (fun e => e.column == (q.col : Int)) then some q else none
+  | none => none
+
+/-- Indexed twin of `L4YAML.Scanner.danglingNodePos?`, item 180's crossed
+    over-full property block and item 182's break-crossing run included — the
+    legacy docstring has the five readings. -/
+def danglingNodePosIx? {input : String} (s : ScannerStateIx input) :
+    Option YamlPos :=
+  if s.inFlow then none
+  else
+    match trailingNodeRunIx? s.tokens with
+    | none => none
+    | some (st, pred) =>
+      let offered := match pred with
+        | some j => s.tokens.tokens[j]!.token.offersNodeSlot
+        | none => false
+      if offered && !(s.tokens.tokens[st]!.token.isNodeBody)
+          && !(s.tokens.tokens[st]!.token.isNodeProperty) then none
+      else
+        let p := s.tokens.tokens[st]!.start
+        if s.indents.any (fun e => e.column == (p.col : Int)) then some p
+        else
+          match crossedPropsExcessPosIx? s.tokens with
+          | some q => some q
+          | none => runLineCrossDanglingPosIx? s.tokens s.indents
+
+/-- §9.2 [211] mid-stream: indexed twin of
+    `scanNextToken_checkDanglingNode`, including item 140's two states — the
+    run is read off the state the landing ARRIVED with, because preprocessing's
+    unwind emits `blockEnd` and pops the level the run stands at. -/
+def scanNextTokenIx_checkDanglingNode {input : String}
+    (s_run s_land : ScannerStateIx input) : Except ScanError Unit :=
+  if s_land.simpleKeyAllowed then
+    match danglingNodePosIx? s_run with
+    | some p => .error (.invalidBareDocument p.line p.col)
+    | none => .ok ()
+  else .ok ()
+
+/-- §9.2 [211] at the end of input: indexed twin of
+    `scanLoop_checkDanglingNode`. -/
+def scanLoopIx_checkDanglingNode {input : String}
+    (s : ScannerStateIx input) : Except ScanError Unit :=
+  match danglingNodePosIx? s with
+  | some p => .error (.invalidBareDocument p.line p.col)
+  | none => .ok ()
+
+/-- Indexed twin of `L4YAML.Scanner.underIndentedFlowValuePos?` (item 172):
+    §8.1's flow-collection floor, read at the CLOSE — the trailing flow node
+    standing in an AWAITED slot whose open sits at an open level's own column.
+    See the legacy docstring for the reading. -/
+def underIndentedFlowValuePosIx? {input : String} (s : ScannerStateIx input) :
+    Option YamlPos :=
+  if s.inFlow then none
+  else
+    match prevRealIdxIx? s.tokens s.tokens.tokens.size with
+    | none => none
+    | some i =>
+      if !(s.tokens.tokens[i]!.token.isFlowClose) then none
+      else
+        match flowOpenIdxIx? s.tokens i with
+        | none => none
+        | some o =>
+          let st := propsRunStartIx s.tokens o
+          let offered := match prevRealIdxIx? s.tokens st with
+            | some j => s.tokens.tokens[j]!.token.offersNodeSlot
+            | none => false
+          let p := s.tokens.tokens[o]!.start
+          if offered && s.indents.any (fun e => e.column == (p.col : Int)) then
+            some p
+          else none
+
+/-- §8.1's floor mid-stream: indexed twin of
+    `scanNextToken_checkFlowValueIndent`, including item 140's two states —
+    the break off `s_land`, the run off `s_run` before the unwind. -/
+def scanNextTokenIx_checkFlowValueIndent {input : String}
+    (s_run s_land : ScannerStateIx input) : Except ScanError Unit :=
+  if s_land.simpleKeyAllowed then
+    match underIndentedFlowValuePosIx? s_run with
+    | some p => .error (.underIndentedFlowContent p.line p.col)
+    | none => .ok ()
+  else .ok ()
+
+/-- §8.1's floor at the end of input: indexed twin of
+    `scanLoop_checkFlowValueIndent`. -/
+def scanLoopIx_checkFlowValueIndent {input : String}
+    (s : ScannerStateIx input) : Except ScanError Unit :=
+  match underIndentedFlowValuePosIx? s with
+  | some p => .error (.underIndentedFlowContent p.line p.col)
+  | none => .ok ()
+
+/-- §9.2 [211]: a completed node and content on a later line at a column no
+    open level stands at, with no marker between them, is a second bare
+    document.  Indexed twin of `scanNextToken_checkBareDocument` — see its
+    docstring for the reading. -/
+def scanNextTokenIx_checkBareDocument {input : String}
+    (s : ScannerStateIx input) : Except ScanError Unit :=
+  if !s.inFlow && s.simpleKeyAllowed
+      && !(s.indents.any (fun e => e.column == (s.cursor.pos.col : Int)))
+      && (match lastRealTokenValIx? s.tokens with
+          | some t => t.completesFlowValue
+          | none => false) then
+    .error (.invalidBareDocument s.cursor.pos.line s.cursor.pos.col)
+  else
+    .ok ()
+
+/-- §8.2.2 [194] / §7.5: a `:` that failed `isValueCandidateIx` while a
+    completed node's stale simple key is recorded starts a second node in a
+    one-node slot (`"a" :b`, `[1]:b`, `*x :b`).  Indexed twin of
+    `scanNextToken_checkAdjacentValue` — see its docstring for the reading. -/
+def scanNextTokenIx_checkAdjacentValue {input : String}
+    (s : ScannerStateIx input) (c : Char) : Except ScanError Unit :=
+  if !s.inFlow && c == ':' && !s.simpleKeyAllowed
+      && (match lastRealTokenValIx? s.tokens with
+          | some t => t.completesFlowValue
+          | none => false) then
+    .error (.unseparatedValue s.cursor.pos.line s.cursor.pos.col)
+  else
+    .ok ()
+
 /-- Scan one token (the per-iteration dispatcher). Returns `none`
     at EOF, `some s'` on a successful token, or an error. -/
-def scanNextTokenIx {input : String} (s : ScannerStateIx input) :
+def scanNextTokenIx {input : String} (s_run : ScannerStateIx input) :
     Except ScanError (Option (ScannerStateIx input)) := do
-  match ← scanNextTokenIx_preprocess s with
+  match ← scanNextTokenIx_preprocess s_run with
   | none => return none
   | some (s, c) =>
+    -- §9.2 [211] (item 133): the dangling node run, before the structural
+    -- dispatch — the dangler dies at a `...`/`---` too.  Item 140: the run off
+    -- `s_run`, the break off `s`.
+    scanNextTokenIx_checkDanglingNode s_run s
+    -- §8.1 (item 172): the awaited flow node's under-indented open, at the
+    -- same gate — the slot-offered complement of the dangling run.
+    scanNextTokenIx_checkFlowValueIndent s_run s
     match ← scanNextTokenIx_dispatchStructural s c with
     | some s' => return some s'
     | none =>
       scanNextTokenIx_checkNoPendingDirectives s
+      scanNextTokenIx_checkBareDocument s
       let s := if s.allowDirectives then
         { s with allowDirectives := false, documentEverStarted := true }
       else s
-      scanNextTokenIx_checkBlockFlowIndent s c
       match ← scanNextTokenIx_dispatchFlowIndicators s c with
       | some s' => return some s'
       | none =>
         match ← scanNextTokenIx_dispatchBlockIndicators s c with
         | some s' => return some s'
         | none =>
+          -- §8.2.2 [194] (item 47): mirror of the legacy check.
+          scanNextTokenIx_checkAdjacentValue s c
           let s' ← scanNextTokenIx_dispatchContent s c
           return some s'
 
@@ -1227,6 +2065,15 @@ def scanLoopIx {input : String} (s : ScannerStateIx input) (fuel : Nat) :
       else if s.directivesPresent then
         .error (.directiveWithoutDocument s.cursor.pos.line)
       else
+        -- §9.2 [211] (item 133): the dangling run the stream itself ended.
+        match scanLoopIx_checkDanglingNode s with
+        | .error e => .error e
+        | .ok _ =>
+        -- §8.1 (item 172): the awaited flow node's under-indented open,
+        -- with the stream itself as the entry's end.
+        match scanLoopIx_checkFlowValueIndent s with
+        | .error e => .error e
+        | .ok _ =>
         let s := unwindIndentsIx s (-1)
         let s := s.emit YamlToken.streamEnd
         .ok s.tokens
@@ -1240,7 +2087,7 @@ def scanIx (input : String) : Except ScanError (Indexed.TokenStream input) :=
   let s := ScannerStateIx.mk' input
   let s := s.emit YamlToken.streamStart
   let s := match s.peek? with
-    | some '﻿' => s.advance
+    | some '﻿' => s.consumeBOM
     | _ => s
   let fuel := input.utf8ByteSize + 1
   scanLoopIx s (fuel * 4)
@@ -1284,6 +2131,11 @@ unchanged; existing proofs about it remain valid. -/
     appended to `s.comments`. -/
 def scanNextTokenIx_preprocessWC {input : String} (s : ScannerStateIx input) :
     Except ScanError (Option (ScannerStateIx input × Char)) :=
+  -- Same §6.1/§6.6 strictness walker as `scanNextTokenIx_preprocess`
+  -- (the comment-preserving pipeline must reject identically).
+  match skipToContentErrIx s.cursor s.inFlow s.currentIndent s.needIndentCheck with
+  | some e => .error e
+  | none =>
   let s := s.skipToContentSWithComments
   if !s.hasMore then .ok none
   else
@@ -1302,25 +2154,34 @@ def scanNextTokenIx_preprocessWC {input : String} (s : ScannerStateIx input) :
 
 /-- Comment-preserving per-iteration dispatcher. Identical to
     `scanNextTokenIx` except it routes through `_preprocessWC`. -/
-def scanNextTokenIxWC {input : String} (s : ScannerStateIx input) :
+def scanNextTokenIxWC {input : String} (s_run : ScannerStateIx input) :
     Except ScanError (Option (ScannerStateIx input)) := do
-  match ← scanNextTokenIx_preprocessWC s with
+  match ← scanNextTokenIx_preprocessWC s_run with
   | none => return none
   | some (s, c) =>
+    -- §9.2 [211] (item 133): the dangling node run, before the structural
+    -- dispatch — the dangler dies at a `...`/`---` too.  Item 140: the run off
+    -- `s_run`, the break off `s`.
+    scanNextTokenIx_checkDanglingNode s_run s
+    -- §8.1 (item 172): the awaited flow node's under-indented open, at the
+    -- same gate — the slot-offered complement of the dangling run.
+    scanNextTokenIx_checkFlowValueIndent s_run s
     match ← scanNextTokenIx_dispatchStructural s c with
     | some s' => return some s'
     | none =>
       scanNextTokenIx_checkNoPendingDirectives s
+      scanNextTokenIx_checkBareDocument s
       let s := if s.allowDirectives then
         { s with allowDirectives := false, documentEverStarted := true }
       else s
-      scanNextTokenIx_checkBlockFlowIndent s c
       match ← scanNextTokenIx_dispatchFlowIndicators s c with
       | some s' => return some s'
       | none =>
         match ← scanNextTokenIx_dispatchBlockIndicators s c with
         | some s' => return some s'
         | none =>
+          -- §8.2.2 [194] (item 47): mirror of the legacy check.
+          scanNextTokenIx_checkAdjacentValue s c
           let s' ← scanNextTokenIx_dispatchContent s c
           return some s'
 
@@ -1346,6 +2207,12 @@ def scanLoopIxWC {input : String} (s : ScannerStateIx input) (fuel : Nat) :
       else if s.directivesPresent then
         .error (.directiveWithoutDocument s.cursor.pos.line)
       else
+        match scanLoopIx_checkDanglingNode s with
+        | .error e => .error e
+        | .ok _ =>
+        match scanLoopIx_checkFlowValueIndent s with
+        | .error e => .error e
+        | .ok _ =>
         let s := s.skipToContentSWithComments
         let s := unwindIndentsIx s (-1)
         let s := s.emit YamlToken.streamEnd
@@ -1365,7 +2232,7 @@ def scanWithCommentsIx (input : String) :
   let s := ScannerStateIx.mk' input
   let s := s.emit YamlToken.streamStart
   let s := match s.peek? with
-    | some '﻿' => s.advance
+    | some '﻿' => s.consumeBOM
     | _ => s
   let fuel := input.utf8ByteSize + 1
   match scanLoopIxWC s (fuel * 4) with
@@ -1378,3 +2245,5 @@ def scanWithCommentsIx (input : String) :
 end ScannerStateIx
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

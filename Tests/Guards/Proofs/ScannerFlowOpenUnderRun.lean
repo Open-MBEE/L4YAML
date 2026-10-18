@@ -7,6 +7,7 @@ public import L4YAML.Output.EventsIx
 
 public meta import L4YAML.Output.EventsIx
 public meta import L4YAML.Scanner.State
+public meta import L4YAML.Scanner.TokenQueries
 @[expose] public section Blanket
 
 /-
@@ -2027,11 +2028,98 @@ Three pins below re-read against the paid tree:
 
 * `RIDE-PRICE`: `slot=OOO` — `ParkSlot.ofOpen` now takes `hrun`, and no arm
   holds it (`by assumption` stands where it would go, so the refusal names the
-  datum); `gated=OOO` for the same reason plus `parkSka`; the three flips now
+  datum) — and §16 measures that no arm CAN hold it, because the fact is false
+  on accepted input; `gated=OOO` for the same reason plus `parkSka`; the three flips now
   price UN-paying the reshape (`anchor` restores item 162's arm) and
   `transport` re-reads the funnel over `ParkChoice`.
 * `TRANSPORT-PRICE`: `genesis=OOO pay=OOO` — the same `hrun` at the same arms.
 * `CLOSE-PRICE`: `anchor=B` — the control returns the pair now. -/
+
+/-! ## §16 The slot the arms were told to supply is FALSE on accepted input (DOCS item 277)
+
+Item 276 recorded a NEXT — *supply `slotRun` at the three arms* — and a supply
+question: price a `PendingNode` field against an `accum_flow_open_depth0`
+hypothesis.  The question is moot, and the rows below are why: the fact is not
+derivable at the arms because it does not hold there.
+
+`slotRun` reads the `[96]` run standing in front of the park's own cursor and
+asks that it be absent or *offered a node slot*, and `offersNodeSlot` is
+exactly the three block indicators `:`, `?`, `-` (`[Token.lean]`'s own
+docstring: "After anything else a run at an open level's own column has no
+slot").  `streamStart` and `documentStart` are therefore not offers — and a
+document root is precisely where a run may stand with nothing but the start in
+front of it.  So the cell item 276 named — a park whose run is offered no slot,
+at which both of the close's verdicts are silent — is INHABITED, by input the
+scanner accepts.
+
+`&x⏎[1]` is such an input, and the acceptance is correct rather than a bug: the
+anchor property and its node may sit on separate lines at block level, and
+PyYAML 6.0.3 loads all four of the shapes below as `[1]`.  The scan SUCCEEDING
+is itself the measurement that both verdicts are silent at the close — §8.1
+fires as `underIndentedFlowContent` and §9.2 as `invalidBareDocument`, so
+either one would have refused the input.
+
+A `ParkSlot` consequently cannot be built at the three arms, `ParkChoice`'s
+slot disjunct is dead there, and `gated=OOO` stands for a reason no supply
+removes.  `RIDE-PRICE`'s `slot=OOO` is unchanged in value and changed in
+meaning: not "no arm holds it" but "no arm can".
+
+**What is still open is which of two things is wrong**, and it is one
+measurement, not an argument: either `slotRun` over-asks — the close needs
+something weaker than an offered slot, and the carrier should name that — or
+`offersNodeSlot` under-approximates its own docstring's criterion, since
+`[185] l-bare-document`'s `s-l+block-node` follows the document start as surely
+as `[185]`'s does a `-`.  The second reading is a RUNTIME change and must be
+measured as one: extending the offer would let §8.1's `offered` fire at a
+document root, which can only over-reject, so it is priced by the corpus and
+not by this file. -/
+
+/-- The index of the first depth-0 flow open, or `none`. -/
+private def depth0OpenIdx (tokens : Array (Positioned YamlToken)) : Option Nat :=
+  let rec go (i d : Nat) : Option Nat :=
+    if i >= tokens.size then none
+    else
+      let t := tokens[i]!.val
+      if t.isFlowOpen then (if d == 0 then some i else go (i + 1) (d + 1))
+      else if t.isFlowClose then go (i + 1) (d - 1)
+      else go (i + 1) d
+  go 0 0
+
+/-- `ParkSlot.slotRun`, read at the depth-0 open of a scanned input: the park is
+    the state just before the open is pushed, so the park's cursor IS that
+    index, and both the walk-back and the offer test read only below it. -/
+private def slotRunAtOpen (input : String) : Option Bool :=
+  match L4YAML.Scanner.scanFiltered input with
+  | .error _ => none
+  | .ok tokens =>
+    match depth0OpenIdx tokens with
+    | none => none
+    | some o =>
+      let st := L4YAML.Scanner.propsRunStart tokens o
+      some (st == o || (match L4YAML.Scanner.prevRealIdx? tokens st with
+        | some j => tokens[j]!.val.offersNodeSlot
+        | none => false))
+
+-- ACCEPTED, and the slot is NOT offered: the run stands behind the start.
+#guard slotRunAtOpen "&x\n[1]\n" == some false
+#guard slotRunAtOpen "&x\n[1, 2]\n" == some false
+#guard slotRunAtOpen "--- &x\n[1]\n" == some false
+#guard slotRunAtOpen "---\n&x\n[1]\n" == some false
+#guard slotRunAtOpen "---\n&x !t\n[1]\n" == some false
+
+-- the block indicators DO offer one, which is why the family's own shapes hold
+#guard slotRunAtOpen "k: &x [1]\n" == some true
+#guard slotRunAtOpen "- &x [1]\n" == some true
+#guard slotRunAtOpen "? &x [1]\n" == some true
+
+-- and a park with no run at all holds it by the left disjunct
+#guard slotRunAtOpen "[1]\n" == some true
+#guard slotRunAtOpen "k: [1]\n" == some true
+
+-- the block-offer variants of the same under-run shape are REFUSED, which is
+-- why the counterexamples had to come from the document root
+#guard slotRunAtOpen "k:\n  b:\n    &x\n  [1]\n" == none
+#guard slotRunAtOpen "k:\n  -\n[1]\n" == none
 
 end L4YAML.Tests.Guards.ScannerFlowOpenUnderRun
 

@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Convergent reduction — runnable demonstration
 
@@ -259,3 +264,5 @@ theorem good_both_convergent : ExecF good ∧ ExecS good := convergent good_Dyck
 theorem good_both_divergent : ExecF good ∧ ExecS good := divergent good_Dyck good_ExecS
 
 end ConvergentReduction
+
+end Blanket

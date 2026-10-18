@@ -1,7 +1,14 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+public meta import L4YAML.Token.Token
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -162,3 +169,5 @@ pins record the verdict it would have to read. -/
 #guard verdicts "  \t:\n" == (some (.tabInIndentation 0 2), some (.tabInIndentation 0 2))
 
 end Tests.Guards.ScannerIndentedBlockCompose
+
+end Blanket

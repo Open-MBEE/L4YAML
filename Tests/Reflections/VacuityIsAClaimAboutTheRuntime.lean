@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 657 — "expected vacuous" is a claim about the RUNTIME, and the cheapest way to test it is to build the input
 
@@ -246,3 +251,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.VacuityIsAClaimAboutTheRuntime
+
+end Blanket

@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -182,3 +189,5 @@ private def badKey (input : String) (line : Nat) : Bool :=
 #guard badKey "- [1,\n  2]: 3\n" 1
 
 end L4YAML.Tests.Guards.ScannerFlowCloseSameLineKey
+
+end Blanket

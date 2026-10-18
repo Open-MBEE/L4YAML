@@ -1,7 +1,17 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+public meta import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+public meta import L4YAML.Scanner.State
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -267,3 +277,5 @@ the item item 139 named: a `danglingNodePos?` face on `pendingContent`, spent at
 the landing where `h_closable` is, with this refusal as its contradiction. -/
 
 end L4YAML.Tests.Guards.ScannerDanglingNodeDedent
+
+end Blanket

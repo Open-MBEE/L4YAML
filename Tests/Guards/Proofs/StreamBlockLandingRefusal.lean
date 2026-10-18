@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -282,3 +287,5 @@ indicator at its own column with a level still open.  §9.2 has no check for it
 face item 141 priced is where it has to be carried rather than refuted. -/
 
 end L4YAML.Tests.Guards.StreamBlockLandingRefusal
+
+end Blanket

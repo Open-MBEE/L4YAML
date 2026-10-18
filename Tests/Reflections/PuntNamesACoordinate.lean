@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 654 — an optional field's punt names a COORDINATE, not a difficulty: re-measure the producer where the runtime pushes
 
@@ -244,3 +249,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.PuntNamesACoordinate
+
+end Blanket

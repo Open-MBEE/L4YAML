@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 244 — complete a new deliverable type's projection family before walking it
 
@@ -245,3 +250,5 @@ theorem mapEmpty_wellBr_typed : WellBr [.oc, .cc] ∧ Typed [.oc, .cc] := by dec
 #guard decide (Typed [.oc, .cc]) = true
 
 end ProjectionFamilyCompletion
+
+end Blanket

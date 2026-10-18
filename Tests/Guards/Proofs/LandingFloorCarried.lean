@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -271,3 +275,5 @@ What it leaves, in the order the dedent punt needs it:
   step later (`landing_mem_of_value`) and the pack cannot. -/
 
 end L4YAML.Tests.Guards.LandingFloorCarried
+
+end Blanket

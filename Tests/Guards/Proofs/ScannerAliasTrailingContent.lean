@@ -1,5 +1,13 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
+module
+
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+
+public meta import L4YAML.Scanner.IndexedDispatch
+public meta import L4YAML.Token.Token
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -135,3 +143,5 @@ is not later read as an item-9h regression. -/
     == (some (.undefinedAlias "a" 1 4), some (.trailingContent 1 7))
 
 end Tests.Guards.ScannerAliasTrailingContent
+
+end Blanket

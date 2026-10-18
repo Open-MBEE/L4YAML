@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 630 — price a threaded datum by where its invariant FAILS
 
@@ -159,3 +164,5 @@ def uncarried : List Assembler := assemblers.filter (fun a => !carriesReservatio
 #guard priceByFailure + uncarried.length == 2
 
 end L4YAML.Tests.Reflections.PriceByFailingState
+
+end Blanket

@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -283,3 +288,5 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_start sp_anchor : SurfPos}
 #guard scanOk "a: 1\n!!str b\n" == "SCAN-ERR L4YAML.ScanError.invalidBareDocument 1 0"
 
 end L4YAML.Tests.Guards.PropsRunLengthGate
+
+end Blanket

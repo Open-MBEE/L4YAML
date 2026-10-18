@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -104,3 +108,5 @@ example (n : Nat) (sc : ScannerState) (sp : SurfPos) (s_prep : ScannerState)
   preprocess_some_separate_at_anyCol n sc sp s_prep c hcorr hok
 
 end L4YAML.Tests.Guards.FlowIndexLeafEvidence
+
+end Blanket

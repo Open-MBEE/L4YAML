@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -333,3 +338,5 @@ that relays through a PROPERTY push; see
       "EOF park=2,2 chk=L4YAML.ScanError.invalidBareDocument 2 2"]
 
 end L4YAML.Tests.Guards.DanglingParkFace
+
+end Blanket

@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 672 — the collapse keeps what the neighbors read
 
@@ -92,3 +97,5 @@ example (close : Unit → String) :
 example (close : Unit → String) : Inv 7 3 [] := .shape 3 (by omega) close
 
 end L4YAML.Tests.Reflections.CollapseKeepsWhatNeighborsRead
+
+end Blanket

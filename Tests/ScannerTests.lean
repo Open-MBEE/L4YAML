@@ -1,6 +1,10 @@
-import L4YAML.Parser.Composition
-import L4YAML.Scanner.Scanner
-import Tests.VerifiedResult
+module
+
+public import L4YAML.Parser.Composition
+public import L4YAML.Scanner.Scanner
+public import Tests.VerifiedResult
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -264,3 +268,5 @@ def collectTests : IO VerifiedSuiteResult := do
   }
 
 end Tests.ScannerTests
+
+end Blanket

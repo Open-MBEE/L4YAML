@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # Split a mixed arm before pricing it (Reflection 618)
 
 An unclosable proof arm was filed with a plan: "reachable only by an inline flow
@@ -236,3 +241,5 @@ The load-bearing claims are decidable facts about a five-element type; the
 #print axioms some_illegal_does_not_give_all_illegal
 
 end Tests.Reflections.SplitAMixedArmBeforePricingIt
+
+end Blanket

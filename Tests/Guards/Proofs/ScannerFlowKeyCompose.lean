@@ -1,5 +1,12 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -83,3 +90,5 @@ private def refuses (input : String) : Bool :=
 #guard refuses "--- [1]: b\n"
 
 end L4YAML.Tests.Guards.ScannerFlowKeyCompose
+
+end Blanket

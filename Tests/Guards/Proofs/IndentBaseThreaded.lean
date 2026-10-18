@@ -1,7 +1,13 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -153,3 +159,5 @@ example {sc s_prep : ScannerState} {c : Char}
   preprocess_landing_at_level hok h_pop h_base
 
 end L4YAML.Tests.Guards.IndentBaseThreaded
+
+end Blanket

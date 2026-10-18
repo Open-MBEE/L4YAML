@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -134,3 +141,5 @@ example {sc : ScannerState} (h_ivl : sc.implicitValueLine = some sc.line)
   KeyPackPunt.implicitValue h_ivl h_kline h_st.toStalePark
 
 end L4YAML.Tests.Guards.ScannerImplicitValueSameLineKey
+
+end Blanket

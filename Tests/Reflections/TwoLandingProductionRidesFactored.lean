@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 677 — a two-landing production rides the pending as a FACTORED closure
 
@@ -93,3 +98,5 @@ theorem factored_extends_everywhere :
   fun _ _ p => factored_serves_full p 1
 
 end L4YAML.Tests.Reflections.TwoLandingProductionRidesFactored
+
+end Blanket

@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 427 — a parallel carrier field's STRUCTURE-EXPOSE carries zero new index reasoning:
   it rides the sibling field's pre-built `_array` bridge as a token-keyed one-liner
@@ -109,3 +114,5 @@ theorem exposeB_is_oneliner (arr : Array Nat) (lo : Nat) (h : AdjB (arr.toList.d
         (#[5, 1, 9] : Array Nat)[1]!) == false                -- the index spaces genuinely differ
 
 end Tests.Reflections.ParallelFieldExposeRelay
+
+end Blanket

@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -170,3 +177,5 @@ example {sc s' : ScannerState} (h_punt : KeyPackPunt sc)
 #guard stamped "k: &p [1]: 2\n" 0 9
 
 end L4YAML.Tests.Guards.ScannerPropsRunSameLineKey
+
+end Blanket

@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -169,3 +173,5 @@ example {sc : ScannerState} {sp_start sp_br sp_tok sp_key : SurfPos}
     ⟨h_kc, Or.inr trivial⟩ h_park h_content
 
 end L4YAML.Tests.Guards.FlowStackIndexParametric
+
+end Blanket

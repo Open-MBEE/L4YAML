@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A widened slot stays pinned by its sibling conjunct (Reflection 619)
 
 An accumulation invariant carried two conjuncts about the SAME pair of positions
@@ -217,3 +222,5 @@ looked at. -/
 #print axioms rescoping_is_sound
 
 end Tests.Reflections.WidenedSlotPinnedBySibling
+
+end Blanket

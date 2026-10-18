@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Schema.SchemaResolution
+module
+
+public import L4YAML.Proofs.Schema.SchemaResolution
+
+@[expose] public section Blanket
 
 namespace L4YAML.Schema.Proofs
 
@@ -65,3 +69,5 @@ open L4YAML
 #guard resolve (.scalar ⟨"hello", .plain, some "tag:yaml.org,2002:null", none, none⟩) == .null
 
 end L4YAML.Schema.Proofs
+
+end Blanket

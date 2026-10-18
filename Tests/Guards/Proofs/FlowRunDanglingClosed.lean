@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -201,3 +206,5 @@ a dangling run that rides into a collection is refused at the next break or at
 end of input. -/
 
 end L4YAML.Tests.Guards.FlowRunDanglingClosed
+
+end Blanket

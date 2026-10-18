@@ -1,6 +1,12 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -295,3 +301,5 @@ for what each of the three remaining families is, and why the refutation rather
 than a fourth route is what they owe. -/
 
 end L4YAML.Tests.Guards.StreamRouteSwapSurface
+
+end Blanket

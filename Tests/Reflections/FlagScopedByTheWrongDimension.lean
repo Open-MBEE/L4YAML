@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A flag scoped by the WRONG DIMENSION (Reflection 626)
 
 A machine records a flag so a later step knows it is inside some construct.  The
@@ -150,3 +155,5 @@ def underSuppressed : List (List Tok) :=
 #guard (overSuppressed.filter (fun w => !w.contains .br)).length == 12
 
 end Tests.Reflections.FlagScopedByTheWrongDimension
+
+end Blanket

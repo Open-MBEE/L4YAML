@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # Reflection 615 — token adjacency is a proxy, and virtual structure breaks it
 
 A scanner guard often wants to say *"these two things belong to the same
@@ -267,3 +272,5 @@ def corpus : List Node :=
 #print axioms guards_differ_exactly_in_block
 
 end Tests.Reflections.AdjacencyProxyAndVirtualStructure
+
+end Blanket

@@ -1,5 +1,11 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+public meta import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -232,3 +238,5 @@ o=4 sk=- slot=- ; o=4 sk=- slot=- ; o=4 sk=12 slot=ph ; o=4 sk=- slot=- ; \
 o=4 sk=16 slot=ph ; o=4 sk=9 slot=ph ; o=- sk=1 slot=ph"
 
 end L4YAML.Tests.Guards.FlowReservationFloor
+
+end Blanket

@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.LineOpenGuard
+
+module
+
+public import L4YAML.Proofs.Scanner.LineOpenGuard
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 668 — a deferring arm's survivors are an intersection of two sets
@@ -147,3 +152,5 @@ example : acceptBlock ':' := Or.inr (Or.inl rfl)
 example : ¬TailSuffix ':' := by rintro (h | h) <;> exact absurd h (by decide)
 
 end L4YAML.Tests.Reflections.StopSetMeetsAcceptClass
+
+end Blanket

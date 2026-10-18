@@ -1,8 +1,12 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Output.Emitter
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import Tests.VerifiedResult
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Output.Emitter
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import Tests.VerifiedResult
+
+@[expose] public section Blanket
 
 /-!
 # Adversarial Instantiation Tests
@@ -32,19 +36,19 @@ namespace Tests.AdversarialInstantiation
 /-! ## Infrastructure -/
 
 /-- Compute flowBracketDelta for a token value. -/
-private def fbd (t : YamlToken) : Int :=
+def fbd (t : YamlToken) : Int :=
   match t with
   | .flowSequenceStart | .flowMappingStart => 1
   | .flowSequenceEnd | .flowMappingEnd => -1
   | _ => 0
 
 /-- Compute bracket balance over a token array slice [lo, hi). -/
-private def bracketBal (tokens : Array (Positioned YamlToken)) (lo hi : Nat) : Int :=
+def bracketBal (tokens : Array (Positioned YamlToken)) (lo hi : Nat) : Int :=
   let slice := tokens.toList.drop lo |>.take (hi - lo)
   slice.foldl (fun acc t => acc + fbd t.val) 0
 
 /-- Check if a token value is a "content start" (scalar, flowSeqStart, or flowMapStart). -/
-private def isContentStart (t : YamlToken) : Bool :=
+def isContentStart (t : YamlToken) : Bool :=
   match t with
   | .scalar _ _ => true
   | .flowSequenceStart => true
@@ -52,7 +56,7 @@ private def isContentStart (t : YamlToken) : Bool :=
   | _ => false
 
 /-- Pretty-print a token for debugging. -/
-private def tokStr (t : YamlToken) : String :=
+def tokStr (t : YamlToken) : String :=
   match t with
   | .streamStart => "streamStart"
   | .streamEnd => "streamEnd"
@@ -79,7 +83,7 @@ private def tokStr (t : YamlToken) : String :=
   | .comment t => s!"#{t}"
 
 /-- Scan a string and return filtered tokens. -/
-private def scanEmitted (input : String) : IO (Array (Positioned YamlToken)) := do
+def scanEmitted (input : String) : IO (Array (Positioned YamlToken)) := do
   match scanFiltered input with
   | .ok tokens => return tokens
   | .error e => throw (IO.Error.userError s!"scan failed: {repr e}")
@@ -87,15 +91,15 @@ private def scanEmitted (input : String) : IO (Array (Positioned YamlToken)) := 
 /-! ## Value constructors -/
 
 /-- Scalar value. -/
-private def sv (content : String) : YamlValue :=
+def sv (content : String) : YamlValue :=
   .scalar { content, style := .plain }
 
 /-- Flow sequence value. -/
-private def seqv (items : List YamlValue) : YamlValue :=
+def seqv (items : List YamlValue) : YamlValue :=
   .sequence .flow items.toArray
 
 /-- Flow mapping value. -/
-private def mapv (pairs : List (YamlValue × YamlValue)) : YamlValue :=
+def mapv (pairs : List (YamlValue × YamlValue)) : YamlValue :=
   .mapping .flow pairs.toArray
 
 /-! ## 9g: emitList body characterization
@@ -107,7 +111,7 @@ private def mapv (pairs : List (YamlValue × YamlValue)) : YamlValue :=
 -/
 
 /-- Check 9g characterization for a given list of items. -/
-private def check9g (state : IO.Ref TestCollector)
+def check9g (state : IO.Ref TestCollector)
     (label : String) (items : List YamlValue) : IO Unit := do
   let emitted := "[" ++ emit.emitList items ++ "]"
   let tokens ← scanEmitted emitted
@@ -154,7 +158,7 @@ private def check9g (state : IO.Ref TestCollector)
 -/
 
 /-- Check 9h characterization for a given list of pairs. -/
-private def check9h (state : IO.Ref TestCollector)
+def check9h (state : IO.Ref TestCollector)
     (label : String) (pairs : List (YamlValue × YamlValue)) : IO Unit := do
   let emitted := "{" ++ emit.emitPairList pairs ++ "}"
   let tokens ← scanEmitted emitted
@@ -194,7 +198,7 @@ private def check9h (state : IO.Ref TestCollector)
 
 /-! ## Test Suites -/
 
-private def test9g (state : IO.Ref TestCollector) : IO Unit := do
+def test9g (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "9g: emitList_body_filtered_characterization"
 
   -- Flat sequences
@@ -229,7 +233,7 @@ private def test9g (state : IO.Ref TestCollector) : IO Unit := do
   check9g state "special-chars" [sv "hello \"world\"", sv "line1\nline2"]
   check9g state "many-items" [sv "a", sv "b", sv "c", sv "d", sv "e", sv "f"]
 
-private def test9h (state : IO.Ref TestCollector) : IO Unit := do
+def test9h (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "9h: emitPairList_body_filtered_characterization"
 
   -- Single pair
@@ -284,7 +288,7 @@ This covers both the sequence and mapping cases, plus scalars as base cases.
 
 /-- Check that `emit v` round-trips through the parser with content preserved.
     Tests: (1) parsing succeeds, (2) exactly 1 document, (3) contentEq holds. -/
-private def checkRoundTrip (state : IO.Ref TestCollector)
+def checkRoundTrip (state : IO.Ref TestCollector)
     (label : String) (v : YamlValue) : IO Unit := do
   let emitted := emit v
   match parseYamlRaw emitted with
@@ -308,7 +312,7 @@ private def checkRoundTrip (state : IO.Ref TestCollector)
 
 /-! ## Priority 2 Test Suites -/
 
-private def test9cd (state : IO.Ref TestCollector) : IO Unit := do
+def test9cd (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "9c/9d: emit round-trip content equivalence"
 
   -- Scalars (base case for both 9c and 9d)
@@ -440,7 +444,7 @@ We test:
 
 /-- Check parser fuel sufficiency for an emitted value.
     Returns `(tokensSize, fuelUsed, tightFuelWorks)`. -/
-private def checkFuelSufficiency (state : IO.Ref TestCollector)
+def checkFuelSufficiency (state : IO.Ref TestCollector)
     (label : String) (v : YamlValue) : IO Unit := do
   let emitted := emit v
   -- Step 1: Scan to get tokens
@@ -475,7 +479,7 @@ private def checkFuelSufficiency (state : IO.Ref TestCollector)
 
 /-! ## Priority 3 Test Suites -/
 
-private def test9ab (state : IO.Ref TestCollector) : IO Unit := do
+def test9ab (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "9a: parseStream_emitSequence fuel sufficiency"
 
   -- Empty sequence (base case — already proven, sanity check)
@@ -665,7 +669,7 @@ preservation and the strong SK invariant hold across the full scanning chain.
     `skInvOk` checks the disjunctive OUTPUT: `(sk'.possible → tokenIndex ≥ n) ∨ ek'=none`.
     `origPrecondFails` = true when the original (broken) theorem's disjunction
     would give a larger n that causes prefix violation. -/
-private def checkPrefixSkStep (s s' : ScannerState) :
+def checkPrefixSkStep (s s' : ScannerState) :
     Nat × Bool × Bool × Bool :=
   -- Max n where precondition (sk.possible → sk.tokenIndex ≥ n) holds:
   let n :=
@@ -701,7 +705,7 @@ private def checkPrefixSkStep (s s' : ScannerState) :
 
 /-- Drive scanning step-by-step through an input string, checking the invariant at each step.
     Returns the number of steps taken and whether any check failed. -/
-private def checkScanInvariant (state : IO.Ref TestCollector)
+def checkScanInvariant (state : IO.Ref TestCollector)
     (label : String) (input : String) : IO Unit := do
   let s0 := ScannerState.mk' input
   let s0 := s0.emit .streamStart
@@ -752,7 +756,7 @@ private def checkScanInvariant (state : IO.Ref TestCollector)
     2. strong SK invariant (`sk_k.possible → tokenIndex_k ≥ n₀`) holds at EVERY step
     This tests whether `ScanChain_preserves_raw_prefix` can work without the
     `∨ explicitKeyLine = none` disjunction. -/
-private def checkChainInvariant (state : IO.Ref TestCollector)
+def checkChainInvariant (state : IO.Ref TestCollector)
     (label : String) (input : String) : IO Unit := do
   let s0 := ScannerState.mk' input
   let s0 := s0.emit .streamStart
@@ -801,7 +805,7 @@ private def checkChainInvariant (state : IO.Ref TestCollector)
 
 /-! ## Priority 4 Test Suites -/
 
-private def test9e (state : IO.Ref TestCollector) : IO Unit := do
+def test9e (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "9e: scanNextToken_prefix_and_sk_inv"
 
   -- Flow indicators (exercises dispatchFlowIndicators)
@@ -957,7 +961,7 @@ properties at every step. Special emphasis on:
 
 /-- Check whether a byte offset is at a valid UTF-8 character boundary in a string.
     Iterates through valid positions from the start. -/
-private def isAtCharBoundary (s : String) (offset : Nat) : Bool :=
+def isAtCharBoundary (s : String) (offset : Nat) : Bool :=
   if offset == s.utf8ByteSize then true  -- one-past-end is valid
   else
     let rec go (byteIdx : Nat) (fuel : Nat) : Bool :=
@@ -969,7 +973,7 @@ private def isAtCharBoundary (s : String) (offset : Nat) : Bool :=
 
 /-- Check BoundInv properties for one scanNextToken step.
     Returns `(offsetOk, inputEndOk, inputOk, isValidOk)`. -/
-private def checkBoundInv (s₀ s' : ScannerState) :
+def checkBoundInv (s₀ s' : ScannerState) :
     Bool × Bool × Bool × Bool :=
   let offsetOk := s'.offset ≤ s'.inputEnd
   let inputEndOk := s'.inputEnd == s₀.inputEnd
@@ -978,7 +982,7 @@ private def checkBoundInv (s₀ s' : ScannerState) :
   (offsetOk, inputEndOk, inputOk, isValidOk)
 
 /-- Drive scanning step-by-step, checking BoundInv at every step. -/
-private def checkBoundInvariant (state : IO.Ref TestCollector)
+def checkBoundInvariant (state : IO.Ref TestCollector)
     (label : String) (input : String) : IO Unit := do
   let s0 := ScannerState.mk' input
   let s0 := s0.emit .streamStart
@@ -1022,7 +1026,7 @@ private def checkBoundInvariant (state : IO.Ref TestCollector)
 
 /-! ## Priority 5 Test Suites -/
 
-private def test5_bound (state : IO.Ref TestCollector) : IO Unit := do
+def test5_bound (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "5: BoundInv preservation (preprocess/structural/content)"
 
   -- === preprocess_preserves_bound: skipToContent + unwindIndents ===
@@ -1249,7 +1253,7 @@ we verify that `(s_j.tokens.filter notPlaceholder)` begins with
 
 /-- Check filtered prefix preservation at every intermediate state where the
     current theorem's `simpleKey.possible = false` precondition holds. -/
-private def checkFilteredPrefix (state : IO.Ref TestCollector)
+def checkFilteredPrefix (state : IO.Ref TestCollector)
     (label : String) (input : String) : IO Unit := do
   let s0 := ScannerState.mk' input
   let s0 := s0.emit .streamStart
@@ -1322,7 +1326,7 @@ private def checkFilteredPrefix (state : IO.Ref TestCollector)
 
 /-- Detailed diagnostic for a single input: dump all intermediate states'
     filtered tokens, ek, sk state, and identify exact token changes. -/
-private def diagFilteredPrefix (state : IO.Ref TestCollector)
+def diagFilteredPrefix (state : IO.Ref TestCollector)
     (label : String) (input : String) : IO Unit := do
   let s0 := ScannerState.mk' input
   let s0 := s0.emit .streamStart
@@ -1362,7 +1366,7 @@ private def diagFilteredPrefix (state : IO.Ref TestCollector)
               IO.println s!"  MISMATCH step {i}→{j} pos {k}: was {tokStr filt_i[k].val} now {tokStr filt_j[k].val}"
   check state s!"{label}: diagnostic complete" true
 
-private def test_filtered_prefix (state : IO.Ref TestCollector) : IO Unit := do
+def test_filtered_prefix (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "ScanChain_filtered_prefix"
 
   -- Diagnostic on smallest failing case
@@ -1470,7 +1474,7 @@ private def findContentInSeq (tokens : Array (Positioned YamlToken)) (bodyStart 
   none
 
 /-- Find the first .key position in a flow mapping body (after `{`). -/
-private def findKeyInMap (tokens : Array (Positioned YamlToken)) (bodyStart : Nat) : Option Nat := do
+def findKeyInMap (tokens : Array (Positioned YamlToken)) (bodyStart : Nat) : Option Nat := do
   for _h : i in [bodyStart:tokens.size] do
     let tok := tokens[i]!.val
     if tok == .key then
@@ -1478,7 +1482,7 @@ private def findKeyInMap (tokens : Array (Positioned YamlToken)) (bodyStart : Na
   none
 
 /-- Check parseNode on nested flowSeqStart inside a sequence body. -/
-private def checkNestedSeqInSeq (state : IO.Ref TestCollector)
+def checkNestedSeqInSeq (state : IO.Ref TestCollector)
     (label : String) (outerSeq : List YamlValue) : IO Unit := do
   let emitted := emit (seqv outerSeq)
   match scanFiltered emitted with
@@ -1518,7 +1522,7 @@ private def checkNestedSeqInSeq (state : IO.Ref TestCollector)
     check state s!"{label}: found nested [" foundNested
 
 /-- Check parseNode on nested flowMapStart inside a sequence body. -/
-private def checkNestedMapInSeq (state : IO.Ref TestCollector)
+def checkNestedMapInSeq (state : IO.Ref TestCollector)
     (label : String) (outerSeq : List YamlValue) : IO Unit := do
   let emitted := emit (seqv outerSeq)
   match scanFiltered emitted with
@@ -1557,7 +1561,7 @@ private def checkNestedMapInSeq (state : IO.Ref TestCollector)
     check state s!"{label}: found nested \{" foundNested
 
 /-- Check parseExplicitKey + parseFlowMappingValue on a map entry. -/
-private def checkMapEntry (state : IO.Ref TestCollector)
+def checkMapEntry (state : IO.Ref TestCollector)
     (label : String) (outerMap : List (YamlValue × YamlValue)) : IO Unit := do
   let emitted := emit (mapv outerMap)
   match scanFiltered emitted with
@@ -1601,7 +1605,7 @@ private def checkMapEntry (state : IO.Ref TestCollector)
 
 /-! ## Priority 6 Test Suites -/
 
-private def testFlowParserHelpers (state : IO.Ref TestCollector) : IO Unit := do
+def testFlowParserHelpers (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "Priority 6: Flow parser helper lemmas"
 
   -- parseNode_flowSeqStart_in_seq tests
@@ -1645,7 +1649,7 @@ result is preserved across `(n+1) → (n+2)`.
 -/
 
 /-- Find the first `.key` token position in `tokens`. -/
-private def findKeyPos (tokens : Array (Positioned YamlToken)) : Option Nat := do
+def findKeyPos (tokens : Array (Positioned YamlToken)) : Option Nat := do
   for _h : i in [0:tokens.size] do
     if tokens[i]!.val == .key then
       return i
@@ -1654,7 +1658,7 @@ private def findKeyPos (tokens : Array (Positioned YamlToken)) : Option Nat := d
 /-- Compare two `(YamlValue × YamlValue × ParseState)` results structurally
     (key, val, pos, tokens.size). ParseState has no derived `BEq`, so we
     compare observable fields. -/
-private def resultEq
+def resultEq
     (r1 r2 : YamlValue × YamlValue × ParseState) : Bool :=
   r1.fst == r2.fst && r1.snd.fst == r2.snd.fst &&
   r1.snd.snd.pos == r2.snd.snd.pos &&
@@ -1665,7 +1669,7 @@ private def resultEq
     monotonicity property holds for this specific `(ps, n)`. Used to
     distinguish true theorem violations from cases where the `ih_pn`
     hypothesis itself is false (vacuously satisfying the implication). -/
-private def parseNodeMonoHoldsAt (ps : ParseState) (n : Nat) : Bool :=
+def parseNodeMonoHoldsAt (ps : ParseState) (n : Nat) : Bool :=
   match parseNode ps (n + 1), parseNode ps (n + 2) with
   | .ok v1, .ok v2 => v1.fst == v2.fst && v1.snd.pos == v2.snd.pos
   | .ok _, .error _ => false  -- lost success = not monotonic
@@ -1673,7 +1677,7 @@ private def parseNodeMonoHoldsAt (ps : ParseState) (n : Nat) : Bool :=
 
 /-- Check parseBlockMappingEntryValue monotonicity at fuel `n` for a given
     `ps, khc, kl, kc`: equivalent of the `h_bmv` hypothesis.  -/
-private def parseBMVMonoHoldsAt (ps : ParseState) (khc : Bool) (kl kc : Nat)
+def parseBMVMonoHoldsAt (ps : ParseState) (khc : Bool) (kl kc : Nat)
     (n : Nat) : Bool :=
   match parseBlockMappingEntryValue ps (n + 1) khc kl kc,
         parseBlockMappingEntryValue ps (n + 2) khc kl kc with
@@ -1686,7 +1690,7 @@ private def parseBMVMonoHoldsAt (ps : ParseState) (khc : Bool) (kl kc : Nat)
     success at `n+2` with the **same result**. Skip checks where `ih_pn`
     at fuel `n` (evaluated on `ps.advance`) doesn't hold, as the theorem
     is vacuous there. -/
-private def checkBMKEMono (state : IO.Ref TestCollector)
+def checkBMKEMono (state : IO.Ref TestCollector)
     (label : String) (input : String) : IO Unit := do
   match scanFiltered input with
   | .error e =>
@@ -1752,7 +1756,7 @@ private def checkBMKEMono (state : IO.Ref TestCollector)
         check state s!"{label}: vacuous-ih_pn fuel count = {vacuousCount}" true
 
 /-- Priority 7 test suite: `handleBlockMappingKeyEntry` mono step. -/
-private def testHandleBlockMappingKeyEntryMono (state : IO.Ref TestCollector) : IO Unit := do
+def testHandleBlockMappingKeyEntryMono (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "Priority 7: handleBlockMappingKeyEntry_mono_step"
 
   -- Simple implicit keys (scalar: scalar)
@@ -1811,3 +1815,5 @@ def collectTests : IO VerifiedSuiteResult := do
            tests := results }
 
 end Tests.AdversarialInstantiation
+
+end Blanket

@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 682 — an unpayable arm is a bug report
 
@@ -128,3 +133,5 @@ theorem narrowing_keeps_the_readable (n : Nat) (r : Run) (h : readable n r = tru
     simp [acceptsAfter, acceptsBefore, hb] <;> omega
 
 end L4YAML.Tests.Reflections.UnpayableArmIsABugReport
+
+end Blanket

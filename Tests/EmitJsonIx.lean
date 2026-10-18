@@ -1,4 +1,8 @@
-import L4YAML.Output.JsonIx
+module
+
+public import L4YAML.Output.JsonIx
+
+@[expose] public section Blanket
 
 /-!
 # l4yaml-json-ix — Core-Schema JSON emitter, indexed pipeline
@@ -17,3 +21,5 @@ def main : IO UInt32 := do
   | .error e =>
     IO.eprintln (toString e)
     return 1
+
+end Blanket

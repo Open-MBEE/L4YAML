@@ -1,6 +1,12 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -303,3 +309,5 @@ fallback genuinely serves it.  What holds is the OTHER half — no level open, n
 `StreamBareDocumentFallback` §1 for the split, measured on the real scanner. -/
 
 end L4YAML.Tests.Guards.StreamHeadLandingFace
+
+end Blanket

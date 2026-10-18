@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # An operational flag already witnesses the history (Reflection 624)
 
 A guard reads a piece of state.  To *use* it downstream you need a fact about
@@ -158,3 +163,5 @@ def withBreak : List Ch := [.other, .br, .sp, .sp, .sp]
 #guard (run start withBreak).flag == true
 
 end Tests.Reflections.OperationalFlagWitnessesHistory
+
+end Blanket

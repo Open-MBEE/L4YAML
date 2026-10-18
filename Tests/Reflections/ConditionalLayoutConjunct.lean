@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 635 — a conditional conjunct replaces a parallel tower
 
@@ -136,3 +141,5 @@ def rejectingScanners : Nat := 2
 #guard rejectingScanners == 2
 
 end L4YAML.Tests.Reflections.ConditionalLayoutConjunct
+
+end Blanket

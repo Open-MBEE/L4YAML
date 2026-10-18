@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 670 — price a re-index by its signatures, not its occurrences
 
@@ -80,3 +85,5 @@ example (h : Tower 2 5) : Reading 2 := h.reading
 example (r : Reading 2) : Tower 2 2 := (Tower.base r).grow r
 
 end L4YAML.Tests.Reflections.ReindexPriceIsTheSignatures
+
+end Blanket

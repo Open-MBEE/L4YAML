@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
+
+module
+
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-! # A name in prose is a claim about the environment (DOCS items 265, 266)
 
@@ -77,3 +82,5 @@ def expectedGateVocab : String :=
   "names=107 mentions=444 families=13 refuted=7 wrapped=3 self=2 unresolved=0"
 
 end L4YAML.Tests.Guards.GateVocabulary
+
+end Blanket

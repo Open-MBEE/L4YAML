@@ -1,5 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+public meta import L4YAML.Scanner.Scanner
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -135,3 +143,5 @@ private def emits (input : String) (expected : List String) : Bool :=
   ["+STR", "+DOC", "+MAP", "=VAL :a", "=VAL &x :w", "-MAP", "-DOC", "-STR"]
 
 end L4YAML.Tests.Guards.ScannerExplicitValueCompose
+
+end Blanket

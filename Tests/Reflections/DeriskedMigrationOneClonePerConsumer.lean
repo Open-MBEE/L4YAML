@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 415 — a de-risked guard-re-scope migration costs ONE clone-with-one-line per consumer; restoring the suppressed arm and supplying the guard's new debt are the SAME case-split
 
@@ -126,3 +131,5 @@ theorem migrationCallSite (b : Tok) (g : NewGuard Tok.op b) :
 #guard (decide (Tok.scal = Tok.cl)) == false
 
 end Tests.Reflections.DeriskedMigrationOneClonePerConsumer
+
+end Blanket

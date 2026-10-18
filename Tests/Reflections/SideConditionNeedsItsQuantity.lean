@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 652 — removing a pin returns a side condition, and a side condition is only as available as the quantity it names
 
@@ -206,3 +211,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.SideConditionNeedsItsQuantity
+
+end Blanket

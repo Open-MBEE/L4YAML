@@ -1,5 +1,11 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+public meta import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -237,3 +243,5 @@ own `danglingNodePos? sc = none` — item 160's other 22 sites — after which
 route keeps no CHARACTER residue at all. -/
 
 end L4YAML.Tests.Guards.FlowParkAnchor
+
+end Blanket

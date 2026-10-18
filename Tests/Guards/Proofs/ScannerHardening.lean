@@ -2,7 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Parser.Composition
+
+module
+
+public import L4YAML.Parser.Composition
+
+
+
+public meta import L4YAML.Parser.Composition
+public meta import L4YAML.Spec.Types
+@[expose] public section Blanket
 
 /-!
 # Scanner Hardening — Compile-Time Guards (v0.2.10)
@@ -274,3 +283,5 @@ open L4YAML.TokenParser
 #guard match parseYamlSingle "[1, 2]" with | .ok v => v.isSequence | .error _ => false
 
 end Tests.Guards.ScannerHardening
+
+end Blanket

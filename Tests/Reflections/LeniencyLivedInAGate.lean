@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 676 — an over-acceptance behind a gate is closed by deleting the gate
 
@@ -75,3 +80,5 @@ theorem gate_delta_is_the_shadow (floor : Nat) (t : Tok) :
     simp [gatedOk, strictOk, hc, hlt]
 
 end L4YAML.Tests.Reflections.LeniencyLivedInAGate
+
+end Blanket

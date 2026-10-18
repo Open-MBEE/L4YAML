@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 636 — the coupling rides the pending's type parameter
 
@@ -140,3 +145,5 @@ def propsContentBailSitesAfter : Nat := 0
 #guard propsContentBailSitesAfter == 0
 
 end L4YAML.Tests.Reflections.PendingTypeParameterCoupling
+
+end Blanket

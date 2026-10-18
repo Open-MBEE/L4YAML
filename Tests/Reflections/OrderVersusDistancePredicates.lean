@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # Reflection 616 — order predicates look back, distance predicates cannot
 
 A scanner accumulates a **token stream**, and a strictening is usually written as
@@ -276,3 +281,5 @@ theorem guards_differ_exactly_on_abutment (l : List Scanned) :
 #print axioms guards_differ_exactly_on_abutment
 
 end Tests.Reflections.OrderVersusDistancePredicates
+
+end Blanket

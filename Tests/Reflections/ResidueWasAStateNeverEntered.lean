@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 661 — the residue was a state the machine never enters
 
@@ -226,3 +231,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.ResidueWasAStateNeverEntered
+
+end Blanket

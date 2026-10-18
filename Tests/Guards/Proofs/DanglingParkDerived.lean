@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -253,3 +258,5 @@ example (s_run s_land : ScannerState) (h : s_land.simpleKeyAllowed = false) :
   rw [ite_eq_right (by simp [h])]
 
 end L4YAML.Tests.Guards.DanglingParkDerived
+
+end Blanket

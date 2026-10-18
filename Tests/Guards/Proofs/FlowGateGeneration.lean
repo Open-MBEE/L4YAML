@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -244,3 +248,5 @@ sk=true/21 [S,ph,ph,&,[,ph,ph,s,,,ph,ph,[,ph,K,s,V,ph,ph,s,],,,ph,ph,s] ; \
 sk=true/1 [S,ph,ph,&,[,ph,ph,s,,,ph,ph,[,ph,K,s,V,ph,ph,s,],,,ph,ph,s,]]"
 
 end L4YAML.Tests.Guards.FlowGateGeneration
+
+end Blanket

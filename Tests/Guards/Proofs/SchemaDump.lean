@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Schema.SchemaDump
+module
+
+public import L4YAML.Proofs.Schema.SchemaDump
+
+@[expose] public section Blanket
 
 namespace L4YAML.Proofs.SchemaDump
 
@@ -58,3 +62,5 @@ end SchemaDumpExtendedGuards
 #guard contentRoundTrips (some false : Option Bool)
 
 end L4YAML.Proofs.SchemaDump
+
+end Blanket

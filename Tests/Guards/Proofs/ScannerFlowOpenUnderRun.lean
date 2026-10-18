@@ -1,5 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+public meta import L4YAML.Scanner.State
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -2005,3 +2013,5 @@ def expectedClosePrice : String :=
    close=4/1 closable=20/5 apps=2"
 
 end L4YAML.Tests.Guards.ScannerFlowOpenUnderRun
+
+end Blanket

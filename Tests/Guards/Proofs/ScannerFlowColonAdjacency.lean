@@ -1,7 +1,14 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+module
+
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+public meta import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -174,3 +181,5 @@ open L4YAML.Proofs.FlowAdjacencyIx in
 #print axioms notCompletes_of_checkFlowAdjacencyIx_ok_nodeStart
 
 end Tests.Guards.ScannerFlowColonAdjacency
+
+end Blanket

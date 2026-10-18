@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 679 — the refused landings fund the reading
 
@@ -65,3 +70,5 @@ theorem unchecked_breaks_reading (floor : Nat) :
   exact absurd (h floor (by simp)) (by omega)
 
 end L4YAML.Tests.Reflections.RefusedLandingsFundTheReading
+
+end Blanket

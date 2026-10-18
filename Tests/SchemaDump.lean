@@ -1,11 +1,15 @@
-import L4YAML.Spec.Types
-import L4YAML.Schema.Schema
-import L4YAML.Schema.FromToYaml
-import L4YAML.Schema.Dump
-import L4YAML.Output.Dump
-import L4YAML.Output.Emitter
-import L4YAML.Parser.Composition
-import Tests.VerifiedResult
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Schema.Schema
+public import L4YAML.Schema.FromToYaml
+public import L4YAML.Schema.Dump
+public import L4YAML.Output.Dump
+public import L4YAML.Output.Emitter
+public import L4YAML.Parser.Composition
+public import Tests.VerifiedResult
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -168,7 +172,7 @@ def testContentRoundTrip (state : IO.Ref TestCollector) : IO Unit := do
 /-! ## §5: Typed Round-Trip -/
 
 /-- Helper: check that typed round-trip returns the expected value. -/
-private def roundTripsTo {α : Type} [ToYaml α] [FromYaml α] [BEq α]
+def roundTripsTo {α : Type} [ToYaml α] [FromYaml α] [BEq α]
     (value : α) (cfg : DumpConfig := {}) : Bool :=
   match roundTripTyped α value cfg with
   | .ok v => v == value
@@ -257,3 +261,5 @@ def collectTests : IO VerifiedSuiteResult := do
   }
 
 end Tests.SchemaDump
+
+end Blanket

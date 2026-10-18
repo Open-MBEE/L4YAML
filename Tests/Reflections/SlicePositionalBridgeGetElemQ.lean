@@ -17,6 +17,11 @@ bridge and the separator bridge.  NEGATIVE: the dependent-`getElem` attempt is s
 reproduce the motive failure, and `#guard`s pin the concrete positional facts.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 namespace Tests.Reflections.SlicePositionalBridgeGetElemQ
 
 set_option autoImplicit false
@@ -108,3 +113,5 @@ def L : List Nat := [10, 20, 30, 40, 50]
 #guard L[5]? == none
 
 end Tests.Reflections.SlicePositionalBridgeGetElemQ
+
+end Blanket

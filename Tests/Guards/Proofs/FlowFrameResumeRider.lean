@@ -1,6 +1,12 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -149,3 +155,5 @@ was paid at item 125.  So the rest of 67b — the constructor, `scannerDrop`,
 (`FlowStackB.shape` left the list at item 126, unreachable and deleted.) -/
 
 end L4YAML.Tests.Guards.FlowFrameResumeRider
+
+end Blanket

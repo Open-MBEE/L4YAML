@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -310,3 +315,5 @@ and — outside this lane entirely — the `[210]` flip's same five construction
 sites. -/
 
 end L4YAML.Tests.Guards.SeqTailResumeFrames
+
+end Blanket

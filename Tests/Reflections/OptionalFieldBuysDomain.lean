@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 653 — carry a new invariant obligation as an OPTIONAL field, so partial coverage costs domain instead of call sites
 
@@ -250,3 +255,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.OptionalFieldBuysDomain
+
+end Blanket

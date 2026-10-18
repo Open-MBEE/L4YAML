@@ -1,5 +1,9 @@
-import L4YAML
-import Tests.VerifiedResult
+module
+
+public import L4YAML
+public import Tests.VerifiedResult
+
+@[expose] public section Blanket
 
 /-!
 # Parser Security Limit Tests
@@ -22,35 +26,35 @@ namespace Tests.Limits
 /-! ## Helpers -/
 
 /-- Check that `parseYamlSafe` succeeds. -/
-private def parseOk (input : String) (limits : ParserLimits := {}) : Bool :=
+def parseOk (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .ok _ => true
   | .error _ => false
 
 /-- Check that `parseYamlSafe` fails with a limit error (not a scan error). -/
-private def parseLimitError (input : String) (limits : ParserLimits := {}) : Bool :=
+def parseLimitError (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .ok _ => false
   | .error (.limitError _) => true
   | .error (.scanError _) => false
 
 /-- Check that `parseYamlSafe` fails with a specific limit error category. -/
-private def parseAliasError (input : String) (limits : ParserLimits := {}) : Bool :=
+def parseAliasError (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .error (.limitError (.aliasLimit _)) => true
   | _ => false
 
-private def parseStructuralError (input : String) (limits : ParserLimits := {}) : Bool :=
+def parseStructuralError (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .error (.limitError (.structuralLimit _)) => true
   | _ => false
 
-private def parseDocumentError (input : String) (limits : ParserLimits := {}) : Bool :=
+def parseDocumentError (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .error (.limitError (.documentLimit _)) => true
   | _ => false
 
-private def parseTagError (input : String) (limits : ParserLimits := {}) : Bool :=
+def parseTagError (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .error (.limitError (.tagSecurity _)) => true
   | _ => false
@@ -374,3 +378,5 @@ def collectTests : IO VerifiedSuiteResult := do
            sourceFile := "Tests/LimitTests.lean", tests := results }
 
 end Tests.Limits
+
+end Blanket

@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 612 — an unclosable case arm has three destinations
 
@@ -241,3 +246,5 @@ info: 'UnclosableArmThreeDestinations.dead_arm_and_live_arm_look_alike' depends 
 #print axioms dead_arm_and_live_arm_look_alike
 
 end UnclosableArmThreeDestinations
+
+end Blanket

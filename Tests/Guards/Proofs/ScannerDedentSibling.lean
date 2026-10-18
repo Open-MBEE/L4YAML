@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -151,3 +158,5 @@ example {sp_start sp_land sp_key : SurfPos} {k : Nat}
   rootMapRouteF hcol0 h_stream h_ind
 
 end L4YAML.Tests.Guards.ScannerDedentSibling
+
+end Blanket

@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -264,3 +268,5 @@ arm~~ (item 154), ~~`pendingProps`'s two frames fields~~ (item 153), and ~~the
 included~~ (item 155).  All three are closed. -/
 
 end L4YAML.Tests.Guards.ContentParkCoverSpent
+
+end Blanket

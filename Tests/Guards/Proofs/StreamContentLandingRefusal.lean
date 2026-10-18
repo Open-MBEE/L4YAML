@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -263,3 +268,5 @@ callers cannot pay, and `flowKeyRoute_of_root`'s no-break arm, which is a park a
 a line start and not a landing at all. -/
 
 end L4YAML.Tests.Guards.StreamContentLandingRefusal
+
+end Blanket

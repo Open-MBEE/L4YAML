@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 614 — a guard's exemption list inherits the *next* dispatcher's side condition
 
@@ -168,7 +173,7 @@ private def same : Except Err St → Except Err St → Bool
 /-! The witness: a completed value, then a `:` that is **not** a separator.
 Loose admits it; tight rejects it. -/
 
-private def witness : St := { last := .value, colonIsSep := false }
+def witness : St := { last := .value, colonIsSep := false }
 
 #guard same (run guardLoose witness [.colon]) (.ok { last := .value, colonIsSep := false })
 #guard same (run guardTight witness [.colon]) (.error .adjacentNodes)
@@ -358,3 +363,5 @@ one class of inputs, and that the class is non-empty. -/
 #print axioms notValue_of_guardTight_none
 
 end Tests.Reflections.RoleDependentGuardExemption
+
+end Blanket

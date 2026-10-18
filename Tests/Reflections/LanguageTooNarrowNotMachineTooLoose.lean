@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # An arm that will not close can mean the LANGUAGE is too narrow (Reflection 625)
 
 A proof arm has to produce a derivation for everything that reaches it.  When it
@@ -182,3 +187,5 @@ The repair is a constructor, in the grammar. -/
 #guard accepts [.q] == true          -- the pipeline was never the problem
 
 end Tests.Reflections.LanguageTooNarrowNotMachineTooLoose
+
+end Blanket

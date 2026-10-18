@@ -1,7 +1,14 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+public meta import L4YAML.Token.Token
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -164,3 +171,5 @@ value indicator (§4). -/
   (some (.invalidImplicitKey 1), some (.invalidImplicitKey 1))
 
 end Tests.Guards.ScannerPropsAliasKeyCompose
+
+end Blanket

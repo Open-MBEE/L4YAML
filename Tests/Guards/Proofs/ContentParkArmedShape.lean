@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -210,3 +214,5 @@ private def inheritSeen (input : String) : Bool :=
 #guard inherits "k: |\n a\nnext: 1\n"
 
 end Tests.Guards.ContentParkArmedShape
+
+end Blanket

@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 603 -- resolveAliases on empty anchors is identity (R603)
@@ -68,3 +72,5 @@ theorem r603_fires (v : YamlValue) : v.resolveAliases #[] = v :=
 #print axioms resolveAliases_empty
 
 end ResolveAliasesEmpty
+
+end Blanket

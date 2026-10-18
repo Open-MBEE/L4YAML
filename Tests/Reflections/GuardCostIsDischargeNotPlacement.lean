@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A strictening costs its discharge, not its placement (Reflection 617)
 
 Two guards, added to the same dispatcher on the same day, with the *same shape*
@@ -267,3 +272,5 @@ def guardedChars (d : Doc) : List Ch := (consults [] d).map Prod.fst
 #print axioms inv'_implies_both
 
 end Tests.Reflections.GuardCostIsDischargeNotPlacement
+
+end Blanket

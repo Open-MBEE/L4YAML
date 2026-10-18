@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 671 — lift the derivation, not the induction
 
@@ -84,3 +89,5 @@ example (b : Body 5) : ∃ t, b = .oneLine t := by
   | multi _ _ h => exact absurd h (by decide)
 
 end L4YAML.Tests.Reflections.LiftTheDerivationNotTheInduction
+
+end Blanket

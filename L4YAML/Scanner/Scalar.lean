@@ -2,9 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.State
-import L4YAML.Scanner.Whitespace
-import L4YAML.Scanner.Document
+
+module
+
+public import L4YAML.Scanner.State
+public import L4YAML.Scanner.Whitespace
+public import L4YAML.Scanner.Document
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Scanner — Scalars and Escapes
@@ -1104,3 +1110,5 @@ def scanBlockScalar (s : ScannerState) : Except ScanError ScannerState :=
     scanBlockScalarBody s s_after_newline header.1 header.2.1 (s.peek? == some '|') s.currentPos
 
 end L4YAML.Scanner
+
+end Blanket

@@ -2,8 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Parser.Composition
-import L4YAML.Scanner.Scanner
+
+module
+
+public import L4YAML.Parser.Composition
+
+public meta import L4YAML.Parser.Composition
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # SerializationWellFormed runtime census
@@ -76,3 +83,5 @@ def tagCases : List (String × String) := [
 #guard (TokenParser.parseYaml "%TAG !h! tag:example.com,2026:\n---\n!h!x value\n").isOk
 
 end L4YAML.Proofs.Serialization.Census
+
+end Blanket

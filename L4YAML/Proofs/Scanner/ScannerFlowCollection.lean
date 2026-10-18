@@ -1,7 +1,11 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Output.Emitter
-import L4YAML.Proofs.Scanner.ScannerLoopInvariant
-import L4YAML.Proofs.Scanner.ScannerContracts
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Output.Emitter
+public import L4YAML.Proofs.Scanner.ScannerLoopInvariant
+public import L4YAML.Proofs.Scanner.ScannerContracts
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -298,3 +302,5 @@ lemma scanFlowEntry_preserves_flowStack (s : ScannerState) (s' : ScannerState)
 
 
 end L4YAML.Proofs.ScannerFlowCollection
+
+end Blanket

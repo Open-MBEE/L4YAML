@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.ScalarProduction
-import L4YAML.Proofs.Coupling.StructureCoupling
-import L4YAML.Proofs.Foundation.CharClass
+
+module
+
+public import L4YAML.Proofs.Production.ScalarProduction
+public import L4YAML.Proofs.Coupling.StructureCoupling
+public import L4YAML.Proofs.Foundation.CharClass
+
+@[expose] public section Blanket
 
 /-! # Structure Production Coupling (Phase C of v0.4.4)
 
@@ -1425,3 +1430,5 @@ lemma scanDirective_prod (sc : ScannerState) (sp : SurfPos)
           skipToEndOfLine_at_break_or_eof_chars _ sp' hcorr'⟩
 
 end L4YAML.Proofs.StructureProduction
+
+end Blanket

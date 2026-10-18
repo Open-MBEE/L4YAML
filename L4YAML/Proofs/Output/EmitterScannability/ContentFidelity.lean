@@ -3,7 +3,14 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Proofs.Output.EmitterScannability.ScanChainGrowth
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ScanChainGrowth
+
+-- The `rfl`s below reduce `String.intercalate`, whose body core does not
+-- expose to a module consumer; `import all` of its declaring module unseals it.
+import all Init.Data.String.Defs
+@[expose] public section Blanket
 
 /-!
 # Content fidelity of emitted scalars
@@ -3253,3 +3260,5 @@ lemma compose_map_scalar_pair
   simp [resolveAliases_scalar]
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

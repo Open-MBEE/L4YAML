@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndentStackBase
-import L4YAML.Proofs.Scanner.IndentStackMono
+
+module
+
+public import L4YAML.Proofs.Scanner.IndentStackBase
+public import L4YAML.Proofs.Scanner.IndentStackMono
+
+@[expose] public section Blanket
 
 /-!
 # The indent stack, covered by the frames (DOCS item 129)
@@ -923,3 +928,5 @@ lemma scanBlockEntry_top_le {s s' : ScannerState} (h_noflow : s.inFlow = false)
   exact pushSequenceIndent_top_le h_floor
 
 end L4YAML.Proofs.IndentStackCover
+
+end Blanket

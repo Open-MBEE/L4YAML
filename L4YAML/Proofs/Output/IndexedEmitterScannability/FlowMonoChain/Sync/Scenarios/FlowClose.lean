@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.Preflow
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.FlowStackChainIx
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.Preflow
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.FlowStackChainIx
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Scenarios.FlowClose` — Phase 3 Step
 `6f.3b3.flowmono.sync.scenarios.flowclose`
@@ -695,3 +700,5 @@ lemma scanNextTokenIx_flow_open_mapping_nested (s : ScannerStateIx input)
          h_s'_ekpush⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

@@ -2,12 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.Basic
-import L4YAML.Proofs.Scanner.FlowAdjacencyIx
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
-import L4YAML.Proofs.Scanner.IndexedScannerProgress
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Output.Emitter
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.Basic
+public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
+public import L4YAML.Proofs.Scanner.IndexedScannerProgress
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Output.Emitter
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.ScanChain` — Phase 3 Step 6f.3b3 staging
 
@@ -572,3 +577,5 @@ lemma ScanChainIx.fuel_bound (s₀ s_final : ScannerStateIx input)
   omega
 
 end L4YAML.Proofs.Indexed.EmitterScannability.ScanChain
+
+end Blanket

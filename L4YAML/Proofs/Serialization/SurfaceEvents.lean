@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Node
-import L4YAML.Proofs.Serialization.SerializationWellFormed
-import L4YAML.Proofs.Serialization.CommitTrace
-import L4YAML.Proofs.Serialization.SourceEvents
+
+module
+
+public import L4YAML.Surface.Node
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+public import L4YAML.Proofs.Serialization.CommitTrace
+public import L4YAML.Proofs.Serialization.SourceEvents
+
+@[expose] public section Blanket
 
 /-!
 # Surface-derivation semantic event witnesses
@@ -128,3 +133,5 @@ end L4YAML.Proofs.Serialization.SurfaceEvents
 #print axioms L4YAML.Proofs.Serialization.SurfaceEvents.current_l4yaml_pending_anchor_does_not_authorize_inner_alias
 
 #print axioms L4YAML.Proofs.Serialization.SurfaceEvents.yaml_anchor_authorizes_inner_alias
+
+end Blanket

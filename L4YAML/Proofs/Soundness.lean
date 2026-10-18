@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Types
-import L4YAML.Spec.Grammar
+
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Spec.Grammar
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-!
 # Soundness Proofs
@@ -438,3 +444,5 @@ lemma validYaml_collection_kind (vy : ValidYaml) :
   rw [heq] <;> exact ⟨_, _, _, rfl⟩
 
 end L4YAML.Proofs.Soundness
+
+end Blanket

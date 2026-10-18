@@ -1,5 +1,11 @@
-import L4YAML.Schema.Schema
-import L4YAML.Spec.Types
+module
+
+public import L4YAML.Schema.Schema
+
+public meta import L4YAML.Schema.Schema
+public import L4YAML.Spec.Types
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -225,3 +231,5 @@ Moved to `Tests/Guards/Proofs/SchemaResolution.lean`.
 
 
 end L4YAML.Proofs.SchemaResolution
+
+end Blanket

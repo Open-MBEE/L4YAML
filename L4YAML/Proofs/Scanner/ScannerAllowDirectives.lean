@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerCorrectness
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+
+@[expose] public section Blanket
 
 /-! # `allowDirectives` across preprocessing (β.3)
 
@@ -481,3 +486,5 @@ lemma scanDirective_allowDirectives {s s' : ScannerState}
     simp at h
 
 end L4YAML.Proofs.ScannerAllowDirectives
+
+end Blanket

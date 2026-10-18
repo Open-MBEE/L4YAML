@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.CouplingBridge
+
+module
+
+public import L4YAML.Proofs.Coupling.CouplingBridge
+
+@[expose] public section Blanket
 
 /-!
 # Scanner Loop Coupling
@@ -876,3 +881,5 @@ lemma skipToContentLoop_ok_corr (sc : ScannerState) (sp : SurfPos) (fuel : Nat)
         exact ⟨sp2, hcorr2⟩
 
 end L4YAML.Proofs.ScannerCoupling
+
+end Blanket

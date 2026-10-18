@@ -1,5 +1,9 @@
-import L4YAML.Spec.Types
-import L4YAML.Token.Token
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Token.Token
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -445,3 +449,5 @@ instance : Coe SchemaError YamlError where
   coe := YamlError.schemaError
 
 end L4YAML
+
+end Blanket

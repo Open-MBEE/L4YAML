@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.FlowMonoChain.Basic` — Phase 3 Step 6f.3b3 core
 
@@ -1370,3 +1375,5 @@ lemma scanNextTokenIx_ok_checkBareDocument {input : String}
     injection h_snt
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

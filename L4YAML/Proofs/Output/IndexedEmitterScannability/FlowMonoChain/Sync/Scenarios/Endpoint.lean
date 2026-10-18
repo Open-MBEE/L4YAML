@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.FlowClose
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.FlowClose
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Scenarios.Endpoint` — Phase 3 Step
 `6f.3b3.flowmono.sync.scenarios.endpoint`
@@ -972,3 +977,5 @@ lemma scanNextTokenIx_flow_open_seq_init (input : String) (rest : List Char)
           h_s'_sk_poss, h_s'_stack_sz, h_s'_last, h_s'_push⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Node
-import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+module
+
+public import L4YAML.Surface.Node
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+@[expose] public section Blanket
 
 /-!
 # Source-event lexemes for SerializationWellFormed
@@ -381,3 +386,5 @@ end L4YAML.Proofs.Serialization.SourceEvents
 #print axioms L4YAML.Proofs.Serialization.SourceEvents.anchor_definition_surface
 #print axioms L4YAML.Proofs.Serialization.SourceEvents.alias_use_surface
 #print axioms L4YAML.Proofs.Serialization.SourceEvents.named_tag_use_surface
+
+end Blanket

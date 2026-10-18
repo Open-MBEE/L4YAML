@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Init
+
+module
+
+public import L4YAML.Init
+
+@[expose] public section Blanket
 
 /-!
 # Grammar Combinators for Surface Syntax
@@ -90,3 +95,5 @@ def GNot (P : SurfPos → SurfPos → Prop) (s : SurfPos) : Prop :=
   ∀ s' : SurfPos, ¬ P s s'
 
 end L4YAML.Surface
+
+end Blanket

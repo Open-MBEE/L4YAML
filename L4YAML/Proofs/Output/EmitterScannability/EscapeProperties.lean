@@ -2,18 +2,27 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Spec.CharPredicates
-import L4YAML.Proofs.Output.ScannerEmitBridge
-import L4YAML.Proofs.RoundTrip.RoundTrip
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Coupling.ScalarCoupling
-import L4YAML.Proofs.Parser.ParserGrammable
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerBound
+
+module
+
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Spec.CharPredicates
+public import L4YAML.Proofs.Output.ScannerEmitBridge
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+public meta import L4YAML.Proofs.RoundTrip.RoundTrip
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Parser.ParserGrammable
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerBound
+
+-- `String.foldl` is sealed by its producer; `import all` of its
+-- declaring module unseals the body this file reduces through.
+import all Init.Data.String.Iterate
+@[expose] public section Blanket
 
 /-! # Escape & emitter-output string properties (foundation for emitter scannability)
 
@@ -833,3 +842,5 @@ lemma collectDoubleQuotedLoop_escapeString_succeeds
             h_line_s'.trans (advance_line_of_peek sc c h_lt_c h_peek_c h_ne_nl h_ne_cr)⟩
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

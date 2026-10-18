@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Document
-import L4YAML.Scanner.Scanner
+
+module
+
+public import L4YAML.Surface.Document
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # Scanner ↔ Surface Syntax Bridge
@@ -990,3 +995,5 @@ lemma gstar_gchar_col_le {p : Char → Prop} {s1 s2 : SurfPos}
     cases hfirst with | mk c rest col _ => exact Nat.le_trans (Nat.le_succ col) ih
 
 end L4YAML.Proofs.CouplingBridge
+
+end Blanket

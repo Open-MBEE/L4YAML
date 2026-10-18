@@ -3,8 +3,12 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
-import L4YAML.Proofs.Output.EmitterScannability.TokVals
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
+public import L4YAML.Proofs.Output.EmitterScannability.TokVals
+
+@[expose] public section Blanket
 
 /-!
 # Value-determined scanner content pin (`emitTokVals`)
@@ -2395,3 +2399,5 @@ info: 'L4YAML.Proofs.EmitterScannability.scanFiltered_emit_tokvals' depends on a
 #print axioms scanFiltered_emit_tokvals
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

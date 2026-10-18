@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.FlowDispatch
-import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.FlowDispatch
+public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Maintenance.Pipeline` — Phase 3 Step 6f.3b3.flowmono.maintenance.pipeline
 
@@ -397,3 +402,5 @@ lemma scanNextTokenIx_via_block_dispatch
   rw [h_block]
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

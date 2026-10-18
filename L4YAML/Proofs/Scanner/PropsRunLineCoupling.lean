@@ -1,7 +1,11 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Proofs.Scanner.ScannerCorrectness
-import L4YAML.Proofs.Scanner.ScannerLinePreservation
-import L4YAML.Proofs.Scanner.FlowAdjacency
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.ScannerLinePreservation
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -616,3 +620,5 @@ lemma preprocess_some_needIndentCheck_false {sc s_prep : ScannerState} {c : Char
             rw [saveSimpleKey_needIndentCheck, h_flag]
 
 end L4YAML.Proofs.PropsRunLineCoupling
+
+end Blanket

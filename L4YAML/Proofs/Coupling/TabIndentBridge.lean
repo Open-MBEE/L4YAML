@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Foundation.SurfaceSpan
-import L4YAML.Proofs.Scanner.ScanStrictCoupling
-import L4YAML.Proofs.Scanner.ScannerWhitespace
+
+module
+
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Foundation.SurfaceSpan
+public import L4YAML.Proofs.Scanner.ScanStrictCoupling
+public import L4YAML.Proofs.Scanner.ScannerWhitespace
+
+@[expose] public section Blanket
 
 /-!
 # The located tab, and the scanner's backward scan (DOCS item 32)
@@ -465,3 +470,5 @@ lemma tabRun_scan_of_located
   exact (tab_scans_of_run hcorr hsuf hrun hwh hmem).1
 
 end L4YAML.Proofs.TabIndentBridge
+
+end Blanket

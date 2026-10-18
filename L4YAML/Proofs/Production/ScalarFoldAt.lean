@@ -2,11 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.ScalarProduction
-import L4YAML.Proofs.Production.FlowIndexLift
-import L4YAML.Proofs.Scanner.PreprocessIndentStable
-import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
-import L4YAML.Proofs.Coupling.LandingTab
+
+module
+
+public import L4YAML.Proofs.Production.ScalarProduction
+public import L4YAML.Proofs.Production.FlowIndexLift
+public import L4YAML.Proofs.Scanner.PreprocessIndentStable
+public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+public import L4YAML.Proofs.Coupling.LandingTab
+
+@[expose] public section Blanket
 
 /-! # Quoted-scalar readings at the pending's own index (DOCS item 53)
 
@@ -1352,3 +1357,5 @@ lemma scanPlainScalar_to_flowContent_flowIn_at (n : Nat) (sc : ScannerState) (sp
           (corr_of_emitAt _ _ hcorr_result)⟩
 
 end L4YAML.Proofs.ScalarFoldAt
+
+end Blanket

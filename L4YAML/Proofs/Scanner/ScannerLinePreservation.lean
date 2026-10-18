@@ -2,7 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Whitespace
+
+module
+
+public import L4YAML.Scanner.Whitespace
+
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `line` across preprocessing (DOCS item 9k)
 
@@ -348,3 +355,5 @@ lemma skipToContent_line_eq_of_needIndentCheck (s s' : ScannerState)
   exact skipToContentLoop_line_eq_of_needIndentCheck s s' _ h hnic
 
 end L4YAML.Scanner
+
+end Blanket

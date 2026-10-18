@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerCorrectness
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+
+@[expose] public section Blanket
 
 /-! # `explicitKeyStack` preservation suite (scanner leaves)
 
@@ -1164,3 +1169,5 @@ lemma dispatchContent_preserves_explicitKeyStack (s : ScannerState) (c : Char) (
           | (simp_all; done)
 
 end L4YAML.Proofs.ScannerEkStack
+
+end Blanket

@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedScanner
-import L4YAML.Token.Token
+
+module
+
+public import L4YAML.Scanner.IndexedScanner
+public import L4YAML.Token.Token
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `IndexedState` — Phase 3 Step 5a scanner state (staging)
 
@@ -436,3 +442,5 @@ def tabInLineIndent {input : String} (s : ScannerStateIx input) : Bool :=
 end ScannerStateIx
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

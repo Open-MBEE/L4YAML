@@ -2,7 +2,19 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Lean
+
+module
+
+public import Lean
+public meta import Lean
+
+-- This module's `elab` bodies are `meta` definitions, while the helpers they
+-- call are ordinary code that the library also uses at runtime.  A declaration
+-- carries one phase and the `meta` modifier cannot be dropped retroactively,
+-- so mixed references inside this module need to be permitted explicitly.
+set_option compiler.relaxedMetaCheck true
+
+@[expose] public section Blanket
 
 /-!
 # Capstone registry: `@[capstone]`, `#capstones`, `#assert_capstone_axioms`
@@ -88,3 +100,5 @@ elab "#assert_capstone_axioms" : command => do
     logInfo <| String.intercalate "\n" lines.toList
 
 end L4YAML
+
+end Blanket

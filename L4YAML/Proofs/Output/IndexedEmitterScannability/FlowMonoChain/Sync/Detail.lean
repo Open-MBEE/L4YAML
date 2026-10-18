@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.FlowDispatch
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.FlowDispatch
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Detail` — Phase 3 Step 6f.3b3.flowmono.sync.detail
 
@@ -333,3 +338,5 @@ lemma scanFlowEntryIx_detail (s : ScannerStateIx input) (rest : List Char)
   · exact h_corr_final.col_eq.symm
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

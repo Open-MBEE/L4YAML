@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedPrims
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedPrims
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerCorrectness.OrderedDispatch` — §8.7–§8.8
 
@@ -1414,3 +1419,5 @@ lemma scanNextTokenIx_dispatchContent_preserves_AllKeysValidIx {input : String}
               · cases h_ok
 
 end L4YAML.Proofs.Indexed.ScannerCorrectness
+
+end Blanket

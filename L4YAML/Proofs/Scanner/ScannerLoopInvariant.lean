@@ -1,4 +1,8 @@
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -399,3 +403,5 @@ lemma emit_preserves_wellFormed (s : ScannerState) (tok : YamlToken)
 
 
 end L4YAML.Proofs.ScannerLoopInvariant
+
+end Blanket

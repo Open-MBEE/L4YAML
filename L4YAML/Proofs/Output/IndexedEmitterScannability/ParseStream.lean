@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.EmitScans
-import L4YAML.Proofs.Parser.IndexedComposition
-import L4YAML.Proofs.Parser.IndexedGrammable
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.EmitScans
+public import L4YAML.Proofs.Parser.IndexedComposition
+public import L4YAML.Proofs.Parser.IndexedGrammable
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.ParseStream` — Phase 3 Step 6f.3b3.parsestream
 
@@ -513,3 +518,5 @@ lemma parseYamlRawIx_emitScalar_value (content : String)
   exact ⟨Scalar.mk content .doubleQuoted none none none, h_dv, rfl⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.ParseStream
+
+end Blanket

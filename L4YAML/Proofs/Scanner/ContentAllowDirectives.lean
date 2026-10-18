@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerAllowDirectives
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerAllowDirectives
+
+@[expose] public section Blanket
 
 /-! # `allowDirectives` across CONTENT dispatch (β.3)
 
@@ -647,3 +652,5 @@ lemma dispatchContent_preserves_allowDirectives (s : ScannerState) (c : Char) (s
           | (simp_all; done)
 
 end L4YAML.Proofs.ScannerAllowDirectives
+
+end Blanket

@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedIndent
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerPlainScalar
-import L4YAML.Proofs.Foundation.StringProperties
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedIndent
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerPlainScalar
+public import L4YAML.Proofs.Foundation.StringProperties
+
+@[expose] public section Blanket
 
 /-! # `IndexedScalar` — Phase 3 Step 4a scalar-layer proofs (staging)
 
@@ -2514,3 +2519,5 @@ lemma scanPlainScalarIx_content_valid {input : String} (c : IxCursor input)
     exact trimTrailingWSIx_noFlowIndicators content' (inv.content_noFlowIndicators hflow)
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

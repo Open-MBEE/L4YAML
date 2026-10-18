@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Surface
-import L4YAML.Proofs.Foundation.SurfaceSpan
+
+module
+
+public import L4YAML.Surface.Surface
+public import L4YAML.Proofs.Foundation.SurfaceSpan
+
+@[expose] public section Blanket
 
 /-!
 # The rest of the span supply
@@ -169,3 +174,5 @@ lemma slDocumentSuffix_suffix {a b : SurfPos} (h : SLDocumentSuffix a b) :
   | .mk _ _ _ hd hc => exact (sslComments_suffix hc).trans (scDocumentEnd_suffix hd)
 
 end L4YAML.Proofs.SurfaceSpan
+
+end Blanket

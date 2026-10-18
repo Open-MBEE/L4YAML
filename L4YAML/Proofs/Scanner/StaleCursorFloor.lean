@@ -2,11 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScalarWalkColFloor
-import L4YAML.Proofs.Scanner.FlowIndentStable
-import L4YAML.Proofs.Scanner.LineOpenGuard
-import L4YAML.Proofs.Scanner.PropsRunLineCoupling
-import L4YAML.Proofs.Scanner.EntryBoundaryLayout
+
+module
+
+public import L4YAML.Proofs.Scanner.ScalarWalkColFloor
+public import L4YAML.Proofs.Scanner.FlowIndentStable
+public import L4YAML.Proofs.Scanner.LineOpenGuard
+public import L4YAML.Proofs.Scanner.PropsRunLineCoupling
+public import L4YAML.Proofs.Scanner.EntryBoundaryLayout
+
+@[expose] public section Blanket
 
 /-! # The stale-cursor floor (DOCS item 123)
 
@@ -1597,3 +1602,5 @@ lemma scanNextToken_preserves_StaleKeyCursorFloor (s s' : ScannerState)
                         exact dispatchContent_preserves_StaleFloor h_dc h_peek2 h_inv3
 
 end L4YAML.Proofs.StaleCursorFloor
+
+end Blanket

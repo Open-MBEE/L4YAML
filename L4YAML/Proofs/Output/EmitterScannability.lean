@@ -2,32 +2,38 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Spec.CharPredicates
-import L4YAML.Proofs.Output.ScannerEmitBridge
-import L4YAML.Proofs.RoundTrip.RoundTrip
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Coupling.ScalarCoupling
-import L4YAML.Proofs.Parser.ParserGrammable
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerBound
-import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
-import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
-import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
-import L4YAML.Proofs.Output.EmitterScannability.FilteredGrowth
-import L4YAML.Proofs.Output.EmitterScannability.ScanChainGrowth
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Proofs.Output.EmitterScannability.FilteredTracking
-import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
-import L4YAML.Proofs.Output.EmitterScannability.BlockProducers
-import L4YAML.Proofs.Output.EmitterScannability.ScannerSpanLocality
-import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
-import L4YAML.Proofs.Output.EmitterScannability.SeqInteriorSeparators
-import L4YAML.Proofs.Output.EmitterScannability.StreamNodeWitness
-import L4YAML.Proofs.Output.EmitterScannability.GeneralLocality
+
+module
+
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Spec.CharPredicates
+public import L4YAML.Proofs.Output.ScannerEmitBridge
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Parser.ParserGrammable
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerBound
+public import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
+public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+public import L4YAML.Proofs.Output.EmitterScannability.FilteredGrowth
+public import L4YAML.Proofs.Output.EmitterScannability.ScanChainGrowth
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Proofs.Output.EmitterScannability.FilteredTracking
+public import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
+public import L4YAML.Proofs.Output.EmitterScannability.BlockProducers
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerSpanLocality
+public import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
+public import L4YAML.Proofs.Output.EmitterScannability.SeqInteriorSeparators
+public import L4YAML.Proofs.Output.EmitterScannability.StreamNodeWitness
+public import L4YAML.Proofs.Output.EmitterScannability.GeneralLocality
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-!
 # Emitter scannability & the universal round-trip
@@ -1566,3 +1572,5 @@ theorem universal_roundtrip (v : YamlValue) (hg : Grammable v false) :
   · exact emit_roundtrip_content_eq v hg raw_docs h_raw h_raw_size
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

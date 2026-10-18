@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+module
+
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+@[expose] public section Blanket
 
 /-!
 # Commitment-ordered serialization traces
@@ -111,3 +116,5 @@ end L4YAML.Proofs.Serialization.CommitTrace
 
 #print axioms L4YAML.Proofs.Serialization.CommitTrace.yaml_enclosing_anchor_self_reference_allowed
 #print axioms L4YAML.Proofs.Serialization.CommitTrace.yaml_current_l4yaml_anchor_separator
+
+end Blanket

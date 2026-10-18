@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.FlowIndentStable
+
+module
+
+public import L4YAML.Proofs.Scanner.FlowIndentStable
+
+@[expose] public section Blanket
 
 /-!
 # The indent stack's base (DOCS item 128)
@@ -688,3 +693,5 @@ lemma scanNextToken_base {s s' : ScannerState}
 lemma mk'_base (input : String) : SentinelBase (ScannerState.mk' input) := rfl
 
 end L4YAML.Proofs.IndentStackBase
+
+end Blanket

@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Node
+
+module
+
+public import L4YAML.Surface.Node
+
+@[expose] public section Blanket
 
 /-!
 # Every surface production consumes a prefix (DOCS item 229)
@@ -1029,3 +1034,5 @@ lemma separate_inline_or_breakOrEnd {n : Nat} {c : YamlContext} {a b : SurfPos}
   exact separateLines_inline_or_breakOrEnd h'
 
 end L4YAML.Proofs.SurfaceSpan
+
+end Blanket

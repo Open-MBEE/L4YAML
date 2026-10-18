@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.EmitScans
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.EmitScans
+
+@[expose] public section Blanket
 
 /-! # `EmitScansStrong` — Phase 3 Step
 `6f.3b3.roundtrip.maintheorem.body1.tokenshape.substrate`
@@ -1607,3 +1612,5 @@ lemma FlowMonoChainIx_preserves_position_specific {input : String}
     exact ⟨h_rest_size, h_rest_eq.trans h_step_eq⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.EmitScans
+
+end Blanket

@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.EkStackChainIx
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.EkStackChainIx
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.EmitScans` — Phase 3 Step 6f.3b3 staging
 
@@ -2071,3 +2076,5 @@ priced in DOCS item 180).  The theorem had no consumers; `scan_accepts_emitScala
 and every §1–§3 brick stand. -/
 
 end L4YAML.Proofs.Indexed.EmitterScannability.EmitScans
+
+end Blanket

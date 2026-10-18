@@ -2,12 +2,27 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Parser.ParseStateIx
-import L4YAML.Parser.FuelIx
-import L4YAML.Parser.TokenParserIx
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Parser.ParseStateIx
+public import L4YAML.Parser.FuelIx
+public import L4YAML.Parser.TokenParserIx
+
+-- `unfold Std.Legacy.Range.forIn'` needs that body, which core does not expose
+-- to a module consumer.  `import all` of its DECLARING module unseals it and
+-- is private in scope, so nothing reaches this module's own importers.
+import all Init.Data.Range.Basic
+-- This module's `elab` bodies are `meta` definitions, while the helpers they
+-- call are ordinary code that the library also uses at runtime.  A declaration
+-- carries one phase and the `meta` modifier cannot be dropped retroactively,
+-- so mixed references inside this module need to be permitted explicitly.
+set_option compiler.relaxedMetaCheck true
+
+@[expose] public section Blanket
 
 /-! # `IndexedNodeProofs` — Phase 3 Step 6c indexed AG + AAR proofs (staging)
 
@@ -1843,3 +1858,5 @@ lemma parseNode_aliases_resolve'
   parseNode_aar_all fuel ps fuel val ps' Nat.le.refl h
 
 end L4YAML.Proofs.Indexed.NodeProofs
+
+end Blanket

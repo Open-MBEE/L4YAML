@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.FirstFiltered
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.FirstFiltered
+
+@[expose] public section Blanket
 
 /-! # `FilteredGrowth.Infra` — Phase 3 Step
 `6f.3b3.filteredgrowth.infra`
@@ -273,3 +278,5 @@ lemma filtered_grows_of_any_newIx {α : Type}
   | cons => simp
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FilteredGrowth
+
+end Blanket

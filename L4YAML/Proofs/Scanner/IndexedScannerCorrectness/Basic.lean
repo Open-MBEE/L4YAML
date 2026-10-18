@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.IndexedScannerPlainScalarValid
+
+module
+
+public import L4YAML.Proofs.Production.IndexedScannerPlainScalarValid
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerCorrectness.Basic` — §1–§6
 
@@ -679,3 +684,5 @@ discharged as a theorem in §8.11). The downstream consumer in
 the §8.12 theorem. -/
 
 end L4YAML.Proofs.Indexed.ScannerCorrectness
+
+end Blanket

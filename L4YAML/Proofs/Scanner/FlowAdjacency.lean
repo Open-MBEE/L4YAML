@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
+
+module
+
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # Flow-adjacency check: proof helpers (Fix A, step a) — legacy scanner
@@ -341,3 +346,5 @@ lemma saveSimpleKey_preserves_lastRealTokenVal (s : ScannerState)
   · rw [h_eq]; exact lastRealTokenVal_push_two_ph_of_real rfl rfl hr
 
 end L4YAML.Proofs.FlowAdjacency
+
+end Blanket

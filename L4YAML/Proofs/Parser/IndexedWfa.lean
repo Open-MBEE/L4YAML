@@ -2,12 +2,20 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Proofs.Parser.IndexedNodeProofs
-import L4YAML.Proofs.Parser.IndexedWellBehaved
-import L4YAML.Algebra.Value
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Parser.IndexedNodeProofs
+public import L4YAML.Proofs.Parser.IndexedWellBehaved
+public import L4YAML.Algebra.Value
+
+-- `Std.Legacy.Range.forIn'` is sealed by its producer; `import all` of its
+-- declaring module unseals the body this file reduces through.
+import all Init.Data.Range.Basic
+@[expose] public section Blanket
 
 /-! # `IndexedWfa` — Phase 3 Step 6d.2 indexed WFA proofs (staging)
 
@@ -1699,3 +1707,5 @@ lemma parseStreamIx_output_anchors_wellformed
     · exact h_parse
 
 end L4YAML.Proofs.Indexed.WfaProofs
+
+end Blanket

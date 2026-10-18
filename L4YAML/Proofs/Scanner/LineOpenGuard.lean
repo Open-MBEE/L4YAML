@@ -2,11 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerCorrectness
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
-import L4YAML.Proofs.Scanner.ScannerLinePreservation
-import L4YAML.Proofs.Scanner.ScalarWalkColFloor
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.ScannerLinePreservation
+public import L4YAML.Proofs.Scanner.ScalarWalkColFloor
+
+@[expose] public section Blanket
 
 /-! # No inline flow open ahead — the depth-0 refutation fact (item 10, site 5)
 
@@ -2982,3 +2987,5 @@ lemma dispatchContent_ok_not_tailSuffix {s s' : ScannerState} {c : Char}
   · exact absurd hh (by decide)
 
 end L4YAML.Proofs.LineOpenGuard
+
+end Blanket

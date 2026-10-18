@@ -2,18 +2,23 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Parser.TokenParserIx
-import L4YAML.Proofs.Composition
-import L4YAML.Proofs.Parser.ParserSoundness
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Proofs.Parser.ParserScannableBase
-import L4YAML.Proofs.Parser.IndexedNodeProofs
-import L4YAML.Proofs.Parser.IndexedWellBehaved
-import L4YAML.Proofs.Parser.IndexedWfa
-import L4YAML.Proofs.Parser.IndexedComposition
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Parser.TokenParserIx
+public import L4YAML.Proofs.Composition
+public import L4YAML.Proofs.Parser.ParserSoundness
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Parser.ParserScannableBase
+public import L4YAML.Proofs.Parser.IndexedNodeProofs
+public import L4YAML.Proofs.Parser.IndexedWellBehaved
+public import L4YAML.Proofs.Parser.IndexedWfa
+public import L4YAML.Proofs.Parser.IndexedComposition
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
+
+@[expose] public section Blanket
 
 /-! # `IndexedGrammable` — Phase 3 Step 6d.3 indexed grammability (staging)
 
@@ -315,3 +320,5 @@ lemma parseYamlIx_implies_valid_token_stream
   · contradiction
 
 end L4YAML.Proofs.Indexed.Grammable
+
+end Blanket

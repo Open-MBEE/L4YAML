@@ -2,7 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.State
+
+module
+
+public import L4YAML.Scanner.State
+
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Scanner — Token-Stream Queries
@@ -512,3 +519,5 @@ def docStartOnLine (tokens : Array (Positioned YamlToken)) (line : Nat) : Bool :
   docStartOnLineLoop tokens tokens.size line
 
 end L4YAML.Scanner
+
+end Blanket

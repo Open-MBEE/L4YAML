@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
-import L4YAML.Parser.TokenParser
+
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Parser.TokenParser
+
+@[expose] public section Blanket
 
 /-!
 # SerializationWellFormed v1
@@ -507,3 +512,5 @@ end L4YAML.Proofs.Serialization.SerializationWellFormed
 
 #print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.parser_tag_guard_runtime
 #print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.parser_alias_guard_runtime
+
+end Blanket

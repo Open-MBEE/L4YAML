@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
+
+module
+
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # Block-scalar-in-flow guard: proof helpers (DOCS item 9c) — legacy scanner
@@ -113,3 +118,5 @@ lemma blockScalarGuard_ok_of_notInFlow {s : ScannerState} {c : Char}
   simp [hf]
 
 end L4YAML.Proofs.BlockScalarFlowGuard
+
+end Blanket

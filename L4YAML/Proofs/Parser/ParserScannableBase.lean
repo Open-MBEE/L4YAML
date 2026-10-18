@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Parser.ParserGrammableBase
+module
+
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+
+@[expose] public section Blanket
 
 /-!
 # The `Scannable`-valued compose chain
@@ -427,3 +431,5 @@ lemma compose_scannable (doc : YamlDocument)
     [] wellFormedEnvS_nil).1
 
 end L4YAML.Proofs.ParserGrammable
+
+end Blanket

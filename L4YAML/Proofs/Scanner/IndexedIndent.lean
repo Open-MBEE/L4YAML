@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedWhitespace
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedWhitespace
+
+@[expose] public section Blanket
 
 /-! # `IndexedIndent` — Phase 3 indentation / line-break dispatch proofs (staging)
 
@@ -506,3 +511,5 @@ lemma skipToContent_progress {input : String} (c : IxCursor input) :
   omega
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

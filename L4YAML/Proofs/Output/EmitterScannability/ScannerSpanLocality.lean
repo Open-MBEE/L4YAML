@@ -3,7 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Proofs.Output.EmitterScannability.BlockProducers
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.BlockProducers
+
+@[expose] public section Blanket
 
 /-!
 # Scanner-span-locality: body-content scanner fact (R596)
@@ -1405,3 +1409,5 @@ lemma scanFiltered_emitMap_allScalar_pair_at
     exact h_v_val
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

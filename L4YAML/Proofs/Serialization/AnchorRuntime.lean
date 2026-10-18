@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Parser.State
-import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+module
+
+public import L4YAML.Parser.State
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+@[expose] public section Blanket
 
 /-!
 # Executable anchor-commitment bridge
@@ -79,3 +84,5 @@ end L4YAML.Proofs.Serialization.AnchorRuntime
 #print axioms L4YAML.Proofs.Serialization.AnchorRuntime.addAnchor_name_projection
 #print axioms L4YAML.Proofs.Serialization.AnchorRuntime.applyNodeFinalization_commits_anchor
 #print axioms L4YAML.Proofs.Serialization.AnchorRuntime.applyNodeFinalization_no_anchor_projection
+
+end Blanket

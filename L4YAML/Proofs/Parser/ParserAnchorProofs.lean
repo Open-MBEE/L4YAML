@@ -2,13 +2,18 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Production.ScannerPlainScalarValid
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Proofs.Parser.ParserNodeProofs
-import L4YAML.Algebra.Value
-import L4YAML.Proofs.Parser.ParserWfaProofs
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Production.ScannerPlainScalarValid
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Parser.ParserNodeProofs
+public import L4YAML.Algebra.Value
+public import L4YAML.Proofs.Parser.ParserWfaProofs
+
+@[expose] public section Blanket
 
 /-!
 # Anchor/alias resolution lifted to documents and streams
@@ -236,3 +241,5 @@ lemma parseStream_output_aliases_resolve
 -- (with updated signature: FlowAwarePSV + FlowBracketsMatched)
 
 end L4YAML.Proofs.ParserAnchorProofs
+
+end Blanket

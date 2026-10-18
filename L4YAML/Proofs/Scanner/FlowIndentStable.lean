@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.PreprocessIndentStable
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
-import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
-import L4YAML.Proofs.Coupling.ScalarCoupling
+
+module
+
+public import L4YAML.Proofs.Scanner.PreprocessIndentStable
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+
+@[expose] public section Blanket
 
 /-!
 # The indent stack stands still inside a flow collection (DOCS item 67)
@@ -419,3 +424,5 @@ lemma dispatchBlockIndicators_preserves_indents {s s' : ScannerState} {c : Char}
     | simp_all
 
 end L4YAML.Proofs.FlowIndentStable
+
+end Blanket

@@ -2,14 +2,20 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.State
-import L4YAML.Scanner.Whitespace
-import L4YAML.Scanner.Indent
-import L4YAML.Scanner.TokenQueries
-import L4YAML.Scanner.Document
-import L4YAML.Scanner.NodeProperties
-import L4YAML.Scanner.Scalar
-import L4YAML.Scanner.SimpleKey
+
+module
+
+public import L4YAML.Scanner.State
+public import L4YAML.Scanner.Whitespace
+public import L4YAML.Scanner.Indent
+public import L4YAML.Scanner.TokenQueries
+public import L4YAML.Scanner.Document
+public import L4YAML.Scanner.NodeProperties
+public import L4YAML.Scanner.Scalar
+public import L4YAML.Scanner.SimpleKey
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # YAML Scanner (Tokenizer) — Dispatch Umbrella
@@ -1341,3 +1347,5 @@ def scanWithComments (input : String) :
   | .error e => .error e
 
 end L4YAML.Scanner
+
+end Blanket

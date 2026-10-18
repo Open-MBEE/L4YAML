@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.Basic
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.Basic
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerCorrectness.StreamStart` — §7
 
@@ -1196,3 +1201,5 @@ chain) where it can reference the proven
 `scanIx_positions_ordered` theorem directly. -/
 
 end L4YAML.Proofs.Indexed.ScannerCorrectness
+
+end Blanket

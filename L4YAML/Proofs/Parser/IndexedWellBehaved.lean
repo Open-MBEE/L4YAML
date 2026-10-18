@@ -2,14 +2,29 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.ParseStateIx
-import L4YAML.Parser.FuelIx
-import L4YAML.Parser.TokenParserIx
-import L4YAML.Proofs.Production.ScannerPlainScalarValid
-import L4YAML.Proofs.Composition
-import L4YAML.Proofs.Parser.ParserSoundness
-import L4YAML.Proofs.Parser.ParserGrammableBase
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.ParseStateIx
+public import L4YAML.Parser.FuelIx
+public import L4YAML.Parser.TokenParserIx
+public import L4YAML.Proofs.Production.ScannerPlainScalarValid
+public import L4YAML.Proofs.Composition
+public import L4YAML.Proofs.Parser.ParserSoundness
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+
+-- `unfold Std.Legacy.Range.forIn'` needs that body, which core does not expose
+-- to a module consumer.  `import all` of its DECLARING module unseals it and
+-- is private in scope, so nothing reaches this module's own importers.
+import all Init.Data.Range.Basic
+-- This module's `elab` bodies are `meta` definitions, while the helpers they
+-- call are ordinary code that the library also uses at runtime.  A declaration
+-- carries one phase and the `meta` modifier cannot be dropped retroactively,
+-- so mixed references inside this module need to be permitted explicitly.
+set_option compiler.relaxedMetaCheck true
+
+@[expose] public section Blanket
 
 /-! # `IndexedWellBehaved` — Phase 3 Step 6d.1b indexed infrastructure (staging)
 
@@ -4557,3 +4572,5 @@ axioms (in the sister file), which the per-action preservation chain
 Reflection 68. -/
 
 end L4YAML.Proofs.Indexed.WellBehaved
+
+end Blanket

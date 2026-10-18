@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.ScannerPlainScalarValid
-import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
-import L4YAML.Proofs.Scanner.ScannerFlowStackPreservation
-import L4YAML.Proofs.Scanner.ScannerEkStackPreservation
+
+module
+
+public import L4YAML.Proofs.Production.ScannerPlainScalarValid
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
+public import L4YAML.Proofs.Scanner.ScannerFlowStackPreservation
+public import L4YAML.Proofs.Scanner.ScannerEkStackPreservation
+
+@[expose] public section Blanket
 
 /-! # FlowStackChain — `flowStack` moves in lockstep with `flowLevel`
 
@@ -469,3 +474,5 @@ lemma ek_restore_of_push_body {s₁ s₂ : ScannerState} {ek : Option Nat}
   rw [h_body, h_push, Array.back?_push, Option.getD_some]
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

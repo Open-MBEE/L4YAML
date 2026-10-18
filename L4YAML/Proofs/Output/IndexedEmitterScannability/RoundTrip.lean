@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.ParseStream
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.ParseStream
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.RoundTrip` — Phase 3 Step 6f.3b3.roundtrip.{fidelity, filterinfra, maintheorem.growth}
 
@@ -1108,3 +1113,5 @@ lemma emitPairList_body_filtered_characterizationIx_part1
          h_stack', h_fmc, h_lt⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.RoundTrip
+
+end Blanket

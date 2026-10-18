@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Basic
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.DpInv
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Basic
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.DpInv
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Preserve.Helpers` — Phase 3 Step 6f.3b3.flowmono.preserve.helpers
 
@@ -640,3 +645,5 @@ lemma scanFlowMappingStartIx_simpleKey_not_possible (s : ScannerStateIx input) :
   unfold scanFlowMappingStartIx; rfl
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

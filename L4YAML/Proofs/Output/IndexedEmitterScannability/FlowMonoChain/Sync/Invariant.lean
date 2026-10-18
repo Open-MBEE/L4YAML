@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Step
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Step
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Invariant` — Phase 3 Step 6f.3b3.flowmono.sync.invariant
 
@@ -711,3 +716,5 @@ lemma checkFlowAdjacencyIx_ok_of_scanNextTokenIx_ok
     rw [h_snt_err] at h_snt; exact absurd h_snt (by simp)
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

@@ -2,7 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Scalars
+
+module
+
+public import L4YAML.Surface.Scalars
+
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Node & Collection Surface Syntax — Chapters 7.4 & 8.2
@@ -613,3 +620,5 @@ mutual
 end -- mutual
 
 end L4YAML.Surface
+
+end Blanket

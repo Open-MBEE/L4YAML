@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedDispatch
-import L4YAML.Proofs.Scanner.IndexedScalar
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedDispatch
+public import L4YAML.Proofs.Scanner.IndexedScalar
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerProgress` — Phase 3 Step 6f.3b3.internals.progress
 
@@ -1094,3 +1099,5 @@ lemma scanNextTokenIx_progress {input : String}
                       exact scanNextTokenIx_dispatchContent_offset_gt hHm hPk hCon
 
 end L4YAML.Proofs.Indexed.ScannerProgress
+
+end Blanket

@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.Block
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.Block
+
+@[expose] public section Blanket
 
 /-!
 # `Grammable` producers for the block-tracking predicates
@@ -1637,3 +1642,5 @@ lemma emitPairList_scans_safebody (pairs : List (YamlValue × YamlValue))
           (lastNonSep_append_right _ block_v hne_v h_lns_v)
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

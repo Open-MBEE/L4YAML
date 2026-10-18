@@ -3,8 +3,12 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Schema.Schema
-import L4YAML.Schema.FromToYaml
+module
+
+public import L4YAML.Schema.Schema
+public import L4YAML.Schema.FromToYaml
+
+@[expose] public section Blanket
 
 /-! # Schema Algebra  (Algebra Items 15 + 16)
 
@@ -263,3 +267,5 @@ lemma fromYaml_via_resolve {α : Type u} [FromYamlType α] (v : YamlValue) :
     @fromYaml? α (instFromYamlOfFromYamlType) v = fromYamlType? (resolve v) := rfl
 
 end L4YAML.Algebra.Schema
+
+end Blanket

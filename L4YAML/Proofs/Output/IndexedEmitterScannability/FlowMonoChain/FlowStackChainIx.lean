@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Step
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Step
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+
+@[expose] public section Blanket
 
 /-! # FlowStackChainIx — `flowStack` moves in lockstep with `flowLevel` (indexed)
 
@@ -713,3 +718,5 @@ lemma FlowMonoChainIx.flowStack_eq {fl₀ : Nat}
   rw [h_eq, Array.eq_empty_of_size_eq_zero h_zero, Array.append_empty]
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

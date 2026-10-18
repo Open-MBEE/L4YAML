@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Indexed.TokenStream
+
+module
+
+public import L4YAML.Indexed.TokenStream
+
+@[expose] public section Blanket
 
 /-! # `IndexedPresenter` — Phase 3 Step 5c `present : TokenStream input → String` (staging)
 
@@ -119,3 +124,5 @@ def present {input : String} (ts : Indexed.TokenStream input) : String :=
     present (Indexed.TokenStream.empty input) = "" := rfl
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

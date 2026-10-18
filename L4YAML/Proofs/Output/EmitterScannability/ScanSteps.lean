@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.ScannerFlowCollection
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.ScannerFlowCollection
+
+@[expose] public section Blanket
 
 /-!
 # Emitter Scannability — Chain Wrappers + Scanning Steps
@@ -4963,3 +4968,5 @@ lemma scanNextToken_flow_open_mapping_init (input : String) (rest : List Char)
 
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

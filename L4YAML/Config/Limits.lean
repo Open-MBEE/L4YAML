@@ -3,10 +3,14 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Spec.Types
-import L4YAML.Token.Token
-import L4YAML.Scanner.Scanner
-import L4YAML.Parser.IndexedComposition
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Token.Token
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Parser.IndexedComposition
+
+@[expose] public section Blanket
 
 /-!
 # Parser Security: Limits and Tag Validation
@@ -672,3 +676,5 @@ def parseYamlSingleRawSafe (input : String) (limits : ParserLimits := {})
   else throw (.scanError (.multipleDocuments docs.size))
 
 end L4YAML
+
+end Blanket

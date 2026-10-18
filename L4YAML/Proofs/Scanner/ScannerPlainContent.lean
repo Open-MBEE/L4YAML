@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.CharPredicates
+
+@[expose] public section Blanket
 
 /-!
 # Plain Scalar Content Invariant (B3.2)
@@ -531,3 +536,5 @@ lemma collectPlainScalarLoop_preserves_contentInv
               · exact h
 
 end L4YAML.Proofs.ScannerPlainContent
+
+end Blanket

@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Types
+
+module
+
+public import L4YAML.Spec.Types
+
+@[expose] public section Blanket
 
 /-! # AnchorMap Algebra  (Algebra Item 12)
 
@@ -144,3 +149,5 @@ lemma find?_empty (name : String) :
 end AnchorMap
 
 end L4YAML.Algebra
+
+end Blanket

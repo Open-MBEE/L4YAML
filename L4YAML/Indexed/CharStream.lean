@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Indexed.Range
-import L4YAML.Indexed.TokenStream
-import L4YAML.Spec.Types
+
+module
+
+public import L4YAML.Indexed.Range
+public import L4YAML.Indexed.TokenStream
+public import L4YAML.Spec.Types
+
+@[expose] public section Blanket
 
 /-! # `IxCursor input` — position-tracked byte cursor
 
@@ -125,7 +130,7 @@ def peekBack? {input : String} (c : IxCursor input) : Option Char :=
     to `input.utf8ByteSize`. The `min` makes the bound obligation
     discharge trivially; in practice the unclamped `next` already
     respects the bound when `pos.offset < utf8ByteSize`. -/
-@[inline] private def nextOffsetClamped {input : String} (c : IxCursor input) : Nat :=
+@[inline] def nextOffsetClamped {input : String} (c : IxCursor input) : Nat :=
   Nat.min (String.Pos.Raw.next input ⟨c.pos.offset⟩).byteIdx input.utf8ByteSize
 
 /-- Advance past the current character, updating `(offset, line, col)`.
@@ -303,3 +308,5 @@ lemma advance_peek_eq_peekAt_one {input : String} (c : IxCursor input)
 end IxCursor
 
 end L4YAML.Indexed
+
+end Blanket

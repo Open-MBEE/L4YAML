@@ -2,9 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedState
-import L4YAML.Proofs.Scanner.IndexedWhitespace
-import L4YAML.Proofs.Scanner.IndexedScalar
+
+module
+
+public import L4YAML.Scanner.IndexedState
+public import L4YAML.Proofs.Scanner.IndexedWhitespace
+public import L4YAML.Proofs.Scanner.IndexedScalar
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `IndexedDispatch` — Phase 3 top-level scanner (staging)
 
@@ -2239,3 +2245,5 @@ def scanWithCommentsIx (input : String) :
 end ScannerStateIx
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

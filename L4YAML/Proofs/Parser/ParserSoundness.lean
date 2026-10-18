@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Types
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Soundness
+
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Soundness
+
+@[expose] public section Blanket
 
 /-!
 # Parser Soundness (P10.8d)
@@ -452,3 +457,5 @@ lemma parseStream_sound
   yamlValue_has_witness docs[i].value false (hgrammable i)
 
 end L4YAML.Proofs.ParserSoundness
+
+end Blanket

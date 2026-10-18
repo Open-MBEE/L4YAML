@@ -2,12 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
-import L4YAML.Proofs.Scanner.ScannerLoopInvariant
-import L4YAML.Proofs.Scanner.ScannerProgress
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
-import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Proofs.Scanner.ScannerLoopInvariant
+public import L4YAML.Proofs.Scanner.ScannerProgress
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+@[expose] public section Blanket
 
 /-!
 # Scanner Bound Preservation (Phase 4.2.A)
@@ -1882,3 +1887,5 @@ lemma scanNextToken_preserves_bound (s s' : ScannerState)
   exact ⟨h_bi.offset_le, h_bi.inputEnd_eq, h_bi.input_eq, h_bi.isValid⟩
 
 end L4YAML.Proofs.ScannerBound
+
+end Blanket

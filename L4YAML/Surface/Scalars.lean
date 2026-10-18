@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Basic
-import L4YAML.Spec.Grammar
+
+module
+
+public import L4YAML.Surface.Basic
+public import L4YAML.Spec.Grammar
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Scalar Surface Syntax — Chapters 7.3 & 8.1
@@ -431,3 +437,5 @@ inductive SCLFolded : Nat → SurfPos → SurfPos → Prop where
       SCLFolded n ⟨'>' :: rest, col⟩ s'
 
 end L4YAML.Surface
+
+end Blanket

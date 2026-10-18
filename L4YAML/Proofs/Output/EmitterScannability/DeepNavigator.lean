@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.NonemptyStructure
+
+@[expose] public section Blanket
 
 /-!
 # The deep-family positional navigator (Phase J — the R447 residual's substrate)
@@ -1737,3 +1742,5 @@ lemma mapRoot_recmapbodydeep
   exact h_rec₂
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

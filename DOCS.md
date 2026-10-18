@@ -38190,8 +38190,9 @@ against them rather than against a forecast.
   on `leanprover/lean4:v4.35.0`.  The release-line branch `v4.35.0` exists for
   consumers that pin by release: it began as `v4.34.0` + `145afc52` (the same
   bump applied to the pre-fix-a tree — 868 jobs, suite 4407/4407) and on
-  2026-10-18 took this branch's tree by merge, so it carries the module-system
-  library and every item through 277.
+  2026-10-18 took this branch's tree by merge, resolved to this side and
+  tree-identical to it, so a consumer pinning by release gets the module-system
+  library.
   What the bump cost:
   * **One code change, and it was a dead name.**  v4.35.0 removes
     `Lean.ofReduceBool`, `Lean.ofReduceNat`, `Lean.trustCompiler` and

@@ -16,6 +16,15 @@ jobs:
 
     permissions:
       contents: write
+      # The "Comment on PR with coverage summary" step POSTs to
+      # /repos/.../issues/{n}/comments, which needs `pull-requests: write`.
+      # Declaring a `permissions` block at all drops every scope not listed, so
+      # with `contents` alone that step got 403 "Resource not accessible by
+      # integration" -- and it runs only `if: github.event_name ==
+      # 'pull_request'`, so it could never succeed: all three `pull_request`
+      # runs in this repo's history are failures, the most recent one
+      # (GHE 202516) green on every other step including doc-gen4.
+      pull-requests: write
 
     steps:
       - name: Checkout repository

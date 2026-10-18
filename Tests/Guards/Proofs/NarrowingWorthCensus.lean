@@ -672,7 +672,27 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- the instrument measures declarations and their auxiliaries, and wrong here,
 -- where the population counts theorems -- it read 7676 instead of 5291, a 45%
 -- inflation, because every generated matcher auxiliary joined the population.
-def expectedNoopTally : String := "theorems=5302 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+def expectedNoopTally : String := "theorems=5344 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
+-- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
+-- grew and the predicate gained its tools.  What is new in kind: `AG` carries
+-- three facts instead of one, which is six accessors and two closure lemmas
+-- per twin plus `AG0`'s own; the properties/finalization pair that
+-- `parseNode` forms needs `propsStage_ag0`,
+-- `declsBound_of_props_finalization`, `applyNodeFinalization_binds`,
+-- `applyNodeFinalization_decls`, `addAnchor_decls`, `anchors_of_recordPos`
+-- and `tryConsume_snd_decls` per twin; the base gained the predicate's five
+-- tools (`AllAliasesDeclared.mono`, `AllAliasesResolve.of_declared`,
+-- `mem_of_any_beq`, `AnchorBound.mono`, `AnchorBound.push_self`); the two
+-- state-preservation proofs became reader-generic, each with two corollaries;
+-- and each twin gained a capstone pair plus `DeclarationsBound`'s two
+-- transport lemmas.  **The clique's own 22 lemmas per twin are a RENAME and
+-- move the count not at all** — `_aar` → `_aad` with a different index — and
+-- four declarations LEFT: the two `findSome?` bridges the old alias leaf went
+-- through, and `AllAliasesResolve.push`/`.mono`, which an index on the
+-- declaration set has no use for.  The census itself is unmoved — `byElab` and
+-- `byWhnf` hold at 17 and both residual lists are empty — so only the
+-- denominator changed.
 -- 5282 → 5292 on 2026-10-02, and the move is +11 − 1 rather than +10 of one
 -- kind.  The `+11` is authored: `ParserScannableBase.lean` carries the
 -- `Scannable`-valued compose chain (`stripAnchors_preserves_Scannable`,

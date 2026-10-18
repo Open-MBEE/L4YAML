@@ -74,6 +74,10 @@ stood when this file was the frontier:
    `AllAliasesResolve` requires a scanner-level invariant that every
    `*name` token has a prior `&name` token (YAML §7.1), plus a parser
    invariant that `ps.addAnchor` accumulations cover all processed anchors.
+   (2026-10-18: both halves are what the chain carries today, and they had to
+   be separated to be true — the first is `AllAliasesDeclared`'s index, the
+   §7.1 occurrence set, and the second is `AG.declsBound`.  The parser's own
+   guard decides the first; only the second needs the document boundary.)
 
 3. **Cross-context semantic gap** (`parseStream_output_anchors_wellformed`):
    `WellFormedAnchors` requires `∀ inFlow, Grammable val.stripAnchors inFlow`.
@@ -3098,7 +3102,7 @@ lemma parseStreamLoop_docs_from_parseDocument
               (h_eq ▸ h_fpsv) (h_eq ▸ h_matched) h_pd).trans h_eq
           -- Tokens preserved through struct update + tryConsume
           let ps_reset : ParseState :=
-            { ps' with anchors := #[], nodePositions := #[], currentPath := #[] }
+            { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
           have h_next_tok : (ps_reset.tryConsume .documentEnd).2.tokens = tokens :=
             (tryConsume_tokens _ _).trans h_pd_tok
           -- The accumulator grows by one doc

@@ -8,6 +8,10 @@ public import L4YAML.Output.Dump
 public meta import L4YAML.Output.Dump
 public import L4YAML.Output.Emitter
 public meta import L4YAML.Output.Emitter
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
 public import L4YAML.Parser.Composition
 
 public meta import L4YAML.Parser.Composition
@@ -160,10 +164,12 @@ The route above is the COMPOSE side.  The parser carries a second table —
 `WellFormedAnchors` asks that every value in it be `Grammable` after stripping.
 For this input that is false, and the two lemmas below say why in the two ways
 it can be said: `Grammable` has no alias constructor at all, and the
-`AllAliasesResolve` premise that `applyNodeFinalization_wfa` takes is false at
-the state the parser is actually in when it finalizes `&x` over `[*x]` — the
-collection's anchor binds only after its items are resolved, so its own
-interior alias never sees it.
+`AllAliasesResolve` premise that the `Grammable`-valued composition
+(`compose_value_grammable`) takes is false at the state the parser is actually
+in when it finalizes `&x` over `[*x]` — the collection's anchor binds only
+after its items are resolved, so its own interior alias never sees it.  The
+parse-side leaf that used to take that premise is gone: `ParserWfaProofs` and
+`IndexedWfa` now ask only that an anchor value be `Scannable`.
 
 `ParserWfaScannable` mirrors that table onto `Scannable`, and the third lemma
 spends the mirror on this input: finalizing `&x` over `[*x]` keeps the table
@@ -179,9 +185,10 @@ lemma alias_not_grammable (name : String) (inFlow : Bool) :
   intro h; cases h
 
 /-- The table the parser finalizes over does not satisfy `AllAliasesResolve`,
-    which is the premise the `Grammable`-valued `applyNodeFinalization_wfa`
-    takes.  That route is therefore not merely harder for this input: its
-    premise is false. -/
+    which is the premise the `Grammable`-valued composition takes
+    (`compose_value_grammable`).  That route is therefore not merely harder for
+    this input: its premise is false.  It is also why capstone 3.5 is indexed
+    on the declaration set instead — see `selfDesc_declared` below. -/
 lemma selfDesc_not_aar : ¬ AllAliasesResolve unboundDoc.value #[] := by
   intro h
   cases h with
@@ -211,6 +218,104 @@ lemma selfDesc_finalization_wfaS
   applyNodeFinalization_wfaS unboundDoc.value ps _ pos
     (by intro nm v hf; rw [h] at hf; simp at hf)
     unboundDoc_value_scannable
+
+/-! ## The two readings of §7.1, spent on the one input they differ on
+    (plan row 20)
+
+§7.1 forbids an alias whose anchor has not previously OCCURRED; §3.2.2.2 says
+what it resolves TO.  `&x [*x]` is where the two part company: the anchor has
+occurred at the collection's start event and its value does not exist until the
+collection's items are complete.  The three lemmas below are that gap, machine
+checked — the §7.1 reading holds of the shape, the resolution reading does NOT
+hold at the state the parser is in, and the bridge closes once the enclosing
+node is finalized, which is what a document boundary supplies. -/
+
+/-- The §7.1 reading of `[*x]` against a declaration set that carries `x`:
+    this is capstone 3.5's conclusion for the shape. -/
+lemma selfDesc_declared : AllAliasesDeclared unboundDoc.value #["x"] :=
+  .sequence _ _ _ _ _ (fun i => by
+    match i with
+    | ⟨0, _⟩ => exact .alias _ _ (by simp))
+
+/-- The predicate is not vacuous: an alias whose name has not occurred is
+    refused, which is the whole of §7.1. -/
+lemma alias_not_declared : ¬ AllAliasesDeclared (.alias "x") #[] := by
+  intro h; cases h with | alias _ _ hm => simp at hm
+
+/-- **The bridge, on this input**: once `&x` is finalized the same value
+    satisfies the resolution reading, against the table that finalization
+    wrote.  Compare `selfDesc_not_aar`: at the state the parser is in while the
+    items are parsed, the table is empty and the resolution reading is FALSE. -/
+lemma selfDesc_resolves_once_bound :
+    AllAliasesResolve unboundDoc.value #[("x", boundDoc.value)] :=
+  AllAliasesResolve.of_declared (fun nm hnm => by
+    have : nm = "x" := by simpa using hnm
+    subst this; exact AnchorBound.push_self #[] _ _) selfDesc_declared
+
+/-! ### §6.9.2's tolerated duplicate: the start event carries the LAST `&`
+
+`scanFiltered` refuses two consecutive `&` outright
+(`invalidNodeProperties '&'`), but `validateNodeProps` tolerates a duplicate
+when the content is a collection start — the scanner's retroactive insertion
+makes that case real (suite 6BFJ) — and the capstones quantify over token
+ARRAYS, not over scanner output.  There the two anchors are distinguishable:
+the node's start event carries only `&b`, so `*a` names no node and is refused,
+while `*b` is bound by the same node's finalization.
+
+That is why `parseNodeProperties` declares from the COMPUTED properties rather
+than from each `&` it reads: a superseded name left in the declaration set
+would be aliasable and never bound, and capstones 3.6/3.7 — the resolution
+reading — would be false over their own domain. -/
+
+private def tok (t : YamlToken) : Positioned YamlToken :=
+  { val := t, pos := { offset := 0, line := 0, col := 0 } }
+
+/-- `&a &b [*a]`: an alias to the SUPERSEDED anchor. -/
+private def dupSuperseded : Array (Positioned YamlToken) :=
+  #[tok .streamStart, tok (.anchor "a"), tok (.anchor "b"),
+    tok .flowSequenceStart, tok (.alias "a"), tok .flowSequenceEnd, tok .streamEnd]
+
+/-- `&a &b [*b]`: an alias to the anchor the node start event carries. -/
+private def dupSurviving : Array (Positioned YamlToken) :=
+  #[tok .streamStart, tok (.anchor "a"), tok (.anchor "b"),
+    tok .flowSequenceStart, tok (.alias "b"), tok .flowSequenceEnd, tok .streamEnd]
+
+/-- The names BOUND in the document's table after a parse, or `none` if the
+    input was refused.  (The document carries the resolution table; the
+    declaration set is parser state and does not outlive the parse — which is
+    the distinction this whole section is about.) -/
+private def boundNames (ts : Array (Positioned YamlToken)) : Option (Array String) :=
+  match TokenParser.parseStream ts with
+  | .ok docs => (docs.toList.head?).map (fun d => d.anchors.map Prod.fst)
+  | .error _ => none
+
+-- the superseded name is not declared, so §7.1 refuses the alias
+#guard boundNames dupSuperseded == none
+-- the surviving one is declared AND bound, which is what capstone 3.6 reads
+#guard boundNames dupSurviving == some #["b"]
+
+/-! ### Anchor scope is per document, on ALL FOUR pipelines
+
+`parseStreamLoop` exists four times — the load and raw paths, and the event
+path's own copy in `Output/Events.lean` and `Output/EventsIx.lean` — and each
+carries its own per-document reset.  §3.2.2.2 makes anchor scope per document,
+so the two registers have to be cleared together: a reset that cleared the
+resolution table and left the DECLARATION set would let document 2 alias
+document 1's anchor on the event path while the load path refused it.  The
+2026-10-02 flip patch did exactly that to two of the four, and no test in this
+repo would have caught it, which is why the rows below read all four. -/
+
+private def loadsOnAll (src : String) : Bool × Bool × Bool × Bool :=
+  ((TokenParser.parseYaml src).isOk, (TokenParser.parseYamlRaw src).isOk,
+   (Events.parseYamlRawMarked src).isOk, (Events.parseYamlRawMarkedIx src).isOk)
+
+-- row 20's shape, and the ordinary one: accepted by all four
+#guard loadsOnAll "&x [*x]\n" == (true, true, true, true)
+#guard loadsOnAll "[&x a, *x]\n" == (true, true, true, true)
+-- an anchor from a PREVIOUS document: refused by all four
+#guard loadsOnAll "&x a\n---\n*x\n" == (false, false, false, false)
+-- an anchor that never occurred: refused by all four
+#guard loadsOnAll "[*x]\n" == (false, false, false, false)
 
 end L4YAML.Tests.Guards.AliasNodeRoute
 

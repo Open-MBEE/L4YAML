@@ -1362,9 +1362,14 @@ lemma parseNode_wfa
 -- §5  prepareDocumentState preserves anchors and tokens
 -- ============================================================
 
-/-- `parseDirectives` preserves the anchors array (only `pos` changes). -/
-lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
-    (parseDirectives ps).2.anchors = ps.anchors := by
+/-- `parseDirectives` only ever `advance`s the state, so every reading that is
+    invariant under `advance` survives it — both anchor registers among them.
+    Stated once over the reader; see the legacy twin
+    (`ParserWfaProofs.parseDirectives_reader`). -/
+lemma parseDirectives_reader_ix (ps : ParseStateIx input) {α : Type}
+    (f : ParseStateIx input → α)
+    (h_adv : ∀ p : ParseStateIx input, f p.advance = f p) :
+    f (parseDirectives ps).2 = f ps := by
   unfold parseDirectives
   simp only [Id.run]
   generalize ps.tokens.size - ps.pos = fuel
@@ -1372,8 +1377,8 @@ lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
              Nat.sub_zero, Nat.add_sub_cancel, Nat.div_one]
   generalize List.range' 0 fuel 1 = ls
   suffices h : ∀ (acc : ParseStateIx input × Array Directive),
-      acc.1.anchors = ps.anchors →
-      (do
+      f acc.1 = f ps →
+      f (do
           let __s ← @forIn Id (List Nat) Nat _ _ ls acc (fun _ __s =>
             match __s.fst.peek? with
             | some (.versionDirective major minor) =>
@@ -1381,7 +1386,7 @@ lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
             | some (.tagDirective handle tagPrefix) =>
               pure (ForInStep.yield (__s.fst.advance, __s.snd.push (.tag handle tagPrefix)))
             | _ => pure (ForInStep.done (__s.fst, __s.snd)))
-          pure (__s.snd, __s.fst)).snd.anchors = ps.anchors by
+          pure (__s.snd, __s.fst)).snd = f ps by
     exact h (ps, #[]) rfl
   intro acc h_inv
   induction ls generalizing acc with
@@ -1402,33 +1407,57 @@ lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
       apply ih; revert heq; split
       · intro heq
         have := ForInStep.yield.inj heq
-        subst this; simp [ParseStateIx.advance, h_inv]
+        subst this; simp only [h_adv]; exact h_inv
       · intro heq
         have := ForInStep.yield.inj heq
-        subst this; simp [ParseStateIx.advance, h_inv]
+        subst this; simp only [h_adv]; exact h_inv
       · intro heq; contradiction
 
-lemma prepareDocumentState_anchors_eq_ix
+/-- The resolution table survives the directive prefix. -/
+lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
+    (parseDirectives ps).2.anchors = ps.anchors :=
+  parseDirectives_reader_ix ps ParseStateIx.anchors (fun _ => rfl)
+
+/-- …and so does the declaration set (§7.1's register). -/
+lemma parseDirectives_decls_ix (ps : ParseStateIx input) :
+    (parseDirectives ps).2.declaredAnchors = ps.declaredAnchors :=
+  parseDirectives_reader_ix ps ParseStateIx.declaredAnchors (fun _ => rfl)
+
+/-- `prepareDocumentState` reads the directive prefix, sets `tagHandles` and
+    consumes an optional `---`; it writes neither anchor register. -/
+lemma prepareDocumentState_reader_ix
     (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
+    {α : Type} (f : ParseStateIx input → α)
+    (h_adv : ∀ p : ParseStateIx input, f p.advance = f p)
+    (h_tags : ∀ (p : ParseStateIx input) (t : Array (String × String)),
+        f { p with tagHandles := t } = f p)
     (h : prepareDocumentState ps = .ok (dirs, ps')) :
-    ps'.anchors = ps.anchors := by
+    f ps' = f ps := by
+  have h_tc : ∀ (p : ParseStateIx input) (tok : YamlToken),
+      f (p.tryConsume tok).2 = f p := by
+    intro p tok
+    unfold ParseStateIx.tryConsume
+    split
+    · split
+      · exact h_adv p
+      · rfl
+    · rfl
   have h_anch :
-      ({ (parseDirectives ps).2 with
+      f ({ (parseDirectives ps).2 with
           tagHandles := (parseDirectives ps).1.filterMap fun
             | Directive.tag handle tagPrefix => some (handle, tagPrefix)
-            | _ => none }.tryConsume .documentStart).2.anchors = ps.anchors := by
+            | _ => none }.tryConsume .documentStart).2 = f ps := by
     calc
-      ({ (parseDirectives ps).2 with
+      f ({ (parseDirectives ps).2 with
           tagHandles := (parseDirectives ps).1.filterMap fun
             | Directive.tag handle tagPrefix => some (handle, tagPrefix)
-            | _ => none }.tryConsume .documentStart).2.anchors
-          = ({ (parseDirectives ps).2 with
+            | _ => none }.tryConsume .documentStart).2
+          = f ({ (parseDirectives ps).2 with
                 tagHandles := (parseDirectives ps).1.filterMap fun
                   | Directive.tag handle tagPrefix => some (handle, tagPrefix)
-                  | _ => none }).anchors :=
-              tc_anchors_ix _ _
-      _ = (parseDirectives ps).2.anchors := rfl
-      _ = ps.anchors := parseDirectives_anchors_ix ps
+                  | _ => none }) := h_tc _ _
+      _ = f (parseDirectives ps).2 := h_tags _ _
+      _ = f ps := parseDirectives_reader_ix ps f h_adv
   unfold prepareDocumentState at h
   simp only [bind, Except.bind] at h
   all_goals (first | split at h | skip)
@@ -1440,6 +1469,22 @@ lemma prepareDocumentState_anchors_eq_ix
   all_goals (
     obtain ⟨_, rfl⟩ := h
     exact h_anch)
+
+/-- The resolution table survives the document prefix. -/
+lemma prepareDocumentState_anchors_eq_ix
+    (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
+    (h : prepareDocumentState ps = .ok (dirs, ps')) :
+    ps'.anchors = ps.anchors :=
+  prepareDocumentState_reader_ix ps dirs ps' ParseStateIx.anchors
+    (fun _ => rfl) (fun _ _ => rfl) h
+
+/-- …and so does the declaration set (§7.1's register). -/
+lemma prepareDocumentState_decls_eq_ix
+    (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
+    (h : prepareDocumentState ps = .ok (dirs, ps')) :
+    ps'.declaredAnchors = ps.declaredAnchors :=
+  prepareDocumentState_reader_ix ps dirs ps' ParseStateIx.declaredAnchors
+    (fun _ => rfl) (fun _ _ => rfl) h
 
 lemma prepareDocumentState_tokens_eq_ix
     (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
@@ -1578,11 +1623,11 @@ lemma parseStreamLoop_wfa
             apply ih
             · -- tokens preserved
               exact (tc_tokens_wfa_ix
-                { ps_doc with anchors := #[], nodePositions := #[], currentPath := #[] }
+                { ps_doc with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
                 .documentEnd).trans h_tok_doc
             · -- well-formed anchors after reset + tryConsume
               have h_eq := tc_anchors_ix
-                { ps_doc with anchors := #[], nodePositions := #[], currentPath := #[] }
+                { ps_doc with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
                 .documentEnd
               simp only [h_eq]; exact WFA_empty
             · exact h_acc'

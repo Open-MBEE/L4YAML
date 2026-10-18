@@ -58,8 +58,8 @@ def aliasCases : List (String × String) := [
   ("explicit same-doc", "---\na: &x 1\nb: *x\n"),
   ("cross-doc reset", "---\na: &x 1\n...\n---\nb: *x\n"),
   ("redefine next-doc", "---\na: &x 1\n...\n---\nb: &x 2\nc: *x\n"),
-  ("self-reference seq", "&x [*x]\n"),
-  ("self-reference map", "&x {a: *x}\n"),
+  ("self-reference seq (accepted)", "&x [*x]\n"),
+  ("self-reference map (accepted)", "&x {a: *x}\n"),
   ("nested define then use", "a: [&x 1, *x]\n"),
   ("redefine same doc", "a: &x 1\nb: &x 2\nc: *x\n")
 ]
@@ -74,11 +74,22 @@ def tagCases : List (String × String) := [
 ]
 
 
-#guard rejectsUndefinedAlias "&x [*x]\n"
-#guard rejectsUndefinedAlias "&x {a: *x}\n"
-#guard rejectsUndefinedAlias "&x\n- *x\n"
+-- §3.2.2.2 binds an alias to the most recent EVENT carrying the anchor, and for
+-- a collection that is its START, so a node may name the anchor of the
+-- collection it sits inside.  §7.1's only error is an anchor that does not
+-- previously OCCUR, and these three occur.  `YamlValue` expresses sharing by
+-- substitution alone, so the load preserves the `.alias` instead of unrolling
+-- it; `Tests/Guards/Proofs/AliasNodeRoute.lean` carries that shape to the
+-- capstone's own conclusion.
+#guard classifyLoad "&x [*x]\n" == "load:ok"
+#guard classifyLoad "&x {a: *x}\n" == "load:ok"
+#guard classifyLoad "&x\n- *x\n" == "load:ok"
 #guard (TokenParser.parseYaml "[&x 1, *x]\n").isOk
+-- an anchor that has NOT occurred is still refused, which is the whole of §7.1
 #guard rejectsUndefinedAlias "*x"
+#guard rejectsUndefinedAlias "[*x]"
+#guard rejectsUndefinedAlias "[*x, &x a]"
+#guard rejectsUndefinedAlias "&x a\n---\n*x\n"
 #guard rejectsUndeclaredTagHandle "!h!x value\n"
 #guard (TokenParser.parseYaml "%TAG !h! tag:example.com,2026:\n---\n!h!x value\n").isOk
 

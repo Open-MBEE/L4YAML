@@ -116,7 +116,8 @@ lemma parseStreamLoop_single_docIx {input : String}
         rw [h_doc]; dsimp only []
         -- Post-document state: clear anchors/nodePositions/currentPath. The
         -- `peek?` projection depends only on `tokens` and `pos`, both unchanged.
-        have h_peek'_r : ({ ps' with anchors := #[], nodePositions := #[],
+        have h_peek'_r : ({ ps' with anchors := #[], declaredAnchors := #[],
+                                     nodePositions := #[],
                                      currentPath := #[] } : ParseStateIx input).peek?
             = some .streamEnd := h_peek'
         simp only [ParseStateIx.tryConsume, h_peek'_r,

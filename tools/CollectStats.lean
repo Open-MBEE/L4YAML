@@ -21,8 +21,13 @@
   Build-job totals are not derivable without running `lake build` — pass them
   via the `BUILD_JOBS_TOTAL` / `BUILD_JOBS_PASSED` env vars (CI sets these).
 -/
-import Lean
-import L4YAML
+
+module
+
+public import Lean
+public import L4YAML
+
+@[expose] public section Blanket
 
 open Lean (Json toJson)
 open System (FilePath)
@@ -108,7 +113,7 @@ def scanStatic (root : FilePath) : IO StaticStats := do
 /-! ## Test-runner output parsing -/
 
 /-- Parse a single `"N/M"` fragment into `(N, M)`. -/
-private def parseFraction (s : String) : Option (Nat × Nat) :=
+def parseFraction (s : String) : Option (Nat × Nat) :=
   let parts : List String := s.splitOn "/"
   match parts with
   | [pStr, mStr] =>
@@ -434,3 +439,5 @@ unsafe def main (args : List String) : IO UInt32 := do
 end L4YAML.CollectStats
 
 unsafe def main (args : List String) : IO UInt32 := L4YAML.CollectStats.main args
+
+end Blanket

@@ -435,7 +435,7 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- environment.  The +106 constants are their declarations plus the ones carrying
 -- no Prop binder.  So the denominator grew; no verdict moved.
 def expectedModuleTally : String :=
-  "constants=1271 decls=1002 eta=374 FIELD=152 READ=1055 RELAY=2139 RETURN=49 UNUSED=9"
+  "constants=1280 decls=1010 eta=376 FIELD=154 READ=1058 RELAY=2167 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",

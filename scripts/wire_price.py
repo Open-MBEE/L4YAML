@@ -49,13 +49,13 @@ TARGET = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 
 GATEOF_HEAD = "def GateOf : Option ScannerState → Prop"
 GATEOF_NONE = "  | none => True"
-GATEOF_SOME = "  | some sc0 => danglingNodePos? sc0 = none"
+GATEOF_SOME = "  | some sc0 => danglingNodePos? sc0 = none ∧ sc0.simpleKeyAllowed = false"
 GATEOF_HEAD2 = "def GateOf : Option ScannerState → Nat → Prop"
 GATEOF_NONE2 = "  | none, _ => True"
-GATEOF_SOME2 = "  | some sc0, _ => danglingNodePos? sc0 = none"
+GATEOF_SOME2 = "  | some sc0, _ => danglingNodePos? sc0 = none ∧ sc0.simpleKeyAllowed = false"
 
-ANCHOR_ARM = "  | some sc0, s, d => ParkAnchor sc0 s d ∧ ParkFloor sc0 s d"
-ANCHOR_ARM2 = ("  | some sc0, s, d => ParkAnchor sc0 s d ∧ ParkFloor sc0 s d "
+ANCHOR_ARM = "  | some sc0, s, d => ParkChoice sc0 s d ∧ ParkFloor sc0 s d"
+ANCHOR_ARM2 = ("  | some sc0, s, d => ParkChoice sc0 s d ∧ ParkFloor sc0 s d "
                "∧ ParkSlot sc0 s d")
 
 ROUTE_FIELD = "  value : GateOf g → ∀ sp_ne sp_mid, SFlowContent n .flowOut sp_br sp_ne →"

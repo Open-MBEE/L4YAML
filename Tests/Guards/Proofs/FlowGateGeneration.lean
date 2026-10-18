@@ -93,7 +93,8 @@ example {sp_start sp : SurfPos} {tl : FrameTail} :
 ungated frame's route free once `FlowBaseRoutes.value` takes the gate. -/
 
 example : GateOf none := trivial
-example {sc0 : ScannerState} (h : danglingNodePos? sc0 = none) : GateOf (some sc0) := h
+example {sc0 : ScannerState} (h : danglingNodePos? sc0 = none)
+    (hska : sc0.simpleKeyAllowed = false) : GateOf (some sc0) := ⟨h, hska⟩
 example {s : ScannerState} {d : Nat} : FlowBaseAnchor none s d := trivial
 
 /-! ## §3  The transport kit, against the scanner's own steps
@@ -106,19 +107,21 @@ arm spends a lemma instead of re-deriving a token shape. -/
     reads it off the bracket the scanner actually pushes. -/
 example {sc0 : ScannerState} (hflow : sc0.inFlow = false)
     (hprop : ∃ k, prevRealIdx? sc0.tokens sc0.tokens.size = some k ∧
-      sc0.tokens[k]!.val.isNodeProperty = true) :
+      sc0.tokens[k]!.val.isNodeProperty = true)
+    (hska : sc0.simpleKeyAllowed = false) :
     ParkAnchor sc0 (scanFlowSequenceStart sc0) 0 :=
   ParkAnchor.ofOpen (scanFlowSequenceStart_tokens sc0) rfl
     (L4YAML.Proofs.EmitterScannability.scanFlowSequenceStart_preserves_indents sc0)
-    hflow hprop
+    hflow hprop hska
 
 example {sc0 : ScannerState} (hflow : sc0.inFlow = false)
     (hprop : ∃ k, prevRealIdx? sc0.tokens sc0.tokens.size = some k ∧
-      sc0.tokens[k]!.val.isNodeProperty = true) :
+      sc0.tokens[k]!.val.isNodeProperty = true)
+    (hska : sc0.simpleKeyAllowed = false) :
     ParkAnchor sc0 (scanFlowMappingStart sc0) 0 :=
   ParkAnchor.ofOpen (scanFlowMappingStart_tokens sc0) rfl
     (L4YAML.Proofs.EmitterScannability.scanFlowMappingStart_preserves_indents sc0)
-    hflow hprop
+    hflow hprop hska
 
 /-- The two silent writers, bundled: preprocessing's save and the
     `allowDirectives` update, which every flow dispatch crosses before its own

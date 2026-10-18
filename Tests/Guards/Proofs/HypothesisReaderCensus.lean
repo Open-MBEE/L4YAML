@@ -434,8 +434,21 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- (`<decl>.match_N.eq_M`, anonymous binders) that `@[expose]` now forces into the
 -- environment.  The +106 constants are their declarations plus the ones carrying
 -- no Prop binder.  So the denominator grew; no verdict moved.
+-- 2026-10-18 (item 281): `constants` 1284 -> 1286 and `RELAY` 2171 -> 2173 when
+-- `YamlToken.offersNodeSlot` took its sixth arm, and the roster NAMES both --
+-- `scratchpad/l4yaml-r3-carrier/verdict-roster-281.out` (3818 rows) against
+-- `scratchpad/l4yaml-modules/verdict-roster-modules.out` (3778).  A match with a
+-- catch-all generates one equation per arm plus the catch-all's, so a sixth arm
+-- adds `offersNodeSlot.eq_6` and `offersNodeSlot.match_1.eq_6` as ARM equations
+-- and renumbers the two catch-alls to `eq_7`; the catch-all carries one
+-- excluded-pattern hypothesis per arm, so each gains a `RELAY` binder (5 -> 6)
+-- while the two new arm equations carry none.  +2 constants, +2 RELAY, and every
+-- other lane and the `UNUSED` roster held exactly.  The equations are named
+-- `L4YAML.YamlToken.*` and counted HERE because they are generated on demand,
+-- when this module's own `simp` first unfolds the predicate -- which is why an
+-- edit to `Token.lean` moves a census scoped to `StreamAccum`.
 def expectedModuleTally : String :=
-  "constants=1284 decls=1010 eta=376 FIELD=154 READ=1058 RELAY=2171 RETURN=48 UNUSED=9"
+  "constants=1286 decls=1010 eta=376 FIELD=154 READ=1058 RELAY=2173 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",

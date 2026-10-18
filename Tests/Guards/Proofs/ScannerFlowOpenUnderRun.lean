@@ -2064,7 +2064,13 @@ start, so the two conditions are mutually exclusive.
 
 The rows below are therefore the arms' supply, pinned at the open — and each
 pins the PREDECESSOR beside the verdict, so a revert of `offersNodeSlot` breaks
-them with the reason attached rather than with a bare `false`. -/
+them with the reason attached rather than with a bare `false`.
+
+**The enumeration above is a floor and §17 is the set** (item 281): the
+argument from the second root node does not reach a document SUFFIX, so
+`documentEnd` was a non-offer standing in front of an accepted depth-0 open,
+and the supply was unpaid again until it joined the three indicators and the
+two starts. -/
 
 /-- The index of the first depth-0 flow open, or `none`. -/
 private def depth0OpenIdx (tokens : Array (Positioned YamlToken)) : Option Nat :=
@@ -2115,14 +2121,300 @@ private def slotRunAtOpen (input : String) : Option (Bool × String) :=
 #guard slotRunAtOpen "k: [1]\n" == some (true, "L4YAML.YamlToken.value")
 
 -- and every OTHER shape that would put a non-offer in front of the run is a
--- second root node in one document, which §9.2 refuses — this is why extending
--- the two starts is the whole of the supply
+-- second root node in one document, which §9.2 refuses — with the document
+-- SUFFIX the one exception, which does not continue a document but ENDS one
+-- (item 281, §17: the kinds are censused there rather than argued from here)
 #guard slotRunAtOpen "---\nk:\n  j: a\n&x\n[1]\n" == none
 #guard slotRunAtOpen "---\n- a\n&x\n[1]\n" == none
 #guard slotRunAtOpen "---\nk: a\n&x\n[1]\n" == none
 #guard slotRunAtOpen "---\n[a]\n&x\n[1]\n" == none
 #guard slotRunAtOpen "k:\n  b:\n    &x\n  [1]\n" == none
 #guard slotRunAtOpen "k:\n  -\n[1]\n" == none
+
+/-! ## §17 The offer set censused, and the carrier question answered by the
+    states (DOCS item 281)
+
+§16 extended `offersNodeSlot` with the two STARTS and enumerated the rest from
+one refusal: every other non-offering predecessor is a second root node in one
+document, which §9.2 refuses.  **That argument does not reach the document
+SUFFIX.**  A `...` does not continue a document, it ENDS one, so what stands
+after it is a fresh `[185] l-bare-document` and a `[96]` run in front of a
+depth-0 open there is that document's root-node properties — the same slot
+`---` offers, by the same production.
+
+So `a⏎...⏎&x⏎[1]` was accepted with `slotRun = false`, in seven shapes, and the
+supply item 278 paid was unpaid again.  Item 278's enumeration was a FLOOR, for
+the same reason a one-round flip census is.
+
+The rows below are the census that argument should have been: one `YamlToken`
+kind per row, each naming either an accepted witness whose first depth-0 open
+carries that kind as its run's predecessor, or the refusal that makes the kind
+unreachable in that position.  Six of the 23 kinds cannot be the predecessor at
+all and are named here rather than left to a blank: `placeholder` is what
+`prevRealIdx?` walks past by construction, `comment` is what `scanFiltered`
+filters, `streamEnd` has nothing after it, and `flowEntry` /
+`flowSequenceStart` / `flowMappingStart` stand only inside a collection, where
+the open they precede is at depth ≥ 1 and this reading does not apply.  Two
+more REDUCE to an offer rather than being reachable: `blockSequenceStart` and
+`blockMappingStart` are emitted before the indicator that opens the entry, so
+the predecessor a run sees is that indicator, and their rows pin the reduction.
+
+**`dispatchedSlot` is the supply itself**, and it is the reading to re-take
+before any future carrier is priced: over the same corpus it counts the inputs
+that DISPATCH a depth-0 open and, of those, the ones whose park reads
+`slotRun = false`.  The third number is what items 277 and 281 each found
+non-zero.
+
+**`carrierStates` answers the question item 279 left open** — a `PendingNode`
+field against an `accum_flow_open_depth0` hypothesis — by reading the states
+each candidate would have to hold at, which is cheaper than pricing either:
+
+* a LOOP INVARIANT is false.  The fact would have to be re-established at every
+  scanner step, the way `scanLoop_grammar_prod`'s induction re-establishes
+  `h_kbc`, `h_base` and `h_mono` through their own `scanNextToken_preserves_*`.
+  The second column counts states where the predicate is false, the next step
+  SUCCEEDS, and the input is accepted — `[a, &x b]` is one — so no
+  unconditional preservation lemma exists.  The third counts the same at depth
+  0, so guarding it on `flowLevel = 0` as `h_pending` itself is guarded does
+  not save it either.
+* a `PendingNode` FIELD is false at a park its own producer must admit.  The
+  fourth column counts parks reading `slotRun = false` whose step's own §9.2
+  and §8.1 readings are both SILENT and whose step succeeds — exactly the
+  hypotheses a producer holds (items 157 and 275 threaded both) — so the
+  field's obligation covers a state no producer can pay at.
+* a HYPOTHESIS has no supplier but the loop.  Its ring chain is
+  `accum_step_flow` (2 applications) → `scanNextToken_accum_step` (1) →
+  `scanLoop_grammar_prod` (1), and the last is the induction that would need
+  the invariant the first bullet refutes.
+
+What that leaves is not a carrier.  The fact is true exactly where the open is
+DISPATCHED, and what decides dispatch is §9.2's and §8.1's readings at that
+step — `h_dn` and `h_fv`, hypotheses of the arm since items 157 and 275.  Where
+the predicate fails and an open follows, `h_dn` FIRES: `---⏎k: a⏎&x⏎[1]` never
+reaches the arm at all, and the last two rows of `parkFace` pin that against
+the silent park beside it. -/
+
+/-- `ParkSlot.slotRun` read at index `i` of a token array: the `[96]` run in
+    front of `i` is absent, or the real token behind that run offers a node
+    slot.  §16's `slotRunAtOpen` is this at the open; the sweeps below need it
+    at an arbitrary cursor. -/
+private def slotRunAtIdx (tokens : Array (Positioned YamlToken)) (i : Nat) : Bool :=
+  let st := Scanner.propsRunStart tokens i
+  st == i || (match Scanner.prevRealIdx? tokens st with
+              | some j => tokens[j]!.val.offersNodeSlot
+              | none => false)
+
+/-- One witness per kind: the input, and the kind it is meant to put in front
+    of the run.  A row whose reading names a different kind is a REDUCTION and
+    §17's prose says which; a row that reads `none` is a refusal. -/
+private def kindWitness : List (String × String) :=
+  [ ("streamStart",        "&x\n[1]\n"),
+    ("documentStart",      "---\n&x\n[1]\n"),
+    ("documentEnd",        "a\n...\n&x\n[1]\n"),
+    ("value",              "k: &x [1]\n"),
+    ("key",                "? &x [1]\n"),
+    ("blockEntry",         "- &x [1]\n"),
+    ("blockSequenceStart", "- &x [1]\n"),
+    ("blockMappingStart",  "k: &x [1]\n"),
+    ("scalar",             "---\nk: a\n&x\n[1]\n"),
+    ("alias",              "&p q\n---\n*p\n&x\n[1]\n"),
+    ("blockEnd",           "---\nk:\n  v\n&x\n[1]\n"),
+    ("flowSequenceEnd",    "[a]\n&x\n[1]\n"),
+    ("flowMappingEnd",     "{a: b}\n&x\n[1]\n"),
+    ("versionDirective",   "%YAML 1.2\n&x\n[1]\n"),
+    ("tagDirective",       "%TAG !e! tag:x\n&x\n[1]\n"),
+    ("anchor",             "&a !t &b\n[1]\n"),
+    ("tag",                "!t1 !t2 &a\n[1]\n") ]
+
+/-- `(kinds probed, kinds reaching an accepted depth-0 open, of those whose
+    predecessor OFFERS a slot)`.
+
+    The second and third must agree, and that agreement IS the arms' supply: a
+    kind that reaches the position and offers nothing is a `slotRun` no carrier
+    can deliver, which is what items 277 and 281 each found one of. -/
+private def kindCensus : Nat × Nat × Nat := Id.run do
+  let mut n := 0
+  let mut reach := 0
+  let mut offered := 0
+  for (_, input) in kindWitness do
+    n := n + 1
+    match slotRunAtOpen input with
+    | none => pure ()
+    | some (sr, _) =>
+      reach := reach + 1
+      if sr then offered := offered + 1
+  return (n, reach, offered)
+
+#guard kindCensus == (17, 8, 8)
+
+-- the suffix: item 281's hole, now an offer, in the seven shapes that read it
+#guard slotRunAtOpen "a\n...\n&x\n[1]\n" == some (true, "L4YAML.YamlToken.documentEnd")
+#guard slotRunAtOpen "a\n...\n  &x\n  [1]\n" == some (true, "L4YAML.YamlToken.documentEnd")
+#guard slotRunAtOpen "a\n...\n...\n&x\n[1]\n" == some (true, "L4YAML.YamlToken.documentEnd")
+#guard slotRunAtOpen "a\n...\n# c\n&x\n[1]\n" == some (true, "L4YAML.YamlToken.documentEnd")
+#guard slotRunAtOpen "a\n...\n!t &x\n[1]\n" == some (true, "L4YAML.YamlToken.documentEnd")
+#guard slotRunAtOpen "k: v\n...\n&x\n{p: q}\n" == some (true, "L4YAML.YamlToken.documentEnd")
+#guard slotRunAtOpen "- a\n...\n&x\n[1]\n" == some (true, "L4YAML.YamlToken.documentEnd")
+
+-- the two REDUCTIONS: a collection's own start is never the predecessor
+#guard slotRunAtOpen "- &x [1]\n" == some (true, "L4YAML.YamlToken.blockEntry")
+#guard slotRunAtOpen "k: &x [1]\n" == some (true, "L4YAML.YamlToken.value")
+
+-- the nine kinds the position does not reach, each by the refusal that stops it
+#guard slotRunAtOpen "---\nk: a\n&x\n[1]\n" == none
+#guard slotRunAtOpen "&p q\n---\n*p\n&x\n[1]\n" == none
+#guard slotRunAtOpen "---\nk:\n  v\n&x\n[1]\n" == none
+#guard slotRunAtOpen "[a]\n&x\n[1]\n" == none
+#guard slotRunAtOpen "{a: b}\n&x\n[1]\n" == none
+#guard slotRunAtOpen "%YAML 1.2\n&x\n[1]\n" == none
+#guard slotRunAtOpen "%TAG !e! tag:x\n&x\n[1]\n" == none
+#guard slotRunAtOpen "&a !t &b\n[1]\n" == none
+#guard slotRunAtOpen "!t1 !t2 &a\n[1]\n" == none
+
+/-- The corpus the three readings below share: the eight kinds that reach the
+    position, the nine that do not, the three indicators' own under-indented
+    landings, and four runs that are absent rather than unoffered. -/
+private def slotCorpus : List String :=
+  [ "&x\n[1]\n", "---\n&x\n[1]\n", "k: &x [1]\n", "- &x [1]\n", "? &x [1]\n",
+    "a\n...\n&x\n[1]\n", "a\n...\n  &x\n  [1]\n", "a\n...\n...\n&x\n[1]\n",
+    "a\n...\n# c\n&x\n[1]\n", "a\n...\n!t &x\n[1]\n", "k: v\n...\n&x\n{p: q}\n",
+    "- a\n...\n&x\n[1]\n", "---\nk: a\n&x\n[1]\n", "&p q\n---\n*p\n&x\n[1]\n",
+    "---\nk:\n  v\n&x\n[1]\n", "[a]\n&x\n[1]\n", "{a: b}\n&x\n[1]\n",
+    "%YAML 1.2\n&x\n[1]\n", "&a !t &b\n[1]\n", "!t1 !t2 &a\n[1]\n",
+    "k:\n  &x\n  [1]\n", "- \n  &x\n  [1]\n", "?\n  &x\n  [1]\n",
+    "[1]\n", "k: [1]\n", "a\n...\n[1]\n", "a\n...\n{p: q}\n" ]
+
+/-- `(inputs, inputs that DISPATCH a depth-0 flow open, of those: parks reading
+    `slotRun = false`)`.
+
+    The park is the state the open is dispatched from, after preprocessing —
+    the array `accum_flow_open_depth0`'s arm reads is `s_prep.tokens` — so this
+    is the arms' supply at the one place it has to hold.  The third number must
+    be ZERO; items 277 and 281 each read it non-zero, and each time the repair
+    was the predicate rather than a carrier for it. -/
+private def dispatchedSlot : Nat × Nat × Nat := Id.run do
+  let mut n := 0
+  let mut disp := 0
+  let mut bad := 0
+  for input in slotCorpus do
+    n := n + 1
+    let mut s := start input
+    let mut fuel := input.utf8ByteSize * 4 + 8
+    let mut seen := false
+    let mut sawBad := false
+    while fuel > 0 && !seen do
+      fuel := fuel - 1
+      match Scanner.scanNextToken s with
+      | .error _ => seen := true
+      | .ok none => seen := true
+      | .ok (some s') =>
+        if s.flowLevel == 0 && s'.flowLevel == 1 then
+          seen := true
+          disp := disp + 1
+          match Scanner.scanNextToken_preprocess s with
+          | .ok (some (s_prep, _)) =>
+            if !slotRunAtIdx s_prep.tokens s_prep.tokens.size then sawBad := true
+          | _ => if !slotRunAtIdx s.tokens s.tokens.size then sawBad := true
+        else s := s'
+    if sawBad then bad := bad + 1
+  return (n, disp, bad)
+
+#guard dispatchedSlot == (27, 21, 0)
+
+/-- The shapes a carrier would have to hold at: a props run inside a flow
+    collection, and one standing after a completed block node at depth 0. -/
+private def carrierCorpus : List String :=
+  [ "[a, &x b]\n", "{a: b, &x c}\n", "[a, &x b, c]\n", "[[a], &x b]\n",
+    "k: [a, &x b]\n", "- [a, &x b]\n", "[a, &x !t b]\n",
+    "---\nk: a\n&x b\n", "---\nk:\n  v\n&x b\n", "---\n- a\n&x b\n",
+    "a\n...\n&x b\n", "&x\n[1]\n", "k: &x [1]\n" ]
+
+/-- `(inputs, false-then-step at depth ≥ 1 on an ACCEPTED input, false-then-step
+    at depth 0, parks reading false whose step's own §9.2 AND §8.1 readings are
+    both silent and whose step succeeds)`.
+
+    Columns two and three refute a loop invariant — unguarded and
+    `flowLevel = 0`-guarded — and column four refutes a `PendingNode` field,
+    because those are exactly the hypotheses a producer of the park holds. -/
+private def carrierStates : Nat × Nat × Nat × Nat := Id.run do
+  let mut n := 0
+  let mut deep := 0
+  let mut flat := 0
+  let mut silent := 0
+  for input in carrierCorpus do
+    n := n + 1
+    let mut s := start input
+    let mut fuel := input.utf8ByteSize * 4 + 8
+    let mut sawDeep := false
+    let mut sawFlat := false
+    let mut sawSilent := false
+    let mut ok := false
+    while fuel > 0 do
+      fuel := fuel - 1
+      let isBad := !slotRunAtIdx s.tokens s.tokens.size
+      let isFlat := s.flowLevel == 0
+      match Scanner.scanNextToken s with
+      | .error _ => fuel := 0
+      | .ok none =>
+        ok := s.flowLevel == 0
+          && (Scanner.scanLoop_checkDanglingNode s).isOk
+          && (Scanner.scanLoop_checkFlowValueIndent s).isOk
+        fuel := 0
+      | .ok (some s') =>
+        if isBad then
+          if isFlat then sawFlat := true else sawDeep := true
+          match Scanner.scanNextToken_preprocess s with
+          | .ok (some (s_prep, _)) =>
+            if isFlat
+                && (Scanner.scanNextToken_checkDanglingNode s s_prep).isOk
+                && (Scanner.scanNextToken_checkFlowValueIndent s s_prep).isOk then
+              sawSilent := true
+          | _ => pure ()
+        s := s'
+    if sawDeep && ok then deep := deep + 1
+    if sawFlat then flat := flat + 1
+    if sawSilent then silent := silent + 1
+  return (n, deep, flat, silent)
+
+#guard carrierStates == (13, 7, 3, 3)
+
+/-- `(step, the park's last real token, `slotRun`, §9.2 at that step, §8.1 at
+    that step, the step succeeded)` — the producer's own face at one park.
+
+    The first row is the park a `PendingNode` field cannot be paid at, and the
+    second is why no carrier is owed for it: one token later, with an open
+    following instead of a scalar, §9.2 FIRES and the arm is never reached. -/
+private def parkFace (input : String) (upto : Nat) :
+    Nat × String × Bool × String × String × Bool := Id.run do
+  let mut s := start input
+  let mut i : Nat := 0
+  while i < upto do
+    match Scanner.scanNextToken s with
+    | .ok (some s') => s := s'; i := i + 1
+    | _ => i := upto
+  let lastTok := match Scanner.prevRealIdx? s.tokens s.tokens.size with
+    | some j => toString (repr s.tokens[j]!.val)
+    | none => "<none>"
+  let (dn, fv) := match Scanner.scanNextToken_preprocess s with
+    | .ok (some (s_prep, _)) =>
+      ((match Scanner.scanNextToken_checkDanglingNode s s_prep with
+        | .ok _ => "silent"
+        | .error _ => "FIRES"),
+       (match Scanner.scanNextToken_checkFlowValueIndent s s_prep with
+        | .ok _ => "silent"
+        | .error _ => "FIRES"))
+    | _ => ("no-preprocess", "no-preprocess")
+  let stepped := match Scanner.scanNextToken s with
+    | .ok (some _) => true
+    | _ => false
+  return (i, lastTok, slotRunAtIdx s.tokens s.tokens.size, dn, fv, stepped)
+
+#guard parkFace "---\nk: a\n&x b\n" 5
+  == (5, "L4YAML.YamlToken.anchor \"x\"", false, "silent", "silent", true)
+#guard parkFace "---\nk: a\n&x\n[1]\n" 5
+  == (5, "L4YAML.YamlToken.anchor \"x\"", false, "FIRES", "silent", false)
+#guard parkFace "a\n...\n&x\n[1]\n" 3
+  == (3, "L4YAML.YamlToken.anchor \"x\"", true, "silent", "silent", true)
 
 end L4YAML.Tests.Guards.ScannerFlowOpenUnderRun
 

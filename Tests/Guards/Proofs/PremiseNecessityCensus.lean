@@ -253,8 +253,14 @@ declarations' own binders and not by a rescoring of an existing one.
 -- lost and 29 gained, every one a matcher equation lemma `<decl>.match_N.eq_M`
 -- that `@[expose]` now forces into the environment.  See [[HypothesisReaderCensus]]
 -- and TODO/l4yaml-module-system.md.
+-- 2026-10-18 (item 281): `constants` 1284 -> 1286 and `RELAY` 2034 -> 2036 when
+-- `YamlToken.offersNodeSlot` took its sixth arm.  The SAME +2/+2 this census's
+-- sibling reads under a different peel, which is again the evidence that one set
+-- of declarations moved rather than two censuses drifting apart -- and the two are
+-- the match's renumbered catch-all equations, named in [[HypothesisReaderCensus]]
+-- from `scratchpad/l4yaml-r3-carrier/verdict-roster-281.out`.
 def expectedModuleTallyP : String :=
-  "constants=1284 decls=1010 eta=376 FIELD=173 READ=1096 RELAY=2034 RETURN=128 UNUSED=9"
+  "constants=1286 decls=1010 eta=376 FIELD=173 READ=1096 RELAY=2036 RETURN=128 UNUSED=9"
 
 def expectedOptTallyP : String :=
   "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"

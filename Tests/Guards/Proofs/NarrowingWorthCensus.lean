@@ -672,7 +672,13 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- the instrument measures declarations and their auxiliaries, and wrong here,
 -- where the population counts theorems -- it read 7676 instead of 5291, a 45%
 -- inflation, because every generated matcher auxiliary joined the population.
-def expectedNoopTally : String := "theorems=5344 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- 2026-10-18 (item 281): population 5344 → 5345 when `YamlToken.offersNodeSlot`
+-- took its sixth arm.  ONE of the two constants the verdict censuses read, and
+-- the difference is this pin's own rule: it does NOT canonicalize private names,
+-- so `offersNodeSlot.eq_7` counts and the match auxiliary `match_1.eq_7`, which
+-- the module system privatises, does not.  The four numbers this pin carries are
+-- unchanged.  Both are named in [[HypothesisReaderCensus]].
+def expectedNoopTally : String := "theorems=5345 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

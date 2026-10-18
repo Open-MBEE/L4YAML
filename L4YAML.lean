@@ -68,6 +68,7 @@ public import L4YAML.Proofs.Parser.ParserSoundness
 public import L4YAML.Proofs.Parser.ParserWellBehaved
 public import L4YAML.Proofs.Parser.FlowParserAcceptance
 public import L4YAML.Proofs.Parser.ParserWfaProofs
+public import L4YAML.Proofs.Parser.ParserWfaScannable
 public import L4YAML.Proofs.Parser.IndexedCorrectness
 public import L4YAML.Proofs.Production.PreprocessProduction
 public import L4YAML.Proofs.RoundTrip.RoundTrip

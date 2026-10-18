@@ -2,6 +2,7 @@ module
 
 public import L4YAML.Proofs.Parser.ParserGrammableBase
 public import L4YAML.Proofs.Parser.ParserScannableBase
+public import L4YAML.Proofs.Parser.ParserWfaScannable
 public import L4YAML.Proofs.Parser.ParserSoundness
 public import L4YAML.Output.Dump
 public meta import L4YAML.Output.Dump
@@ -150,6 +151,66 @@ def refusesAlias (src : String) : Bool :=
 #guard refusesAlias "[&y a, *x]"      -- a different anchor is declared
 #guard refusesAlias "[*x, &x a]"      -- forward reference: not *preceding*
 #guard refusesAlias "*y\n---\n&y b\n" -- the anchor is in a later document
+
+
+/-! ## The PARSE-side table for the same shape (plan row 20 / step 5a(vi))
+
+The route above is the COMPOSE side.  The parser carries a second table —
+`ParseState.anchors`, written by `addAnchor` at node finalization — and
+`WellFormedAnchors` asks that every value in it be `Grammable` after stripping.
+For this input that is false, and the two lemmas below say why in the two ways
+it can be said: `Grammable` has no alias constructor at all, and the
+`AllAliasesResolve` premise that `applyNodeFinalization_wfa` takes is false at
+the state the parser is actually in when it finalizes `&x` over `[*x]` — the
+collection's anchor binds only after its items are resolved, so its own
+interior alias never sees it.
+
+`ParserWfaScannable` mirrors that table onto `Scannable`, and the third lemma
+spends the mirror on this input: finalizing `&x` over `[*x]` keeps the table
+`WellFormedAnchorsS`.  These three are the consumer probe plan row 20 names —
+they are what says the remaining parse-side clique is a rename and not a
+redesign. -/
+
+/-- `Grammable` has no alias constructor, so no alias node is ever `Grammable`:
+    the direct reason `WellFormedAnchors` cannot hold of a table binding
+    `[*x]`. -/
+lemma alias_not_grammable (name : String) (inFlow : Bool) :
+    ¬ Grammable (.alias name) inFlow := by
+  intro h; cases h
+
+/-- The table the parser finalizes over does not satisfy `AllAliasesResolve`,
+    which is the premise the `Grammable`-valued `applyNodeFinalization_wfa`
+    takes.  That route is therefore not merely harder for this input: its
+    premise is false. -/
+lemma selfDesc_not_aar : ¬ AllAliasesResolve unboundDoc.value #[] := by
+  intro h
+  cases h with
+  | sequence _ _ _ _ _ h_items =>
+    have h0 := h_items ⟨0, by simp⟩
+    cases h0 with
+    | alias _ _ h_find => simp at h_find
+
+/-- …and the value really does still carry the alias after cleaning, which is
+    the fact both refusals turn on. -/
+example : (unboundDoc.value.resolveAliases #[]).stripAnchors
+    = .sequence .flow #[.alias "x"] none none := rfl
+
+/-- `[*x]` is `Scannable` — the mirror's hypothesis, where the original's
+    `Grammable` is unavailable. -/
+lemma unboundDoc_value_scannable : Scannable unboundDoc.value false :=
+  .sequence _ _ _ _ _ (fun i => by match i with | ⟨0, _⟩ => exact .alias _ _)
+
+/-- **The probe row 20 asks for**: finalizing `&x` over `[*x]` keeps the
+    parse-side anchor table `WellFormedAnchorsS`.  The `Grammable`-valued
+    original cannot be applied here at all — `selfDesc_not_aar` above. -/
+lemma selfDesc_finalization_wfaS
+    (ps : ParseState) (h : ps.anchors = #[]) (pos : YamlPos) :
+    WellFormedAnchorsS
+      (applyNodeFinalization unboundDoc.value ps
+        { anchor := some "x", tag := none, hadDuplicateAnchor := false } pos).2.anchors :=
+  applyNodeFinalization_wfaS unboundDoc.value ps _ pos
+    (by intro nm v hf; rw [h] at hf; simp at hf)
+    unboundDoc_value_scannable
 
 end L4YAML.Tests.Guards.AliasNodeRoute
 

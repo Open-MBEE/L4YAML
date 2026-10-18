@@ -30,7 +30,8 @@ it was written before: **what receives the carrier.**  A ride that takes a
     carrier   three reshapes of `FlowBaseAnchor`'s `some` arm, each a census by
               declaration: `add` puts `ParkSlot` beside the anchor (item 268's
               `anchor` ring, re-derived), `swap` puts it in the anchor's place,
-              `choice` makes the carrier a disjunction.
+              `anchor` restores item 162's anchor-only arm.  Item 276 PAID the
+              `choice` reshape, so each flip now prices UN-paying it.
     transport the arity flip on `FlowBaseAnchor.transport`, the funnel every
               other carrier lemma goes through — the second wave any reshape
               pays.
@@ -101,8 +102,8 @@ def rows(arm):
         ("prop", prop_ty("s_prep"),
          None if PROP_TERM[arm] is None else PROP_TERM[arm]),
         ("gated", "FlowBaseAnchor (some s_prep) s' 0",
-         pre + f"exact ⟨ParkAnchor.ofOpen {tok} {op} h_ind' h_noflow_prep "
-               "(by assumption), ⟨KeyFloor.cleared h_opsk, "
+         pre + f"exact ⟨Or.inl (ParkAnchor.ofOpen {tok} {op} h_ind' h_noflow_prep "
+               "(by assumption) (by assumption)), ⟨KeyFloor.cleared h_opsk, "
                "fun i hlo hhi => absurd hhi (by omega)⟩⟩"),
     ]
 
@@ -139,16 +140,19 @@ RIDE_TY = "      ∃ sp_gram' sp_block' sp_flow' sp_scan',"
 RIDE_BODY = ("    ⟨sp_block, sp_block, sp_open, sp_open, h_stream_block, "
              "BlockStack.nil _,")
 
-ANCHOR_ARM = "  | some sc0, s, d => ParkAnchor sc0 s d ∧ ParkFloor sc0 s d"
+#: Item 276 PAID the `choice` reshape: the `some` arm names `ParkChoice`.  The
+#: three flips now read what UN-paying it costs -- the anchor alone (item 162's
+#: shape), the slot alone, or both beside each other.
+ANCHOR_ARM = "  | some sc0, s, d => ParkChoice sc0 s d ∧ ParkFloor sc0 s d"
 CARRIER = {
-    "add": ANCHOR_ARM + " ∧ ParkSlot sc0 s d",
+    "add": ("  | some sc0, s, d => ParkAnchor sc0 s d ∧ ParkFloor sc0 s d"
+            " ∧ ParkSlot sc0 s d"),
     "swap": "  | some sc0, s, d => ParkSlot sc0 s d ∧ ParkFloor sc0 s d",
-    "choice": ("  | some sc0, s, d => (ParkAnchor sc0 s d ∨ ParkSlot sc0 s d)"
-               " ∧ ParkFloor sc0 s d"),
+    "anchor": "  | some sc0, s, d => ParkAnchor sc0 s d ∧ ParkFloor sc0 s d",
 }
 
-TRANSPORT_F = "    (f : ∀ sc0, ParkAnchor sc0 s d → ParkFloor sc0 s d →"
-TRANSPORT_F2 = ("    (f : ∀ sc0, 0 = 0 → ParkAnchor sc0 s d → "
+TRANSPORT_F = "    (f : ∀ sc0, ParkChoice sc0 s d → ParkFloor sc0 s d →"
+TRANSPORT_F2 = ("    (f : ∀ sc0, 0 = 0 → ParkChoice sc0 s d → "
                 "ParkFloor sc0 s d →")
 
 
@@ -283,7 +287,7 @@ def main():
             ride, ride_d = run_flip(base, "ride")
         if which in ("carrier", "all"):
             print("-- carrier: three reshapes of the frame's `some` arm")
-            for v in ("add", "swap", "choice"):
+            for v in ("add", "swap", "anchor"):
                 print(f"   {v}:")
                 carrier[v] = run_flip(base, v)
         if which in ("transport", "all"):
@@ -306,11 +310,11 @@ def main():
                     for n in ROW_NAMES)
            + f" ride={ride}/{len(ride_d)}"
            + "".join(f" {v}={carrier[v][0]}/{len(carrier[v][1])}"
-                     for v in ("add", "swap", "choice"))
+                     for v in ("add", "swap", "anchor"))
            + f" transport={tr}/{len(tr_d)}")
     print("RIDE-PRICE " + got)
     print(f"  ride sites in: {', '.join(ride_d)}")
-    for v in ("add", "swap", "choice"):
+    for v in ("add", "swap", "anchor"):
         print(f"  {v} sites in: {', '.join(carrier[v][1])}")
     print(f"  transport sites in: {', '.join(tr_d)}")
     for (a, n), out in sorted(why.items()):

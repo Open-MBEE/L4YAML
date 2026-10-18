@@ -96,7 +96,7 @@ def genesis_tac(arm):
         intro = ""
         p_, tok, op = held
     return ("intro hpos; " + intro +
-            f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_; "
+            f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ (by assumption); "
             f"rw [hpos {p_} {tok} {op}]; exact {src}")
 
 
@@ -251,7 +251,7 @@ def pay_tac(arm):
     else:
         intro = ""
         tok, op, pos = held[1], held[2], "h_br_pos"
-    return (intro + f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_; "
+    return (intro + f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ (by assumption); "
             f"rw [{pos}]; exact {src}")
 
 

@@ -105,7 +105,7 @@ UNDER = ("have hf := h.underIndented_eq hpre hind hflow hlast hclose hoff; "
 #: of reporting a tactic that was never written.
 ROWS = [
     ("anchor", "ParkAnchor", None,
-     "exact ((h.dangling_eq hpre hind hflow hlast hclose).symm).trans hnd"),
+     "exact ⟨((h.dangling_eq hpre hind hflow hlast hclose).symm).trans hnd, h.parkSka⟩"),
     ("bare", "ParkSlot", None,
      FIRES.format(hst="(by assumption)", hoff="(by assumption)")),
     ("nonoffer", "ParkSlot", NONOFFER, FIRES.format(hst="hst", hoff="hoff")),

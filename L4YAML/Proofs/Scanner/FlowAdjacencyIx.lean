@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedDispatch
+
+module
+
+public import L4YAML.Scanner.IndexedDispatch
+
+@[expose] public section Blanket
 
 /-!
 # Flow-adjacency check: proof helpers (Fix A, step a) — indexed scanner
@@ -223,3 +228,5 @@ lemma saveSimpleKeyIx_preserves_completesFalse {input : String}
     | inr h => subst h; rfl
 
 end L4YAML.Proofs.FlowAdjacencyIx
+
+end Blanket

@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -222,3 +227,5 @@ example {s' : ScannerState} {c : Char} {sp_start sp_anchor : SurfPos}
   the states it describes are refused before any route is owed. -/
 
 end L4YAML.Tests.Guards.PropsCrossWindowRoute
+
+end Blanket

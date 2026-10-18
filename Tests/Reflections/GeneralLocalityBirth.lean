@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Output.EmitterScannability
-import L4YAML.Proofs.Output.EmitterScannability.TokVals
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability
+public import L4YAML.Proofs.Output.EmitterScannability.TokVals
+
+public meta import L4YAML.Proofs.Output.EmitterScannability.TokVals
+@[expose] public section Blanket
 
 /-!
 # Reflection — birth probes for the Front-B general-locality plan
@@ -121,3 +126,5 @@ theorem purity_birth :
   native_decide
 
 end GeneralLocalityBirth
+
+end Blanket

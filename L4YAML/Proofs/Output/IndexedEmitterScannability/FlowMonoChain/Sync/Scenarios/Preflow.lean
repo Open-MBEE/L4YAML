@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Detail
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Invariant
-import L4YAML.Proofs.Scanner.IndexedIndent
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Detail
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Invariant
+public import L4YAML.Proofs.Scanner.IndexedIndent
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Scenarios.Preflow` — Phase 3 Step
 `6f.3b3.flowmono.sync.scenarios.preflow`
@@ -493,3 +498,5 @@ lemma scanNextTokenIx_flow_comma (s : ScannerStateIx input)
   rw [h_s'_col]; exact h_s'_corr
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

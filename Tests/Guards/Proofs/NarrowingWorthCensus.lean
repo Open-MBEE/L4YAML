@@ -661,7 +661,18 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
     roster below does not move.  Item 271 adds the under-run's own column
     reading and item 272 the composition that spends it, one authored lemma
     each and neither with that conclusion: **5276**. -/
-def expectedNoopTally : String := "theorems=5294 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- 2026-10-17: population 5294 → 5291 when the library took `module` headers --
+-- three declarations the environment used to expose under a plain name are now
+-- private-mangled and fall outside the `L4YAML` prefix.  The four numbers this
+-- pin actually carries (byElab, byWhnf, elabOnly, whnfOnly) are unchanged, which
+-- is what the docstring above says the pin is for.
+--
+-- Deliberately NOT canonicalized with `privateToUserName`, unlike the verdict
+-- censuses: recovering the private-mangled GENERATED auxiliaries is right where
+-- the instrument measures declarations and their auxiliaries, and wrong here,
+-- where the population counts theorems -- it read 7676 instead of 5291, a 45%
+-- inflation, because every generated matcher auxiliary joined the population.
+def expectedNoopTally : String := "theorems=5291 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5282 → 5292 on 2026-10-02, and the move is +11 − 1 rather than +10 of one
 -- kind.  The `+11` is authored: `ParserScannableBase.lean` carries the
 -- `Scannable`-valued compose chain (`stripAnchors_preserves_Scannable`,

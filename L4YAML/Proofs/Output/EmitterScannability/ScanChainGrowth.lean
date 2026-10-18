@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.FilteredGrowth
-import L4YAML.Proofs.Output.EmitterScannability.FlowStackChain
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.FilteredGrowth
+public import L4YAML.Proofs.Output.EmitterScannability.FlowStackChain
+
+@[expose] public section Blanket
 
 /-!
 # Emitter Scannability — Strict Chain Growth + Saved-Key Survival + Pipeline
@@ -3746,3 +3751,5 @@ lemma emit_parsed_scannable (v : YamlValue)
 
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

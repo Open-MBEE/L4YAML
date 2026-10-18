@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A wider closure argument is a lost invariant (Reflection 621)
 
 A nested frame does not store its parent; it carries a closure that folds this
@@ -169,3 +174,5 @@ theorem widen_invents_an_answer :
 #print axioms narrow_wrap_round_trips
 
 end Tests.Reflections.WiderClosureArgumentLosesInvariant
+
+end Blanket

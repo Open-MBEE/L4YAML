@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch
+
+@[expose] public section Blanket
 
 /-! # `FilteredGrowth.Turn3` — Phase 3 Step `6f.3b3.filteredgrowth.turn3`
 
@@ -218,3 +223,5 @@ lemma scanNextTokenIx_filtered_grows_in_flow
           omega
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FilteredGrowth
+
+end Blanket

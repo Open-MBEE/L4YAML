@@ -2,20 +2,25 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Spec.CharPredicates
-import L4YAML.Proofs.Output.ScannerEmitBridge
-import L4YAML.Proofs.RoundTrip.RoundTrip
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Proofs.Coupling.ScalarCoupling
-import L4YAML.Proofs.Parser.ParserGrammable
-import L4YAML.Proofs.Scanner.ScannerPlainContent
-import L4YAML.Proofs.Scanner.ScannerBound
-import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
-import L4YAML.Proofs.Scanner.FlowAdjacency
+
+module
+
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Spec.CharPredicates
+public import L4YAML.Proofs.Output.ScannerEmitBridge
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Parser.ParserGrammable
+public import L4YAML.Proofs.Scanner.ScannerPlainContent
+public import L4YAML.Proofs.Scanner.ScannerBound
+public import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+
+@[expose] public section Blanket
 
 /-!
 # Emitter Scannability — §3 Scanner Acceptance + Substrate Predicates
@@ -3082,3 +3087,5 @@ lemma NoColonDispatchChain.trans {fl₀ : Nat}
 
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

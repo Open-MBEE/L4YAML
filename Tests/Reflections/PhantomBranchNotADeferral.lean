@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 646 — a branch the runtime cannot take is not a case you owe; count a deferral's domain over REACHABLE inputs, and refute the rest from the dispatcher itself
 
@@ -236,3 +241,5 @@ def runtimeEdits : Nat := 0
 #guard runtimeEdits == 0
 
 end L4YAML.Tests.Reflections.PhantomBranchNotADeferral
+
+end Blanket

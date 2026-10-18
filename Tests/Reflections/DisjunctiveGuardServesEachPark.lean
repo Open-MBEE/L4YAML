@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 674 — a disjunctive guard serves each park its own disjunct
 
@@ -93,3 +98,5 @@ theorem parkMaybe_not_all_closed :
     ⟨Or.inr trivial⟩ rfl
 
 end L4YAML.Tests.Reflections.DisjunctiveGuardServesEachPark
+
+end Blanket

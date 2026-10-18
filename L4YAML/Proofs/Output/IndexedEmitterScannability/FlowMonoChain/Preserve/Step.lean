@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Basic
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Basic
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Preserve.Step` — Phase 3 Step 6f.3b3.flowmono.preserve.step
 
@@ -509,3 +514,5 @@ lemma scanNextTokenIx_dispatchContent_preserves_simpleKeyStack
               · cases h
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

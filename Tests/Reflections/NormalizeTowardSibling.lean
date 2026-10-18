@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 631 — a behaviour change's price is INVARIANT ripple + SHAPE ripple
 
@@ -158,3 +163,5 @@ def consumersOfChangedConclusion : Nat := 6
 #guard measuredRipple - invariantSites == shapeSites
 
 end L4YAML.Tests.Reflections.NormalizeTowardSibling
+
+end Blanket

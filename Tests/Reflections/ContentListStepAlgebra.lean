@@ -1,6 +1,10 @@
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 579 — INHABITATION PROBE for Front B's brick-3 content-list step algebra (§5.9)
@@ -170,3 +174,5 @@ discharged — the audits certify `[propext]`, with no `Classical.choice` and no
 #print axioms contentEqPairList_push
 
 end ContentListStepAlgebra
+
+end Blanket

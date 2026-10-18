@@ -1,9 +1,17 @@
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Proofs.Parser.ParserScannableBase
-import L4YAML.Proofs.Parser.ParserSoundness
-import L4YAML.Output.Dump
-import L4YAML.Output.Emitter
-import L4YAML.Parser.Composition
+module
+
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Parser.ParserScannableBase
+public import L4YAML.Proofs.Parser.ParserSoundness
+public import L4YAML.Output.Dump
+public meta import L4YAML.Output.Dump
+public import L4YAML.Output.Emitter
+public meta import L4YAML.Output.Emitter
+public import L4YAML.Parser.Composition
+
+public meta import L4YAML.Parser.Composition
+public meta import L4YAML.Spec.Types
+@[expose] public section Blanket
 
 /-!
 # `[104] c-ns-alias-node` — the route is inhabited
@@ -144,3 +152,5 @@ def refusesAlias (src : String) : Bool :=
 #guard refusesAlias "*y\n---\n&y b\n" -- the anchor is in a later document
 
 end L4YAML.Tests.Guards.AliasNodeRoute
+
+end Blanket

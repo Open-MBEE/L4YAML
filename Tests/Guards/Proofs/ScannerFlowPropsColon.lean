@@ -1,7 +1,16 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+
+public meta import L4YAML.Scanner.IndexedDispatch
+public meta import L4YAML.Token.Token
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -205,3 +214,5 @@ held run is visible as additive. -/
   ["+STR", "+DOC", "+SEQ []", "=VAL &a :b", "-SEQ", "-DOC", "-STR"]
 
 end Tests.Guards.ScannerFlowPropsColon
+
+end Blanket

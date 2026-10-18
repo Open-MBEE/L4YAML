@@ -1,6 +1,14 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -157,3 +165,5 @@ re-reads a parked property run as a key. -/
   ["+STR", "+DOC", "+MAP", "=VAL <!t> :", "=VAL :b", "-MAP", "-DOC", "-STR"]
 
 end Tests.Guards.ScannerDocEndTail
+
+end Blanket

@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Node
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Surface.Node
+public import L4YAML.Spec.CharPredicates
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-!
 # Document & Stream Surface Syntax — Chapter 9
@@ -346,3 +352,5 @@ lemma indent_coupling (n : Nat) (cs : List Char) (col : Nat) :
       exact SIndent.succ k rest col _ ih_result
 
 end L4YAML.Surface
+
+end Blanket

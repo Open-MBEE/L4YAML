@@ -290,11 +290,21 @@ if wants 3; then
   say "Phase 3 — proof-hygiene gates"
   LOG="$LOGS/03-gates.log"
   : > "$LOG"
+  # A gate's verdict has to reach the SUMMARY, not just the log.  Printing
+  # `FAILED` into $LOG and warning on stderr left the status file saying only
+  # `env clean: N theorems`, so the run exited 0 with two gates red and the
+  # module-system branch read as green for a day (2026-10-17).  `note` is what
+  # the end-of-run `grep FAILED "$STATUS_FILE"` reads.
+  GATES_FAILED=""
   for g in check-theorem-keyword check-import-closure check-reflection-index check-closure-log; do
     printf '%-26s ' "$g" | tee -a "$LOG"
     if bash "scripts/$g.sh" >> "$LOG" 2>&1; then echo "ok" | tee -a "$LOG"
-    else echo "FAILED" | tee -a "$LOG"; warn "$g failed — see $LOG"; fi
+    else
+      echo "FAILED" | tee -a "$LOG"; warn "$g failed — see $LOG"
+      GATES_FAILED="${GATES_FAILED:+$GATES_FAILED }$g"
+    fi
   done
+  if [ -n "$GATES_FAILED" ]; then note 3 hygiene-gates "FAILED: $GATES_FAILED"; fi
   # The kernel-accurate half: zero theorems with a sorry, zero custom axioms,
   # measured over the compiled environment rather than by grepping sources.
   python3 - "$REPORTS/stats.json" <<'EOF' | tee -a "$LOG"

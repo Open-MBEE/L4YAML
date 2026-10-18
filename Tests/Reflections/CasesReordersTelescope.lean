@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 611 — `cases` reorders the constructor telescope
 
@@ -189,3 +194,5 @@ info: 'CasesReordersTelescope.rename_i_declaration_order_binds_swapped' does not
 #print axioms rename_i_declaration_order_binds_swapped
 
 end CasesReordersTelescope
+
+end Blanket

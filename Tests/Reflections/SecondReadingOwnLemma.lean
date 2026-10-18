@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 640 — a narrow reading of the same walk is a SECOND lemma, not a conjunct — unless it names the wide conclusion's ∃-bound witnesses
 
@@ -173,3 +178,5 @@ def runtimeEdits : Nat := 0
 #guard runtimeEdits == 0
 
 end L4YAML.Tests.Reflections.SecondReadingOwnLemma
+
+end Blanket

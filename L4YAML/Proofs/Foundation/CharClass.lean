@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.CharPredicates
+
+@[expose] public section Blanket
 
 /-!
 # Character Classification Correspondence Proofs (Layer 1c)
@@ -231,3 +236,5 @@ lemma ofNat_eq_zero_iff_of_isValidChar {n : Nat} (h : n.isValidChar) :
   · intro hz; subst hz; rfl
 
 end L4YAML.Proofs.CharClass
+
+end Blanket

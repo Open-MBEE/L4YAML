@@ -2,12 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.ScannerCoupling
-import L4YAML.Proofs.Production.NodeProduction
-import L4YAML.Proofs.Scanner.ScannerLinePreservation
-import L4YAML.Proofs.Scanner.PreprocessIndentStable
-import L4YAML.Proofs.Coupling.LandingTab
-import L4YAML.Proofs.Scanner.EntryBoundaryLayout
+
+module
+
+public import L4YAML.Proofs.Coupling.ScannerCoupling
+public import L4YAML.Proofs.Production.NodeProduction
+public import L4YAML.Proofs.Scanner.ScannerLinePreservation
+public import L4YAML.Proofs.Scanner.PreprocessIndentStable
+public import L4YAML.Proofs.Coupling.LandingTab
+public import L4YAML.Proofs.Scanner.EntryBoundaryLayout
+
+@[expose] public section Blanket
 
 /-! # Preprocessing Production Coupling (Layer 4b)
 
@@ -1301,3 +1306,5 @@ lemma SFlowMapEntries_extendSep {n : Nat} {c : YamlContext} {s s_e s' : SurfPos}
            .consMore he hsep hcomma hsep' tail' h_cl'⟩
 
 end L4YAML.Proofs.PreprocessProduction
+
+end Blanket

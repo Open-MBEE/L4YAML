@@ -1,5 +1,12 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
+module
+
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+
+public meta import L4YAML.Scanner.IndexedDispatch
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -129,3 +136,5 @@ stream, and each is valid — which is why the test carries the `s.inFlow` gate.
 #guard bothAccept "k: &alias1 v\ntop3: &node3 \n  *alias1 : scalar3\n"
 
 end Tests.Guards.ScannerFlowKeyPredecessor
+
+end Blanket

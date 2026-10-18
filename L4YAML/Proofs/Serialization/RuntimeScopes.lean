@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Parser.TokenParser
-import L4YAML.Scanner.Scanner
-import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+module
+
+public import L4YAML.Parser.TokenParser
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+@[expose] public section Blanket
 
 /-!
 # Runtime document-scope bridges
@@ -107,3 +112,5 @@ end L4YAML.Proofs.Serialization.RuntimeScopes
 
 #print axioms L4YAML.Proofs.Serialization.RuntimeScopes.documentEvents_reset_before_directives
 #print axioms L4YAML.Proofs.Serialization.RuntimeScopes.tag_directive_reset_order_separator
+
+end Blanket

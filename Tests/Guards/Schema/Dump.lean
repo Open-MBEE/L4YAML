@@ -1,4 +1,14 @@
-import L4YAML.Schema.Dump
+module
+
+public import L4YAML.Schema.Dump
+
+
+
+
+public meta import L4YAML.Spec.Types
+public meta import L4YAML.Schema.Dump
+public meta import L4YAML.Schema.FromToYaml
+@[expose] public section Blanket
 
 namespace L4YAML.Schema.Dump
 
@@ -75,3 +85,5 @@ open L4YAML.Schema.Dump
 #guard dumpTypedDocuments [(1 : Nat), 2] == "1\n---\n2\n..."
 
 end L4YAML.Schema.Dump
+
+end Blanket

@@ -34,7 +34,11 @@ from pathlib import Path
 
 INDEX = Path("Tests/Reflections.lean")
 
-IMPORT_RE = re.compile(r"^import\s+Tests\.Reflections\.(\S+)", re.M)
+# `public import` / `meta import` / `import all` are all imports; a regex that
+# matched only the bare form read the migrated index as empty and reported all
+# 230 reflections missing from it (2026-10-17).
+IMPORT_RE = re.compile(
+    r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?Tests\.Reflections\.(\S+)", re.M)
 SUBTHEME_RE = re.compile(r"^###\s+(.*?)\s*\(Reflections?\s+([^)]*)\)\s*$")
 BULLET_RE = re.compile(r"^\*\s+`([A-Za-z0-9_.]+)`\s*—\s*(.*)$")
 

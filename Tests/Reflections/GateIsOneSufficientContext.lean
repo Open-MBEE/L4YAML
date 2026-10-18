@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A soundness gate names ONE sufficient context (Reflection 623)
 
 A guard reads a lookback and concludes something about structure.  It is sound
@@ -239,3 +244,5 @@ def sameLineTwin : List Atom := [.prop, .prop, .item]
 #guard (overAccepts .block (trustBoth .block)).all (fun as => as.contains .br)
 
 end Tests.Reflections.GateIsOneSufficientContext
+
+end Blanket

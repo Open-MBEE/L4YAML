@@ -1,6 +1,10 @@
-import L4YAML.Spec.Types
-import L4YAML.Schema.Schema
-import Std.Data.HashMap
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Schema.Schema
+public import Std.Data.HashMap
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -243,3 +247,5 @@ instance {α : Type} [FromYaml α] : FromYaml (Std.HashMap String α) where
     | v => .error (.notAMapping v)
 
 end L4YAML.Schema
+
+end Blanket

@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A guard you wrote to REFUTE also PRODUCES (Reflection 627)
 
 A strictening lands, and its first consumer is always a refutation: some arm has
@@ -192,3 +197,5 @@ told you this case was impossible. -/
 #guard ((allToks.filter (fun t => tailOf t == Tail.sep)).filter isProperty).length == 0
 
 end Tests.Reflections.GuardWrittenToRefuteAlsoProduces
+
+end Blanket

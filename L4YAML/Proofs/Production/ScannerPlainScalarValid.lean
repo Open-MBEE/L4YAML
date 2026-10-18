@@ -2,12 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Grammar
-import L4YAML.Proofs.Scanner.ScannerPlainScalar
-import L4YAML.Proofs.Scanner.ScannerCorrectness
-import L4YAML.Proofs.Scanner.ScannerFlowCollection
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Proofs.Scanner.ScannerPlainScalar
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.ScannerFlowCollection
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+
+@[expose] public section Blanket
 
 /-!
 # Plain Scalar Validity for the Full Scan Chain (B3.5)
@@ -1667,6 +1672,10 @@ lemma fpsv_of_not_plain (tok : Positioned YamlToken)
   cases val <;> simp_all
   rename_i content style; cases style <;> simp_all
 
+-- `unusedSimpArgs` misreports the rewrite in this proof: dropping the argument
+-- makes it fail with a type mismatch, because the rewrite is what brings the
+-- goal's generated matcher application into the shape the step lemma states.
+set_option linter.unusedSimpArgs false in
 /-- `flowNesting.go` on non-flow tokens returns depth unchanged. -/
 lemma flowNesting_go_non_flow
     (tokens : Array (Positioned YamlToken)) (pos target depth : Nat)
@@ -1690,7 +1699,11 @@ lemma flowNesting_go_non_flow
         | _ => depth) = depth := by
         generalize h_tok : (tokens[pos]'h_pos).val = tok
         cases tok <;> simp_all
-      rw [this]
+      -- `simp only`, not `rw`: the two `match` applications are different
+      -- generated matcher constants -- one elaborated here, one inside the
+      -- step lemma's statement -- so kabstract finds no syntactic occurrence
+      -- while simp matches them up to reducible defeq.
+      simp only [this]
       exact ih (pos + 1) depth (fun j hge hlt hj => h_nf j (by omega) hlt hj) (by omega)
     · exact flowNesting_go_oob tokens pos target depth (by omega)
 
@@ -4022,6 +4035,10 @@ lemma flowNesting_depth_non_flow (v : YamlToken) (depth : Nat)
      | _ => depth) = depth := by
   cases v <;> first | contradiction | rfl
 
+-- `unusedSimpArgs` misreports the rewrite in this proof: dropping the argument
+-- makes it fail with a type mismatch, because the rewrite is what brings the
+-- goal's generated matcher application into the shape the step lemma states.
+set_option linter.unusedSimpArgs false in
 /-- Replacing a non-flow token with another non-flow token preserves `flowNesting.go`. -/
 lemma flowNesting_go_setIfInBounds_non_flow
     (tokens : Array (Positioned YamlToken))
@@ -4060,7 +4077,7 @@ lemma flowNesting_go_setIfInBounds_non_flow
          | .flowSequenceEnd | .flowMappingEnd => if depth > 0 then depth - 1 else 0
          | _ => depth) = depth := by
           generalize (tokens[idx]'h_pos).val = v at ho1 ho2 ho3 ho4; cases v <;> first | contradiction | rfl
-        rw [hd1, hd2]
+        simp only [hd1, hd2]
         exact ih (idx + 1) _ (by omega)
       · rw [ite_eq_right h_eq]
         exact ih (pos + 1) _ (by omega)
@@ -5660,3 +5677,5 @@ lemma scan_flow_brackets_matched (input : String)
   · simp at h
 
 end L4YAML.Proofs.ScannerPlainScalarValid
+
+end Blanket

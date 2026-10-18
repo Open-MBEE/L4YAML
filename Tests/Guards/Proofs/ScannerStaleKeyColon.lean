@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -162,3 +169,5 @@ example {sc s_prep s' : ScannerState}
     h_noflow h_dispatch
 
 end L4YAML.Tests.Guards.ScannerStaleKeyColon
+
+end Blanket

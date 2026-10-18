@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 678 — the break binds the index
 
@@ -68,3 +73,5 @@ theorem landed_not_universal : ¬ (∀ n, ReadsAt (some 0) n) := by
   simp at this
 
 end L4YAML.Tests.Reflections.TheBreakBindsTheIndex
+
+end Blanket

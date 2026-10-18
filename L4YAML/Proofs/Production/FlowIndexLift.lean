@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Node
+
+module
+
+public import L4YAML.Surface.Node
+
+@[expose] public section Blanket
 
 /-! # Reading-index lifts for scalar tokens and landing runs (DOCS item 45)
 
@@ -345,3 +350,5 @@ lemma SFlowNode_at (n : Nat) {c : L4YAML.YamlContext} {s s' : SurfPos}
     · exact Or.inr (.separator n hx)
 
 end L4YAML.Proofs.FlowIndexLift
+
+end Blanket

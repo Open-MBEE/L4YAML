@@ -2,16 +2,21 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Serialization.SerializationWellFormed
-import L4YAML.Proofs.Serialization.SourceEvents
-import L4YAML.Proofs.Serialization.RuntimeScopes
-import L4YAML.Proofs.Serialization.AnchorTiming
-import L4YAML.Proofs.Serialization.CommitTrace
-import L4YAML.Proofs.Serialization.SurfaceEvents
-import L4YAML.Proofs.Serialization.AnchorRuntime
-import L4YAML.Proofs.Serialization.ErrorCensus
-import L4YAML.Proofs.Serialization.Census
-import L4YAML.Proofs.Serialization.ExecutableBoundary
+
+module
+
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+public import L4YAML.Proofs.Serialization.SourceEvents
+public import L4YAML.Proofs.Serialization.RuntimeScopes
+public import L4YAML.Proofs.Serialization.AnchorTiming
+public import L4YAML.Proofs.Serialization.CommitTrace
+public import L4YAML.Proofs.Serialization.SurfaceEvents
+public import L4YAML.Proofs.Serialization.AnchorRuntime
+public import L4YAML.Proofs.Serialization.ErrorCensus
+public import L4YAML.Proofs.Serialization.Census
+public import L4YAML.Proofs.Serialization.ExecutableBoundary
+
+@[expose] public section Blanket
 
 /-!
 # Stateful serialization semantics
@@ -22,3 +27,5 @@ exact scanner-plus-token-parser acceptance factorization selected for the load
 capstone. The independent whole-input event traversal remains separate from
 the surface-language work.
 -/
+
+end Blanket

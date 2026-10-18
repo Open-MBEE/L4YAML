@@ -2,10 +2,23 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
-import L4YAML.Proofs.RoundTrip.RoundTrip
-import L4YAML.Proofs.Coupling.CouplingBridge
-import L4YAML.Scanner.IndexedScanner
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+public meta import L4YAML.Proofs.RoundTrip.RoundTrip
+public import L4YAML.Proofs.Coupling.CouplingBridge
+public import L4YAML.Scanner.IndexedScanner
+
+public meta import L4YAML.Scanner.IndexedScanner
+
+-- `String.foldl` is sealed by its producer; `import all` of its
+
+-- declaring module unseals the body this file reduces through.
+
+import all Init.Data.String.Iterate
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.Basic` — Phase 3 Step 6f.3b3 (`.basic` landed)
 
@@ -1224,3 +1237,5 @@ lemma quotedScalarErrLoopIx_escapeString_none {input : String}
         exact ih c.advance fuel' hcorr_c (by omega)
 
 end L4YAML.Proofs.Indexed.EmitterScannability.Basic
+
+end Blanket

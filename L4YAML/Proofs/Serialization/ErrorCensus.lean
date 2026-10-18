@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Token.Token
+
+module
+
+public import L4YAML.Token.Token
+
+@[expose] public section Blanket
 
 /-!
 # L4YAML rejection-boundary census
@@ -106,3 +111,5 @@ end L4YAML.Proofs.Serialization.ErrorCensus
 
 #print axioms L4YAML.Proofs.Serialization.ErrorCensus.serialization_error_iff
 #print axioms L4YAML.Proofs.Serialization.ErrorCensus.resource_guards_not_serialization
+
+end Blanket

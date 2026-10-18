@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Production.ScalarFoldAt
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Production.ScalarFoldAt
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -156,3 +163,5 @@ example {n : Nat} {sc : ScannerState} {sp : SurfPos} {s' : ScannerState} {c : Ch
   scanPlainScalar_to_flowContent_at n sc sp hcorr hpeek hstart h_not_doc hok hinflow hn
 
 end L4YAML.Tests.Guards.ScannerPlainBlankFoldTab
+
+end Blanket

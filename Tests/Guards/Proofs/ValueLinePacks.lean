@@ -331,12 +331,22 @@ def isDataTy (ty : Expr) : Bool :=
   | _ => (piConcl ty).isSort
 
 /-- A `have`'s label: its name, its source, and — for a transport — the
-    hypotheses the transport takes. -/
+    hypotheses the transport takes.
+
+    **The head is read under `privateToUserName`, and that is the whole reason
+    these rows carry their binder lists.**  A transport's head is usually a
+    generated matcher, and the library exports a generated auxiliary under a
+    private name — `_private.L4YAML.Proofs.Production.StreamAccum.0.L4YAML.Proofs.StreamAccum.compact_open_map.match_1_3`
+    is the head of `compact_open_map`'s `h_vslot105`.  Its `getRoot` is
+    `_private`, so a raw root test rejects every transport the library writes
+    and the list after `<param:…` comes out empty on nine rows.  The
+    declaration is the library's either way; the mangling is a name, not a
+    fact about the term. -/
 def letLabel (st : Stack) (n : Name) (v : Expr) : MetaM String := do
   let v' := peelSafe v
   let src ← sourceOf st v
   let inputs : Array String := match v'.getAppFn with
-    | .const c _ => if c.getRoot == `L4YAML then v'.getAppArgs.filterMap (fun a =>
+    | .const c _ => if (Lean.privateToUserName c).getRoot == `L4YAML then v'.getAppArgs.filterMap (fun a =>
         match a.consumeMData with
         | .bvar i => if i < st.size then (if isDataTy st[st.size - 1 - i]!.ty then none else some (bname st[st.size - 1 - i]!.name)) else none
         | _ => none) else #[]
@@ -758,6 +768,12 @@ def expectedParams : List String := [
   "indicator_open_map.h_explUp_chain arm=l lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "question_open_map.h_explUp_chain arm=l lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "slotChainMap.up arm=l lvl=∀nvX∈ns premises=[SBlockIndented(nv)] ⊢ ExplValueLine(nvX) tail=no"]
+-- The nine rows carrying a `(h_vslot)`-style binder list after `<param:…` read
+-- the list through `letLabel`'s `privateToUserName`.  Without it the module
+-- system's name for a generated matcher (`_private.<module>.0.<name>`) fails a
+-- root test and all nine come out bare -- 151 rows in, 151 rows out, the names
+-- silently absent, every tally unchanged.  The list is the only thing that
+-- moves, which is what made it worth a one-line fix rather than a re-pin.
 def expectedWriters : List String := [
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslot idx=k := paid:chain ns=nv spend=hkv←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ held(h_valF)",
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp idx=k := paid:chain ns=nsU spend=hkvU←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ level-var",

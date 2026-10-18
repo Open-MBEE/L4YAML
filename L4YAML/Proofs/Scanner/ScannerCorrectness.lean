@@ -2,13 +2,18 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.Scanner
-import L4YAML.Spec.Grammar
-import L4YAML.Proofs.Scanner.ScannerProofs
-import L4YAML.Proofs.Scanner.ScannerProgress
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
-import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Spec.Grammar
+public import L4YAML.Proofs.Scanner.ScannerProofs
+public import L4YAML.Proofs.Scanner.ScannerProgress
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+@[expose] public section Blanket
 
 /-!
 # Scanner Correctness (P10.11a)
@@ -181,8 +186,9 @@ For any index i < original size, tokens[i] remains unchanged. -/
 lemma emit_preserves_tokens_at (s : ScannerState) (tok : YamlToken)
     (i : Nat) (h : i < s.tokens.size) :
     (s.emit tok).tokens[i]'(by have := emit_tokens_size s tok; omega) = s.tokens[i] := by
-  unfold ScannerState.emit
-  simp only [Array.getElem_push]
+  -- The index proof is typed at the un-unfolded `emit`, so unfolding first
+  -- leaves `Array.getElem_push` unable to match; unfold in the same pass.
+  simp only [ScannerState.emit, Array.getElem_push]
   split
   · rfl
   · -- This branch is when i = s.tokens.size, but h says i < s.tokens.size
@@ -2317,8 +2323,8 @@ lemma preprocess_preserves_prefix (s : ScannerState) (s1 : ScannerState) (c : Ch
 lemma emitAt_preserves_tokens_at (s : ScannerState) (pos : YamlPos) (tok : YamlToken)
     (i : Nat) (h : i < s.tokens.size) :
     (s.emitAt pos tok).tokens[i]'(by rw [emitAt_tokens_size]; omega) = s.tokens[i] := by
-  unfold ScannerState.emitAt
-  simp only [Array.getElem_push]
+  -- Same shape as `emit_preserves_tokens_at`: unfold inside the simp pass.
+  simp only [ScannerState.emitAt, Array.getElem_push]
   split
   · rfl
   · omega
@@ -2377,8 +2383,8 @@ lemma emit_unwind_preserves_prefix (s : ScannerState) (n : Int)
       have h3 : { unwindIndents s n with simpleKey := sk }.tokens.size
                 = (unwindIndents s n).tokens.size := rfl
       omega) = s.tokens[i] := by
-  unfold ScannerState.emit
-  simp only [Array.getElem_push]
+  -- Same shape as `emit_preserves_tokens_at`: unfold inside the simp pass.
+  simp only [ScannerState.emit, Array.getElem_push]
   split
   · exact unwindIndents_preserves_prefix s n i h_i
   · have := unwindIndents_adds_tokens s n; omega
@@ -12207,3 +12213,5 @@ lemma scanNextToken_preserves_KeysBehindCursor (s s' : ScannerState)
                           (dispatchContent_offset_gt sp2 _ c h_hm2 h_peek2 hnoDoc2 h_dc) h_kab2
 
 end L4YAML.Proofs.ScannerCorrectness
+
+end Blanket

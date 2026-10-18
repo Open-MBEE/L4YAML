@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 647 — a production's "auto-detected" parameter is an EXISTENTIAL; inline it as a constant and the language silently shrinks, bind it inside the repetition and the language silently grows
 
@@ -184,3 +189,5 @@ def grammarEditsMade : Nat := 0
 #guard grammarEditsMade == 0
 
 end L4YAML.Tests.Reflections.AutoDetectedIsExistential
+
+end Blanket

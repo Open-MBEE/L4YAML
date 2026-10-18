@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -320,3 +325,5 @@ What no refusal reaches stays §2's second measurement, now with a flow witness:
 `k:⏎␣␣"a"⏎␣␣␣␣[1, 2]` scans clean and only `TokenParser` refuses it. -/
 
 end L4YAML.Tests.Guards.StreamFlowLandingRefusal
+
+end Blanket

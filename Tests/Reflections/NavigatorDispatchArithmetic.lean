@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 350 — a position-indexed navigator splits DECISION from CORRECTNESS: the bottom-up locator's branch dispatch is pure offset/length arithmetic, balance is demoted to the correctness side
 
@@ -132,3 +137,5 @@ theorem balance_arg_redundant (off L a : Nat) (_hb : Balance off a) :
     classifyWithBalance off L a _hb = classifyMove off L a := rfl
 
 end Tests.Reflections.NavigatorDispatchArithmetic
+
+end Blanket

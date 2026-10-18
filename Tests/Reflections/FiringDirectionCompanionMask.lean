@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 633 — the FIRING direction of a strictened guard costs a
 # one-directional companion mask
@@ -123,3 +128,5 @@ def sorriesAfter : Nat := 1
 #guard sorriesAfter == 1
 
 end L4YAML.Tests.Reflections.FiringDirectionCompanionMask
+
+end Blanket

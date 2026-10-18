@@ -1,4 +1,8 @@
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Output.EventsIx
+
+@[expose] public section Blanket
 
 /-!
 # l4yaml-event-ix — test-suite event stream emitter, indexed pipeline
@@ -18,3 +22,5 @@ def main : IO UInt32 := do
   | .error e =>
     IO.eprintln (toString e)
     return 1
+
+end Blanket

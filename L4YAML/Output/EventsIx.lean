@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Output.Events
-import L4YAML.Parser.IndexedComposition
+
+module
+
+public import L4YAML.Output.Events
+public import L4YAML.Parser.IndexedComposition
+
+@[expose] public section Blanket
 
 /-!
 # Event Stream Emitter — indexed-pipeline twin
@@ -105,3 +110,5 @@ def streamToEventsIx (input : String) : Except ScanError String :=
   | .error e => .error e
 
 end L4YAML.Events
+
+end Blanket

@@ -1,4 +1,10 @@
-import L4YAML.Proofs.Errors.EscapeResolution
+module
+
+public import L4YAML.Proofs.Errors.EscapeResolution
+
+
+public meta import L4YAML.Parser.Composition
+@[expose] public section Blanket
 
 namespace L4YAML.Proofs.EscapeResolution
 
@@ -52,3 +58,5 @@ private def parseScalar (s : String) : Option String :=
 #guard parseScalar "\"\\U00110000\"" == none                -- past the end (unchanged)
 
 end L4YAML.Proofs.EscapeResolution
+
+end Blanket

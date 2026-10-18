@@ -228,11 +228,16 @@ def shownName (n : Name) : String :=
     shows the collapse is not available. -/
 partial def chaseWith (peel : Peel) (env : Environment) (fuel : Nat)
     (seen : Std.HashSet String) (c : Name) (i : Nat) : Std.HashSet String :=
-  let k := s!"{c}#{i}"
+  -- Print the USER name: a private-mangled `_private.<module>.0.<name>` makes
+  -- `isLibTerminal` read a library terminal as a core one, which moved 13 binders
+  -- into the CORE-TERMINAL shortlist.  The `seen` set stays keyed on the RAW name,
+  -- because two modules' private declarations can share one user name.
+  let kraw := s!"{c}#{i}"
+  let k := s!"{Lean.privateToUserName c}#{i}"
   if fuel == 0 then (({} : Std.HashSet String).insert "FUEL")
-  else if seen.contains k then {}
+  else if seen.contains kraw then {}
   else
-    let seen := seen.insert k
+    let seen := seen.insert kraw
     match binderUsesWith peel env c i with
     | none =>
         if isCtor env c then (({} : Std.HashSet String).insert s!"FIELD@{k}")
@@ -244,10 +249,10 @@ partial def chaseWith (peel : Peel) (env : Environment) (fuel : Nat)
           let mut out : Std.HashSet String := {}
           for u in us do
             match u with
-            | .elim g j => out := out.insert s!"ELIM@{c}#{i}>{g}#{j}"
+            | .elim g j => out := out.insert s!"ELIM@{Lean.privateToUserName c}#{i}>{Lean.privateToUserName g}#{j}"
             | .applied => out := out.insert s!"APPLIED@{k}"
             | .projd => out := out.insert s!"PROJ@{k}"
-            | .field g j => out := out.insert s!"FIELD@{g}#{j}"
+            | .field g j => out := out.insert s!"FIELD@{Lean.privateToUserName g}#{j}"
             | .bare => out := out.insert s!"RETURN@{k}"
             | .inTy => out := out.insert s!"TYPE@{k}"
             | .relay g j =>
@@ -419,8 +424,18 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
     build does emit is
     `scratchpad/l4yaml-435-migration/verdict-roster-435.out`, so the next move
     is diffable. -/
+-- 2026-10-17: `constants` 1165 → 1271, `decls` 985 → 1002, `RELAY` 2110 → 2139
+-- when the library took `module` headers.  Every other lane held exactly --
+-- `eta=374 FIELD=152 READ=1055 RETURN=49 UNUSED=9` -- and the roster says what
+-- moved rather than only that something did: diffing
+-- `scratchpad/l4yaml-modules/verdict-roster-modules.out` (3778 rows) against the
+-- pre-migration `scratchpad/l4yaml-435-migration/verdict-roster-435.out` (3749)
+-- gives ZERO rows lost and 29 gained, and all 29 are matcher EQUATION lemmas
+-- (`<decl>.match_N.eq_M`, anonymous binders) that `@[expose]` now forces into the
+-- environment.  The +106 constants are their declarations plus the ones carrying
+-- no Prop binder.  So the denominator grew; no verdict moved.
 def expectedModuleTally : String :=
-  "constants=1165 decls=985 eta=374 FIELD=152 READ=1055 RELAY=2110 RETURN=49 UNUSED=9"
+  "constants=1271 decls=1002 eta=374 FIELD=152 READ=1055 RELAY=2139 RETURN=49 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",
@@ -438,7 +453,21 @@ run_cmd do
   let modIdx := env.getModuleIdxFor? ``colon_fires_implicit_key
   let mut names : Array Name := #[]
   for (nm, _) in env.constants.toList do
-    if nm.isInternal then continue
+    -- Filter on the USER name, not the raw one.  Since the library took `module`
+    -- headers its generated auxiliaries are private, so their real names read
+    -- `_private.<module>.0.<name>`; such a name starts with `_`, so `isInternal`
+    -- is true for it and the L4YAML prefix test fails.  Filtering the raw name
+    -- therefore DISCARDS them -- `constants` read 959 instead of 1165 -- while the
+    -- declarations are still in the environment.
+    --
+    -- `authoredPrivate` is the other half: the module system privatises GENERATED
+    -- auxiliaries, and recovering those is the point, but a declaration the author
+    -- wrote `private` was mangled before the migration too and this census never
+    -- counted it.  Recovering that one as well would widen what the instrument
+    -- reports about the library's surface, so it stays excluded.
+    let un := Lean.privateToUserName nm
+    if un.isInternal then continue
+    if Lean.isPrivateName nm && !un.isInternalDetail then continue
     if env.getModuleIdxFor? nm != modIdx then continue
     names := names.push nm
   let mut tally : Std.HashMap String Nat := {}
@@ -493,9 +522,11 @@ run_cmd do
   let mut tally : Std.HashMap String Nat := {}
   let mut total := 0
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    let un := Lean.privateToUserName nm
+    if un.isInternal then continue
+    if Lean.isPrivateName nm && !un.isInternalDetail then continue
+    if !(`L4YAML).isPrefixOf un then continue
+    if (`L4YAML.Tests).isPrefixOf un then continue
     if isMechanism env nm then continue
     for (i, _) in (optBinders ci.type).1 do
       total := total + 1
@@ -561,9 +592,11 @@ run_cmd do
   let env ← getEnv
   let mut core : Array String := #[]
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    let un := Lean.privateToUserName nm
+    if un.isInternal then continue
+    if Lean.isPrivateName nm && !un.isInternalDetail then continue
+    if !(`L4YAML).isPrefixOf un then continue
+    if (`L4YAML.Tests).isPrefixOf un then continue
     if isMechanism env nm then continue
     for (i, bn) in (optBinders ci.type).1 do
       if verdict env nm i != "RELAY" then continue

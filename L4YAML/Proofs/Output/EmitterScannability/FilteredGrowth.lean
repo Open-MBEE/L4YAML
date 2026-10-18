@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+
+@[expose] public section Blanket
 
 /-!
 # Emitter Scannability — Filtered Token Growth Infrastructure
@@ -1738,3 +1743,5 @@ lemma scanNextToken_filtered_grows_in_flow
 
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

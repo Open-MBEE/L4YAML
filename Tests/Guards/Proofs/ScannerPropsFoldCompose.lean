@@ -1,5 +1,12 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -40,3 +47,5 @@ private def emits (input : String) (expected : List String) : Bool :=
    "-SEQ", "-MAP", "-DOC", "-STR"]
 
 end L4YAML.Tests.Guards.ScannerPropsFoldCompose
+
+end Blanket

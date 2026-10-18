@@ -2,10 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Spec.Types
-import L4YAML.Token.Token
-import L4YAML.Spec.YamlSpec
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Spec.Types
+public import L4YAML.Token.Token
+public import L4YAML.Spec.YamlSpec
+public meta import L4YAML.Spec.YamlSpec
+public import L4YAML.Spec.CharPredicates
+
+@[expose] public section Blanket
 
 /-!
 # Formal YAML Grammar
@@ -861,3 +867,5 @@ instance (c : Char) : Decidable (isContentChar c) := by
   unfold isContentChar; infer_instance
 
 end L4YAML.Grammar
+
+end Blanket

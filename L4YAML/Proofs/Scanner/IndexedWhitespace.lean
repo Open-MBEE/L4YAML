@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedScanner
-import L4YAML.Proofs.Foundation.CharClass
+
+module
+
+public import L4YAML.Scanner.IndexedScanner
+public import L4YAML.Proofs.Foundation.CharClass
+
+@[expose] public section Blanket
 
 /-! # `IndexedWhitespace` — Phase 3 character/whitespace spec proofs (staging)
 
@@ -413,3 +418,5 @@ lemma consumeLineBreak_strict {input : String} (c : IxCursor input)
     · rw [consumeLineBreak_CR_no_LF c hp hCRLF]; exact hAdv
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

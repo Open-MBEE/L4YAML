@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 651 — a constant in a precondition is often a quantity you declined to measure
 
@@ -186,3 +191,5 @@ theorem the_narrowing (k : Nat) :
   ⟨rfl, rfl, rfl⟩
 
 end L4YAML.Tests.Reflections.ConstantPreconditionIsUnmeasuredQuantity
+
+end Blanket

@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 655 — a punt may be a lost PROJECTION: read what the CARRIER kept, not only what the producer proved
 
@@ -290,3 +295,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.PuntMayBeALostProjection
+
+end Blanket

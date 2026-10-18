@@ -2,17 +2,23 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Composition
-import L4YAML.Proofs.Scanner.ScanStrictCoupling
-import L4YAML.Proofs.EndToEndCorrectness
-import L4YAML.Proofs.Soundness
-import L4YAML.Proofs.Output.EmitterScannability
-import L4YAML.Proofs.Output.ScannerEmitBridge
-import L4YAML.Proofs.Production.DocumentProduction
-import L4YAML.Proofs.Parser.ParserCompleteness
-import L4YAML.Proofs.Parser.IndexedCompleteness
-import L4YAML.Proofs.Coupling.SurfaceCoupling
-import L4YAML.Proofs.RoundTrip.RoundTrip
+
+module
+
+public import L4YAML.Proofs.Composition
+public import L4YAML.Proofs.Scanner.ScanStrictCoupling
+public import L4YAML.Proofs.EndToEndCorrectness
+public import L4YAML.Proofs.Soundness
+public import L4YAML.Proofs.Output.EmitterScannability
+public import L4YAML.Proofs.Output.ScannerEmitBridge
+public import L4YAML.Proofs.Production.DocumentProduction
+public import L4YAML.Proofs.Parser.ParserCompleteness
+public import L4YAML.Proofs.Parser.IndexedCompleteness
+public import L4YAML.Proofs.Coupling.SurfaceCoupling
+public import L4YAML.Proofs.RoundTrip.RoundTrip
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-!
 # Capstones — the library's trust kernel, machine-pinned
@@ -112,3 +118,5 @@ L4YAML.Proofs.Soundness.validYaml_construct: pure
 #guard (L4YAML.TokenParser.parseYaml "a: 1").isOk
 #guard (L4YAML.TokenParser.parseYaml "- x\n- y").isOk
 #guard (L4YAML.TokenParser.parseYaml "[1, 2, {k: v}]").isOk
+
+end Blanket

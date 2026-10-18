@@ -1,8 +1,16 @@
-import L4YAML.Schema.Schema
-import L4YAML.Schema.FromToYaml
-import L4YAML.Output.Dump
-import L4YAML.Output.Emitter
-import L4YAML.Parser.Composition
+module
+
+public import L4YAML.Schema.Schema
+public import L4YAML.Schema.FromToYaml
+public meta import L4YAML.Schema.FromToYaml
+public import L4YAML.Output.Dump
+public meta import L4YAML.Output.Dump
+public import L4YAML.Output.Emitter
+public import L4YAML.Parser.Composition
+
+public meta import L4YAML.Parser.Composition
+public meta import L4YAML.Spec.Types
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -508,3 +516,5 @@ lemma roundtrip_typed_nested_arrays :
   native_decide
 
 end L4YAML.Proofs.RoundTripComposition
+
+end Blanket

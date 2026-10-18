@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.ScalarProduction
+
+module
+
+public import L4YAML.Proofs.Production.ScalarProduction
+
+@[expose] public section Blanket
 
 /-!
 # The block scalar's detected content indent, kept (DOCS item 26)
@@ -243,3 +248,5 @@ lemma scanBlockScalar_prod_at (sc : ScannerState) (sp : SurfPos)
         exact SCLFolded.mk n (contentIndent - n) rest sc.col sp_nl sp_mid h_header h_at
 
 end L4YAML.Proofs.BlockScalarIndentFloor
+
+end Blanket

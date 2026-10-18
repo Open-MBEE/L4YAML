@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 641 — a carrier's arms are the PRODUCTION's alternatives, not the producer's cases — and a coupling carries what its consumer cannot observe
 
@@ -197,3 +202,5 @@ def runtimeEdits : Nat := 0
 #guard runtimeEdits == 0
 
 end L4YAML.Tests.Reflections.CarrierSeamOfProduction
+
+end Blanket

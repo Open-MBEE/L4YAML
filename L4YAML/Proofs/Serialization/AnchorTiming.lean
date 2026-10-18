@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+module
+
+public import L4YAML.Proofs.Serialization.SerializationWellFormed
+
+@[expose] public section Blanket
 
 /-!
 # Anchor commitment timing
@@ -50,3 +55,5 @@ end L4YAML.Proofs.Serialization.AnchorTiming
 
 #print axioms L4YAML.Proofs.Serialization.AnchorTiming.self_reference_before_commit_rejected
 #print axioms L4YAML.Proofs.Serialization.AnchorTiming.anchor_commit_order_separator
+
+end Blanket

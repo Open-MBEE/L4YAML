@@ -1,6 +1,10 @@
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 577 — INHABITATION PROBE for Front B's value-recovery trace, brick 2 ASSEMBLED
@@ -156,3 +160,5 @@ theorem mapTokens_outer_shape_recovered
 #print axioms parseStream_flowMapStart_recovers_outer_shape
 
 end ValueRecoveryOuterShapeAssembled
+
+end Blanket

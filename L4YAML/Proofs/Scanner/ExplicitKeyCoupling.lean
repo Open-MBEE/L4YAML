@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerCorrectness
-import L4YAML.Proofs.Scanner.ScannerLinePreservation
-import L4YAML.Proofs.Scanner.PreprocessIndentStable
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.ScannerLinePreservation
+public import L4YAML.Proofs.Scanner.PreprocessIndentStable
+
+@[expose] public section Blanket
 
 /-! # The explicit-key coupling's scanner half (DOCS item 124)
 
@@ -2190,3 +2195,5 @@ lemma consumeBOM_preserves_explicitKey (s : ScannerState) :
 
 
 end L4YAML.Proofs.ExplicitKeyCoupling
+
+end Blanket

@@ -243,8 +243,18 @@ declarations' own binders and not by a rescoring of an existing one.
     and so does every named roster below — the lane totals moved, no conclusion
     did. -/
 
+-- 2026-10-17: `constants` 1165 → 1271, `decls` 985 → 1002, `RELAY` 1973 → 2002
+-- when the library took `module` headers; `eta`, `FIELD`, `READ`, `RETURN` and
+-- `UNUSED` all held exactly.  The deltas are the SAME +106/+17/+29 that
+-- `HypothesisReaderCensus` reads under a different peel, which is the evidence
+-- that one set of declarations moved rather than two censuses drifting apart --
+-- and the roster names them: `scratchpad/l4yaml-modules/verdict-roster-modules.out`
+-- against `scratchpad/l4yaml-435-migration/verdict-roster-435.out` is zero rows
+-- lost and 29 gained, every one a matcher equation lemma `<decl>.match_N.eq_M`
+-- that `@[expose]` now forces into the environment.  See [[HypothesisReaderCensus]]
+-- and TODO/l4yaml-module-system.md.
 def expectedModuleTallyP : String :=
-  "constants=1165 decls=985 eta=374 FIELD=171 READ=1093 RELAY=1973 RETURN=129 UNUSED=9"
+  "constants=1271 decls=1002 eta=374 FIELD=171 READ=1093 RELAY=2002 RETURN=129 UNUSED=9"
 
 def expectedOptTallyP : String :=
   "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"
@@ -254,7 +264,13 @@ run_cmd do
   let modIdx := env.getModuleIdxFor? ``colon_fires_implicit_key
   let mut names : Array Name := #[]
   for (nm, _) in env.constants.toList do
-    if nm.isInternal then continue
+    -- Filter the USER name: the library's generated auxiliaries are private under
+    -- the module system, so their real names read `_private.<module>.0.<name>`,
+    -- which `isInternal` and the prefix test both reject.  Authored privates stay
+    -- excluded -- they were mangled before the migration too.
+    let nmU := Lean.privateToUserName nm
+    if nmU.isInternal then continue
+    if Lean.isPrivateName nm && !nmU.isInternalDetail then continue
     if env.getModuleIdxFor? nm != modIdx then continue
     names := names.push nm
   let mut tally : Std.HashMap String Nat := {}
@@ -291,9 +307,15 @@ run_cmd do
   let mut tally : Std.HashMap String Nat := {}
   let mut total := 0
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    -- Filter the USER name: the library's generated auxiliaries are private under
+    -- the module system, so their real names read `_private.<module>.0.<name>`,
+    -- which `isInternal` and the prefix test both reject.  Authored privates stay
+    -- excluded -- they were mangled before the migration too.
+    let nmU := Lean.privateToUserName nm
+    if nmU.isInternal then continue
+    if Lean.isPrivateName nm && !nmU.isInternalDetail then continue
+    if !(`L4YAML).isPrefixOf nmU then continue
+    if (`L4YAML.Tests).isPrefixOf nmU then continue
     if isMechanism env nm then continue
     for (i, _) in (optBinders ci.type).1 do
       total := total + 1
@@ -363,9 +385,15 @@ run_cmd do
   -- …and re-derived, the shortlist is EMPTY, asserted as a count.
   let mut core : Nat := 0
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    -- Filter the USER name: the library's generated auxiliaries are private under
+    -- the module system, so their real names read `_private.<module>.0.<name>`,
+    -- which `isInternal` and the prefix test both reject.  Authored privates stay
+    -- excluded -- they were mangled before the migration too.
+    let nmU := Lean.privateToUserName nm
+    if nmU.isInternal then continue
+    if Lean.isPrivateName nm && !nmU.isInternalDetail then continue
+    if !(`L4YAML).isPrefixOf nmU then continue
+    if (`L4YAML.Tests).isPrefixOf nmU then continue
     if isMechanism env nm then continue
     for (i, _) in (optBinders ci.type).1 do
       if verdictP env nm i != "RELAY" then continue
@@ -510,7 +538,13 @@ run_cmd do
   let modIdx := env.getModuleIdxFor? ``colon_fires_implicit_key
   let mut q : Array Node := #[]
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
+    -- Filter the USER name: the library's generated auxiliaries are private under
+    -- the module system, so their real names read `_private.<module>.0.<name>`,
+    -- which `isInternal` and the prefix test both reject.  Authored privates stay
+    -- excluded -- they were mangled before the migration too.
+    let nmU := Lean.privateToUserName nm
+    if nmU.isInternal then continue
+    if Lean.isPrivateName nm && !nmU.isInternalDetail then continue
     if env.getModuleIdxFor? nm == modIdx then
       for (i, _) in ← propBinders nm do q := q.push ⟨nm, i⟩
     if (`L4YAML).isPrefixOf nm && !(`L4YAML.Tests).isPrefixOf nm
@@ -606,9 +640,15 @@ run_cmd do
   let mut optTy := 0
   let mut ctorFields := 0
   for (nm, ci) in env.constants.toList do
-    if nm.isInternal then continue
-    if !(`L4YAML).isPrefixOf nm then continue
-    if (`L4YAML.Tests).isPrefixOf nm then continue
+    -- Filter the USER name: the library's generated auxiliaries are private under
+    -- the module system, so their real names read `_private.<module>.0.<name>`,
+    -- which `isInternal` and the prefix test both reject.  Authored privates stay
+    -- excluded -- they were mangled before the migration too.
+    let nmU := Lean.privateToUserName nm
+    if nmU.isInternal then continue
+    if Lean.isPrivateName nm && !nmU.isInternalDetail then continue
+    if !(`L4YAML).isPrefixOf nmU then continue
+    if (`L4YAML.Tests).isPrefixOf nmU then continue
     if isMechanism env nm then continue
     let mut t := ci.type
     let mut j := 0

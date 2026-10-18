@@ -3,9 +3,13 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Proofs.Parser.ParserWellBehaved
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Proofs.Output.EmitterScannability.TokVals
+module
+
+public import L4YAML.Proofs.Parser.ParserWellBehaved
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Proofs.Output.EmitterScannability.TokVals
+
+@[expose] public section Blanket
 
 /-!
 # Value locality: the both-success token-`.val`-window joint over the parser clique
@@ -1731,3 +1735,5 @@ lemma parseNode_joint (f1 f2 : Nat) (ps1 ps2 : ParseState) (nn : Nat)
   parseNode_joint_all f1 f1 (Nat.le_refl _) f2 ps1 ps2 nn v1 v2 q1 q2 hnn h_ag h_cl h1 h2 h_fr
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

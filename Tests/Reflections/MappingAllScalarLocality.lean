@@ -1,6 +1,10 @@
-import L4YAML.Proofs.Output.EmitterScannability
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Proofs.Output.EmitterScannability.ScannerSpanLocality
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Proofs.Output.EmitterScannability.ScannerSpanLocality
+
+@[expose] public section Blanket
 
 /-!
 # Reflection -- mapping all-scalar locality branch in emit_roundtrip_mapping_content_eq
@@ -211,3 +215,5 @@ theorem mapping_all_scalar_locality_chain
 #print axioms compose_map_scalar_pair
 
 end MappingAllScalarLocality
+
+end Blanket

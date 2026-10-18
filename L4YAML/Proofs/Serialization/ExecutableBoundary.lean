@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Composition
+
+module
+
+public import L4YAML.Proofs.Composition
+
+@[expose] public section Blanket
 
 /-!
 # Exact executable acceptance boundary
@@ -77,3 +82,5 @@ lemma executable_implies_scanner (input : String) :
 end L4YAML.Proofs.Serialization
 
 #print axioms L4YAML.Proofs.Serialization.parse_iff_executable_language
+
+end Blanket

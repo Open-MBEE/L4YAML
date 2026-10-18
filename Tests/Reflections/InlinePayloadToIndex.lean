@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 610 — inline the payload to index it
 
@@ -162,3 +167,5 @@ theorem hold_fires : Inlined .sep ([Tok.atom] ++ [Tok.comma]) :=
 #print axioms hold_wrapped_false
 
 end InlinePayloadToIndex
+
+end Blanket

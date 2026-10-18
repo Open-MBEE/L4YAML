@@ -3,9 +3,13 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import Lean
-import L4YAML.Schema.FromToYaml
-import L4YAML.Schema.Struct
+module
+
+public import Lean
+public import L4YAML.Schema.FromToYaml
+public import L4YAML.Schema.Struct
+
+@[expose] public section Blanket
 
 /-!
 # Automatic Deriving for FromYaml and ToYaml
@@ -264,3 +268,5 @@ initialize
   registerDerivingHandler ``L4YAML.Schema.ToYaml mkToYamlInstanceHandler
 
 end L4YAML.Deriving
+
+end Blanket

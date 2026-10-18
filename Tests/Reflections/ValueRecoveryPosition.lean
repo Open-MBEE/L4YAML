@@ -1,6 +1,10 @@
-import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
-import L4YAML.Output.Emitter
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ContentFidelity
+public import L4YAML.Output.Emitter
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 576 — INHABITATION PROBE for Front B's value-recovery trace, brick 2 last link (part 2)
@@ -181,3 +185,5 @@ theorem mapTokens_first_doc_at_pos_one
 #print axioms expect_pos_succ
 
 end ValueRecoveryPosition
+
+end Blanket

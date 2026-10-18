@@ -1,5 +1,12 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
+module
+
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+
+public meta import L4YAML.Scanner.IndexedDispatch
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -114,3 +121,5 @@ inside one — is unaffected, and so is every `?` in block context. -/
 #guard bothAccept "- ?\n   a\n"
 
 end Tests.Guards.ScannerFlowKeyFollower
+
+end Blanket

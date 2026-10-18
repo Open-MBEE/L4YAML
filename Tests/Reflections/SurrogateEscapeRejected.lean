@@ -1,6 +1,13 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Proofs.Foundation.CharClass
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Proofs.Foundation.CharClass
+
+@[expose] public section Blanket
 
 /-!
 # Reflection — a total coercion with a silent default turns a weak guard into silent corruption
@@ -45,7 +52,7 @@ open L4YAML.Events
 open L4YAML.Proofs.CharClass
 
 /-- The event stream `streamToEvents` emits for `input`, or a fixed marker on rejection. -/
-private def run (input : String) : String :=
+def run (input : String) : String :=
   match streamToEvents input with | .ok s => s | .error _ => "«rejected»"
 
 /-! ## §1 The lemma the old docstring was missing
@@ -134,11 +141,11 @@ message-diverse between the pipelines, not just this member (`\q`, `\u12`, `\x4`
 parity requires. The acceptance pins are byte-exact against §3's legacy streams. -/
 
 /-- The indexed pipeline's verdict for `input`: `false` iff it rejects. -/
-private def acceptsIx (input : String) : Bool :=
+def acceptsIx (input : String) : Bool :=
   (streamToEventsIx input).isOk
 
 /-- The indexed pipeline's event stream, for the byte-exact acceptance pins. -/
-private def runIx (input : String) : String :=
+def runIx (input : String) : String :=
   match streamToEventsIx input with | .ok s => s | .error _ => "«rejected»"
 
 theorem ix_rejects_u_d800 : acceptsIx "a: \"\\ud800\"\n" = false := by native_decide
@@ -155,3 +162,5 @@ theorem ix_accepts_U_0010ffff :
     runIx "a: \"\\U0010FFFF\"\n" = run "a: \"\\U0010FFFF\"\n" := by native_decide
 
 end SurrogateEscapeRejected
+
+end Blanket

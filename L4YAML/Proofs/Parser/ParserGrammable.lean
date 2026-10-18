@@ -1,12 +1,16 @@
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Production.ScannerPlainScalarValid
-import L4YAML.Proofs.Composition
-import L4YAML.Proofs.Parser.ParserSoundness
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Proofs.Parser.ParserScannableBase
-import L4YAML.Proofs.Parser.ParserWellBehaved
-import L4YAML.Proofs.Parser.ParserAnchorProofs
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Production.ScannerPlainScalarValid
+public import L4YAML.Proofs.Composition
+public import L4YAML.Proofs.Parser.ParserSoundness
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Parser.ParserScannableBase
+public import L4YAML.Proofs.Parser.ParserWellBehaved
+public import L4YAML.Proofs.Parser.ParserAnchorProofs
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -138,3 +142,5 @@ lemma parseYaml_produces_valid_nodes
   · simp at h
 
 end L4YAML.Proofs.ParserGrammable
+
+end Blanket

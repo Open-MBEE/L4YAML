@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Helpers
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Helpers
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Maintenance.FlowDispatch` — Phase 3 Step 6f.3b3.flowmono.maintenance.flowdispatch
 
@@ -463,3 +468,5 @@ lemma scanFlowMappingStartIx_lastRealTokenVal (s : ScannerStateIx input) :
     (show YamlToken.flowMappingStart ≠ YamlToken.placeholder by decide)
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

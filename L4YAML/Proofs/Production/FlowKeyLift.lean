@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Node
-import L4YAML.Spec.CharPredicates
-import L4YAML.Proofs.Foundation.SurfaceSpan
+
+module
+
+public import L4YAML.Surface.Node
+public import L4YAML.Spec.CharPredicates
+public import L4YAML.Proofs.Foundation.SurfaceSpan
+
+@[expose] public section Blanket
 
 /-! # The closed flow node re-read as `[154]`'s key (DOCS item 56)
 
@@ -1015,3 +1020,5 @@ lemma sep_toKey_left_at_zero_width (ch : Char) (rest : List Char) :
     (by simp [atEnd])
 
 end L4YAML.Proofs.FlowKeyLift
+
+end Blanket

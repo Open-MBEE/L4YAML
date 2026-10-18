@@ -1,4 +1,12 @@
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Scanner.Scanner
+
+
+
+public meta import L4YAML.Scanner.Scanner
+public meta import L4YAML.Scanner.State
+@[expose] public section Blanket
 
 /-!
 # The COMPACT route's emptiness, re-measured at the runtime (item 204)
@@ -169,3 +177,5 @@ def refusalCensus : List (String × Nat) := Id.run do
 #guard refusalCensus == [("L4YAML.ScanError.misindentedExplicitValue", 244)]
 
 end Tests.Guards.CompactRouteCensus
+
+end Blanket

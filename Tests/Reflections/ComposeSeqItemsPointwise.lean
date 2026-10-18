@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Output.EmitterScannability
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 595 -- compose sequence items element-wise (outer-parse half)
@@ -147,3 +151,5 @@ theorem scalar_item_concrete_elem0
 #print axioms compose_seq_scalar_item
 
 end ComposeSeqItemsPointwise
+
+end Blanket

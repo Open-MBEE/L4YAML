@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Parser.ParserWellBehaved
+module
+
+public import L4YAML.Proofs.Parser.ParserWellBehaved
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -1341,3 +1345,5 @@ lemma flow_parser_ok_of_structure (tokens : Array (Positioned YamlToken)) (fuel 
          fun lo hi h1 h2 h3 h4 h5 h6 => (key (hi - lo) lo hi (Nat.le_refl _)).2 h1 h2 h3 h4 h5 h6⟩
 
 end L4YAML.Proofs.ParserWellBehaved
+
+end Blanket

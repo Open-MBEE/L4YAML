@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
+
+@[expose] public section Blanket
 
 /-!
 # Block-tracking substrate for flow-collection emitter scannability
@@ -1229,3 +1234,5 @@ lemma emitPairList_scans_block_nonempty (pairs : List (YamlValue × YamlValue))
           (lastNonSep_append_right _ block_v hne_v h_lns_v)
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

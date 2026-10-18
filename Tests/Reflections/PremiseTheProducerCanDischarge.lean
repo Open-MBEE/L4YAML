@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 683 — state the premise the producer can always discharge
 
@@ -171,3 +176,5 @@ theorem fact_observation_separates :
     obsFact gateRanOnFinalLine 1 ≠ obsFact gateNeverRuns 1 := by decide
 
 end L4YAML.Tests.Reflections.PremiseTheProducerCanDischarge
+
+end Blanket

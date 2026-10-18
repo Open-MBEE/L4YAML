@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -214,3 +218,5 @@ private def clearArmSeen (input : String) : Bool :=
 #guard clearArmSeen "? earth: blue\n: moon: white\n"
 
 end Tests.Guards.KeysBehindCursorFloor
+
+end Blanket

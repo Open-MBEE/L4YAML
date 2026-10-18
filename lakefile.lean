@@ -44,11 +44,24 @@ require DocGen4 from git
 
 
 @[default_target]
-lean_lib L4YAML
+lean_lib L4YAML where
+  -- Ratchet: every file of this library carries a `module` header (242/242), and
+  -- this makes Lake refuse a new one that does not.  It reports on the IMPORTER
+  -- side too, so the test libraries that still hold legacy census files opt out
+  -- with `allowNonModules` below -- see TODO/l4yaml-module-system.md for why those
+  -- 48 files stay legacy.
+  requiresModuleSystem := true
 
 @[default_target]
 lean_lib «Tests.Guards» where
   roots := #[`Tests.Guards]
+  -- Importer-side opt-out, scoped to the libraries that still hold legacy census
+  -- files on purpose: a body-reading census cannot take a `module` header without
+  -- `import all` of every module it walks (TODO/l4yaml-module-system.md).  Set per
+  -- library, NOT on the package: on the package it also exempts `lean_lib L4YAML`
+  -- from its own `requiresModuleSystem`, which a positive control caught --
+  -- a genuine legacy library file then built with no complaint at all.
+  allowNonModules := true
 
 -- Item 219's census module, made a library of its own at item 220 so that
 -- later censuses can IMPORT its predicates and its walk.  Its runnable entry
@@ -57,6 +70,7 @@ lean_lib «Tests.Guards» where
 @[default_target]
 lean_lib «Tests.DeclineReachCensus» where
   roots := #[`Tests.DeclineReachCensus]
+  allowNonModules := true
 
 -- Item 220's census, likewise a library: `Tests.Guards.Proofs.DeclineArmLattice`
 -- imports it, and its entry point is `Tests.DeclineArmMain`.

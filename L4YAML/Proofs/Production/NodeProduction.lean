@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.ScalarProduction
-import L4YAML.Proofs.Production.StructureProduction
+
+module
+
+public import L4YAML.Proofs.Production.ScalarProduction
+public import L4YAML.Proofs.Production.StructureProduction
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # Node Production Coupling (Layer 2 of v0.4.6)
 
@@ -1282,3 +1288,5 @@ lemma PendingFlowSeqEntry.finishExplicitPairEmpty {n : Nat} {c : YamlContext}
     h_sep_tr
 
 end L4YAML.Proofs.NodeProduction
+
+end Blanket

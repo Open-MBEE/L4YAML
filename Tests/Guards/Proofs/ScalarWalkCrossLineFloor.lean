@@ -1,7 +1,13 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Proofs.Scanner.ScalarWalkColFloor
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Scanner.Scanner
+public import L4YAML.Proofs.Scanner.ScalarWalkColFloor
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -164,3 +170,5 @@ private def emits (input : String) (expected : List String) : Bool :=
   ["+STR", "+DOC", "+MAP", "=VAL :k", "=VAL 'a b", "-MAP", "-DOC", "-STR"]
 
 end L4YAML.Tests.Guards.ScalarWalkCrossLineFloor
+
+end Blanket

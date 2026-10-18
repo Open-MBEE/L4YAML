@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Output.EmitterScannability
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability
+
+@[expose] public section Blanket
 
 /-!
 # Reflection 604 -- compose mapping pairs element-wise (outer-parse half, R604)
@@ -151,3 +155,5 @@ theorem scalar_pair_concrete_elem0
 #print axioms compose_map_scalar_pair
 
 end ComposeMapPairsPointwise
+
+end Blanket

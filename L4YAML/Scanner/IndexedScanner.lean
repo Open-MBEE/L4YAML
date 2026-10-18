@@ -2,8 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Indexed.CharStream
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Indexed.CharStream
+public import L4YAML.Spec.CharPredicates
+
+public meta import L4YAML.Spec.YamlSpec
+@[expose] public section Blanket
 
 /-! # `IndexedScanner` — Phase 3 character/whitespace layer (staging)
 
@@ -1653,3 +1659,5 @@ def scanBlockScalarIx {input : String} (c : IxCursor input)
   | none   => none
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

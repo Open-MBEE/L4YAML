@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -286,3 +291,5 @@ item adds no lemma to it, which is items 148–152's factoring continuing to pay
 for itself. -/
 
 end L4YAML.Tests.Guards.PropsParkCoverSpent
+
+end Blanket

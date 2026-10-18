@@ -2,10 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.StructureCoupling
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
-import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+module
+
+public import L4YAML.Proofs.Coupling.StructureCoupling
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.AliasTrailingContent
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-!
 # Scan-Strict Coupling: Full-Consumption Infrastructure
@@ -802,3 +808,5 @@ lemma GPlus_snoc {P : SurfPos → SurfPos → Prop} {a b c : SurfPos}
       (GStar_trans hrest (GStar.cons _ _ _ hlast (GStar.nil _)))
 
 end L4YAML.Proofs.ScanStrictCoupling
+
+end Blanket

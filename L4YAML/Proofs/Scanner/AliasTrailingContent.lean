@@ -1,4 +1,8 @@
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Scanner.Scanner
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -47,3 +51,5 @@ lemma aliasArm_scan_ok {s s' : ScannerState}
     · rw [hv, Except.ok.inj h]
 
 end L4YAML.Scanner
+
+end Blanket

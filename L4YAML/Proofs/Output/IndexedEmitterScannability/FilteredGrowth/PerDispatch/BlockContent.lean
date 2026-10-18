@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Infra
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.StreamStart
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Infra
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.StreamStart
+
+@[expose] public section Blanket
 
 /-! # `FilteredGrowth.PerDispatch.BlockContent` — Phase 3 Step
 `6f.3b3.filteredgrowth.perdispatch.blockcontent`
@@ -602,3 +607,5 @@ lemma dispatchContent_filtered_growsIx {s s' : ScannerStateIx input} {c : Char}
     exact dispatchContent_new_not_placeholderIx h h_strict
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FilteredGrowth
+
+end Blanket

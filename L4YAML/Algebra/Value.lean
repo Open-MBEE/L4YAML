@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Parser.ParserGrammableBase
+
+module
+
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+
+@[expose] public section Blanket
 
 /-! # Value Algebra for `YamlValue`  (Algebra Items 18–21)
 
@@ -203,3 +208,5 @@ lemma stripAnchors_of_cleaned (v : YamlValue) :
   rw [stripAnchors_adaptForFlowContext_comm, stripAnchors_idempotent]
 
 end L4YAML.Algebra.Value
+
+end Blanket

@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 613 — a `do`-block guard costs a join-point layer, so count guards, not logic
 
@@ -240,7 +245,7 @@ One `have __do_jp := …` layer per early-exit guard, nested outermost-last. The
 `threeGuards` three. A toolchain that changes `do`-desugaring will diff here. -/
 
 /--
-info: def DoEarlyExitDuplicatesContinuation.oneGuard : St → Except Err St :=
+info: @[expose] def DoEarlyExitDuplicatesContinuation.oneGuard : St → Except Err St :=
 fun s =>
   have __do_jp := fun __r => body s;
   if s.b = true then do
@@ -252,7 +257,7 @@ fun s =>
 #print oneGuard
 
 /--
-info: def DoEarlyExitDuplicatesContinuation.merged : St → Except Err St :=
+info: @[expose] def DoEarlyExitDuplicatesContinuation.merged : St → Except Err St :=
 fun s =>
   have __do_jp := fun __r => body s;
   match preErr s with
@@ -265,7 +270,7 @@ fun s =>
 #print merged
 
 /--
-info: def DoEarlyExitDuplicatesContinuation.twoGuards : St → Except Err St :=
+info: @[expose] def DoEarlyExitDuplicatesContinuation.twoGuards : St → Except Err St :=
 fun s =>
   have __do_jp := fun __r =>
     have __do_jp := fun __r => body s;
@@ -285,7 +290,7 @@ fun s =>
 but the `simp` expansion of those layers is 2^layers. -/
 
 /--
-info: def DoEarlyExitDuplicatesContinuation.threeGuards : St → Except Err St :=
+info: @[expose] def DoEarlyExitDuplicatesContinuation.threeGuards : St → Except Err St :=
 fun s =>
   have __do_jp := fun __r =>
     have __do_jp := fun __r =>
@@ -307,7 +312,7 @@ fun s =>
 #print threeGuards
 
 /--
-info: def DoEarlyExitDuplicatesContinuation.elseDo : St → Except Err St :=
+info: @[expose] def DoEarlyExitDuplicatesContinuation.elseDo : St → Except Err St :=
 fun s =>
   if s.a = true then throw Err.guardA
   else
@@ -337,3 +342,5 @@ Judge by axiom profile, not by the absence of `sorry` warnings. -/
 #print axioms invert_two
 
 end DoEarlyExitDuplicatesContinuation
+
+end Blanket

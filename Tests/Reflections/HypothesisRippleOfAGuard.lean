@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 632 — a strictened guard's THIRD ripple is the hypothesis chain,
 # and it climbs to the weakest producer
@@ -126,3 +131,5 @@ def corpusSources : Nat := 351
 #guard corpusSources == 351
 
 end L4YAML.Tests.Reflections.HypothesisRippleOfAGuard
+
+end Blanket

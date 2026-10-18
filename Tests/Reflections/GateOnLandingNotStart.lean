@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 643 — gate an arm on the position it LANDS at, not the one it started from; a body already generic in that position needs a second PRODUCER of the gate's fact, not a second body
 
@@ -144,3 +149,5 @@ def runtimeEdits : Nat := 0
 #guard runtimeEdits == 0
 
 end L4YAML.Tests.Reflections.GateOnLandingNotStart
+
+end Blanket

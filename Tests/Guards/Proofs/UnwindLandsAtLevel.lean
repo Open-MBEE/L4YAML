@@ -1,7 +1,13 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -155,3 +161,5 @@ private def scannerRefuses (input : String) : Bool :=
 #guard scannerRefuses "k:\n  a:\n      x: 1\n    b: 2\n"
 
 end L4YAML.Tests.Guards.UnwindLandsAtLevel
+
+end Blanket

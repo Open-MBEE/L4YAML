@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -309,3 +313,5 @@ each that item 149 kept and this item matches.
 so of the three named above only the col-0 park and the sequence parks stand. -/
 
 end L4YAML.Tests.Guards.ValueLineCoverSpent
+
+end Blanket

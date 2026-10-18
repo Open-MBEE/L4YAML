@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedDispatch
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedDispatch
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerCorrectness.OrderedLoop` — §8.9–§8.11
 
@@ -432,3 +437,5 @@ lemma scanIx_valid_token_stream
   · exact scanIx_positions_ordered tokens h
 
 end L4YAML.Proofs.Indexed.ScannerCorrectness
+
+end Blanket

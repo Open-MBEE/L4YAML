@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.FirstFiltered
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Infra
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Turn3
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.FirstFiltered
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Infra
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.PerDispatch
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Turn3
+
+@[expose] public section Blanket
 
 /-! # `IndexedEmitterScannability.FilteredGrowth` — re-export shim
 
@@ -63,3 +68,5 @@ FirstFiltered + Infra + PerDispatch (2/2) + Turn3 all ported.
 
 See `Basic.lean` for the directory-wide cutover plan.
 -/
+
+end Blanket

@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerWhitespace
-import L4YAML.Proofs.Scanner.ScannerLoopInvariant
-import L4YAML.Proofs.Scanner.ScannerLinePreservation
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerWhitespace
+public import L4YAML.Proofs.Scanner.ScannerLoopInvariant
+public import L4YAML.Proofs.Scanner.ScannerLinePreservation
+
+@[expose] public section Blanket
 
 /-!
 # The indent stack across preprocessing (DOCS item 27)
@@ -1405,3 +1410,5 @@ lemma scanValue_tab_run_ne {s s' : ScannerState}
     simp at hok
 
 end L4YAML.Proofs.PreprocessIndentStable
+
+end Blanket

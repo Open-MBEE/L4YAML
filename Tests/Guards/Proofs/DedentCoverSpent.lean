@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -337,3 +341,5 @@ was projected down to its widths now pass it through unchanged.
   so their dedent hop has none to spend — the same stop item 148 recorded. -/
 
 end L4YAML.Tests.Guards.DedentCoverSpent
+
+end Blanket

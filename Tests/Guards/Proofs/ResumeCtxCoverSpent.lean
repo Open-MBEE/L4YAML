@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -334,3 +338,5 @@ obstacle — spends it.  What the list has left is the SEQUENCE chain:
 `pendingBlock.h_closeF`, three fields on one lane. -/
 
 end L4YAML.Tests.Guards.ResumeCtxCoverSpent
+
+end Blanket

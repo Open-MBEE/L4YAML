@@ -1,9 +1,22 @@
-import L4YAML.Spec.Grammar
-import L4YAML.Parser.Composition
-import L4YAML.Proofs.Parser.ParserGrammableBase
-import L4YAML.Proofs.Parser.ParserNodeProofs
-import L4YAML.Proofs.Parser.ParserWellBehaved
-import L4YAML.Algebra.Value
+module
+
+public import L4YAML.Spec.Grammar
+public import L4YAML.Parser.Composition
+public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Parser.ParserNodeProofs
+public import L4YAML.Proofs.Parser.ParserWellBehaved
+public import L4YAML.Algebra.Value
+
+-- `Std.Legacy.Range.forIn'` is sealed by its producer; `import all` of its
+-- declaring module unseals the body this file reduces through.
+import all Init.Data.Range.Basic
+-- This module's `elab` bodies are `meta` definitions, while the helpers they
+-- call are ordinary code that the library also uses at runtime.  A declaration
+-- carries one phase and the `meta` modifier cannot be dropped retroactively,
+-- so mixed references inside this module need to be permitted explicitly.
+set_option compiler.relaxedMetaCheck true
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -1724,3 +1737,5 @@ lemma parseStream_output_anchors_wellformed
     · exact h_parse
 
 end L4YAML.Proofs.ParserWfaProofs
+
+end Blanket

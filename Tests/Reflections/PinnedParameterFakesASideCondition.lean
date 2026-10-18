@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 648 — a pinned existential does not only shrink the language; it propagates DOWNSTREAM as a side condition that reads like a fact about the domain
 
@@ -234,3 +239,5 @@ def runtimeEdits : Nat := 0
 #guard runtimeEdits == 0
 
 end L4YAML.Tests.Reflections.PinnedParameterFakesASideCondition
+
+end Blanket

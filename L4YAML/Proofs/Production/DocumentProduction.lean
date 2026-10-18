@@ -2,11 +2,17 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScanStrictCoupling
-import L4YAML.Proofs.Production.StructureProduction
-import L4YAML.Proofs.Production.NodeProduction
-import L4YAML.Proofs.Composition
-import L4YAML.Proofs.Production.StreamAccum
+
+module
+
+public import L4YAML.Proofs.Scanner.ScanStrictCoupling
+public import L4YAML.Proofs.Production.StructureProduction
+public import L4YAML.Proofs.Production.NodeProduction
+public import L4YAML.Proofs.Composition
+public import L4YAML.Proofs.Production.StreamAccum
+
+public meta import L4YAML.CapstoneAttr
+@[expose] public section Blanket
 
 /-! # Document & Stream Production (Phase D of v0.4.4)
 
@@ -261,3 +267,5 @@ theorem parse_strict_proof
   · contradiction
 
 end L4YAML.Proofs.DocumentProduction
+
+end Blanket

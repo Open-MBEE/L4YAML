@@ -2,10 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Indexed.TokenStream
-import L4YAML.Spec.YamlSpec
-import L4YAML.Parser.ParseStateIx
-import L4YAML.Parser.FuelIx
+
+module
+
+public import L4YAML.Indexed.TokenStream
+public import L4YAML.Spec.YamlSpec
+public meta import L4YAML.Spec.YamlSpec
+public import L4YAML.Parser.ParseStateIx
+public import L4YAML.Parser.FuelIx
+
+@[expose] public section Blanket
 
 /-! # `TokenParserIx` — Phase 3 Step 6b indexed token parser (staging)
 
@@ -693,3 +699,5 @@ def parseStreamIx {input : String} (tokens : Indexed.TokenStream input)
   parseStreamLoop ps #[] .initial tokens.size
 
 end L4YAML.TokenParser.Indexed
+
+end Blanket

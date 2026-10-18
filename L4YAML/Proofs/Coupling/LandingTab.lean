@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.ScannerCoupling
-import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+
+module
+
+public import L4YAML.Proofs.Coupling.ScannerCoupling
+public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
+
+@[expose] public section Blanket
 
 /-! # The located tab and §6.1's own gate (DOCS item 64)
 
@@ -252,3 +257,5 @@ lemma LandingTabFacts.transport {ci ci' : Int} {nic nic' : Bool}
   exact h (Or.inl hnic) (by rw [hci]; exact h0) j sx hind (by rw [hci]; exact hj) htab
 
 end L4YAML.Proofs.LandingTab
+
+end Blanket

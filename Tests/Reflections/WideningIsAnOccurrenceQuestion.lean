@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 649 — to widen a parameterized reading, ask WHERE the parameter occurs, not whether it can be weakened
 
@@ -220,3 +225,5 @@ theorem shipped :
   decide
 
 end L4YAML.Tests.Reflections.WideningIsAnOccurrenceQuestion
+
+end Blanket

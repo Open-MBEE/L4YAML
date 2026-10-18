@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 673 — a guard's condition is priced by its refutation
 
@@ -88,3 +93,5 @@ theorem rearmed_not_fired (t : Tok) (c : Option Nat) :
     guardTail ⟨true, t, c⟩ = false := rfl
 
 end L4YAML.Tests.Reflections.GuardConditionPricedByItsRefutation
+
+end Blanket

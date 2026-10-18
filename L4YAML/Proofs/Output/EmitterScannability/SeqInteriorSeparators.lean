@@ -2,7 +2,16 @@
 Copyright (c) 2026 L4YAML contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.EmitterScannability.DeepNavigator
+
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.DeepNavigator
+
+
+
+public meta import L4YAML.Proofs.Output.EmitterScannability.WellBracketed
+public meta import L4YAML.Proofs.Parser.ParserGrammableBase
+@[expose] public section Blanket
 
 /-!
 # `SeqInteriorSeparators` — the seq-typed separator carrier (sub-brick `(i'-b-descend-defn)`)
@@ -11406,3 +11415,5 @@ lemma seqRoot_carrier_r447
   exact seqWidthEnc_of_recIH_seq tokens 2 (tokens.size - 2) h_root_win h_root_deep recIH
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

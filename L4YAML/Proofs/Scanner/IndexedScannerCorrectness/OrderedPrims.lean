@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedDefs
+
+module
+
+public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedDefs
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerCorrectness.OrderedPrims` — §8.3–§8.6
 
@@ -593,3 +598,5 @@ lemma ScanInvIx_of_one_emit_at_pre_cursor {input : String}
       rw [h_new k hk_lo hk]; exact h_off
 
 end L4YAML.Proofs.Indexed.ScannerCorrectness
+
+end Blanket

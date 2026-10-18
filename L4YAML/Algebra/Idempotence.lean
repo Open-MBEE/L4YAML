@@ -3,10 +3,14 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Algebra.Value
-import L4YAML.Algebra.Schema
-import L4YAML.Algebra.Equivalence
-import L4YAML.Algebra.AnchorMap
+module
+
+public import L4YAML.Algebra.Value
+public import L4YAML.Algebra.Schema
+public import L4YAML.Algebra.Equivalence
+public import L4YAML.Algebra.AnchorMap
+
+@[expose] public section Blanket
 
 /-! # Idempotence Capstone  (Algebra Item 4)
 
@@ -460,3 +464,5 @@ inventory frozen. Phase 1 remains closed.
 -/
 
 end L4YAML.Algebra.Idempotence
+
+end Blanket

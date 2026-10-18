@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # Cross the indices, and price the residual by DATUM (Reflection 629)
 
 Reflection 628 split a blocked step by its index and found four classes at what
@@ -176,3 +181,5 @@ named obligations to one. -/
 #guard !(openCells.any (fun c => datumAt c == some Datum.adjacency))
 
 end Tests.Reflections.CrossIndicesPriceByDatum
+
+end Blanket

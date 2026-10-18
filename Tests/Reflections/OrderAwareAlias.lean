@@ -1,5 +1,12 @@
-import L4YAML.Output.Json
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Output.Json
+
+public meta import L4YAML.Output.Json
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-!
 # Reflection — INHABITATION / BOUNDARY probe for order-aware alias resolution (matrix defect J2)
@@ -29,11 +36,11 @@ The pins bracket the fix from both sides:
 namespace OrderAwareAlias
 
 /-- The Core-Schema JSON `streamToJson` emits for `input`, or a fixed error marker. -/
-private def runJson (input : String) : String :=
+def runJson (input : String) : String :=
   match L4YAML.Json.streamToJson input with | .ok s => s | .error _ => "«parse-error»"
 
 /-- The full event stream `streamToEvents` emits for `input`, or a fixed error marker. -/
-private def runEvents (input : String) : String :=
+def runEvents (input : String) : String :=
   match L4YAML.Events.streamToEvents input with | .ok s => s | .error _ => "«parse-error»"
 
 /-! ## Rule 5 (positive) — 3GZX, grounded on the yaml-test-suite bytes
@@ -95,3 +102,5 @@ theorem forward_alias_still_rejected : runJson inForwardAlias = "«parse-error»
 #print axioms gzx_resolves_each_alias_at_its_position
 
 end OrderAwareAlias
+
+end Blanket

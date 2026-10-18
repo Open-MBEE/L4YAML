@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 644 — a parked state should name what it AWAITS, not what opened it; then a second opener costs one producer and no consumers
 
@@ -243,3 +248,5 @@ def runtimeEdits : Nat := 0
 #guard runtimeEdits == 0
 
 end L4YAML.Tests.Reflections.AwaitNotOpener
+
+end Blanket

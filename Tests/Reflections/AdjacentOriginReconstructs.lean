@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 namespace Tests.Reflections.AdjacentOriginReconstructs
 
 set_option autoImplicit false
@@ -82,3 +87,5 @@ example : ¬ (∀ i, 2 < i → i ≤ 5 → bal δflat 2 i ≥ 1) := fun h =>
   absurd (h 3 (by decide) (by decide)) (by decide)
 
 end Tests.Reflections.AdjacentOriginReconstructs
+
+end Blanket

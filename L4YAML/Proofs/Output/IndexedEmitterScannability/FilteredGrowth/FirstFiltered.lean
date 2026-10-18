@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain
+
+@[expose] public section Blanket
 
 /-! # `FilteredGrowth.FirstFiltered` — Phase 3 Step
 `6f.3b3.filteredgrowth.firstfiltered`
@@ -491,3 +496,5 @@ lemma Array_filter_prefix_of_raw_prefix {α : Type}
   exact ⟨(b.toList.drop a.size).filter p, rfl⟩
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FilteredGrowth
+
+end Blanket

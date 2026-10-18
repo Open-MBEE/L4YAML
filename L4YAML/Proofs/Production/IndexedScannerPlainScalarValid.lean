@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Parser.IndexedWellBehaved
-import L4YAML.Proofs.Scanner.IndexedDispatch
-import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+module
+
+public import L4YAML.Proofs.Parser.IndexedWellBehaved
+public import L4YAML.Proofs.Scanner.IndexedDispatch
+public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+@[expose] public section Blanket
 
 /-! # `IndexedScannerPlainScalarValid` — Phase 3 Step 6d.1e foundation (staging)
 
@@ -6731,3 +6736,5 @@ lemma scan_flow_brackets_matched_ix_axiom
     (by split <;> exact h_akpi_after_emit) h_scan
 
 end L4YAML.Proofs.Indexed.ScannerPlainScalarValid
+
+end Blanket

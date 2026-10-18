@@ -1,4 +1,12 @@
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Scanner.Scanner
+
+
+
+public meta import L4YAML.Scanner.Scanner
+public meta import L4YAML.Scanner.State
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -313,3 +321,5 @@ arm, which spends `h_stream_fallback` — a different parameter — and never re
 the park's close at all. -/
 
 end L4YAML.Tests.Guards.StreamDanglingParkRevocable
+
+end Blanket

@@ -1233,8 +1233,14 @@ disagree={disagree.size} {(lsT.toList.map (fun (a,b) => s!"{a}={b}")).mergeSort 
   let mut sd : Std.HashMap String Nat := {}
   for e in split.filter (fun e => e.rootTgt.isNone) do
     let shp := String.intercalate "|" (e.leaves.map (fun a => (a.splitOn " ").head!)).qsort.toList
+    -- The splitter's name goes through `privateToUserName` first.  A generated
+    -- matcher stays private inside the blanket's `public section`, so its real
+    -- name is `_private.<module>.0.<user name>`; stripping only `pfx` left two
+    -- rows reading `_private.L4YAML.Proofs.Production.StreamAccum.0.…`, which
+    -- pins this census to a module PATH -- splitting `StreamAccum.lean` would
+    -- have moved it.  The user name is the same name it has always been.
     let k := s!"{e.caller.getString!} :: {
-      ((e.how.splitOn " ").getLast!).replace pfx ""} on {
+      (Lean.privateToUserName ((e.how.splitOn " ").getLast!).toName).toString.replace pfx ""} on {
       e.disc.replace pfx ""} ⇒ {shp}"
     sd := sd.insert k ((sd.getD k 0) + 1)
   let gotSite := (sd.toList.map (fun (a,b) => s!"{b} {a}")).mergeSort (· ≤ ·)

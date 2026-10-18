@@ -1,4 +1,8 @@
-import L4YAML.Proofs.Production.StreamAccum
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -120,3 +124,5 @@ example {sp_start : SurfPos} {sc : ScannerState} {fl : Nat} {ks : Array Bool}
   exact ⟨n, kc, km, g, ((h_prom h_fl).2.2 rfl).imp id (fun f => f sp_prep sp_tok)⟩
 
 end Tests.Guards.FlowStackFloorReal
+
+end Blanket

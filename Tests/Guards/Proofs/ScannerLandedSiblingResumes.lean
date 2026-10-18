@@ -1,6 +1,12 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -288,3 +294,5 @@ example {sp_start sp_land sp_key : SurfPos} {k nv : Nat}
   what this item removes is the reason the landing skeleton needed it. -/
 
 end L4YAML.Tests.Guards.ScannerLandedSiblingResumes
+
+end Blanket

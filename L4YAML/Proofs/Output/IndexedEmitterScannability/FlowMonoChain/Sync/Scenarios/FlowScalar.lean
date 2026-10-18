@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.Preflow
-import L4YAML.Proofs.Scanner.IndexedScalar
+
+module
+
+public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.Preflow
+public import L4YAML.Proofs.Scanner.IndexedScalar
+
+@[expose] public section Blanket
 
 /-! # `FlowMonoChain.Sync.Scenarios.FlowScalar` — Phase 3 Step
 `6f.3b3.emitscans.flowpair` (SS2, double-quoted-scalar track)
@@ -421,3 +426,5 @@ lemma scanNextTokenIx_flow_scanDoubleQuoted (s : ScannerStateIx input)
       exact saveSimpleKeyIx_tokens_prefix s i hi
 
 end L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+end Blanket

@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # Split the index before pricing the transition (Reflection 628)
 
 A state family indexed by a coarse class, and a new transition to write over it.
@@ -175,3 +180,5 @@ def landed : List Frame :=
 #guard (allTails.filter (fun t => discriminator t != none)).length == 2
 
 end Tests.Reflections.TotalAndMixedIndexClasses
+
+end Blanket

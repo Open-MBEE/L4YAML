@@ -1,4 +1,12 @@
-import L4YAML.Output.Dump
+module
+
+public import L4YAML.Output.Dump
+
+
+
+public meta import L4YAML.Spec.Types
+public meta import L4YAML.Output.Dump
+@[expose] public section Blanket
 
 namespace L4YAML.Dump
 
@@ -252,3 +260,5 @@ a core-schema consumer resolves — survives a load→dump round trip. -/
   { scalarStyle := .preserve } == "\"line1\\nline2\""
 
 end L4YAML.Dump
+
+end Blanket

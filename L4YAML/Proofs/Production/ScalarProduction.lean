@@ -2,10 +2,15 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.ScalarCoupling
-import L4YAML.Proofs.Coupling.LandingTab
-import L4YAML.Proofs.Scanner.ScannerCorrectness
-import L4YAML.Proofs.Scanner.ScannerLinePreservation
+
+module
+
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Coupling.LandingTab
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.ScannerLinePreservation
+
+@[expose] public section Blanket
 
 /-! # Scalar Production Coupling (Phase B of v0.4.4)
 
@@ -4849,3 +4854,5 @@ lemma scanBlockScalar_prod (sc : ScannerState) (sp : SurfPos)
         (by rw [Nat.zero_add]; exact h_absorb sp_mid W))
 
 end L4YAML.Proofs.ScalarProduction
+
+end Blanket

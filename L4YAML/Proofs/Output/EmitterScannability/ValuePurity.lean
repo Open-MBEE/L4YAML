@@ -3,7 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Proofs.Output.EmitterScannability.ValueLocality
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.ValueLocality
+
+@[expose] public section Blanket
 
 /-!
 # Purity of values parsed from clean token arrays
@@ -361,3 +365,5 @@ lemma parseNode_pure (f : Nat) (ps : ParseState) (v : YamlValue) (q : ParseState
   parseNode_pure_all f f (Nat.le_refl _) ps v q h_cl h
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

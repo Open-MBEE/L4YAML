@@ -2,7 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Parser.IndexedComposition
+
+module
+
+public import L4YAML.Parser.IndexedComposition
+
+
+public meta import L4YAML.Parser.IndexedComposition
+@[expose] public section Blanket
 
 /-! # `IndexedComposition` proofs — Phase 3 Step 6e end-to-end corpus (staging)
 
@@ -245,3 +252,5 @@ lemma parseYamlIx_ok_iff (input : String) (docs : Array YamlDocument) :
     simp only [parseYamlIx, h_raw, h_eq]
 
 end L4YAML.Proofs.Indexed.Composition
+
+end Blanket

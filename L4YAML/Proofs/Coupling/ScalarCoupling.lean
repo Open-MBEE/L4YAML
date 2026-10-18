@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.ScannerCoupling
+
+module
+
+public import L4YAML.Proofs.Coupling.ScannerCoupling
+
+@[expose] public section Blanket
 
 /-!
 # Scalar Collection Coupling
@@ -1054,3 +1059,5 @@ lemma terminates_content_eq (c : Char) (s : ScannerState)
         · simp at h
 
 end L4YAML.Proofs.ScalarCoupling
+
+end Blanket

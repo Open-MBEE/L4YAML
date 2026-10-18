@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 680 — alternative routes ride the frame
 
@@ -112,3 +117,5 @@ theorem head_alone_insufficient (f : ∀ (S N E : Type), (N → E) → N → S) 
   (f Empty Unit Unit (fun _ => ()) ()).elim
 
 end L4YAML.Tests.Reflections.AlternativeRoutesRideTheFrame
+
+end Blanket

@@ -2,8 +2,13 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+module
+
+public import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+
+@[expose] public section Blanket
 
 /-! # `IndexedDispatch` — Phase 3 dispatcher-layer proofs (staging)
 
@@ -1814,3 +1819,5 @@ lemma scanLoopIx_tokens_size_le {input : String}
         exact Nat.le_trans hStep (ih h)
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

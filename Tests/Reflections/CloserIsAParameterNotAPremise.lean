@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-!
 # Reflection 669 — the closer is a parameter, not a premise
 
@@ -124,3 +129,5 @@ theorem afterClose_never_ends_explicit (closed : Stream) (d : Dispatched)
   simp [dispatchAfterClose]
 
 end L4YAML.Tests.Reflections.CloserIsAParameterNotAPremise
+
+end Blanket

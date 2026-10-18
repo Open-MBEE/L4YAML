@@ -1,3 +1,8 @@
+module
+
+
+@[expose] public section Blanket
+
 /-! # Reflection 516 — a faithful proof-mirror inherits its DEPENDENCY's axiom profile
 
 R516 lands the first sub-brick of the map fold cluster (`mapHRec_of_root_and_emit`, brick (2)):
@@ -192,3 +197,5 @@ end MirrorInheritsDependencyAxioms
 /-- info: 'MirrorInheritsDependencyAxioms.provider_at_produced' depends on axioms: [MirrorInheritsDependencyAxioms.relocated_residual] -/
 #guard_msgs in
 #print axioms MirrorInheritsDependencyAxioms.provider_at_produced
+
+end Blanket

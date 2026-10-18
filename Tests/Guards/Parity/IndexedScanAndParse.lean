@@ -1,5 +1,12 @@
-import L4YAML.Parser.Composition
-import L4YAML.Parser.IndexedComposition
+module
+
+public import L4YAML.Parser.Composition
+
+public meta import L4YAML.Parser.Composition
+public import L4YAML.Parser.IndexedComposition
+
+public meta import L4YAML.Parser.IndexedComposition
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -257,3 +264,5 @@ plain-scalar content, valid `%TAG` documents). -/
 #guard docs "%YAML .2\n---\nx"
 
 end L4YAML.Parity.Indexed
+
+end Blanket

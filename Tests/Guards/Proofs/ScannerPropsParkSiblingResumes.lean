@@ -1,6 +1,12 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+
+public meta import L4YAML.Output.EventsIx
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -287,3 +293,5 @@ example {sp_start sp_node sp_p sp_scan : SurfPos} {n : Nat} {ks : List Nat}
   LAST. -/
 
 end L4YAML.Tests.Guards.ScannerPropsParkSiblingResumes
+
+end Blanket

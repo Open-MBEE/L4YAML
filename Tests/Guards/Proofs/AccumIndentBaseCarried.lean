@@ -1,5 +1,9 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -227,3 +231,5 @@ measured against the carriage rather than against nothing:
   the four producers, and the three lemmas around them. -/
 
 end L4YAML.Tests.Guards.AccumIndentBaseCarried
+
+end Blanket

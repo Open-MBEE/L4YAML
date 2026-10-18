@@ -1,6 +1,14 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Scanner.Scanner
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -93,3 +101,5 @@ break re-armed `simpleKeyAllowed`). -/
 #guard !scanAccepts "\"a\"\n:b\n" && rejectsAlike "\"a\"\n:b\n"
 
 end L4YAML.Tests.Guards.ScannerAdjacentValueRefused
+
+end Blanket

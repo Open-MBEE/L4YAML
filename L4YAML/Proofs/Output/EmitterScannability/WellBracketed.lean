@@ -3,7 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
-import L4YAML.Proofs.Output.EmitterScannability.FilteredTracking
+module
+
+public import L4YAML.Proofs.Output.EmitterScannability.FilteredTracking
+
+@[expose] public section Blanket
 
 namespace L4YAML.Proofs.EmitterScannability
 
@@ -3285,3 +3289,5 @@ lemma ScanChain.split {s s₁ s₂ : ScannerState} {n₁ n₂ : Nat}
 
 
 end L4YAML.Proofs.EmitterScannability
+
+end Blanket

@@ -3,6 +3,11 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 
+module
+
+
+@[expose] public section Blanket
+
 /-! # A held token re-points the index that names its neighbour (Reflection 620)
 
 The plan said: widen the flow-interior slot so it can hold a scanned but
@@ -254,3 +259,5 @@ the invariant unsatisfiable, and the transport survives only under `Sync`. -/
 #print axioms props_case_is_new
 
 end Tests.Reflections.HeldTokenRepointsIndex
+
+end Blanket

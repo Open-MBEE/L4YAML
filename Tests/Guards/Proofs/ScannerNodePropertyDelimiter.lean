@@ -1,5 +1,12 @@
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
+module
+
+public import L4YAML.Scanner.Scanner
+
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+
+public meta import L4YAML.Scanner.IndexedDispatch
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -123,3 +130,5 @@ ones a forward/backward mix-up would break first. -/
 #guard bothAccept "[&x, *x, *x]\n"
 
 end Tests.Guards.ScannerNodePropertyDelimiter
+
+end Blanket

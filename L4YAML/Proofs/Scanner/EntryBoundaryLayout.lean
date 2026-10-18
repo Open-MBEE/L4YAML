@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Scanner.ScannerCorrectness
+
+module
+
+public import L4YAML.Proofs.Scanner.ScannerCorrectness
+
+@[expose] public section Blanket
 
 /-! # The completed-entry key layout, read by the accumulator (item 10)
 
@@ -823,3 +828,5 @@ lemma preprocess_saved_key_fresh {sc s_prep : ScannerState} {c : Char}
   exact ⟨rfl, rfl⟩
 
 end L4YAML.Proofs.EntryBoundaryLayout
+
+end Blanket

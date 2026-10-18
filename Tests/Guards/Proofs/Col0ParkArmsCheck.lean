@@ -1,5 +1,10 @@
-import L4YAML.Proofs.Production.StreamAccum
-import L4YAML.Output.Events
+module
+
+public import L4YAML.Proofs.Production.StreamAccum
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -301,3 +306,5 @@ need is a new invariant threaded through the accumulation — the flag is alread
 the park's to state, exactly as its save flag has been since item 77. -/
 
 end L4YAML.Tests.Guards.Col0ParkArmsCheck
+
+end Blanket

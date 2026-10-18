@@ -2,8 +2,16 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Scanner.IndexedDispatch
-import L4YAML.Scanner.IndexedPresenter
+
+module
+
+public import L4YAML.Scanner.IndexedDispatch
+
+public meta import L4YAML.Scanner.IndexedDispatch
+public import L4YAML.Scanner.IndexedPresenter
+
+public meta import L4YAML.Scanner.IndexedPresenter
+@[expose] public section Blanket
 
 /-! # `IndexedRoundtrip` — Phase 3 Step 5c corpus roundtrip theorem (staging)
 
@@ -156,3 +164,5 @@ lemma scanIx_present_of_roundtripOk (input : String)
     exact (beq_iff_eq).1 h
 
 end L4YAML.Scanner.Indexed
+
+end Blanket

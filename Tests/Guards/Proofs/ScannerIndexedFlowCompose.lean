@@ -1,7 +1,15 @@
-import L4YAML.Output.Events
-import L4YAML.Output.EventsIx
-import L4YAML.Scanner.Scanner
-import L4YAML.Scanner.IndexedDispatch
+module
+
+public import L4YAML.Output.Events
+
+public meta import L4YAML.Output.Events
+public import L4YAML.Output.EventsIx
+public meta import L4YAML.Output.EventsIx
+public import L4YAML.Scanner.Scanner
+public meta import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
+
+@[expose] public section Blanket
 
 /-
 Copyright (c) 2026. All rights reserved.
@@ -95,3 +103,5 @@ continuation is checked against the enclosing block indent. -/
 #guard rejected "k:\n  a:\n[1]\n"           -- flow open below the block level
 
 end L4YAML.Tests.Guards.ScannerIndexedFlowCompose
+
+end Blanket

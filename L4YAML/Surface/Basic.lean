@@ -2,9 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Surface.Combinators
-import L4YAML.Spec.Types
-import L4YAML.Spec.CharPredicates
+
+module
+
+public import L4YAML.Surface.Combinators
+public import L4YAML.Spec.Types
+public import L4YAML.Spec.CharPredicates
+
+@[expose] public section Blanket
 
 /-!
 # Basic Surface Syntax Productions — Chapters 5–6
@@ -296,3 +301,5 @@ def seqSpaces (n : Nat) (c : YamlContext) : Nat :=
 abbrev SENode : SurfPos → SurfPos → Prop := GEps
 
 end L4YAML.Surface
+
+end Blanket

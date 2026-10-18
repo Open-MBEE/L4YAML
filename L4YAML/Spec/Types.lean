@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Init
+
+module
+
+public import L4YAML.Init
+
+@[expose] public section Blanket
 
 /-!
 # YAML Value Types
@@ -727,3 +732,5 @@ access `AnchorMap`, `AnchorMap.empty`, `AnchorMap.insert`,
 -/
 
 end L4YAML
+
+end Blanket

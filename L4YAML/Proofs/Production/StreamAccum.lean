@@ -2,30 +2,35 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Production.PreprocessProduction
-import L4YAML.Proofs.Scanner.ScanStrictCoupling
-import L4YAML.Proofs.Production.StructureProduction
-import L4YAML.Proofs.Production.NodeProduction
-import L4YAML.Proofs.Scanner.FlowAdjacency
-import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
-import L4YAML.Proofs.Scanner.ScannerFlowCollection
-import L4YAML.Proofs.Scanner.ScannerFlowStackPreservation
-import L4YAML.Proofs.Scanner.ScannerAllowDirectives
-import L4YAML.Proofs.Scanner.ContentAllowDirectives
-import L4YAML.Proofs.Scanner.EntryBoundaryLayout
-import L4YAML.Proofs.Scanner.LineOpenGuard
-import L4YAML.Proofs.Scanner.PropsRunLineCoupling
-import L4YAML.Proofs.Scanner.BlockScalarIndentFloor
-import L4YAML.Proofs.Scanner.PreprocessIndentStable
-import L4YAML.Proofs.Scanner.FlowIndentStable
-import L4YAML.Proofs.Scanner.IndentStackBase
-import L4YAML.Proofs.Scanner.IndentStackCover
-import L4YAML.Proofs.Scanner.StaleCursorFloor
-import L4YAML.Proofs.Scanner.ExplicitKeyCoupling
-import L4YAML.Proofs.Coupling.TabIndentBridge
-import L4YAML.Proofs.Production.FlowIndexLift
-import L4YAML.Proofs.Production.ScalarFoldAt
-import L4YAML.Proofs.Production.FlowKeyLift
+
+module
+
+public import L4YAML.Proofs.Production.PreprocessProduction
+public import L4YAML.Proofs.Scanner.ScanStrictCoupling
+public import L4YAML.Proofs.Production.StructureProduction
+public import L4YAML.Proofs.Production.NodeProduction
+public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.ScannerFlowCollection
+public import L4YAML.Proofs.Scanner.ScannerFlowStackPreservation
+public import L4YAML.Proofs.Scanner.ScannerAllowDirectives
+public import L4YAML.Proofs.Scanner.ContentAllowDirectives
+public import L4YAML.Proofs.Scanner.EntryBoundaryLayout
+public import L4YAML.Proofs.Scanner.LineOpenGuard
+public import L4YAML.Proofs.Scanner.PropsRunLineCoupling
+public import L4YAML.Proofs.Scanner.BlockScalarIndentFloor
+public import L4YAML.Proofs.Scanner.PreprocessIndentStable
+public import L4YAML.Proofs.Scanner.FlowIndentStable
+public import L4YAML.Proofs.Scanner.IndentStackBase
+public import L4YAML.Proofs.Scanner.IndentStackCover
+public import L4YAML.Proofs.Scanner.StaleCursorFloor
+public import L4YAML.Proofs.Scanner.ExplicitKeyCoupling
+public import L4YAML.Proofs.Coupling.TabIndentBridge
+public import L4YAML.Proofs.Production.FlowIndexLift
+public import L4YAML.Proofs.Production.ScalarFoldAt
+public import L4YAML.Proofs.Production.FlowKeyLift
+
+@[expose] public section Blanket
 
 /-! # Stream Grammar Accumulator (Layer 4d + 4e: Lagging Grammar with Block Stack)
 
@@ -35474,3 +35479,5 @@ lemma scan_content_gives_stream_v2
 -/
 
 end L4YAML.Proofs.StreamAccum
+
+end Blanket

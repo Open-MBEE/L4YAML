@@ -2,7 +2,12 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import L4YAML.Proofs.Coupling.ScalarCoupling
+
+module
+
+public import L4YAML.Proofs.Coupling.ScalarCoupling
+
+@[expose] public section Blanket
 
 /-!
 # Structure, Document & Directive Coupling
@@ -667,3 +672,5 @@ lemma scanDirective_corr (sc : ScannerState) (sp : SurfPos)
         exact ⟨sp', ⟨hcorr'.chars_from, hcorr'.col_eq, hcorr'.end_eq, hcorr'.input_prefix, hcorr'.indent_cols_nonneg⟩⟩
 
 end L4YAML.Proofs.StructureCoupling
+
+end Blanket

@@ -759,11 +759,14 @@ def expectedSpines : List String :=
    "  stream=2 carry=2 fwd=0 punt=2 closed=0 SBlockNode(_+1,blockIn) ⇒ Resume(_)▹ExplValueLine(_)  ← pendingMapValue.h_closeFV",
    "  stream=0 carry=1 fwd=0 punt=5 closed=0 SBlockNode(_+1,blockIn) > SCompactMapTail(_) ⇒ Resume(_)▹SeqEntryTail(_)  ← pendingMapValue.h_seqF",
    "  stream=0 carry=1 fwd=0 punt=5 closed=0 SBlockMapEntry(_) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingMapValue.h_explUp"]
+-- Item 287: the same 47 rows.  With `accum_block_on_closeThenBlock`'s inline
+-- application gone, the walk reaches `compact_open_map` from it before it
+-- reaches the escape through the stamp wrappers, so those two rows trade places.
 def expectedSites : List String :=
   ["  accum_block_on_closeThenBlock: nil park=pendingBlock stream=bound:h_stream_new:=param:h_close_pending closedBy=[SSLComments ⇒ Stream] h_close=carry,h_close_entry=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=carry,h_closeFV=carry",
    "  accum_block_on_closeThenBlock: nil park=pendingBlock stream=bound:h_stream_a closedBy=[obtained] h_close=carry,h_close_entry=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=carry,h_closeFV=punt",
-   "  block_dispatch_deferred: nil park=pendingFlow stream=param:h_stream closedBy=[] ",
    "  compact_open_map: nil park=pendingMapValue stream=param:h_stream_block closedBy=[] h_close=carry,h_ivl=carry,h_expl=carry,h_vslot=carry,h_kslot=punt,h_closeF=carry,h_frames=punt,h_closeFV=punt,h_framesV=punt,h_seqF=punt,h_explUp=punt",
+   "  block_dispatch_deferred: nil park=pendingFlow stream=param:h_stream closedBy=[] ",
    "  colon_open_map_explicit: nil park=pendingMapValue stream=param:h_stream_mid closedBy=[] h_close=carry,h_ivl=carry,h_expl=punt,h_vslot=carry,h_kslot=punt,h_closeF=punt,h_frames=punt,h_closeFV=punt,h_framesV=punt,h_seqF=punt,h_explUp=punt",
    "  question_open_map: nil park=pendingMapValue stream=param:h_stream_land closedBy=[] h_close=stream,h_ivl=stream,h_expl=stream,h_vslot=stream,h_kslot=carry,h_closeF=carry,h_frames=carry,h_closeFV=stream,h_framesV=stream,h_seqF=punt,h_explUp=carry",
    "  colon_open_map: nil park=pendingMapValue stream=param:h_stream_land closedBy=[] h_close=stream,h_ivl=punt,h_expl=punt,h_vslot=punt,h_kslot=carry,h_closeF=carry,h_frames=carry,h_closeFV=stream,h_framesV=carry,h_seqF=punt,h_explUp=punt",
@@ -833,9 +836,15 @@ def expectedK : List String :=
     punt=1` and the line `carry=160 punt=79`.  Item 285 adds one exit and moves
     nothing else: `slot_ride`'s frame, closed through `absorb_stacksB` like
     `drop_ride`'s, so `slots`, `nil`, `closings` and `absorbed` each read one
-    more. -/
+    more.  Item 287 moves three route arguments out of `closed`: at
+    `accum_block_on_closeThenBlock`'s `h_vslot`, `Or.inr trivial` became the
+    caller's reading of an inline residue, and three of those readings mention
+    a hypothesis — the content park's and the props `:`'s builder argument
+    `h_inl` (`carry`), and the dead `pendingFlow` arm's deferral, which applies
+    the escape to `h_stream_block` (`stream`).  The seven refutations stay
+    `closed` (`scratchpad/l4yaml-row12-steps/238-routeargs-287.txt`). -/
 def expectedLine : String :=
-  "closures=54 packed=14 optional=41 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=3 carry=48 fwd=0 punt=3 closed=0] optional[stream=5 carry=112 fwd=8 punt=76 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=18 routeCarry=42 routeFwd=50 routeClosed=40 routeToWalked=97 routeStreamToWalked=13 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
+  "closures=54 packed=14 optional=41 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=3 carry=48 fwd=0 punt=3 closed=0] optional[stream=5 carry=112 fwd=8 punt=76 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=19 routeCarry=44 routeFwd=50 routeClosed=37 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

@@ -36,7 +36,7 @@ wrapper's deletion rather than a total drifting:
 | `_stamp_offcol` | **3** in 3 definitions | the park HAS a value pack, at `nv`, and the landing is at `k ≠ nv` | a reason the two indices agree — `[187]`'s `s-indent(n)` is exact.  **Item 189 (§8) paid its first domain** and **item 190 (§9) the other two sites'**: where `nv ≠ k` because the park holds TWO frames and offered the inner one, the landing now reads the outer one — from `h_vpackUp` at the landed `?`, from `h_kslotUp` at the compact one.  ~~What is left is a landing TWO frames up~~ — **item 191 (§10) paid that too**, by carrying the ancestors as a LIST instead of naming one; **item 192 (§11)** carried the list across a flow CONSTRUCT, and **item 193 (§12)** across an awaited SEQUENCE ENTRY at the landed `?` |
 | `_stamp_nopack` | **3** in 3 definitions | the park carries no value pack at all, and its register is LIVE | a CARRIER: the `?` frame's value slot at the landing's column, U2's residue proper — priced at item 186 (§5), RE-priced at item 187 (§6), and its first DOMAIN paid at item 188 (§7) |
 | `_stamp_compact` | **2** in 2 definitions | the fill is COMPACT, and `[189]`'s value is `s-l+block-node`, so the face cannot stand in for the stamp | the stamp, or a refutation |
-| `_inline` | **2** in 2 definitions | the mid-line indicator (`inline_residue_of_landing`) | ~~`KeyPackPunt`'s two surviving reasons (item 102)~~ — **item 286 (§3.1): five callers and seven arms** — four empty at the runtime, two a relay (item 211), the seventh accepted input its park's slot serves; none refuted in the proof yet |
+| `_inline` | ~~**2** in 2 definitions~~ **8** in 3 (item 287) | the mid-line indicator (`inline_residue_of_landing`) | ~~`KeyPackPunt`'s two surviving reasons (item 102)~~ — **item 286 (§3.1): five callers and seven arms** — four empty at the runtime, two a relay (item 211), the seventh accepted input its park's slot serves; since item 287 each arm applies the wrapper itself, and none is refuted in the proof yet |
 | bare | **1** | `pendingFlow`'s own arm, which this escape PRODUCES | the constructor (item 35's structural note) |
 
 **The classes OVERLAP; only the sites are partitioned.**  `_stamp_compact`'s
@@ -247,22 +247,25 @@ example {sc s_prep : ScannerState} {c : Char}
 
 /-- The inline class's premise is `inline_residue_of_landing`'s conclusion: the
     park is off column 0 and only `s-white` stands between it and the
-    indicator. -/
-example (sp_start sp_X sp_scan' sp_park : SurfPos) (s' : ScannerState) (c : Char)
+    indicator.  Item 287: the escape's three premises about its park are read
+    off the dispatch, which every arm that applies the wrapper holds. -/
+example (sp_start sp_X sp_scan' sp_park : SurfPos) {sc s_prep s' : ScannerState} (c : Char)
     (h_stream : SLYamlStream sp_start sp_X)
-    (h_arm : (s'.simpleKeyAllowed = true ∧ s'.simpleKey.possible = false) ∨ 0 < sp_scan'.col)
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h_dispatch : scanNextToken_dispatchBlockIndicators
+        (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep) c = .ok (some s'))
     (hcorr : ScannerSurfCorr s' sp_scan')
-    (h_nodir : s'.allowDirectives = false)
-    (h_res : InlineResidue sp_park c)
-    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true) :
+    (h_res : InlineResidue sp_park c) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
       FlowStackB sp_start 0 0 none 0 #[] #[] .sep sp_block' sp_flow' ∧
       PendingNode s' false sp_start sp_flow' sp_scan'' ∧
       ScannerSurfCorr s' sp_scan'' :=
-  block_dispatch_deferred_inline sp_start sp_X sp_scan' s' h_stream h_arm hcorr
-    h_nodir h_res h_nic0
+  block_dispatch_deferred_inline sp_start sp_X sp_scan' h_stream h_preprocess h_dispatch
+    hcorr h_res
 
 /-- `InlineResidue`'s own shape, pinned: the class is about a park OFF a line
     start, which is what makes it the mid-line `:` rather than a landing. -/
@@ -410,9 +413,22 @@ and `compact_open_map`'s `:` branch) and two consumers that re-read the slot
 with `.imp _ id`.  Each producer pays `h_ivl` with the stamp in the same
 argument list, so the arm's carrier is named and its first ring measured. -/
 
-/-- `scripts/inline_class_price.py feeders`, checked from the script's side. -/
+/-- `scripts/inline_class_price.py feeders`, checked from the script's side —
+    the tree as it stood at item 286.  Item 287 retired the fallback the mode
+    narrows, so on a later tree it says so and stops. -/
 def expectedInlineFeeders : String :=
   "errors=6 decls=2 feeders=accum_block_on_pendingBlock/-,accum_block_pending/pendingBlockContent,accum_block_pending/pendingContent,accum_block_pending/pendingFlow,accum_block_pending/pendingMapValue,accum_block_pending/pendingProps"
+
+/-- **Item 287: the class's sites are its arms.**  `accum_block_on_closeThenBlock`'s
+    fallback merged into `h_vslot` as the caller's own reading of an inline
+    residue, and the two `:` consumers take their punt as a builder, so every
+    arm says what the residue at its park is: the five crossed-break arms
+    refute it (`sslComments_refutes_inline_residue`) and the seven above apply
+    the escape where their reason stands.  `scripts/inline_class_price.py arms`
+    deletes the wrapper and locates every application the tree then lacks:
+    eight, at the seven arms and the dead `pendingFlow` one. -/
+def expectedInlineArms : String :=
+  "apps=8 decls=3 arms=accum_block_pending/pendingFlow,accum_block_pending/pendingMapValue,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_implicit_key/¬h_poss,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext,colon_fires_props_key/tab"
 
 /-- `scripts/inline_class_price.py census`, checked from the script's side. -/
 def expectedInlineCensus : String :=

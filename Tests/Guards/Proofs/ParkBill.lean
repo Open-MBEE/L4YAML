@@ -149,7 +149,7 @@ def expectedClosure : Nat := 248
 
 /-- The park's populations beside the arm's, from one pass. -/
 def expectedBill : String :=
-  "Dp=9 Sp=0 Tp=31 T=26 shared=19 extra=12 capstonesInTp=2"
+  "Dp=9 Sp=0 Tp=33 T=26 shared=19 extra=14 capstonesInTp=2"
 
 /-- Names the park in a PROOF TERM — builders and case splits together, which
     no syntactic reading separates (item 240).  **Seven of the nine break and
@@ -178,12 +178,14 @@ def expectedStmt : List Name := []
 
 /-! ## §2 The bracket, and the three numbers it separates
 
-`Tp=31` against `T=26`: **twelve declarations β.5 reaches that the arm's
-closure never counted** — `PendingNode.arm_or_col` and the three park lemmas
-above, the four `accum_block_on_*` and the four `block_dispatch_deferred*`.
+~~`Tp=31`~~ `Tp=33` against `T=26`: ~~**twelve**~~ **fourteen declarations β.5
+reaches that the arm's closure never counted** — `PendingNode.arm_or_col` and
+the three park lemmas above, the four `accum_block_on_*`, the four
+`block_dispatch_deferred*`, and (DOCS item 287) `colon_fires_implicit_key` and
+`colon_fires_props_key`, which apply the inline wrapper themselves.
 Nineteen of item 238's twenty-six are shared.  So the bill stated as a closure
-is **thirty-eight**, not twenty-six, and it was never twenty-six because it was
-only ever half of β.5.
+is ~~**thirty-eight**~~ **forty**, not twenty-six, and it was never twenty-six
+because it was only ever half of β.5.
 
 **And thirty-eight is not what β.5 costs.**  The fixpoint elaborates the whole
 tree against the post-β.5 sources and reads
@@ -199,7 +201,7 @@ The three numbers are three different questions and only the last is the bill:
 
 | reading | what it counts | value |
 |---|---|---|
-| `Tp ∪ T` | what a REBUILD touches | **38** |
+| `Tp ∪ T` | what a REBUILD touches | ~~38~~ **40** |
 | `Dp` (+ item 238's `D`) | what NAMES a deletion | 9 + 4 |
 | the fixpoint | what stops ELABORATING | **13 proofs + 1 statement** |
 

@@ -466,11 +466,24 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- generates inside `accum_flow_open_depth0`, whose two binders are both read.
 -- Roster `scratchpad/l4yaml-row12-steps/verdict-roster-285.out` (3954 rows)
 -- against item 284's: those two rows gained, none lost.
+-- 2026-10-19 (item 287): `constants` 1344 -> 1356, `decls` 1063 -> 1074, `READ`
+-- 1088 -> 1112, `RELAY` 2269 -> 2276, `RETURN` 51 -> 48.  Roster
+-- `scratchpad/l4yaml-row12-steps/232-roster-287.out` (3982 rows) against item
+-- 285's: 37 rows gained, 9 lost, and every row named.  The line-stop lemmas
+-- and `sslComments_refutes_inline_residue`, with their matchers, bring 11
+-- declarations (12 constants with `CommentStop`) and 33 rows.  The wrapper
+-- reads its premises off the dispatch, so `h_arm`, `h_nodir` and `h_nic0` go
+-- and `h_preprocess`, `h_dispatch` come (RELAY either way).  The four
+-- `h_stream_fallback`s retire (2 READ, 1 RELAY, 1 RETURN).  And the two
+-- `h_punt`s are builders now, so their verdict moves RETURN -> READ -- the
+-- only verdict of a surviving binder that moved.
 def expectedModuleTally : String :=
-  "constants=1344 decls=1063 eta=380 FIELD=157 READ=1088 RELAY=2269 RETURN=51 UNUSED=9"
+  "constants=1356 decls=1074 eta=380 FIELD=157 READ=1112 RELAY=2276 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
-  [ "block_dispatch_deferred_inline#10 (_h_res)",
+  -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
+  -- its thirteenth binder.
+  [ "block_dispatch_deferred_inline#12 (_h_res)",
     "block_dispatch_deferred_stamp_nopack#10 (_h_src)",
     "block_dispatch_deferred_stamp_nopack#11 (_h_indent)",
     "block_dispatch_deferred_stamp_nopack#12 (_h_park)",
@@ -536,7 +549,9 @@ declines, what relays.  Nothing there asked who READS one when it is paid, and
 this is that census over the same population, with the matcher auxiliaries that
 inherit their parents' binders filtered out so the denominator is declarations. -/
 
-def expectedOptTally : String := "total=163 ETA=34 READ=85 RELAY=44"
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` is no longer a
+-- `_ ∨ True` (a READ one), so it leaves the population.
+def expectedOptTally : String := "total=162 ETA=34 READ=84 RELAY=44"
 
 /-- The six item 212 enumerated, by verdict.  Five are read in
     `content_dispatch_routed`'s own term; `h_ref` alone relays, and §5 says
@@ -604,9 +619,11 @@ third terminal, `SPLIT@Eq.ndrec#9`, is the pipe: item 226 peels it and two
 remain.) -/
 
 def expectedCoreTerminal : List String :=
-  [ "accum_block_on_pendingBlock#29 (h_seqF_old)",
-    "accum_block_on_pendingBlockContent#34 (h_seqF_old)",
-    "accum_block_on_pendingContent#32 (h_seqF168)",
+  -- Item 287: the three `accum_block_on_*` rows read two binders earlier, past
+  -- the retired `sp_block_ctx` and `h_stream_fallback`.
+  [ "accum_block_on_pendingBlock#27 (h_seqF_old)",
+    "accum_block_on_pendingBlockContent#32 (h_seqF_old)",
+    "accum_block_on_pendingContent#30 (h_seqF168)",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old)",
     "colon_open_map#24 (h_cov_in)",
     "flowKeyRoute_of_root#20 (h_tail143)",

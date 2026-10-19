@@ -269,11 +269,21 @@ declarations' own binders and not by a rescoring of an existing one.
 -- 2026-10-18 (item 285): +1 constant, +1 decl, +2 `READ` — the SAME move its
 -- sibling reads: the one matcher `slot_ride`'s `match h_optok` generates, both of
 -- whose binders are read under either peel.
+-- 2026-10-19 (item 287): the SAME +12 constants, +11 decls and +24 `READ` its
+-- sibling reads, from the same rows.  The two censuses differ on five of them:
+-- the matcher binders `hb`, `hc`, `h₁`, `hcol` and `hws` in the new line-stop
+-- lemmas read RELAY there and RETURN under this peel, every other row reading
+-- the same under both (`scratchpad/l4yaml-row12-steps/239-rosterP-287.out`
+-- against `232-roster-287.out`).  So the sibling's `RELAY` +7 / `RETURN` -3
+-- reads +2 / +2 here -- counting the nine rows that left at their unpeeled
+-- verdicts, since item 285 kept no peeled roster to read them from.
 def expectedModuleTallyP : String :=
-  "constants=1344 decls=1063 eta=380 FIELD=179 READ=1127 RELAY=2125 RETURN=134 UNUSED=9"
+  "constants=1356 decls=1074 eta=380 FIELD=179 READ=1151 RELAY=2127 RETURN=136 UNUSED=9"
 
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
+-- `_ ∨ True` population — its sibling's move, under this peel.
 def expectedOptTallyP : String :=
-  "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"
+  "total=162 ETA=34 FIELD=4 READ=84 RELAY=38 RETURN=2"
 
 run_cmd do
   let env ← getEnv
@@ -363,10 +373,13 @@ what "no terminal inside `L4YAML`" denied, and `indicator_open_map`'s lands at
 The count is asserted beside the rows, because an empty shortlist that is not
 also counted passes vacuously. -/
 
+-- Item 287: the three `accum_block_on_*` rows, and the `closeThenBlock` binder
+-- two of them land at, read two binders earlier — `sp_block_ctx` and
+-- `h_stream_fallback` retired from all four.
 def expectedNineResolved : List String :=
-  [ "accum_block_on_pendingBlock#29 (h_seqF_old) => ELIM@L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock#29>Or.casesOn#3",
-    "accum_block_on_pendingBlockContent#34 (h_seqF_old) => ELIM@L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock#29>Or.casesOn#3",
-    "accum_block_on_pendingContent#32 (h_seqF168) => RETURN@L4YAML.Proofs.StreamAccum.accum_block_on_pendingContent#32",
+  [ "accum_block_on_pendingBlock#27 (h_seqF_old) => ELIM@L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock#27>Or.casesOn#3",
+    "accum_block_on_pendingBlockContent#32 (h_seqF_old) => ELIM@L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock#27>Or.casesOn#3",
+    "accum_block_on_pendingContent#30 (h_seqF168) => RETURN@L4YAML.Proofs.StreamAccum.accum_block_on_pendingContent#30",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old) => FIELD@L4YAML.Proofs.StreamAccum.PendingNode.pendingProps#19",
     "colon_open_map#24 (h_cov_in) => FIELD@And.intro#2",
     "flowKeyRoute_of_root#20 (h_tail143) => RETURN@L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root#20",
@@ -383,8 +396,8 @@ def expectedRefTerminalsP : List String :=
 run_cmd do
   let env ← getEnv
   let nine : List (Name × Nat) :=
-    [ (``accum_block_on_pendingBlock, 29), (``accum_block_on_pendingBlockContent, 34),
-      (``accum_block_on_pendingContent, 32), (``accum_content_on_pendingMapValue_indented, 14),
+    [ (``accum_block_on_pendingBlock, 27), (``accum_block_on_pendingBlockContent, 32),
+      (``accum_block_on_pendingContent, 30), (``accum_content_on_pendingMapValue_indented, 14),
       (``colon_open_map, 24), (``flowKeyRoute_of_root, 20), (``indicator_open_map, 26),
       (``question_open_map, 23), (``question_open_map, 24) ]
   if nine.length != expectedCoreTerminal.length then
@@ -521,8 +534,10 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
 /-- Ten dead binders in the whole explored closure, and every one is `UNUSED`.
     Nine are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
     does not move — and the tenth is one module over. -/
+-- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is its
+-- thirteenth binder.
 def expectedDead : List String :=
-  [ "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#10 (_h_res) [class marker]",
+  [ "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#10 (_h_src) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#11 (_h_indent) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#12 (_h_park) [class marker]",
@@ -537,7 +552,7 @@ def expectedDead : List String :=
     source and it is written down so a later reader can disagree with it; what
     is measured is the set, not the reasons. -/
 def deadReason : String → String
-  | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#10"
+  | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#10"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#11"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#12"
@@ -648,7 +663,9 @@ lemma opt_premise_is_no_premise {A P : Prop} : (A ∨ True → P) ↔ P :=
 
     The pin is the count, because a selector that matched nothing would make
     the sentence above true and empty. -/
-def expectedOptPopulation : String := "total=163 optTy=163 ctorFields=34"
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` left the `_ ∨ True`
+-- population.
+def expectedOptPopulation : String := "total=162 optTy=162 ctorFields=34"
 
 run_cmd do
   let env ← getEnv

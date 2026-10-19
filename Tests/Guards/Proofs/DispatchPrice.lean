@@ -30,7 +30,7 @@ and for a grammar path landing on the position the step's output names.
 
 | rung | what it asks | count |
 |---|---|---|
-| `dispHolders` | a `scanNextToken_dispatch*` equation is held | **299** |
+| `dispHolders` | a `scanNextToken_dispatch*` equation is held | ~~299~~ **300** |
 | `dispTwoCorr` | …with two correspondences beside it | **28** |
 | `edge` | a production LANDS on the step's output position | **4** |
 | `chain` | a production path RUNS from a known point to it | **1** |
@@ -266,9 +266,15 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
     `dispatchBlock_colon_or_question_offerPred` and `slotGateAt_spend`.  None
     holds two correspondences (`dispTwoCorr` stays 28), `fns` and `fnsIx` hold,
     and with the 49 declarations excluded the census reads 1654 / 294 again, so
-    availability rose by what the slot face reads and derivation did not move. -/
+    availability rose by what the slot face reads and derivation did not move.
+
+    Moved to 1675 / 300 by DOCS item 287 and no new step:
+    `block_dispatch_deferred_inline` reads its three premises off the dispatch
+    now, so its statement holds the preprocessing and dispatch equations it
+    did not hold before.  It holds one correspondence (`dispTwoCorr` stays 28),
+    and `fns` and `fnsIx` hold. -/
 def expectedSteps : String :=
-  "stepHolders=1674 dispHolders=299 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1675 dispHolders=300 dispTwoCorr=28 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -314,10 +320,11 @@ def expectedChainSpec : List Name :=
     `slotGateAt_of_offerPred`, `slotGateAt_of_propsPark`,
     `slotGateAt_of_parkSource`, `slotGateAt_of_noPending`, and
     `slotGateAt_spend` for the dispatch — and none carries a path, so both
-    second numbers hold. -/
+    second numbers hold.  DOCS item 287 adds one holder of preprocessing's
+    equation, `block_dispatch_deferred_inline`, with no path. -/
 def expectedPerFn : List String :=
   ["scanNextToken_dispatchContent decls=130 chain=1",
-   "scanNextToken_preprocess decls=201 chain=6"]
+   "scanNextToken_preprocess decls=202 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

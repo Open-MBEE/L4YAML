@@ -839,10 +839,18 @@ def hopName (env : Environment) (e : Edge) : String :=
     the split landing, the split branch and the collapsed edge stand.  **Item
     258 moves two more**: the entry park's compact and nested re-parks'
     `pendingBlock.h_closeF` (the same literal from the park's own top bound),
-    one edge each, `DECLINE` 268 → 266 and `PAY` 46 → 48; no split is added. -/
+    one edge each, `DECLINE` 268 → 266 and `PAY` 46 → 48; no split is added.
+
+    **Item 287 moves `edges` for the first time, and no walk lost an edge: a
+    BINDER left the population.**  `accum_block_on_closeThenBlock`'s `h_vslot`
+    was `_ ∨ True`; its right disjunct is the caller's reading of an inline
+    residue now (DOCS item 287), so it is not an optional premise and its
+    eleven supply edges are not this census's: the ten callers that wrote
+    `Or.inr trivial` (`DECLINE` 265 → 255) and the value park's split on
+    `h_vslot51` (`SPLIT` 156 → 155).  `edges` 659 → 648. -/
 def expectedTally : String :=
-  "edges=659 skipped=30 [DECLINE=265, FIELD=58, LOCAL=27, PAY=49, RELAY=68, \
-SPLIT=156, VIA=36]"
+  "edges=648 skipped=30 [DECLINE=255, FIELD=58, LOCAL=27, PAY=49, RELAY=68, \
+SPLIT=155, VIA=36]"
 
 /-- **The row item 211 read off the compiler's error text and got wrong.**  All
     eight of these print `h_keyctx` when the premise is narrowed; six of them
@@ -924,11 +932,15 @@ Or.imp⇒SPLIT=3, dite⇒SPLIT=4]"
     **That one is named in `expectedCollapsedEdge` as of item 218**, and naming
     it was not bookkeeping: it is the site N-218 broke at where the join
     predicted no break, because its `have` ascribes the wide `_ ∨ True` while
-    its proof pays on all six branches. -/
+    its proof pays on all six branches.
+
+    **Item 287: one split fewer**, the value park's split on `h_vslot51`, which
+    left with the binder it supplied (`expectedTally`): `survived` 156 → 155,
+    `leaves` 330 → 328, one `DECLINE|PAY`. -/
 def expectedSplitLanding : String :=
-  "survived=156 collapsed=1 leaves=330 elsewhere=0 [DECLINE=169, PAY=161] \
+  "survived=155 collapsed=1 leaves=328 elsewhere=0 [DECLINE=168, PAY=160] \
 [DECLINE|DECLINE|DECLINE|PAY=1, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|PAY=8, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=144, \
+DECLINE|DECLINE|PAY=8, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=143, \
 DECLINE|PAY|PAY=1]"
 
 /-- **Which BRANCH is taken (DOCS item 217).**  Item 216 resolved what a split
@@ -960,10 +972,19 @@ DECLINE|PAY|PAY=1]"
     `closed`**, an `Or.inr trivial` that mentions nothing in scope, and all 160
     `PAY` leaves are `free`.  That asymmetry is what made N-217 predictable by
     line: a `closed` decline cannot break when the premise its split branches on
-    is narrowed. -/
+    is narrowed.
+
+    **Item 287 moves six roots.**  Five splits branch on
+    `accum_block_on_closeThenBlock`'s own `h_vslot` (`expectedBranchSupply`'s
+    row for it read `splits=5`), and they stay and change their ROOT's kind,
+    because that binder stopped being a `_ ∨ True`: `optionalRoot` 100 → 95.
+    The sixth is the value park's split on its park's `h_vslot` FIELD — a
+    plain root — which left with the binder it supplied (`relayRooted`
+    146 → 145, one `DECLINE-closed` and one `PAY-free` with it): `plainRoot`
+    46 + 5 − 1 = 50. -/
 def expectedSplitBranch : String :=
-  "splits=156 leaves=330 relayRooted=146 siteDecided=10 optionalRoot=100 \
-plainRoot=46 agree=100/100 disagree=0 [DECLINE-closed=165, DECLINE-free=4, PAY-free=161]"
+  "splits=155 leaves=328 relayRooted=145 siteDecided=10 optionalRoot=95 \
+plainRoot=50 agree=100/100 disagree=0 [DECLINE-closed=164, DECLINE-free=4, PAY-free=160]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue
     of the branch question after `expectedSplitBranch`.  Four are a `dite` on a
@@ -1001,8 +1022,10 @@ DECLINE|PAY"]
 def expectedBranchPremises : List String :=
   ["1 h_mapF", "1 h_mapFV", "1 h_mk", "1 h_pr", "1 h_routeS", "1 h_sfx", "1 h_valFV",
    "10 h_closeFV_old", "13 h_closeF_old", "3 h_cov", "3 h_kslotUp_old", "3 h_seqF_old",
+   -- Item 287: `h_vslot` 8 → 3, the five splits `expectedSplitBranch` names.
+   "3 h_vslot",
    "4 h_closeFV108", "4 h_expl", "4 h_kslotUp", "4 h_resV_land", "4 h_routeF",
-   "4 h_routeFV", "5 h_seqF168", "7 h_closeF99", "8 h_kslot_old", "8 h_vslot",
+   "4 h_routeFV", "5 h_seqF168", "7 h_closeF99", "8 h_kslot_old",
    "9 h_kslot"]
 
 /-- **Is a DECLINE arm ever SELECTED (DOCS item 218).**  Item 217 named, for
@@ -1028,9 +1051,12 @@ def expectedBranchPremises : List String :=
     `accounted` is the control: the join must PARTITION the census, so it has to
     equal `edges`.  `resolved` is the second: every `FIELD` edge must name a
     constructor field, or the `FIELD` hop is guessing. -/
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` left the population
+-- (`expectedTally`), and the join with it: one pair, which its ten callers
+-- declined DIRECTLY, its node, and the five splits that branched on it.
 def expectedDeclineReach : String :=
-  "pairs=36 orphan=3 direct=8 closureDecline=33 dead=0 maxDepth=2 liveSplits=97 \
-deadSplits=0 accounted=659/659 nodes=161 fieldEdges=58 fieldResolved=58 withCycle=8 \
+  "pairs=35 orphan=3 direct=7 closureDecline=32 dead=0 maxDepth=2 liveSplits=92 \
+deadSplits=0 accounted=648/648 nodes=160 fieldEdges=58 fieldResolved=58 withCycle=8 \
 declineWriters=19 parkHop=21"
 
 /-- **Every branch premise, with what its own callers supply and where that
@@ -1038,31 +1064,35 @@ declineWriters=19 parkHop=21"
     itself (`pendingBlock.h_closeF`), which is the form the module's own
     comments use, so the row is checkable against them by a route this census
     does not take.  `⇒` is the terminal set, `br` marking a label reached on one
-    branch of a split rather than flatly. -/
+    branch of a split rather than flatly.
+
+    Item 287: `h_vslot :: accum_block_on_closeThenBlock#12 :: splits=5 sup=11`
+    left with its binder, and every other row of the three lemmas that lost
+    `sp_block_ctx` and `h_stream_fallback` reads its binder two places earlier. -/
 def expectedBranchSupply : List String :=
   ["h_closeF99 :: accum_content_on_pendingMapValue_indented#18 :: splits=7 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_closeF ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_closeFV108 :: accum_content_on_pendingMapValue_indented#20 :: splits=4 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_closeFV ⇒ DECLINE+PAY+brDECLINE+brPAY",
-   "h_closeFV_old :: accum_block_on_pendingBlock#31 :: splits=4 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_closeFV ⇒ DECLINE+brDECLINE+brPAY",
-   "h_closeFV_old :: accum_block_on_pendingBlockContent#37 :: splits=2 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_closeFV ⇒ brDECLINE+brPAY",
+   "h_closeFV_old :: accum_block_on_pendingBlock#29 :: splits=4 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_closeFV ⇒ DECLINE+brDECLINE+brPAY",
+   "h_closeFV_old :: accum_block_on_pendingBlockContent#35 :: splits=2 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_closeFV ⇒ brDECLINE+brPAY",
    "h_closeFV_old :: accum_content_on_pendingBlock_indented#29 :: splits=4 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_closeFV ⇒ DECLINE+brDECLINE+brPAY",
-   "h_closeF_old :: accum_block_on_pendingBlockContent#36 :: splits=2 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_closeF ⇒ brDECLINE+brPAY",
+   "h_closeF_old :: accum_block_on_pendingBlockContent#34 :: splits=2 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_closeF ⇒ brDECLINE+brPAY",
    "h_closeF_old :: accum_content_on_pendingBlock_indented#14 :: splits=11 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_closeF ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_cov :: indicator_open_map#27 :: splits=3 sup=4 [DECLINE=1,SPLIT=3] ⇐ - ⇒ DECLINE+brDECLINE+brPAY",
    "h_expl :: accum_content_on_pendingMapValue_indented#15 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_expl ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_expl :: explFrameValueLine#3 :: splits=1 sup=4 [RELAY=4] ⇐ h_expl@accum_content_on_pendingMapValue_indented ⇒ DECLINE+PAY+brDECLINE+brPAY",
-   "h_kslot :: accum_block_on_pendingBlock#15 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
-   "h_kslot :: accum_block_on_pendingBlockContent#16 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslot ⇒ brDECLINE+brPAY",
+   "h_kslot :: accum_block_on_pendingBlock#13 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
+   "h_kslot :: accum_block_on_pendingBlockContent#14 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslot ⇒ brDECLINE+brPAY",
    "h_kslot :: accum_content_on_pendingMapValue_indented#17 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
    "h_kslot :: colon_open_map_implicit#11 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.left ⇒ ORPHAN",
    "h_kslot :: colon_open_map_props#11 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.left ⇒ ORPHAN",
-   "h_kslotUp :: accum_block_on_pendingBlock#30 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
-   "h_kslotUp :: accum_block_on_pendingBlockContent#35 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
+   "h_kslotUp :: accum_block_on_pendingBlock#28 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
+   "h_kslotUp :: accum_block_on_pendingBlockContent#33 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
    "h_kslotUp_old :: accum_content_on_pendingBlock_indented#28 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
    "h_kslot_old :: accum_content_on_pendingBlock_indented#13 :: splits=8 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
-   "h_mapF :: accum_block_on_closeThenBlock#30 :: splits=1 sup=11 [DECLINE=7,FIELD=2,RELAY=2] ⇐ h_mapF109@accum_block_on_pendingContent,-,PendingNode.pendingMapValue.h_frames ⇒ DECLINE+PAY+brDECLINE+brPAY",
-   "h_mapFV :: accum_block_on_closeThenBlock#32 :: splits=1 sup=11 [DECLINE=7,FIELD=2,RELAY=2] ⇐ h_mapFV108@accum_block_on_pendingContent,-,PendingNode.pendingMapValue.h_framesV ⇒ DECLINE+PAY+brDECLINE+brPAY",
-   "h_mk :: accum_block_on_closeThenBlock#21 :: splits=1 sup=11 [DECLINE=10,PAY=1] ⇐ - ⇒ DECLINE+PAY",
-   "h_pr :: accum_block_on_closeThenBlock#31 :: splits=1 sup=11 [DECLINE=9,SPLIT=2] ⇐ - ⇒ DECLINE+brDECLINE+brPAY",
+   "h_mapF :: accum_block_on_closeThenBlock#28 :: splits=1 sup=11 [DECLINE=7,FIELD=2,RELAY=2] ⇐ h_mapF109@accum_block_on_pendingContent,-,PendingNode.pendingMapValue.h_frames ⇒ DECLINE+PAY+brDECLINE+brPAY",
+   "h_mapFV :: accum_block_on_closeThenBlock#30 :: splits=1 sup=11 [DECLINE=7,FIELD=2,RELAY=2] ⇐ h_mapFV108@accum_block_on_pendingContent,-,PendingNode.pendingMapValue.h_framesV ⇒ DECLINE+PAY+brDECLINE+brPAY",
+   "h_mk :: accum_block_on_closeThenBlock#19 :: splits=1 sup=11 [DECLINE=10,PAY=1] ⇐ - ⇒ DECLINE+PAY",
+   "h_pr :: accum_block_on_closeThenBlock#29 :: splits=1 sup=11 [DECLINE=9,SPLIT=2] ⇐ - ⇒ DECLINE+brDECLINE+brPAY",
    "h_resV_land :: colon_open_map#26 :: splits=3 sup=1 [RELAY=1] ⇐ h_resV_land@indicator_open_map ⇒ DECLINE+brDECLINE+brPAY",
    "h_resV_land :: question_open_map#27 :: splits=1 sup=1 [RELAY=1] ⇐ h_resV_land@indicator_open_map ⇒ DECLINE+brDECLINE+brPAY",
    "h_routeF :: colon_open_map_implicit#12 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
@@ -1072,9 +1102,8 @@ def expectedBranchSupply : List String :=
    "h_routeS :: colon_open_map_implicit#27 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.right ⇒ ORPHAN",
    "h_seqF168 :: accum_content_on_pendingMapValue_indented#35 :: splits=5 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_seqF ⇒ DECLINE+brDECLINE+brPAY",
    "h_seqF_old :: accum_content_on_pendingBlock_indented#15 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_seqF ⇒ DECLINE+PAY",
-   "h_sfx :: accum_block_on_closeThenBlock#20 :: splits=1 sup=11 [DECLINE=10,PAY=1] ⇐ - ⇒ DECLINE+PAY",
-   "h_valFV :: accum_block_on_closeThenBlock#33 :: splits=1 sup=11 [DECLINE=9,FIELD=2] ⇐ -,PendingNode.pendingMapValue.h_closeFV ⇒ DECLINE+PAY+brDECLINE+brPAY",
-   "h_vslot :: accum_block_on_closeThenBlock#12 :: splits=5 sup=11 [DECLINE=10,SPLIT=1] ⇐ - ⇒ DECLINE+brDECLINE+brPAY",
+   "h_sfx :: accum_block_on_closeThenBlock#18 :: splits=1 sup=11 [DECLINE=10,PAY=1] ⇐ - ⇒ DECLINE+PAY",
+   "h_valFV :: accum_block_on_closeThenBlock#31 :: splits=1 sup=11 [DECLINE=9,FIELD=2] ⇐ -,PendingNode.pendingMapValue.h_closeFV ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_vslot :: accum_content_on_pendingMapValue_indented#16 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_vslot ⇒ DECLINE+PAY+brDECLINE+brPAY"]
 
 /-- **The lemmas that actually WRITE the declines** the 99 splits branch on,
@@ -1099,9 +1128,12 @@ def expectedBranchSupply : List String :=
     items 257 and 258's payments moved their lemmas' numbers UP, because the
     count follows the chase and not the direction of the payment.  Predict it
     from the chase, or read it from the run. -/
+-- Item 287: the eleven declines written into `accum_block_on_closeThenBlock`'s
+-- `h_vslot` left with that binder — two by `…_pendingContent`, one each by
+-- `…_pendingBlockContent` and `…_pendingBlock`, and seven by
+-- `accum_block_pending` (six flat, one the value park's split branch).
 def expectedDeclineWriters : List String :=
   ["10 accum_block_on_noPending",
-   "10 accum_block_on_pendingContent",
    "12 accum_content_on_pendingBlock_indented",
    "12 accum_content_on_pendingMapValue_indented",
    "13 colon_open_map",
@@ -1110,13 +1142,14 @@ def expectedDeclineWriters : List String :=
    "16 colon_open_map_implicit",
    "16 colon_open_map_props",
    "17 accum_block_on_closeThenBlock",
-   "18 accum_block_on_pendingBlockContent",
+   "17 accum_block_on_pendingBlockContent",
    "2 colon_fires_implicit_key",
    "2 colon_fires_props_key",
    "2 question_open_map",
-   "31 accum_block_on_pendingBlock",
+   "30 accum_block_on_pendingBlock",
    "32 accum_content_pending",
-   "41 accum_block_pending",
+   "34 accum_block_pending",
+   "8 accum_block_on_pendingContent",
    "8 accum_step_flow",
    "8 content_dispatch_routed"]
 

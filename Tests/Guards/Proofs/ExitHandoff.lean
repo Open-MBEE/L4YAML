@@ -323,7 +323,9 @@ def expectedLines : List String :=
    "absorb_stacksB input=sp_block slots=0 nil=0 carrier=0 forward=0 other=0 loose=1 at=[] stream=[] flow=[] parks=[]",
    "accum_block_on_closeThenBlock input=none slots=2 nil=2 carrier=0 forward=0 other=0 loose=0 at=[bound(sp_a):1,bound(sp_mid):1] stream=[bound:h_stream_a:1,bound:h_stream_new:=param:h_close_pending:1] flow=[nil:2] parks=[pendingBlock:2]",
    "accum_block_on_noPending input=sp_block slots=1 nil=1 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):1] stream=[param:h_stream_block:1] flow=[nil:1] parks=[pendingBlock:1]",
-   "accum_block_on_pendingBlock input=sp_block(+1) slots=3 nil=3 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):3] stream=[param:h_stream_block:3] flow=[nil:3] parks=[pendingBlock:3]",
+   -- Item 287: its second stream hypothesis, `h_stream_fallback`, retired, so
+   -- the input reads unmarked.
+   "accum_block_on_pendingBlock input=sp_block slots=3 nil=3 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):3] stream=[param:h_stream_block:3] flow=[nil:3] parks=[pendingBlock:3]",
    "accum_block_on_pendingBlockContent input=sp_block slots=1 nil=1 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):1] stream=[param:h_stream_block:1] flow=[nil:1] parks=[pendingBlock:1]",
    "accum_content_on_pendingBlock_indented input=sp_block slots=4 nil=4 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):4] stream=[param:h_stream_block:4] flow=[nil:4] parks=[pendingBlockContent:3,pendingProps:1]",
    "accum_content_on_pendingMapValue_indented input=sp_block slots=4 nil=4 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):3,param(sp_scan'):1] stream=[bound:h_stream':=param:h_close_old:1,param:h_stream_block:3] flow=[nil:4] parks=[pendingContent:3,pendingProps:1]",

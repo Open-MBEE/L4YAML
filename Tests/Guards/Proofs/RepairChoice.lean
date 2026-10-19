@@ -46,8 +46,10 @@ That question is about `close_with_ssl`'s consumers, so the zero is exact and
 narrow.  **It is not a claim that the other two repairs change no statements.**
 The `field` end moves the connection to the park's PRODUCER, which cannot
 derive it from the correspondence it holds, so a premise is threaded there
-instead and the producer's own closure is eighteen declarations — seven of
-them outside item 238's set, which the weak repair never leaves:
+instead and the producer's own closure is ~~eighteen~~ **twenty** declarations
+(DOCS item 287: the two `:` consumers apply the escape's inline wrapper
+themselves) — ~~seven~~ **nine** of them outside item 238's set, which the weak
+repair never leaves:
 `Tests/Guards/Proofs/ProducerDerivation.lean` (DOCS item 241).
 
 ## Why the thread does not stop before the top
@@ -225,7 +227,7 @@ def holdsScanStream (n : Name) : MetaM (Nat × Nat × Bool) := do
 /-- The thread, and the producer's own.  `shared` is the eleven declarations
     both repairs reach however the repair is spelled. -/
 def expectedThread : String :=
-  "thread=19 prodThread=18 shared=11 capstones=2 rings=8"
+  "thread=19 prodThread=20 shared=11 capstones=2 rings=8"
 
 /-- The first ring: the five library consumers item 238 named, and item 239's
     own exhibit, which rides the arm on purpose and goes with it. -/

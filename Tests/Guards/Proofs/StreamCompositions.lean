@@ -641,7 +641,9 @@ def expectedSites : List String :=
    "accum_block_pending→accum_block_on_closeThenBlock.h_close_pending [SSLComments ⇒ Stream] segments=3 comps=3",
    "accum_block_pending→accum_block_on_pendingBlockContent.h_close_pending [SSLComments ⇒ Stream] segments=3 comps=3",
    "accum_block_pending→accum_block_on_pendingBlock.h_close_pending [SSLComments ⇒ Stream] segments=3 comps=3",
-   "accum_block_pending→accum_block_on_closeThenBlock.h_vslot [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream | [col(_)=_+1] SBlockIndented(_,blockOut) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream | [col(_)=_+1] SBlockIndented(_,blockOut) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream] segments=1 comps=1",
+   -- Item 287: the value park's `h_vslot` declines its slot with the escape
+   -- applied to the same stream leaf, so the leaf reaches two more segments.
+   "accum_block_pending→accum_block_on_closeThenBlock.h_vslot [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream | [col(_)=_+1] SBlockIndented(_,blockOut) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream | [col(_)=_+1] SBlockIndented(_,blockOut) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream] segments=3 comps=2",
    "accum_structural_pending→dispatch_new_pending.h_dir_route [SLDirectiveDocument ⇒ Stream] segments=1 comps=1",
    "structural_dispatch_to_pending:pendingDocStart.h_doc_route [GAlt(SLBareDocument,GSeq(SENode,SSLComments)) ⇒ Stream] segments=1 comps=1"]
 
@@ -681,6 +683,8 @@ def expectedSiteComps : List String :=
    "accum_block_pending→accum_block_on_pendingBlock.h_close_pending ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.none,GStar.nil]",
    "accum_block_pending→accum_block_on_pendingBlock.h_close_pending ⟶ SLYamlStream.scannerDrop[S,prem:SSLComments]",
    "accum_block_pending→accum_block_on_closeThenBlock.h_vslot ⟶ (fact)",
+   -- Item 287: the frameless arm's escape, reached by its lemma hop.
+   "accum_block_pending→accum_block_on_closeThenBlock.h_vslot ⟶ (via)",
    "accum_structural_pending→dispatch_new_pending.h_dir_route ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.some(SLAnyDocument.directive(prem:SLDirectiveDocument)),GStar.nil]",
    "structural_dispatch_to_pending:pendingDocStart.h_doc_route ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.explicit(SLExplicitDocument.withContent)),GStar.nil]"]
 
@@ -737,9 +741,17 @@ def expectedShapeComps : List String :=
     `drop_ride`: each of their paths ran to `dropClose`'s leaf, and the slot's
     value route is refuted rather than routed, so it emits none.  Putting the
     three spends back on `drop_ride` on the item-285 tree reads 206 again
-    (`scratchpad/l4yaml-row12-steps/153-iso-streamcomp.log`). -/
+    (`scratchpad/l4yaml-row12-steps/153-iso-streamcomp.log`).
+
+    2026-10-19 (item 287): `segments` 51 -> 53 and `unmarked` 203 -> 202.  The
+    two segments are the value park's frameless arm, which applies the escape
+    to the stream leaf its slot already spends — `siteComps` names it, `(via)`.
+    `unmarked` is net over the restructure: the fallback streams the content
+    parks handed `accum_block_on_closeThenBlock` are gone and the deferrals at
+    the seven arms are new, and one fewer leaf-to-top path crosses no build
+    point.  This item did not isolate which. -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=51 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=203 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=53 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=202 reach=38"
 
 /-! ## §5 The reading -/
 

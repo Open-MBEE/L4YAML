@@ -169,10 +169,14 @@ def armEdges (anchor : Name) : CommandElabM (Array Edge × Nat) := do
     acc := walk env m nm n #[] v acc
   return (acc, skipped)
 
-/-- The twenty-two arm binders, tight first by sort order.  Six of the fourteen
-    tight rows are the park CONSTRUCTORS — the supply, which a demand census is
-    right to exclude and which item 223's twelve therefore did.  The other
-    eight are consumers, and item 223's ledger named four of them. -/
+/-- The ~~twenty-two~~ twenty-one arm binders, tight first by sort order.  Six
+    of the ~~fourteen~~ thirteen tight rows are the park CONSTRUCTORS — the
+    supply, which a demand census is right to exclude and which item 223's
+    twelve therefore did.  The other ~~eight~~ seven are consumers, and item
+    223's ledger named four of them.  DOCS item 287: the inline wrapper reads
+    its arm off the dispatch, so its `h_arm` row is gone, and three
+    `accum_block_on_*` read their `h_park` two binders earlier, past the
+    retired `sp_block_ctx` and `h_stream_fallback`. -/
 def expectedBinders : List String :=
   [ "loose accum_block_on_noPending#13 (h_arm)",
     "loose accum_content_on_noPending#15 (h_park)",
@@ -182,11 +186,10 @@ def expectedBinders : List String :=
     "loose landing_or_park_save#6 (h_park)",
     "loose landing_or_park_ska#6 (h_park)",
     "loose preprocess_flow_thread#9 (h_park)",
-    "tight accum_block_on_closeThenBlock#17 (h_park)",
-    "tight accum_block_on_pendingBlockContent#25 (h_park)",
-    "tight accum_block_on_pendingContent#23 (h_park)",
+    "tight accum_block_on_closeThenBlock#15 (h_park)",
+    "tight accum_block_on_pendingBlockContent#23 (h_park)",
+    "tight accum_block_on_pendingContent#21 (h_park)",
     "tight block_dispatch_deferred#5 (h_arm)",
-    "tight block_dispatch_deferred_inline#7 (h_arm)",
     "tight block_dispatch_deferred_stamp_nopack#7 (h_arm)",
     "tight block_dispatch_deferred_stamp_offcol#8 (h_arm)",
     "tight colon_fires_implicit_key#11 (h_arm)",
@@ -217,9 +220,15 @@ def expectedBinders : List String :=
 
     **Item 285 adds one more**: `slot_ride` builds the open's `noPending` park
     exactly as `drop_ride` does, paying its tight `h_arm` with
-    `Or.inr (inFlow_of_flowLevel_eq h_fl1)`. -/
+    `Or.inr (inFlow_of_flowLevel_eq h_fl1)`.
+
+    **Item 287 takes two out**: the inline wrapper reads its arm off the
+    dispatch, so its `h_arm` binder is gone and with it the two `VIA` edges
+    its old applications paid (`arm_tight_of_block_dispatch`) and the `RELAY`
+    it handed `block_dispatch_deferred`; the wrapper's own derivation is one
+    `VIA` edge in their place.  91 → 89, `RELAY` 25 → 24, `VIA` 32 → 31. -/
 def expectedTally : String :=
-  "edges=91 skipped=30 DECLINE=19 FIELD=6 PAY=9 RELAY=25 VIA=32"
+  "edges=89 skipped=30 DECLINE=19 FIELD=6 PAY=9 RELAY=24 VIA=31"
 
 run_cmd do
   let env ← getEnv

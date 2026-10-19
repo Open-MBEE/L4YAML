@@ -21,6 +21,13 @@ because both ends narrow together.
 Elaborates StreamAccum alone (`lake env lean`) and restores it byte-identical,
 md5-checked.
 
+**`feeders` reads the tree as it stood at item 286.**  Item 287 retired the
+fallback: `accum_block_on_closeThenBlock`'s `h_vslot` carries the caller's own
+reading of an inline residue where the park holds no open slot, and each arm
+that defers applies the escape itself.  So on a later tree `feeders` says so
+and stops; `arms` reads the class's sites instead, by deleting the wrapper and
+locating every application it then lacks.
+
 `census` asks the RUNTIME what the class's reasons stand for, at every
 yaml-test-suite case (all 351 sources) and a fixed list of hand-written
 inputs.  A row is a park the `:` consumers read: the last real token is
@@ -39,7 +46,8 @@ off the scanner state.  Two readings per row:
 The probe is written to `Scratch/` (gitignored), elaborated, and deleted.
 
 Usage:
-    python3 scripts/inline_class_price.py feeders
+    python3 scripts/inline_class_price.py feeders   # item 286's tree
+    python3 scripts/inline_class_price.py arms      # item 287 on
     python3 scripts/inline_class_price.py census
 """
 import hashlib
@@ -143,6 +151,10 @@ def run(lines):
 
 def feeders():
     src = TARGET.read_text().split("\n")
+    if not any(l.startswith("    (h_stream_fallback :") for l in src):
+        print("feeders: `h_stream_fallback` retired at item 287 -- "
+              "`arms` reads the class's sites on this tree")
+        return
     patched = narrow(src)
     body = run(patched)
     pat = re.compile(rf"^{re.escape(REL)}:(\d+):(\d+): error: (.*)$")
@@ -190,6 +202,90 @@ def check_pin(name, label, line):
     else:
         print(f"{label} MOVED\n  got      {line}\n  expected {m.group(1)}")
         sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# `arms` mode (item 287): the class's sites, by deleting the wrapper.
+
+WRAPPER = "block_dispatch_deferred_inline"
+
+
+def wrapper_span(lines):
+    """The wrapper's declaration with its docstring, as `(first, last+1)`."""
+    head = [i for i, l in enumerate(lines) if l == f"lemma {WRAPPER}"]
+    assert len(head) == 1, head
+    i = head[0]
+    end = i + 1
+    while end < len(lines) and not (lines[end] and not lines[end][0].isspace()):
+        end += 1
+    start = i
+    if lines[start - 1].rstrip().endswith("-/"):
+        start -= 1
+        while not lines[start].startswith("/--"):
+            start -= 1
+    return start, end
+
+
+def arm_label(lines, i, decl_line):
+    """The case arm an application stands in: its own `| reason =>`, the
+    nearest `| pendingX` park arm above it, or the `by_cases` it negates."""
+    # a punt REASON's own arm, written on the application's line; any other
+    # `| …` there (a `match` on the slot, say) is not the arm it stands in
+    m = re.match(r"^\s*\| (\w+)", lines[i])
+    if m and m.group(1) in ("tab", "dedent", "implicitValue", "noKeyContext"):
+        return m.group(1)
+    ind = len(lines[i]) - len(lines[i].lstrip())
+    for j in range(i - 1, decl_line, -1):
+        t = lines[j]
+        if not t.strip() or t.strip().startswith("--"):
+            continue
+        tind = len(t) - len(t.lstrip())
+        m = re.match(r"^  \| (pending\w+)", t)
+        if m:
+            return m.group(1)
+        if tind == ind:
+            m = re.match(r"^\s*by_cases (\w+)", t)
+            if m:
+                return "¬" + m.group(1)
+    return "-"
+
+
+def arms():
+    src = TARGET.read_text().split("\n")
+    a, b = wrapper_span(src)
+    patched = src[:a] + ["-- WRAPPER DELETED (scripts/inline_class_price.py arms)"] * (b - a) + src[b:]
+    body = run(patched)
+    pat = re.compile(rf"^{re.escape(REL)}:(\d+):(\d+): error(?:\([\w.]+\))?: (.*)$")
+    starts = decl_starts(src)
+    rows, other = [], []
+    for l in body.split("\n"):
+        m = pat.match(l)
+        if not m:
+            continue
+        ln, msg = int(m.group(1)), m.group(3)
+        if WRAPPER not in msg:
+            other.append(l)
+            continue
+        i = ln - 1
+        d = enclosing(starts, i)
+        dl = max(j for j, n in starts if j <= i)
+        rows.append((d, arm_label(src, i, dl), ln))
+    by = {}
+    for d, arm, ln in rows:
+        by.setdefault(d, []).append((arm, ln))
+    print(f"\n=== arms: {len(rows)} applications / {len(by)} declarations ===")
+    for d, rs in sorted(by.items()):
+        print(f"  {len(rs):3d}  {d}")
+        for arm, ln in rs:
+            print(f"         L{ln:<6} {arm}")
+    if other:
+        print(f"  ({len(other)} other errors -- the deletion broke more than the applications)")
+        for l in other[:10]:
+            print("   ", l[:180])
+    line = (f"apps={len(rows)} decls={len(by)} arms="
+            + ",".join(f"{d}/{arm}" for d, arm, _ in sorted(rows)))
+    print("INLINE-ARMS " + line)
+    check_pin("expectedInlineArms", "INLINE-ARMS-PIN", line)
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +425,9 @@ if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "feeders"
     if which == "feeders":
         feeders()
+    elif which == "arms":
+        arms()
     elif which == "census":
         census()
     else:
-        sys.exit("usage: inline_class_price.py feeders|census")
+        sys.exit("usage: inline_class_price.py feeders|arms|census")

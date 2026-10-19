@@ -183,6 +183,8 @@ lemma colon_fires_from_any_park
     h_stale
     -- **The arm, from ANY park** — the one blocker item 223 paid.
     (PendingNode.arm_tight_or_col h_noflow_sc h_pending)
-    h_kbc h_scf h_punt hcorr_prep hcorr_result h_corr h_noflow h_preprocess h_dispatch
+    -- Item 287: the consumer takes the punt as a builder, told what an inline
+    -- residue at the park is; this route's punt is already the conclusion.
+    h_kbc h_scf (fun _ => h_punt) hcorr_prep hcorr_result h_corr h_noflow h_preprocess h_dispatch
 
 end Tests.Guards.ArmDemandLedger

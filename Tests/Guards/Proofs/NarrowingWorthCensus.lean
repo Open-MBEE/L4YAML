@@ -277,19 +277,20 @@ def isSurfFace (env : Environment) (lhs : Expr) : MetaM Bool := do
     binders spell 62 distinct shapes, so the population is not 163 copies of
     one idiom and not 163 unrelated facts. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a face, left the
--- `_ ∨ True` population.
-def expectedFaceTally : String := "binders=162 faces=61 heads=18"
+-- `_ ∨ True` population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`.
+def expectedFaceTally : String := "binders=161 faces=60 heads=18"
 
 /-- The conclusion head of every left disjunct.  `FVAR 2` is `frameChainUnion`,
     whose face is schematic in `P` — the two rows no census of any kind can
     evaluate, because there is nothing there to evaluate. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` was one of the faces
--- headed `SLYamlStream`; it left the population.
+-- headed `SLYamlStream`; it left the population.  Item 288:
+-- `PendingNode.pendingMapValue.h_vslot`'s face, headed by its `≤`, left too.
 def expectedHeadCensus : List String :=
   ["BareLandingFacts 8", "CompletedTail 4", "Covered 3", "Eq 17", "FVAR 2",
    "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "MarkerNodeRoute 5",
    "Mono 4", "PropsNodeRoute 4", "ResumeFrames 12", "SLYamlStream 31",
-   "SeqEntryTail 7", "SuffixRun 6", "le 11", "lt 23"]
+   "SeqEntryTail 7", "SuffixRun 6", "le 10", "lt 23"]
 
 /-! ## §3  The rung-1 census: which faces are vacuous on their own
 
@@ -337,8 +338,8 @@ constant it names has a type over `SurfPos`, if it binds a `SurfPos`, or if it
 mentions one.  The four tests are run in that order and the first that fires
 decides, because the question is reachability of the face by an instrument, not
 which of four reasons applies. -/
--- Item 287: the departed `h_vslot` named the surface grammar.
-def expectedFidelity : String := "binders=162 surf=137 state=25"
+-- Item 287: the departed `h_vslot` named the surface grammar; item 288's did too.
+def expectedFidelity : String := "binders=161 surf=136 state=25"
 
 /-- The 25 faces a state census COULD evaluate, which is the population the
     mandate's instrument is actually defined over.  Two of them
@@ -576,8 +577,8 @@ file re-derives every one of them unmoved.  What was wrong is the sentence
 beside the number.  The gate below is the instrument that would have caught it
 at item 212, which is why it is written as a comparison of the two selectors
 rather than as a count. -/
--- Item 287: the same binder, read syntactically.
-def expectedHiddenTally : String := "hiddenDefs=1 syntactic=162 hiddenOnly=2 population=164"
+-- Item 287: the same binder, read syntactically.  Item 288: and the field.
+def expectedHiddenTally : String := "hiddenDefs=1 syntactic=161 hiddenOnly=2 population=163"
 
 def expectedHiddenDefs : List String := ["ResumeKeyCtx"]
 

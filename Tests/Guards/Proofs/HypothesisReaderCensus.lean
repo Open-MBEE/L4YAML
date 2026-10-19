@@ -550,8 +550,9 @@ this is that census over the same population, with the matcher auxiliaries that
 inherit their parents' binders filtered out so the denominator is declarations. -/
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` is no longer a
--- `_ ∨ True` (a READ one), so it leaves the population.
-def expectedOptTally : String := "total=162 ETA=34 READ=84 RELAY=44"
+-- `_ ∨ True` (a READ one), so it leaves the population.  Item 288: nor is
+-- `PendingNode.pendingMapValue.h_vslot` (a constructor field, read ETA).
+def expectedOptTally : String := "total=161 ETA=33 READ=84 RELAY=44"
 
 /-- The six item 212 enumerated, by verdict.  Five are read in
     `content_dispatch_routed`'s own term; `h_ref` alone relays, and §5 says

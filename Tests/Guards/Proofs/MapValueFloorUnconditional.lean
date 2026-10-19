@@ -52,7 +52,8 @@ example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos} {n : Nat}
     (h_offer : OfferPred sc.tokens) :
     PendingNode sc false sp_start sp_block sp_scan :=
   PendingNode.pendingMapValue (h_offer := h_offer) sp_start sp_block sp_scan n h_close h_floor
-    h_nic h_real (Or.inl h_ivl) (Or.inr trivial) (Or.inr trivial)
+    -- Item 288: the slot's decline names the stamp this pin carries.
+    h_nic h_real (Or.inl h_ivl) (Or.inr trivial) (Or.inr h_ivl)
     h_sk h_col0 (Or.inr trivial) (Or.inr trivial)
     (Or.inr trivial) (Or.inr trivial)
     (Or.inr trivial) (Or.inr trivial) h_nodir

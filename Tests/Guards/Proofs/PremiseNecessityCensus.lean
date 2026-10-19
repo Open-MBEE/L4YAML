@@ -281,9 +281,10 @@ def expectedModuleTallyP : String :=
   "constants=1356 decls=1074 eta=380 FIELD=179 READ=1151 RELAY=2127 RETURN=136 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
--- `_ ∨ True` population — its sibling's move, under this peel.
+-- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
+-- `PendingNode.pendingMapValue.h_vslot`, a constructor field read ETA.
 def expectedOptTallyP : String :=
-  "total=162 ETA=34 FIELD=4 READ=84 RELAY=38 RETURN=2"
+  "total=161 ETA=33 FIELD=4 READ=84 RELAY=38 RETURN=2"
 
 run_cmd do
   let env ← getEnv
@@ -664,8 +665,8 @@ lemma opt_premise_is_no_premise {A P : Prop} : (A ∨ True → P) ↔ P :=
     The pin is the count, because a selector that matched nothing would make
     the sentence above true and empty. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` left the `_ ∨ True`
--- population.
-def expectedOptPopulation : String := "total=162 optTy=162 ctorFields=34"
+-- population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`, a field.
+def expectedOptPopulation : String := "total=161 optTy=161 ctorFields=33"
 
 run_cmd do
   let env ← getEnv

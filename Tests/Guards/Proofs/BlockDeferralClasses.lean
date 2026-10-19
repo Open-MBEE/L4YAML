@@ -36,7 +36,7 @@ wrapper's deletion rather than a total drifting:
 | `_stamp_offcol` | **3** in 3 definitions | the park HAS a value pack, at `nv`, and the landing is at `k ≠ nv` | a reason the two indices agree — `[187]`'s `s-indent(n)` is exact.  **Item 189 (§8) paid its first domain** and **item 190 (§9) the other two sites'**: where `nv ≠ k` because the park holds TWO frames and offered the inner one, the landing now reads the outer one — from `h_vpackUp` at the landed `?`, from `h_kslotUp` at the compact one.  ~~What is left is a landing TWO frames up~~ — **item 191 (§10) paid that too**, by carrying the ancestors as a LIST instead of naming one; **item 192 (§11)** carried the list across a flow CONSTRUCT, and **item 193 (§12)** across an awaited SEQUENCE ENTRY at the landed `?` |
 | `_stamp_nopack` | **3** in 3 definitions | the park carries no value pack at all, and its register is LIVE | a CARRIER: the `?` frame's value slot at the landing's column, U2's residue proper — priced at item 186 (§5), RE-priced at item 187 (§6), and its first DOMAIN paid at item 188 (§7) |
 | `_stamp_compact` | **2** in 2 definitions | the fill is COMPACT, and `[189]`'s value is `s-l+block-node`, so the face cannot stand in for the stamp | the stamp, or a refutation |
-| `_inline` | ~~**2** in 2 definitions~~ **8** in 3 (item 287) | the mid-line indicator (`inline_residue_of_landing`) | ~~`KeyPackPunt`'s two surviving reasons (item 102)~~ — **item 286 (§3.1): five callers and seven arms** — four empty at the runtime, two a relay (item 211), the seventh accepted input its park's slot serves; since item 287 each arm applies the wrapper itself, and none is refuted in the proof yet |
+| `_inline` | ~~**2** in 2 definitions~~ ~~**8**~~ **7** in 3 (items 287–288) | the mid-line indicator (`inline_residue_of_landing`) | ~~`KeyPackPunt`'s two surviving reasons (item 102)~~ — **item 286 (§3.1): five callers and seven arms** — four empty at the runtime, two a relay (item 211), the seventh accepted input its park's slot serves; since item 287 each arm applies the wrapper itself, and none is refuted in the proof yet |
 | bare | **1** | `pendingFlow`'s own arm, which this escape PRODUCES | the constructor (item 35's structural note) |
 
 **The classes OVERLAP; only the sites are partitioned.**  `_stamp_compact`'s
@@ -383,7 +383,7 @@ and a caller that hands a stream breaks once, at the stream it hands.
 | `accum_block_pending` | `pendingContent` | `colon_fires_implicit_key`'s `dedent`, `noKeyContext` and `¬ possible` arms — and its two crossed-break arms, vacuously |
 | `accum_block_pending` | `pendingBlockContent` | the same, through `h_generic` |
 | `accum_block_pending` | `pendingProps` | `colon_fires_props_key`'s `tab`, `dedent` and `noKeyContext` arms — and its two crossed-break arms, vacuously |
-| `accum_block_pending` | `pendingMapValue` | the explicit value park whose `h_vslot` declines — the seventh arm |
+| `accum_block_pending` | `pendingMapValue` | the explicit value park whose `h_vslot` declines — the seventh arm, **refuted at item 288**: the decline is the stamp |
 | `accum_block_on_pendingBlock` | — | the dedent `-`, a LANDED branch: vacuous |
 | `accum_block_pending` | `pendingFlow` | the dead arm, which goes with the constructor |
 
@@ -426,9 +426,14 @@ def expectedInlineFeeders : String :=
     refute it (`sslComments_refutes_inline_residue`) and the seven above apply
     the escape where their reason stands.  `scripts/inline_class_price.py arms`
     deletes the wrapper and locates every application the tree then lacks:
-    eight, at the seven arms and the dead `pendingFlow` one. -/
+    eight, at the seven arms and the dead `pendingFlow` one.
+
+    **Item 288 refutes the seventh arm**: `pendingMapValue.h_vslot` declines its
+    slot with the stamp, so the value park's frameless arm is the stamped
+    branch's refusal (`dispatch_refutes_sameLine`).  Seven applications are
+    left, at the six arms and the dead one. -/
 def expectedInlineArms : String :=
-  "apps=8 decls=3 arms=accum_block_pending/pendingFlow,accum_block_pending/pendingMapValue,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_implicit_key/¬h_poss,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext,colon_fires_props_key/tab"
+  "apps=7 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_implicit_key/¬h_poss,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext,colon_fires_props_key/tab"
 
 /-- `scripts/inline_class_price.py census`, checked from the script's side. -/
 def expectedInlineCensus : String :=

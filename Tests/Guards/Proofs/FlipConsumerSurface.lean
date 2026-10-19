@@ -235,14 +235,15 @@ Each `rootMapRoute_or_refused` row is paired with its entries-level twin
 
 /-! ## §3  The deferral beside it
 
-~~FOUR~~ **SEVEN** definitions, ~~ELEVEN~~ ~~NINE~~ **FIFTEEN** applications
+~~FOUR~~ **SEVEN** definitions, ~~ELEVEN~~ ~~NINE~~ ~~FIFTEEN~~ **FOURTEEN** applications
 (item 186 — five and twelve before it; item 209 — the compact wrapper's two,
 refuted and gone; **item 287** — the inline wrapper's two became eight, one at
 each arm of DOCS item 286's measurement: `dedent`, `noKeyContext` and the
 no-key arm at `colon_fires_implicit_key`, `tab`, `dedent` and `noKeyContext` at
 `colon_fires_props_key`, and `accum_block_pending`'s frameless value park and
 dead `pendingFlow` arm).  The count rose and the domain did not: the five
-crossed-break arms that reached the old two sites are refuted now.
+crossed-break arms that reached the old two sites are refuted now.  **Item
+288** refutes the frameless value park's, which holds the stamp.
 `pendingFlow` is not a `[210]`
 construction site and never appears in the flip's five errors — it is the park
 whose arms have nothing to pay the landing faces WITH, so it keeps the guards'
@@ -436,7 +437,9 @@ All three lanes, in one walk of the module. -/
       ["accum_block_on_closeThenBlock: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1",
        "accum_block_on_pendingBlock: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1",
        "accum_block_on_pendingBlockContent: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1",
-       "accum_block_pending: block_dispatch_deferred_inline=2",
+       -- Item 288: the value park's frameless arm is refuted; the dead
+       -- `pendingFlow` arm's application is the one left here.
+       "accum_block_pending: block_dispatch_deferred_inline=1",
        "accum_content_pending: block_dispatch_deferred=1",
        "colon_fires_implicit_key: block_dispatch_deferred_inline=3",
        "colon_fires_props_key: block_dispatch_deferred_inline=3"]⟩,

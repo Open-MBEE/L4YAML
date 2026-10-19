@@ -2300,10 +2300,17 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- have no compact alternative to fill, and they are exactly the two whose
       -- push is at the KEY's column rather than the indicator's — so the price
       -- that fell away is also the hardest part of the one that stayed. ═══
+      --
+      -- **Item 288: and the decline names its reason, the STAMP.**  The three
+      -- producers with no compact alternative stamp their line, and so does
+      -- the compact `:` (`h_ivl`'s left half, item 125), so `True` was always
+      -- the stamp they hold.  Saying so is what refutes the value park's
+      -- frameless arm: a same-line indicator on a stamped line is §8.2.2's
+      -- refusal, which `dispatch_refutes_sameLine` reads.
       (h_vslot : (sc.currentIndent ≤ (n : Int) ∧ sp_scan.col = n + 1 ∧
         ∀ sp_v : SurfPos,
         SBlockIndented n .blockOut sp_scan sp_v →
-        SLYamlStream sp_start sp_v) ∨ True)
+        SLYamlStream sp_start sp_v) ∨ sc.implicitValueLine = some sc.line)
       -- Item 58 (LAST, same reason): the `?`/`:` scan that parked this pending
       -- re-armed fresh saves, so a key recorded at the NEXT indicator sits AT
       -- that indicator — which is the coordinate `tab_refutes_dispatch_inline`
@@ -12623,7 +12630,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                -- compact map this key opens IS the `?`'s key content, and the
                -- landed `:` closes the `[188]` entry `h_expl` routes
                -- (`? [1]: b⏎: - w`).
-               flowKeyRoute_of_open h_close (h_vslot.imp (fun h => ⟨h.2.2, h.2.1⟩) id)
+               flowKeyRoute_of_open h_close (h_vslot.imp (fun h => ⟨h.2.2, h.2.1⟩) (fun _ => trivial))
                  (match h_expl with
                   | Or.inl ⟨sp_q, h_qlit, route⟩ => Or.inl ⟨n_old, [],
                       frameChainOne (a := n_old)
@@ -20694,7 +20701,8 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
            -- could not consume an explicit pair, so the epilogue stamped.
            (Or.inl (scanValue_stamp_of_src (dispatchBlock_colon_scanValue h_dispatch)
              h_noflow_disp hpeek_disp h_src))
-           (Or.inr trivial) (Or.inr trivial)
+           (Or.inr trivial) (Or.inr (scanValue_stamp_of_src (dispatchBlock_colon_scanValue h_dispatch)
+             h_noflow_disp hpeek_disp h_src))
            (scanValue_simpleKeyAllowed (dispatchBlock_colon_scanValue h_dispatch))
            -- Item 68: the `:` stands AT the entry index (`s-indent(k)` from a
            -- column-0 landing) and the park is the character past it.
@@ -21483,9 +21491,12 @@ lemma compact_open_map (sp_start sp_entry sp_ind : SurfPos) (n m : Nat)
   have h_vslot105 : (s'.currentIndent ≤ ((n + 1 + m : Nat) : Int) ∧
       sp_scan'.col = (n + 1 + m) + 1 ∧ ∀ sp_v : SurfPos,
       SBlockIndented (n + 1 + m) .blockOut sp_scan' sp_v →
-        SLYamlStream sp_start sp_v) ∨ True :=
+        SLYamlStream sp_start sp_v) ∨ s'.implicitValueLine = some s'.line :=
     match hc with
-    | Or.inl _ => Or.inr trivial
+    | Or.inl h => Or.inr (by
+        subst h
+        exact scanValue_stamp_of_src (dispatchBlock_colon_scanValue h_dispatch)
+          h_noflow_disp hpeek_disp (h_src rfl))
     | Or.inr h =>
       -- Item 209: and the slot's own stack top, the caller's measurement.
       Or.inl ⟨h_top_in, h_park_col',
@@ -21877,7 +21888,7 @@ lemma colon_open_map_implicit (sp_start sp_block sp_key sp_gram sp_ws : SurfPos)
              h_route sp_v
                (SBlockMapEntry.implicitKeyNode k sp_key sp_ws sp_scan' sp_v h_ik h_lit
                  (SBlockNode_blockIn_to_blockOut h_node)))
-           h_floor hpf.1 hpf.2.1 (Or.inl h_stamp) (Or.inr trivial) (Or.inr trivial)
+           h_floor hpf.1 hpf.2.1 (Or.inl h_stamp) (Or.inr trivial) (Or.inr h_stamp)
            (scanValue_simpleKeyAllowed (dispatchBlock_colon_scanValue h_dispatch))
            -- Item 68: the `:` is a character, so the park is past column 0.  The
            -- INDEX is the half this producer cannot measure: `k` reaches it
@@ -22104,7 +22115,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                  (SBlockNode_blockIn_to_blockOut h_node)))
            (implicit_key_floor h_poss h_kcol h_inh h_kline h_behind
              h_noflow h_preprocess h_dispatch)
-           hpf.1 hpf.2.1 (Or.inl h_stamp) (Or.inr trivial) (Or.inr trivial)
+           hpf.1 hpf.2.1 (Or.inl h_stamp) (Or.inr trivial) (Or.inr h_stamp)
            (scanValue_simpleKeyAllowed (dispatchBlock_colon_scanValue h_dispatch))
            -- Item 68: `colon_open_map_implicit`'s boundary, for its reason — the
            -- run's own column is the pack's optional datum, not this producer's.
@@ -22661,15 +22672,16 @@ lemma block_dispatch_deferred
       `.elim`, and the wrapper is deleted.  The class was measured empty at
       item 185 and re-measured at item 204; what it cost to PROVE empty was
       one number (`pendingBlock.h_park_top`) and one dropped conjunct.
-    * `block_dispatch_deferred_inline` (~~2~~ **8**) — the inline residue.  The
+    * `block_dispatch_deferred_inline` (~~2~~ ~~8~~ **7**) — the inline residue.  The
       park is off column 0 and the step crossed no break, so the indicator is a
       MID-LINE one.  ~~The residue is the implicit-key pack's punt (item 102),
       whose surviving reasons are `KeyPackPunt.dedent` and `.noKeyContext`.~~
       **Item 286 measured five callers and seven arms**, and since item 287 each
       arm applies the wrapper itself: `dedent` and `noKeyContext` at both `:`
       consumers, `¬ possible` at `colon_fires_implicit_key`, `tab` at
-      `colon_fires_props_key`, and the value park whose slot declines.  The
-      eighth is the dead `pendingFlow` arm's.
+      `colon_fires_props_key`, and ~~the value park whose slot declines~~ —
+      **refuted at item 288**, since that park holds the stamp.  The seventh
+      application is the dead `pendingFlow` arm's.
     * `block_dispatch_deferred` itself (1) — `pendingFlow`'s own arm, which
       this escape PRODUCES.  It cannot close while the escape stands and goes
       with the constructor (item 35's structural note).
@@ -22801,8 +22813,8 @@ lemma block_dispatch_deferred_stamp_nopack
     **Item 287: applied at the arm it stands for.**  Item 286 measured the class
     as five callers and seven arms, and each arm now applies this wrapper
     itself — the two `:` consumers at every reason that rides their deferral,
-    and the value park whose slot declines — so an arm that empties deletes one
-    application.  The escape's three premises about its park are read off the
+    and ~~the value park whose slot declines~~ (refuted at item 288) — so an arm
+    that empties deletes one application.  The escape's three premises about its park are read off the
     dispatch that made it, which every arm holds. -/
 lemma block_dispatch_deferred_inline
     (sp_start sp_X sp_scan' : SurfPos) {sc s_prep s' : ScannerState}
@@ -26218,7 +26230,10 @@ lemma accum_block_pending (sc : ScannerState)
     -- explicit frame serves the rest — the `?`'s own slot takes the compact
     -- fill (`? - a`), and the entry's value line spends the pack, with the
     -- key half `e-node` because nothing arrived between the `?` and this
-    -- landing (`?⏎: - w`).  Only the frameless explicit residue defers. ═══
+    -- landing (`?⏎: - w`).  ~~Only the frameless explicit residue defers.~~
+    -- **Item 288: and it is refuted** — a park that declines its slot holds
+    -- the stamp (`pendingMapValue.h_vslot`'s right half), so its same-line
+    -- indicator is the stamped branch's refusal again. ═══
     rcases h_ivl48 with h_ivl48 | _
     · exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' c sp_prep sp_scan'
         h_close_pending
@@ -26350,7 +26365,9 @@ lemma accum_block_pending (sc : ScannerState)
                       (SBlockMapEntry.explicitEmpty nmv sp_q sp_scan sp_m h_qlit h_bo)
                       sp_i sp_c h_iv h_lit sp_v h_sbi⟩
               | Or.inr _ => Or.inr trivial)⟩
-         | Or.inr _ => Or.inr (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res))
+         | Or.inr h_st => Or.inr (fun _ h_pay => (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inl h_st)
+            (preprocess_preserves_implicitValueLine sc s_prep c h_preprocess)
+            (noflow_disp_of_noflow h_noflow) h_pay h_dispatch).elim))
         hcorr_prep hcorr_result h_corr h_noflow (Or.inr h_col0_mv) h_preprocess h_dispatch
         (Or.inr trivial) (Or.inr trivial) h_bare h_dn h_fv h_base h_mono (Or.inr trivial)
         -- Item 155: the explicit-frame twin of the branch above — same field,
@@ -34886,7 +34903,7 @@ lemma accum_content_pending (sc : ScannerState)
       -- Item 209: the content lane reads the SLOT and not the top beside it,
       -- so the top is projected away here rather than restated downstream — a
       -- lemma that asks for more than it reads is a lemma nobody can call.
-      h_ncol_old h_expl51 (h_vslot51.imp (fun h => ⟨h.2.1, h.2.2⟩) id)
+      h_ncol_old h_expl51 (h_vslot51.imp (fun h => ⟨h.2.1, h.2.2⟩) (fun _ => trivial))
       h_kslot93 h_closeF99 h_frames99
       h_closeFV108 h_framesV108 h_sk58
       h_ivl101 h_nic101 h_real101 h_mono h_base

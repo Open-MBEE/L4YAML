@@ -705,7 +705,8 @@ def expectedClosures : List String :=
    "pendingMapValue.h_close[] req: sp_scan: SBlockNode(n+1,blockIn) ⇒ Stream",
    "pendingMapValue.h_ivl[R2] req: [col(sp_scan)=n+1] sp_scan: SBlockIndented(n,blockOut) ⇒ Stream",
    "pendingMapValue.h_expl[LE2] opt: _: SBlockMapEntry(n) ⇒ Stream",
-   "pendingMapValue.h_vslot[L3] opt: [col(sp_scan)=n+1] sp_scan: SBlockIndented(n,blockOut) ⇒ Stream",
+   -- Item 288: the field's decline is the stamp, so the closure is required.
+   "pendingMapValue.h_vslot[L3] req: [col(sp_scan)=n+1] sp_scan: SBlockIndented(n,blockOut) ⇒ Stream",
    "pendingMapValue.h_kslot[LE] opt: sp_scan: SBlockNode(n+1,blockIn) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream",
    "pendingMapValue.h_closeF[LE3] opt: sp_scan: SBlockNode(n+1,blockIn) ⇒ Resume(n::_)▹Stream",
    "pendingMapValue.h_frames[LE2] opt: sp_scan: SSLComments ⇒ Resume(_)▹Stream",
@@ -842,9 +843,12 @@ def expectedK : List String :=
     a hypothesis — the content park's and the props `:`'s builder argument
     `h_inl` (`carry`), and the dead `pendingFlow` arm's deferral, which applies
     the escape to `h_stream_block` (`stream`).  The seven refutations stay
-    `closed` (`scratchpad/l4yaml-row12-steps/238-routeargs-287.txt`). -/
+    `closed` (`scratchpad/l4yaml-row12-steps/238-routeargs-287.txt`).  Item
+    288 moves one closure from `optional` to `mandatory`:
+    `pendingMapValue.h_vslot` declines with the stamp, so its six producer
+    slots — one `stream`, two `carry`, three `punt` — change bucket with it. -/
 def expectedLine : String :=
-  "closures=54 packed=14 optional=41 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=3 carry=48 fwd=0 punt=3 closed=0] optional[stream=5 carry=112 fwd=8 punt=76 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=19 routeCarry=44 routeFwd=50 routeClosed=37 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
+  "closures=54 packed=14 optional=40 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 closed=0] optional[stream=4 carry=110 fwd=8 punt=73 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=19 routeCarry=44 routeFwd=50 routeClosed=37 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

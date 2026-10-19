@@ -199,7 +199,7 @@ if wants 1; then
     suiterunner tryparse tryroundtrip trydump \
     tests demo explicitkeytests flowtests \
     validationtests dumproundtrip rawparsetests \
-    specexamples schemadump scannertests scannerspecexamples \
+    specexamples schemadump derivingconsumer scannertests scannerspecexamples \
     adversarialtests mutationtests propertytests productioncoverage \
     limittests \
     flowregressioncheck errorstagediag scalarstagediag \

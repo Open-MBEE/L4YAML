@@ -448,6 +448,7 @@ lake exe scannerspecexamples     # same examples via tokenized pipeline
 lake exe validationtests         # structural validation
 lake exe dumproundtrip           # dump round-trip
 lake exe schemadump              # Schema ↔ Dump integration
+lake exe derivingconsumer        # deriving FromYaml/ToYaml from a module consumer
 ```
 
 The full list of executables is in [lakefile.lean](lakefile.lean).

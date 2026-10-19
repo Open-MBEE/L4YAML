@@ -188,7 +188,7 @@ only ever half of β.5.
 **And thirty-eight is not what β.5 costs.**  The fixpoint elaborates the whole
 tree against the post-β.5 sources and reads
 
-    sorried=13  restated=0  deleted=3  pins=36
+    sorried=13  restated=0  deleted=3  pins=37
 
 — thirteen proofs, of which seven are the library's (all in `StreamAccum.lean`)
 and six are Tests-side; ONE statement, `dropClose`, which goes with the arm;

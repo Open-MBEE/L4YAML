@@ -382,7 +382,7 @@ and a caller that hands a stream breaks once, at the stream it hands.
 |---|---|---|
 | `accum_block_pending` | `pendingContent` | `colon_fires_implicit_key`'s `dedent`, `noKeyContext` and `¬ possible` arms — and its two crossed-break arms, vacuously |
 | `accum_block_pending` | `pendingBlockContent` | the same, through `h_generic` |
-| `accum_block_pending` | `pendingProps` | `colon_fires_props_key`'s `tab`, `dedent` and `noKeyContext` arms — and its two crossed-break arms, vacuously |
+| `accum_block_pending` | `pendingProps` | `colon_fires_props_key`'s ~~`tab`,~~ `dedent` and `noKeyContext` arms — and its two crossed-break arms, vacuously; `tab` **refuted at item 289**, the reason carrying the saved key's possibility and line |
 | `accum_block_pending` | `pendingMapValue` | the explicit value park whose `h_vslot` declines — the seventh arm, **refuted at item 288**: the decline is the stamp |
 | `accum_block_on_pendingBlock` | — | the dedent `-`, a LANDED branch: vacuous |
 | `accum_block_pending` | `pendingFlow` | the dead arm, which goes with the constructor |
@@ -399,7 +399,7 @@ level.  So the `¬ possible` arm is empty over the corpus, and `dedent`'s
 `w ∉ ks` is false wherever the frames cover the stack
 (`preprocess_landing_mem_or_seq`); the sequence case is the `:`'s own
 `trailingContent` (§8.2.1), refused in the rows below.  The props park's `tab`
-input is refused too.  `noKeyContext` is still the relay item 211 measured:
+input is refused too, and item 289 refutes its arm.  `noKeyContext` is still the relay item 211 measured:
 its one deciding production is reached only by refused input, and the rest
 relay their callers' contexts.
 
@@ -431,9 +431,14 @@ def expectedInlineFeeders : String :=
     **Item 288 refutes the seventh arm**: `pendingMapValue.h_vslot` declines its
     slot with the stamp, so the value park's frameless arm is the stamped
     branch's refusal (`dispatch_refutes_sameLine`).  Seven applications are
-    left, at the six arms and the dead one. -/
+    left, at the six arms and the dead one.
+
+    **Item 289 refutes the props consumer's `tab`**: the reason carries the
+    saved key's possibility and line, which `scanValue_tab_keyrun_ne` reads and
+    both producers hold.  Six applications are left, at the five arms and the
+    dead one. -/
 def expectedInlineArms : String :=
-  "apps=7 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_implicit_key/¬h_poss,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext,colon_fires_props_key/tab"
+  "apps=6 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_implicit_key/¬h_poss,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext"
 
 /-- `scripts/inline_class_price.py census`, checked from the script's side. -/
 def expectedInlineCensus : String :=

@@ -477,8 +477,14 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `h_stream_fallback`s retire (2 READ, 1 RELAY, 1 RETURN).  And the two
 -- `h_punt`s are builders now, so their verdict moves RETURN -> READ -- the
 -- only verdict of a surviving binder that moved.
+-- 2026-10-19 (item 289): `eta` 380 -> 382, `READ` 1112 -> 1113.  Roster
+-- `scratchpad/l4yaml-row12-steps/311-roster-289.out` (3985 rows) against item
+-- 287's (item 288 moved no lane): three rows gained, none lost.
+-- `KeyPackPunt.tab`'s two new fields, `h_poss` and `h_kline`, are ETA (a
+-- constructor has no body to read them in), and `keyPackPunt_transport`'s new
+-- premise `h_poss` is READ, in its `tab` case.
 def expectedModuleTally : String :=
-  "constants=1356 decls=1074 eta=380 FIELD=157 READ=1112 RELAY=2276 RETURN=48 UNUSED=9"
+  "constants=1356 decls=1074 eta=382 FIELD=157 READ=1113 RELAY=2276 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
@@ -678,7 +684,9 @@ about proofs.** -/
 
 /-- The two unpayable reasons are argument-free; the two payable ones are not. -/
 def expectedPuntFields : String :=
-  "tab=2 dedent=0 implicitValue=3 noKeyContext=0"
+  -- Item 289: `tab` carries the saved key's possibility and line beside the
+  -- scan's reading and the park's flags.
+  "tab=4 dedent=0 implicitValue=3 noKeyContext=0"
 
 run_cmd do
   let env ← getEnv

@@ -277,8 +277,13 @@ declarations' own binders and not by a rescoring of an existing one.
 -- against `232-roster-287.out`).  So the sibling's `RELAY` +7 / `RETURN` -3
 -- reads +2 / +2 here -- counting the nine rows that left at their unpeeled
 -- verdicts, since item 285 kept no peeled roster to read them from.
+-- 2026-10-19 (item 289): the SAME `eta` +2 and `READ` +1 its sibling reads, from
+-- the same three rows under this peel: `KeyPackPunt.tab`'s `h_poss` and
+-- `h_kline` (ETA) and `keyPackPunt_transport`'s `h_poss` (READ)
+-- (`scratchpad/l4yaml-row12-steps/319-rosterP-289.out` against
+-- `239-rosterP-287.out`: three rows gained, none lost).
 def expectedModuleTallyP : String :=
-  "constants=1356 decls=1074 eta=380 FIELD=179 READ=1151 RELAY=2127 RETURN=136 UNUSED=9"
+  "constants=1356 decls=1074 eta=382 FIELD=179 READ=1152 RELAY=2127 RETURN=136 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

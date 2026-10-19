@@ -952,9 +952,18 @@ def expectedUnborn : List String := []
     decliners of `pendingMapValue.h_vslot` writing the stamp; `lapps` +1,
     `alts` +4 and `liteNodes` +450 are the frameless arm's refutation and
     `compact_open_map`'s stamp proof, measured as the remainder and not isolated
-    further. -/
+    further.
+
+    Item 289 moves three, and the walk run per declaration names all of them
+    (`scratchpad/l4yaml-row12-steps/320-vlo-perdecl.log`, against item 288's
+    tree rebuilt in place).  `lets` +3, `alts` +19 and `liteNodes` +2806 are
+    `colon_fires_props_key`'s `tab` arm, which refutes where it deferred; the
+    other +16 `liteNodes` are `accum_content_pending`'s three transport calls
+    passing the new premise (+12) and the two new fields bound at the `tab`
+    arms of `accum_flow_open_depth0` and `colon_fires_implicit_key` (+2 each).
+    No row, class or origin moves. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=552 lapps=669 alts=4358 nodes=12416 liteNodes=499735"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=555 lapps=669 alts=4377 nodes=12416 liteNodes=502557"
 
 /-! ## §4 The reading -/
 

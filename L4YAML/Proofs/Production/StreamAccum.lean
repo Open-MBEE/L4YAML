@@ -721,7 +721,13 @@ lemma underIndented_none_of_eof {s : ScannerState}
       (`StalePark`) — which is what makes the reading transportable: with the
       flag down and no break, preprocessing re-saves nothing, so the key the
       `:` resolves is the key the tab precedes (`colon_fires_implicit_key`
-      spends both).
+      spends both).  **Item 289: and the saved key's possibility and line**,
+      which that refutation (`scanValue_tab_keyrun_ne`) also reads.  The
+      implicit-key consumer has them from the guard its field is stated
+      under; `colon_fires_props_key` has no such guard, and both producers
+      hold the two facts anyway (the implicit pack under that guard, the
+      props pack off the fresh save) — so the reason carries them, and it is
+      refuted at both consumers.
     * `dedent` — the landing under-ran the pending's index, so the value is
       not this entry's at all.  Item 64's boundary, and row 19's to close: the
       enclosing collection resumes, which needs a frame stack the pending does
@@ -774,7 +780,9 @@ lemma underIndented_none_of_eof {s : ScannerState}
 inductive KeyPackPunt (sc : ScannerState) : Prop where
   | tab (h : ScannerState.hasTabInPrecedingWhitespaceLoop sc.input
       sc.simpleKey.pos.offset sc.simpleKey.pos.offset = true)
-      (h_st : StalePark sc) : KeyPackPunt sc
+      (h_st : StalePark sc)
+      (h_poss : sc.simpleKey.possible = true)
+      (h_kline : sc.simpleKey.pos.line = sc.line) : KeyPackPunt sc
   | dedent : KeyPackPunt sc
   | implicitValue (h_ivl : sc.implicitValueLine = some sc.line)
       (h_kline : sc.simpleKey.pos.line = sc.line)
@@ -789,7 +797,12 @@ inductive KeyPackPunt (sc : ScannerState) : Prop where
     What each reason reads is exactly the premise list — the input and the
     saved key's POSITION for the tab's backward scan, the line and the stamp
     for the implicit value, the park's three flags for both, and nothing at
-    all for the three unpayable names.  The `.pos` (rather than the whole
+    all for the ~~three~~ two unpayable names (`noFrame` went at item 125).
+    **Item 289: the tab also reads the saved key's possibility and line.**
+    The line travels by the same two routes as the implicit value's; the
+    possibility is the one new premise, `h_poss`, which a property extension
+    pays from the saved-key equation it holds and a decorated content from
+    its own guard.  The `.pos` (rather than the whole
     saved key) is what makes this usable at a content dispatch, where the
     scans return the position alone.
 
@@ -804,9 +817,16 @@ lemma keyPackPunt_transport {sc s' : ScannerState} (h_punt : KeyPackPunt sc)
     (h_input : s'.input = sc.input)
     (h_line : s'.line = sc.line ∨ s'.simpleKey.pos.line = s'.line)
     (h_ivl : s'.implicitValueLine = sc.implicitValueLine)
-    (h_st : StalePark s') : KeyPackPunt s' := by
+    (h_st : StalePark s')
+    (h_poss : sc.simpleKey.possible = true → s'.simpleKey.possible = true) :
+    KeyPackPunt s' := by
   cases h_punt with
-  | tab h _ => exact KeyPackPunt.tab (by rw [h_input, h_skpos]; exact h) h_st
+  | tab h _ h_p h_kl =>
+    exact KeyPackPunt.tab (by rw [h_input, h_skpos]; exact h) h_st (h_poss h_p)
+      (by
+        cases h_line with
+        | inl h => rw [h_skpos, h]; exact h_kl
+        | inr h => exact h)
   | dedent => exact KeyPackPunt.dedent
   | implicitValue h_ivl0 h_kl _ =>
     have h_ln : s'.line = sc.line := by
@@ -22672,16 +22692,17 @@ lemma block_dispatch_deferred
       `.elim`, and the wrapper is deleted.  The class was measured empty at
       item 185 and re-measured at item 204; what it cost to PROVE empty was
       one number (`pendingBlock.h_park_top`) and one dropped conjunct.
-    * `block_dispatch_deferred_inline` (~~2~~ ~~8~~ **7**) — the inline residue.  The
+    * `block_dispatch_deferred_inline` (~~2~~ ~~8~~ ~~7~~ **6**) — the inline residue.  The
       park is off column 0 and the step crossed no break, so the indicator is a
       MID-LINE one.  ~~The residue is the implicit-key pack's punt (item 102),
       whose surviving reasons are `KeyPackPunt.dedent` and `.noKeyContext`.~~
       **Item 286 measured five callers and seven arms**, and since item 287 each
       arm applies the wrapper itself: `dedent` and `noKeyContext` at both `:`
-      consumers, `¬ possible` at `colon_fires_implicit_key`, `tab` at
-      `colon_fires_props_key`, and ~~the value park whose slot declines~~ —
-      **refuted at item 288**, since that park holds the stamp.  The seventh
-      application is the dead `pendingFlow` arm's.
+      consumers, `¬ possible` at `colon_fires_implicit_key`, ~~`tab` at
+      `colon_fires_props_key`~~ (**refuted at item 289**, the reason carrying
+      the saved key's possibility and line), and ~~the value park whose slot
+      declines~~ — **refuted at item 288**, since that park holds the stamp.
+      The ~~seventh~~ sixth application is the dead `pendingFlow` arm's.
     * `block_dispatch_deferred` itself (1) — `pendingFlow`'s own arm, which
       this escape PRODUCES.  It cannot close while the escape stands and goes
       with the constructor (item 35's structural note).
@@ -24131,7 +24152,9 @@ lemma accum_block_on_closeThenBlock
 
     Item 287 moved it here, beside `colon_fires_implicit_key`: its pack-less
     arms apply `block_dispatch_deferred_inline` themselves, and `h_punt` is a
-    builder for the same reason as there. -/
+    builder for the same reason as there.  **Item 289: the `tab` arm refutes**,
+    on the saved key's possibility and line the reason carries, so two arms
+    apply the wrapper — `dedent` and `noKeyContext`. -/
 lemma colon_fires_props_key (sc : ScannerState)
     (sp_start sp_block sp_p sp_scan : SurfPos)
     (s_prep s' : ScannerState) (sp_prep sp_scan' : SurfPos)
@@ -24185,15 +24208,14 @@ lemma colon_fires_props_key (sc : ScannerState)
     -- the sibling, one construct over.  `k: &p : 1` and `k: !!str : 1` are an
     -- implicit value's second value indicator, and the property scan is not
     -- `scanValue`, so the stamp the indicator left is still on the park's
-    -- line.  The other four ride the deferral: the dedent is row 19's, the
-    -- explicit frameless park item 51's, `noKeyContext` nobody's — and the
-    -- TAB is a named residue rather than a missing argument.  Its refutation
-    -- (`scanValue_tab_keyrun_ne`, item 65) also wants the saved key's LINE
-    -- and its possibility, which `colon_fires_implicit_key` reads off the
-    -- guard its own field is stated under and this lemma has only inside the
-    -- pack; `k:⏎␣→&p : 1` is measured refused and still defers, while the
-    -- decorated `k:⏎␣→&p a: 1` is paid, the transport landing it on that
-    -- consumer instead. ═══
+    -- line.  Two ride the deferral: the dedent is row 19's and
+    -- `noKeyContext` nobody's.  **Item 289: the TAB is refuted here, as at
+    -- the sibling.**  Its refutation (`scanValue_tab_keyrun_ne`, item 65)
+    -- also wants the saved key's LINE and its possibility, which
+    -- `colon_fires_implicit_key` reads off the guard its own field is stated
+    -- under and which the reason carries, so `k:⏎␣→&p : 1` is refuted at the
+    -- run's own park; the decorated `k:⏎␣→&p a: 1` still lands on the
+    -- sibling, through the transport. ═══
     cases punt with
     | implicitValue h_ivl _h_kl _h_st =>
       obtain ⟨_sp_mid, _sp_ws, _sp_prep2, h_disj, _h_ws, _h_cmt, hcorr_prep2, _h_pk, _⟩ :=
@@ -24207,7 +24229,33 @@ lemma colon_fires_props_key (sc : ScannerState)
         exact (dispatch_refutes_sameLine h_nic h_real (Or.inl h_ivl)
           (preprocess_preserves_implicitValueLine sc s_prep ':' h_preprocess)
           (noflow_disp_of_noflow h_noflow) h_mid.2.1 h_dispatch).elim
-    | tab _ _ => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
+    | tab h_run h_st h_poss h_kline =>
+      obtain ⟨_sp_mid, _sp_ws, _sp_prep2, h_disj, _h_ws, _h_cmt, hcorr_prep2, _h_pk, _⟩ :=
+        preprocess_some_ssl_comments_anyCol sc sp_scan s_prep ':' h_corr h_preprocess
+      have hsp_eq2 := ScannerSurfCorr_unique hcorr_prep hcorr_prep2; subst hsp_eq2
+      cases h_disj with
+      | inl h_l => exact h_punt (fun h_res _ => (sslComments_refutes_inline_residue h_l.1 (Or.inr (Or.inl rfl)) h_res).elim)
+      | inr h_mid =>
+        exfalso
+        obtain ⟨h_line_eq, -, -, -⟩ := h_mid.2.1 h_st.1 h_st.2.2
+        obtain ⟨h_sk_eq, -, -, -⟩ := h_mid.2.2.2 h_st.1 h_st.2.1
+        have h_inp : s_prep.input = sc.input := preprocess_input h_preprocess
+        refine scanValue_tab_keyrun_ne (s := if s_prep.allowDirectives then
+            { s_prep with allowDirectives := false, documentEverStarted := true }
+          else s_prep) (noflow_disp_of_noflow h_noflow) ?_ ?_ ?_
+          (dispatchBlockIndicators_value_scan h_dispatch)
+        · show (if _ then _ else _ : ScannerState).simpleKey.possible = true
+          rw [allowDirectives_update_simpleKey, h_sk_eq]; exact h_poss
+        · show (if _ then _ else _ : ScannerState).simpleKey.pos.line
+              = (if _ then _ else _ : ScannerState).line
+          rw [allowDirectives_update_simpleKey, allowDirectives_update_line,
+            h_sk_eq, h_line_eq]
+          exact h_kline
+        · have h_i : (if s_prep.allowDirectives then
+              { s_prep with allowDirectives := false, documentEverStarted := true }
+            else s_prep).input = sc.input := by split <;> exact h_inp
+          rw [h_i, allowDirectives_update_simpleKey, h_sk_eq]
+          exact h_run
     | dedent => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
     | noKeyContext => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
   | inl pack =>
@@ -29294,12 +29342,14 @@ lemma entryKeyPack_of_dispatch
     -- Item 65: the tab is LOCATED, and what locates it for the consumer is
     -- the `:`'s own backward scan — which walks from the KEY's offset, where
     -- preprocessing saved it, and which the dispatch moved neither the
-    -- string nor the position of.
+    -- string nor the position of.  Item 289: the guard's two facts ride
+    -- along, for the consumer whose field is not stated under it.
     refine Or.inr (KeyPackPunt.tab ?_
       (StaleNodeTail.toStalePark <|
        staleNodeTail_of_dispatchContent_value h_dispatch hna hnt hnPipe hnGt
         (by split <;>
-          exact nic_false_of_flow_disp (sc := sc) (s_prep := s_prep) h_preprocess h_flow_disp)))
+          exact nic_false_of_flow_disp (sc := sc) (s_prep := s_prep) h_preprocess h_flow_disp))
+      h_poss h_kline)
     have hsuf : sp_mid.chars <:+ s_prep.input.toList := by
       rw [preprocess_input h_preprocess]
       rcases h_disj with h | h
@@ -29840,9 +29890,12 @@ lemma entryPropsKeyPack_of_dispatch
     -- `h_sk`).  The park itself really is accepted (`k:⏎␣→&p a` reads), so
     -- this punts rather than refutes, exactly as item 65's does; the
     -- refutation comes at the `:`, which for a decorated CONTENT park is
-    -- `colon_fires_implicit_key`'s, reached through the transport below. ═══
+    -- `colon_fires_implicit_key`'s, reached through the transport below.
+    -- Item 289: for the run's OWN park it is `colon_fires_props_key`'s, which
+    -- reads the fresh save's possibility and line off the reason. ═══
     rw [← h_pe] at htab
-    refine Or.inr (KeyPackPunt.tab ?_ h_ppf)
+    refine Or.inr (KeyPackPunt.tab ?_ h_ppf
+      (by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1) h_sk_line)
     have hsuf : sp_mid.chars <:+ s_prep.input.toList := by
       rw [preprocess_input h_preprocess]
       rcases h_disj with h | h
@@ -33801,7 +33854,10 @@ lemma accum_content_pending (sc : ScannerState)
                    -- nor the stamp (`k: &p !t a: 1`).
                    | inr h_punt =>
                      refine Or.inr (keyPackPunt_transport h_punt ?_ ?_ ?_ ?_
-                       ⟨h_nic_s, (dispatchContent_anchor_simpleKey h_dispatch).2, h_real_s⟩)
+                       ⟨h_nic_s, (dispatchContent_anchor_simpleKey h_dispatch).2, h_real_s⟩
+                       (fun h => by
+                         rw [(dispatchContent_anchor_simpleKey h_dispatch).1,
+                           allowDirectives_update_simpleKey, h_inherit]; exact h))
                      · rw [(dispatchContent_anchor_simpleKey h_dispatch).1,
                            allowDirectives_update_simpleKey, h_inherit]
                      · have h_i : s_prep.input = sc.input := preprocess_input h_preprocess
@@ -33941,7 +33997,10 @@ lemma accum_content_pending (sc : ScannerState)
                      -- nor the stamp (`k: &p !t a: 1`).
                      | inr h_punt =>
                        refine Or.inr (keyPackPunt_transport h_punt ?_ ?_ ?_ ?_
-                         ⟨h_nic_s, (dispatchContent_tag_simpleKey h_dispatch).2, h_real_s⟩)
+                         ⟨h_nic_s, (dispatchContent_tag_simpleKey h_dispatch).2, h_real_s⟩
+                         (fun h => by
+                           rw [(dispatchContent_tag_simpleKey h_dispatch).1,
+                             allowDirectives_update_simpleKey, h_inherit]; exact h))
                        · rw [(dispatchContent_tag_simpleKey h_dispatch).1,
                              allowDirectives_update_simpleKey, h_inherit]
                        · have h_i : s_prep.input = sc.input := preprocess_input h_preprocess
@@ -34111,7 +34170,7 @@ lemma accum_content_pending (sc : ScannerState)
                 -- travels by the saved key (a multi-line scalar fails the
                 -- consumer's own guard first).
                 refine Or.inr (keyPackPunt_transport h_punt ?_ ?_ (Or.inr h_kline) ?_
-                  h_park_all.2.2)
+                  h_park_all.2.2 (fun _ => h_poss))
                 · rw [h_park_all.1, allowDirectives_update_simpleKey, h_inherit]
                 · have h_i : s_prep.input = sc.input := preprocess_input h_preprocess
                   rw [dispatchContent_input (corr_of_allowDirectives_update hcorr_prep)

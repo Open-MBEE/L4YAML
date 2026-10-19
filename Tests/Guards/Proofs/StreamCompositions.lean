@@ -761,9 +761,15 @@ def expectedShapeComps : List String :=
 
     2026-10-19 (item 288): `segments` 53 -> 52 and nothing else — the value
     park's deferral path (`case:inr/2`), refuted now that the park holds the
-    stamp; the dead `pendingFlow` arm's stays. -/
+    stamp; the dead `pendingFlow` arm's stays.
+
+    2026-10-19 (item 289): `unmarked` 202 -> 201 and nothing else — the props
+    consumer's `tab` deferral, a leaf-to-top path that crosses no build point,
+    refuted on the saved key's possibility and line the reason carries.
+    Putting the escape back at that one arm on the item-289 tree reads 202
+    again (`scratchpad/l4yaml-row12-steps/312-iso-streamcomp.log`). -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=202 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=201 reach=38"
 
 /-! ## §5 The reading -/
 

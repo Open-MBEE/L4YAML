@@ -993,11 +993,15 @@ def expectedPerPos : List String := [
 -- walked terms; `rows`, `apps` and every shape hold.
 -- 2026-10-19 (item 288): the field's three decliners, totalled — `punt` 32 → 29,
 -- `stamp` 13 → 16, `touched` +3; `nodes` holds.
+-- 2026-10-19 (item 293): `nodes` 12386 → 12460 alone, named per declaration by
+-- the walk run on both trees (`scratchpad/l4yaml-row12-steps/378-walks-perdecl-293.log`):
+-- the four park eliminators bind the four new fields (+4 each), and the rest
+-- is the threading and payments in the accumulation lemmas (+1 to +14 each).
 /-- **The pack line.**  `nodes` is the proof-term size of the walked
     declarations.  Lean v4.35.0 moves it alone: 12307 → 12296, with the other
     27 fields byte-identical. -/
 def expectedLine : String :=
-  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 punt=29 stamp=16 empty=0 relay=36 step=1 via=12 chain=50 route=3 frames=1 tail=0 other=0 alt=3 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=122 nodes=12386"
+  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 punt=29 stamp=16 empty=0 relay=36 step=1 via=12 chain=50 route=3 frames=1 tail=0 other=0 alt=3 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=122 nodes=12460"
 
 /-! ## §4 The reading -/
 

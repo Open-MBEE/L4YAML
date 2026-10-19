@@ -194,7 +194,9 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' s_dis : ScannerState)
     (h_src : StampBranch s_dis)
     (h_indent : (s_dis.col : Int) = s_dis.currentIndent)
     (h_ne : k ∉ ns)
-    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true) :
+    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true)
+    -- Item 293: the escape's park reads `flag ∨ live`.
+    (h_live0 : s'.simpleKeyAllowed = true ∨ s'.simpleKey.possible = true) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -202,7 +204,7 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' s_dis : ScannerState)
       PendingNode s' false sp_start sp_flow' sp_scan'' ∧
       ScannerSurfCorr s' sp_scan'' :=
   block_dispatch_deferred_stamp_offcol sp_start sp_X sp_scan' s' h_stream h_arm
-    hcorr h_nodir h_src h_indent h_ne h_nic0
+    hcorr h_nodir h_src h_indent h_ne h_nic0 h_live0
 
 /-- `nopack`: nothing about the pack — and, since item 187, the PARK's own
     register, read LIVE.  That is the class's proposition: it is what says the
@@ -216,7 +218,9 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' sc s_dis : ScannerState)
     (h_src : StampBranch s_dis)
     (h_indent : (s_dis.col : Int) = s_dis.currentIndent)
     (h_park : sc.explicitKeyLine ≠ none)
-    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true) :
+    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true)
+    -- Item 293: the escape's park reads `flag ∨ live`.
+    (h_live0 : s'.simpleKeyAllowed = true ∨ s'.simpleKey.possible = true) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -224,7 +228,7 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' sc s_dis : ScannerState)
       PendingNode s' false sp_start sp_flow' sp_scan'' ∧
       ScannerSurfCorr s' sp_scan'' :=
   block_dispatch_deferred_stamp_nopack sp_start sp_X sp_scan' s' h_stream h_arm
-    hcorr h_nodir h_src h_indent h_park h_nic0
+    hcorr h_nodir h_src h_indent h_park h_nic0 h_live0
 
 /-- …and the transport that produces it at each of the three sites: the branch
     reads the register on the DISPATCH state, and the park is where a carrier
@@ -380,7 +384,7 @@ and a caller that hands a stream breaks once, at the stream it hands.
 
 | caller | park | what reaches the site through it |
 |---|---|---|
-| `accum_block_pending` | `pendingContent` | `colon_fires_implicit_key`'s `dedent`, `noKeyContext` and `¬ possible` arms — and its two crossed-break arms, vacuously |
+| `accum_block_pending` | `pendingContent` | `colon_fires_implicit_key`'s `dedent`, `noKeyContext` and ~~`¬ possible`~~ arms — and its two crossed-break arms, vacuously; `¬ possible` **refuted at item 293**, an inline `:` finding a live key at every content park |
 | `accum_block_pending` | `pendingBlockContent` | the same, through `h_generic` |
 | `accum_block_pending` | `pendingProps` | `colon_fires_props_key`'s ~~`tab`,~~ `dedent` and `noKeyContext` arms — and its two crossed-break arms, vacuously; `tab` **refuted at item 289**, the reason carrying the saved key's possibility and line |
 | `accum_block_pending` | `pendingMapValue` | the explicit value park whose `h_vslot` declines — the seventh arm, **refuted at item 288**: the decline is the stamp |
@@ -395,7 +399,8 @@ yaml-test-suite case and the hand-written rows here at the scanner state the
 consumers read: a content or property park off column 0, then a same-line `:`
 dispatched as a block VALUE indicator.  Every accepted one holds a live key on
 its line, and every one whose own landing popped landed on an open MAPPING
-level.  So the `¬ possible` arm is empty over the corpus, and `dedent`'s
+level.  So the `¬ possible` arm is empty over the corpus — item 293 refutes it —
+and `dedent`'s
 `w ∉ ks` is false wherever the frames cover the stack
 (`preprocess_landing_mem_or_seq`); the sequence case is the `:`'s own
 `trailingContent` (§8.2.1), refused in the rows below.  The props park's `tab`
@@ -436,9 +441,14 @@ def expectedInlineFeeders : String :=
     **Item 289 refutes the props consumer's `tab`**: the reason carries the
     saved key's possibility and line, which `scanValue_tab_keyrun_ne` reads and
     both producers hold.  Six applications are left, at the five arms and the
-    dead one. -/
+    dead one.
+
+    **Item 293 refutes the implicit consumer's `¬ possible`**: every content
+    park carries `h_live` — an inline `:` finds a live key — so five
+    applications are left, at the four arms (`dedent` and `noKeyContext` at
+    both consumers) and the dead one. -/
 def expectedInlineArms : String :=
-  "apps=6 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_implicit_key/¬h_poss,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext"
+  "apps=5 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext"
 
 /-- `scripts/inline_class_price.py census`, checked from the script's side. -/
 def expectedInlineCensus : String :=
@@ -3399,9 +3409,11 @@ example {sc : ScannerState} {sp_start sp_X sp_scan' : SurfPos}
     (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan'.col)
     (h_nodir : sc.allowDirectives = false)
     -- Item 206: and this, which the section above said would be unpayable.
-    (h_nic0 : sp_scan'.col = 0 → sc.needIndentCheck = true) :
+    (h_nic0 : sp_scan'.col = 0 → sc.needIndentCheck = true)
+    -- Item 293: and the park's `flag ∨ live`.
+    (h_live0 : sc.simpleKeyAllowed = true ∨ sc.simpleKey.possible = true) :
     PendingNode sc false sp_start sp_X sp_scan' :=
-  PendingNode.pendingFlow sp_start sp_X sp_scan' h_stream h_arm h_nodir h_nic0
+  PendingNode.pendingFlow sp_start sp_X sp_scan' h_stream h_arm h_nodir h_nic0 h_live0
 
 end Item205
 

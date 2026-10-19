@@ -153,7 +153,8 @@ example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos}
     (h_real : LastTokenReal sc.tokens)
     (h_marker_tail : ∃ t, lastRealToken? sc.tokens = some t ∧
       t.val = .documentStart ∧ t.pos.line = sc.line)
-    (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col)
+    -- Item 293: the armed half alone — the `---` scan re-arms and clears.
+    (h_arm : sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false)
     -- Item 138: and the park's directive face — `scanDocumentStart` clears the
     -- flag, so a `---` park is not directive-eligible.
     (h_nodir : sc.allowDirectives = false)

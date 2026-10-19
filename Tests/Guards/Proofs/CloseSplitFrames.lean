@@ -701,9 +701,12 @@ def expectedArgs : List String :=
 -- DROPS it — the `-` dispatched off the park reads the offer of the `-` it pushes,
 -- never the park's own — so the row reads one more field, one more face and one
 -- more drop, and every field the door used it still uses.
+-- Item 293: `pendingBlockContent` gains a nineteenth field, `h_live`, and this
+-- door USES it — `accum_block_pending` hands it to the `:` consumer — so the row
+-- reads one more field, one more face and one more use, and drops what it did.
 def expectedDoor : List String :=
   ["PendingNode.pendingBlock: fields=17 data=4 faces=13 equations=5 used=9 dropped=4 h_close(_h_close),h_closeF(h_closeF✝),h_nodir(h_nodir✝),h_offer(h_offer✝)",
-   "PendingNode.pendingBlockContent: fields=18 data=4 faces=14 equations=5 used=12 dropped=2 h_closable(_h_closable),h_nodir(h_nodir✝)"]
+   "PendingNode.pendingBlockContent: fields=19 data=4 faces=15 equations=5 used=13 dropped=2 h_closable(_h_closable),h_nodir(h_nodir✝)"]
 -- 2026-10-18 (item 284): `decisions` 126 → 127, `apps` 39 → 40 and `doorDropped`
 -- 3/2 → 4/2, and nothing else.  The door's extra drop is `pendingBlock.h_offer`
 -- (above).  The other two are ONE payment: the walk meets the `-` producer's

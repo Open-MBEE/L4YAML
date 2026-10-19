@@ -130,7 +130,9 @@ def run_arms(paid, idxs, verbose=True):
 
 SELF = re.compile(r"^L4YAML/Proofs/Production/StreamAccum\.lean:(\d+):\d+: error")
 
-RIDE_HEAD = "  have drop_ride :"
+#: Item 293: the ride takes the open's saved-key possibility first, so its head
+#: names it; the flip's `0 = 0 →` and `fun _ =>` nest under it unchanged.
+RIDE_HEAD = "  have drop_ride : s_prep.simpleKey.possible = true →"
 RIDE_TY = "      ∃ sp_gram' sp_block' sp_flow' sp_scan',"
 RIDE_BODY = ("    ⟨sp_block, sp_block, sp_open, sp_open, h_stream_block, "
              "BlockStack.nil _,")

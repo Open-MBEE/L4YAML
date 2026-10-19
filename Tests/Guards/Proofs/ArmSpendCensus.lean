@@ -176,16 +176,30 @@ def armEdges (anchor : Name) : CommandElabM (Array Edge × Nat) := do
     223's ledger named four of them.  DOCS item 287: the inline wrapper reads
     its arm off the dispatch, so its `h_arm` row is gone, and three
     `accum_block_on_*` read their `h_park` two binders earlier, past the
-    retired `sp_block_ctx` and `h_stream_fallback`. -/
+    retired `sp_block_ctx` and `h_stream_fallback`.
+
+    **Item 293: twenty-five.**  Two rows leave because two binders narrowed to
+    what their producers pay — `accum_content_on_noPending`'s `h_park` to the
+    flag, and `pendingDocStart`'s `h_arm` to the armed conjunction.  Six rows
+    join that are not arms: the escape park's `flag ∨ live` (`h_live0`) on
+    `pendingFlow`, the escape, its two stamp wrappers, `content_live0` and
+    `preprocess_possible_of_live0`.  The census reads every
+    `simpleKeyAllowed = true ∨ …` binder as a loose arm — the shape, not the
+    role. -/
 def expectedBinders : List String :=
   [ "loose accum_block_on_noPending#13 (h_arm)",
-    "loose accum_content_on_noPending#15 (h_park)",
+    "loose block_dispatch_deferred#9 (h_live0)",
+    "loose block_dispatch_deferred_stamp_nopack#14 (h_live0)",
+    "loose block_dispatch_deferred_stamp_offcol#15 (h_live0)",
+    "loose content_live0#4 (h_live0)",
     "loose flowKeyRoute_of_open#14 (h_park)",
     "loose flowKeyRoute_of_root#9 (h_park)",
     "loose keyctx_of_preprocess#12 (h_park)",
     "loose landing_or_park_save#6 (h_park)",
     "loose landing_or_park_ska#6 (h_park)",
+    "loose pendingFlow#8 (h_live0)",
     "loose preprocess_flow_thread#9 (h_park)",
+    "loose preprocess_possible_of_live0#3 (h_live0)",
     "tight accum_block_on_closeThenBlock#15 (h_park)",
     "tight accum_block_on_pendingBlockContent#23 (h_park)",
     "tight accum_block_on_pendingContent#21 (h_park)",
@@ -197,7 +211,6 @@ def expectedBinders : List String :=
     "tight pendingBlockContent#10 (h_arm)",
     "tight pendingContent#9 (h_arm)",
     "tight pendingDocEnd#6 (h_arm)",
-    "tight pendingDocStart#8 (h_arm)",
     "tight pendingFlow#5 (h_arm)" ]
 
 /-- The payments, by kind.  **PAY=8** is every literal `Or.inl` that funds an
@@ -226,9 +239,25 @@ def expectedBinders : List String :=
     dispatch, so its `h_arm` binder is gone and with it the two `VIA` edges
     its old applications paid (`arm_tight_of_block_dispatch`) and the `RELAY`
     it handed `block_dispatch_deferred`; the wrapper's own derivation is one
-    `VIA` edge in their place.  91 → 89, `RELAY` 25 → 24, `VIA` 32 → 31. -/
+    `VIA` edge in their place.  91 → 89, `RELAY` 25 → 24, `VIA` 32 → 31.
+
+    **Item 293: 89 → 102**, every edge named by a diff against item 292's tree
+    (`scratchpad/l4yaml-row12-steps/362-armspend-edges.log`: 18 gained, 5
+    lost).  Fifteen are the supply of the six `flag ∨ live` binders — the six
+    stamp-wrapper calls and the inline wrapper paying `Or.inl` off the
+    dispatch (`PAY` 7), the escape relaying to its park and the two wrappers
+    and `content_live0` relaying onward (`RELAY` 4), `content_live0` into the
+    escape (`VIA` 1), the two park fields read through `casesOn` (`FIELD` 2),
+    and the props arm's `Or.inr` of the run's key (`DECLINE` 1).  The two
+    narrowings take five out and put two back: `pendingDocStart.h_arm`'s two
+    producer `PAY`s and `accum_content_on_noPending.h_park`'s caller `PAY`
+    leave with their binders, and the two consumers that read a narrowed field
+    on to a disjunctive binder now pay it with `Or.inl` (a `RELAY` and a
+    `FIELD` each become a `PAY`).  The last is a second application of
+    `landing_or_park_ska`, at the props park's landing (`DECLINE` 1).
+    `skipped` 30 → 31 is `live_of_dispatch`, as at `RelaySupplyCensus`. -/
 def expectedTally : String :=
-  "edges=89 skipped=30 DECLINE=19 FIELD=6 PAY=9 RELAY=24 VIA=31"
+  "edges=102 skipped=31 DECLINE=21 FIELD=7 PAY=15 RELAY=27 VIA=32"
 
 run_cmd do
   let env ← getEnv

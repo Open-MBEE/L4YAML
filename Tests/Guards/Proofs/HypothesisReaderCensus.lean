@@ -483,8 +483,20 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `KeyPackPunt.tab`'s two new fields, `h_poss` and `h_kline`, are ETA (a
 -- constructor has no body to read them in), and `keyPackPunt_transport`'s new
 -- premise `h_poss` is READ, in its `tab` case.
+-- 2026-10-19 (item 293): `constants` 1356 -> 1364, `decls` 1074 -> 1082, `eta`
+-- +5, `FIELD` +1, `READ` +6, `RELAY` +30.  Roster
+-- `scratchpad/l4yaml-row12-steps/365-roster-293.out` (4027 rows) against item
+-- 289's: 42 rows gained, none lost.  The eight new lemmas are the eight
+-- constants and 28 of the rows; the four new park fields (`pendingContent` and
+-- `pendingBlockContent`'s `h_live`, `pendingFlow.h_live0`,
+-- `pendingProps.h_poss`) are four ETA; and ten are new parameters on existing
+-- declarations — `colon_fires_implicit_key.h_live` and `KmSound.push.h_poss_new`
+-- READ, `block_dispatch_deferred.h_live0` FIELD (it fills the park's), and the
+-- relays (`h_live` at the two block consumers, `h_possD` at the two routed
+-- lemmas, `h_live0` at the two stamp wrappers, `km_push_at_open.h_poss_new`).
+-- The two narrowed binders change type and keep their verdicts.
 def expectedModuleTally : String :=
-  "constants=1356 decls=1074 eta=382 FIELD=157 READ=1113 RELAY=2276 RETURN=48 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1119 RELAY=2306 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is

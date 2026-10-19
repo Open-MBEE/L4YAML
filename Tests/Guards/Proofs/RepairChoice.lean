@@ -273,14 +273,15 @@ def expectedEmptyClass : String := "empty=10 onThread=9"
 
 /-- **Three readings of the same ten.**  `users` inlines generated
     auxiliaries, `rawRefs` is one step without them, and `fullApps` counts the
-    declarations whose proof term applies the park to all eight of its
-    arguments.  Only two of the ten BUILD a park; no reading here can say
+    declarations whose proof term applies the park to all ~~eight~~ nine of its
+    arguments (item 293's `h_live0` is the ninth).  Only two of the ten BUILD a park; no reading here can say
     which two, and the pin exists so that a refinement which can disagrees
     with this file rather than replacing it silently. -/
 def expectedParkReadings : String := "users=10 rawRefs=10 fullApps=10"
 
-/-- The park's arity, pinned: a change to it re-aims `fullApps`. -/
-def parkArity : Nat := 8
+/-- The park's arity, pinned: a change to it re-aims `fullApps`.  Item 293
+    re-aims it: the park reads `flag ∨ live` (`pendingFlow.h_live0`). -/
+def parkArity : Nat := 9
 
 /-- The largest application of `park` anywhere inside an expression.  A `cases`
     arm builds the constructor it eliminates, so this does NOT separate a

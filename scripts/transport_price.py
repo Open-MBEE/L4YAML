@@ -161,8 +161,9 @@ OPTOK = "        p.pos.col = s_prep.col)"
 OPTOK2 = "        p.pos.col = s_prep.col ∧ 0 = 0)"
 KPKG = "      FlowBaseAnchor g s' 0 →"
 KPKG2 = "      FlowBaseAnchor g s' 0 → 0 = 0 →"
-KPKG_FUN = "    fun g n _ _ h_st hfl h_anch h_b =>"
-KPKG_FUN2 = "    fun g n _ _ h_st hfl h_anch _ h_b =>"
+#: Item 293: the package binds the open's saved-key possibility (`h_kp`) too.
+KPKG_FUN = "    fun g n _ _ h_st h_kp hfl h_anch h_b =>"
+KPKG_FUN2 = "    fun g n _ _ h_st h_kp hfl h_anch _ h_b =>"
 SELF = re.compile(r"^L4YAML/Proofs/Production/StreamAccum\.lean:(\d+):\d+: error")
 
 
@@ -307,7 +308,8 @@ def run_pay(base, verbose=True):
 
 # ------------------------------------------------------------------- the ride
 
-RIDE_ANCHOR = "  have drop_ride :"
+#: Item 293: the ride takes the open's saved-key possibility first.
+RIDE_ANCHOR = "  have drop_ride : s_prep.simpleKey.possible = true →"
 
 
 def run_ride(base, verbose=True):

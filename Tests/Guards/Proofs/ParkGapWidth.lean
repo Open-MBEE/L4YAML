@@ -508,11 +508,14 @@ corrBlock=0 corrScan=1 via="]
     on — so the rows read 101, 130 and 201 with every `edge` and `chain` where
     they were.  DOCS item 287 adds one holder of two of them and no crossing:
     the inline wrapper reads its premises off the dispatch and its
-    preprocessing, so the rows read 102, 130 and 202. -/
+    preprocessing, so the rows read 102, 130 and 202.  DOCS item 293 adds
+    three content-dispatch holders and four preprocessing ones and no crossing
+    — the possibility lemmas `DispatchPrice` names — so the rows read 102, 133
+    and 206. -/
 def expectedLadder : List String :=
   ["scanNextToken_dispatchBlockIndicators holders=102 edge=0 chain=0",
-   "scanNextToken_dispatchContent holders=130 edge=2 chain=1",
-   "scanNextToken_preprocess holders=202 edge=17 chain=6"]
+   "scanNextToken_dispatchContent holders=133 edge=2 chain=1",
+   "scanNextToken_preprocess holders=206 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

@@ -700,7 +700,9 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- carries hold; the declarations are named in [[HypothesisReaderCensus]].
 -- Item 287: five more theorems — the four line-stop lemmas and
 -- `sslComments_refutes_inline_residue` — none a no-op.
-def expectedNoopTally : String := "theorems=5396 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- Item 293: eight more — the possibility lemmas named in
+-- [[HypothesisReaderCensus]] — none a no-op.
+def expectedNoopTally : String := "theorems=5404 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

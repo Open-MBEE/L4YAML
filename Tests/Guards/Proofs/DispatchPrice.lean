@@ -30,7 +30,7 @@ and for a grammar path landing on the position the step's output names.
 
 | rung | what it asks | count |
 |---|---|---|
-| `dispHolders` | a `scanNextToken_dispatch*` equation is held | ~~299~~ **300** |
+| `dispHolders` | a `scanNextToken_dispatch*` equation is held | ~~299~~ ~~300~~ **303** |
 | `dispTwoCorr` | …with two correspondences beside it | **28** |
 | `edge` | a production LANDS on the step's output position | **4** |
 | `chain` | a production path RUNS from a known point to it | **1** |
@@ -272,9 +272,16 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
     `block_dispatch_deferred_inline` reads its three premises off the dispatch
     now, so its statement holds the preprocessing and dispatch equations it
     did not hold before.  It holds one correspondence (`dispTwoCorr` stays 28),
-    and `fns` and `fnsIx` hold. -/
+    and `fns` and `fnsIx` hold.
+
+    Moved to 1681 / 303 by DOCS item 293 and no new step: six of its new
+    declarations hold a step equation — `preprocess_saved_key_possible_post`,
+    `preprocess_possible_of_live0` and `close_poss_of_base` a preprocessing
+    one, `live_of_dispatch`, `dispatchContent_blockScalar_ska` and
+    `content_live0` a content dispatch (`content_live0` both).  None holds two
+    correspondences, and `fns` and `fnsIx` hold. -/
 def expectedSteps : String :=
-  "stepHolders=1675 dispHolders=300 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1681 dispHolders=303 dispTwoCorr=28 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -321,10 +328,14 @@ def expectedChainSpec : List Name :=
     `slotGateAt_of_parkSource`, `slotGateAt_of_noPending`, and
     `slotGateAt_spend` for the dispatch — and none carries a path, so both
     second numbers hold.  DOCS item 287 adds one holder of preprocessing's
-    equation, `block_dispatch_deferred_inline`, with no path. -/
+    equation, `block_dispatch_deferred_inline`, with no path.  DOCS item 293
+    adds four holders of preprocessing's (`preprocess_saved_key_possible_post`,
+    `preprocess_possible_of_live0`, `close_poss_of_base`, `content_live0`) and
+    three of the content dispatch's (`live_of_dispatch`,
+    `dispatchContent_blockScalar_ska`, `content_live0`), none with a path. -/
 def expectedPerFn : List String :=
-  ["scanNextToken_dispatchContent decls=130 chain=1",
-   "scanNextToken_preprocess decls=202 chain=6"]
+  ["scanNextToken_dispatchContent decls=133 chain=1",
+   "scanNextToken_preprocess decls=206 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

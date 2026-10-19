@@ -1070,9 +1070,18 @@ def expectedDoor : List String :=
     terms: `accum_content_pending` +12, whose three `keyPackPunt_transport`
     calls each pass the new possibility premise, and `accum_flow_open_depth0`
     +2, whose `tab` arm binds the reason's two new fields
-    (`scratchpad/l4yaml-row12-steps/317-csc-perdecl.log`). -/
+    (`scratchpad/l4yaml-row12-steps/317-csc-perdecl.log`).  Item 293 moves
+    `nodes` alone, 99114 → 100079, and the same per-declaration run names all
+    of it (`375-csc-perdecl-293.log`): `accum_content_pending` +674 — the props
+    arm's eight `h_live` payments, its run extensions' `h_poss`, the
+    possibility the routed and document-start content take, and the escape
+    park's `content_live0` — and `accum_flow_open_depth0` +188, the eight
+    opens paying their saved key's possibility.  The other +103 are the four
+    new park fields bound at each eliminator (+1 to +5 per declaration),
+    `arm_tight_or_col`'s `Or.inl` (+27) and `accum_block_pending`'s threading
+    (+29). -/
 def expectedLine : String :=
-  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=99114"
+  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=100079"
 
 /-! ## §6 The reading -/
 

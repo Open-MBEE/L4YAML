@@ -215,9 +215,14 @@ def readDecl (n : Name) : MetaM Readings := do
     scanner state and concludes an inequality; `underRunEnd_landing_on_stack`
     hands that same correspondence on and concludes a membership on the
     landing's indent stack.  Neither concludes a stream, so both join the count
-    and none of the other six readings moves. -/
+    and none of the other six readings moves.
+
+    Item 293 moves it by one more, for the same kind of reason:
+    `live_of_dispatch` takes the content park's correspondence to read a block
+    scalar's line stop, and concludes a possibility — the one new declaration
+    holding a correspondence. -/
 def expectedCensus : String :=
-  "corrHyp=435 streamConcl=89 both=39 free=0 pairConcl=1 held=3 pairAny=8"
+  "corrHyp=436 streamConcl=89 both=39 free=0 pairConcl=1 held=3 pairAny=8"
 
 /-- The one conclusion that pairs them, and it is the stream's origin. -/
 def expectedSeedConcl : List Name :=

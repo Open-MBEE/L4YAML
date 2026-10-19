@@ -282,8 +282,15 @@ declarations' own binders and not by a rescoring of an existing one.
 -- `h_kline` (ETA) and `keyPackPunt_transport`'s `h_poss` (READ)
 -- (`scratchpad/l4yaml-row12-steps/319-rosterP-289.out` against
 -- `239-rosterP-287.out`: three rows gained, none lost).
+-- 2026-10-19 (item 293): the SAME 42 rows its sibling gains, eight constants
+-- with them (`scratchpad/l4yaml-row12-steps/368-rosterP-293.out` against
+-- `319-rosterP-289.out`: 42 gained, none lost).  Two read differently under
+-- this peel — `live_of_dispatch.h_poss` and
+-- `preprocess_saved_key_possible_post.h_noflow` are RETURN here and RELAY
+-- there, each spent by its proof's final `exact` — so the sibling's `RELAY`
+-- +30 reads +28 here, with `RETURN` +2.
 def expectedModuleTallyP : String :=
-  "constants=1356 decls=1074 eta=382 FIELD=179 READ=1152 RELAY=2127 RETURN=136 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=180 READ=1158 RELAY=2155 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

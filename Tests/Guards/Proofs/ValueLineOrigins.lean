@@ -961,9 +961,23 @@ def expectedUnborn : List String := []
     other +16 `liteNodes` are `accum_content_pending`'s three transport calls
     passing the new premise (+12) and the two new fields bound at the `tab`
     arms of `accum_flow_open_depth0` and `colon_fires_implicit_key` (+2 each).
-    No row, class or origin moves. -/
+    No row, class or origin moves.
+
+    Item 293 moves five, and the same per-declaration run names them
+    (`scratchpad/l4yaml-row12-steps/381-vlo-perdecl-293.log`, against item
+    292's tree rebuilt in place).  The largest share is `accum_step_flow`'s two
+    depth-0 closes paying `h_live` from the restored slot (`lets` +2, `alts`
+    +22, `liteNodes` +1462); then `accum_content_pending`'s props arm, run
+    extensions and routed possibility (`alts` +8, `liteNodes` +684), the two
+    indented lemmas (`alts` +3 and `liteNodes` +311 each), the three block
+    consumers' stamp-wrapper calls paying the escape park's flag (`alts` +2 and
+    `liteNodes` +148 each), the eight opens (`lapps` +2, `liteNodes` +261), and
+    the refuted `¬ possible` arm (`lapps` +1, `liteNodes` +57).  The two
+    `pendingDocStart` producers shrink by 25 each, paying the narrowed field
+    without its `Or.inl`; `nodes` +75 is the new fields bound at each
+    eliminator and the threading.  No row, class or origin moves. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=555 lapps=669 alts=4377 nodes=12416 liteNodes=502557"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=557 lapps=672 alts=4421 nodes=12491 liteNodes=506219"
 
 /-! ## §4 The reading -/
 

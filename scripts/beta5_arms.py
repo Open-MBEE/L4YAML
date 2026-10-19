@@ -90,23 +90,25 @@ DEAD = [
      " by assumption])\n"),
     ("accum_block_pending", "accum_block_pending",
      "  | pendingFlow _ _ _ _ h_arm77 _ h_nic0F =>\n"),
-    # Item 285: the arm binds nothing since item 284 rerouted it to the escape.
+    # Item 285: the arm binds nothing since item 284 rerouted it to the escape;
+    # item 293: but the park's `flag ∨ live`, which the escape re-takes.
     ("accum_content_pending", "accum_content_pending",
-     "  | pendingFlow _ _ _ _ _ _ _ =>\n"),
+     "  | pendingFlow _ _ _ _ _ _ _ h_live0F =>\n"
+     "    -- Item 284: the opaque park defers at EVERY landing"),
     # `accum_flow_open_depth0` is three deletions in one proof: the arm, and the
     # two `have`s that only the arm consumes, `opaque_resume` directly and
     # `drop_ride` through it.  `drop_ride` is where β.5's `dropClose` is spent;
     # the three live arms take `slot_ride` (item 285), so if this end
     # elaborates the lemma, that spend is dead code.
     ("flow_arm", "accum_flow_open_depth0",
-     "  | pendingFlow =>\n"
+     "  | pendingFlow _ _ _ _ _ _ _ h_live0F =>\n"
      "    -- The deferred state: its own closing strategy is the drop, and the"
      " flow\n"),
+    # Item 293: both take the open's saved-key possibility first.
     ("flow_opaque_resume", "accum_flow_open_depth0",
-     "  have opaque_resume : sp_scan.col ≠ 0 → GStar SSWhite sp_scan"
-     " sp_prep →\n"),
+     "  have opaque_resume : s_prep.simpleKey.possible = true →\n"),
     ("flow_drop_ride", "accum_flow_open_depth0",
-     "  have drop_ride :\n"),
+     "  have drop_ride : s_prep.simpleKey.possible = true →\n"),
 ]
 
 #: A line that is only a comment, at a given indent.  A block of these directly

@@ -138,8 +138,9 @@ example (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) 
 Item 222's NEXT recorded this as the route it "measured and did not build".
 Here it is built — `colon_fires_implicit_key` applied with no park class named,
 the arm coming from the family reading.  Everything else the lemma wants is a
-PARAMETER below, so the residual is five, it is machine-checked, and it moves
-only when this signature moves. -/
+PARAMETER below, so the residual is ~~five~~ **six**, it is machine-checked, and
+it moves only when this signature moves — as it did at item 293, when the
+consumer's `¬ possible` arm took the park's `h_live`. -/
 
 lemma colon_fires_from_any_park
     (sc : ScannerState) (sp_start sp_block sp_scan : SurfPos)
@@ -154,6 +155,8 @@ lemma colon_fires_from_any_park
     (h_stale : InlineResidue sp_scan ':' → StaleNodeTail sc)
     (h_kbc : ScannerCorrectness.KeysBehindCursor sc)
     (h_scf : StaleCursorFloor.StaleKeyCursorFloor sc)
+    -- — item 293's live key at an inline `:` (a content park's `h_live`) —
+    (h_live : InlineResidue sp_scan ':' → sc.simpleKey.possible = true)
     -- — and the punt §3's `.dedent` defers to.
     (h_punt : ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
@@ -185,6 +188,6 @@ lemma colon_fires_from_any_park
     (PendingNode.arm_tight_or_col h_noflow_sc h_pending)
     -- Item 287: the consumer takes the punt as a builder, told what an inline
     -- residue at the park is; this route's punt is already the conclusion.
-    h_kbc h_scf (fun _ => h_punt) hcorr_prep hcorr_result h_corr h_noflow h_preprocess h_dispatch
+    h_kbc h_scf h_live (fun _ => h_punt) hcorr_prep hcorr_result h_corr h_noflow h_preprocess h_dispatch
 
 end Tests.Guards.ArmDemandLedger

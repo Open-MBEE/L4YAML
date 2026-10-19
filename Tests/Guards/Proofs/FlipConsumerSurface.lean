@@ -61,7 +61,8 @@ counts ~~what empties the inline class: `KeyPackPunt`'s two surviving reasons~~
 the punt's reasons, which are five of the inline class's seven arms (DOCS item
 286; the other two are the no-key arm and the value park whose slot declines).
 Items 288 and 289 refuted the value park's arm and the props consumer's `tab`,
-so the reasons are four of the five arms left.
+so the reasons are four of the five arms left — and item 293 refuted the no-key
+arm, so they are all four.
 Both partitions and the input families they serve are documented at
 [`BlockDeferralClasses`](BlockDeferralClasses.lean).
 
@@ -241,7 +242,7 @@ Each `rootMapRoute_or_refused` row is paired with its entries-level twin
 
 /-! ## §3  The deferral beside it
 
-~~FOUR~~ **SEVEN** definitions, ~~ELEVEN~~ ~~NINE~~ ~~FIFTEEN~~ ~~FOURTEEN~~ **THIRTEEN** applications
+~~FOUR~~ **SEVEN** definitions, ~~ELEVEN~~ ~~NINE~~ ~~FIFTEEN~~ ~~FOURTEEN~~ ~~THIRTEEN~~ **TWELVE** applications
 (item 186 — five and twelve before it; item 209 — the compact wrapper's two,
 refuted and gone; **item 287** — the inline wrapper's two became eight, one at
 each arm of DOCS item 286's measurement: `dedent`, `noKeyContext` and the
@@ -251,7 +252,8 @@ dead `pendingFlow` arm).  The count rose and the domain did not: the five
 crossed-break arms that reached the old two sites are refuted now.  **Item
 288** refutes the frameless value park's, which holds the stamp, and **item
 289** the props consumer's `tab`, whose reason carries the saved key's
-possibility and line.
+possibility and line, and **item 293** the implicit consumer's `¬ possible`,
+on the content parks' `h_live`.
 `pendingFlow` is not a `[210]`
 construction site and never appears in the flip's five errors — it is the park
 whose arms have nothing to pay the landing faces WITH, so it keeps the guards'
@@ -449,7 +451,8 @@ All three lanes, in one walk of the module. -/
        -- `pendingFlow` arm's application is the one left here.
        "accum_block_pending: block_dispatch_deferred_inline=1",
        "accum_content_pending: block_dispatch_deferred=1",
-       "colon_fires_implicit_key: block_dispatch_deferred_inline=3",
+       -- Item 293: the `¬ possible` arm refutes, on the park's `h_live`.
+       "colon_fires_implicit_key: block_dispatch_deferred_inline=2",
        -- Item 289: the `tab` arm refutes, on the saved key's possibility and
        -- line the reason carries.
        "colon_fires_props_key: block_dispatch_deferred_inline=2"]⟩,

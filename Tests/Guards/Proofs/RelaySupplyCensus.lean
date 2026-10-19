@@ -853,9 +853,15 @@ def hopName (env : Environment) (e : Edge) : String :=
     `PendingNode.pendingMapValue.h_vslot` declines with the stamp now, so its
     six supply edges leave too — the three stamped producers' `Or.inr trivial`
     (`DECLINE` 255 → 252), the two slot openers' `Or.inl` (`PAY` 49 → 47), and
-    `compact_open_map`'s split (`SPLIT` 155 → 154).  `edges` 648 → 642. -/
+    `compact_open_map`'s split (`SPLIT` 155 → 154).  `edges` 648 → 642.
+
+    **Item 293 moves `skipped` alone, 30 → 31**: `live_of_dispatch`, which
+    concludes in an arrow and case-splits before it introduces it, so its value
+    has nine leading lambdas for ten binders — the shape of `stale_of_dispatch`,
+    its twin, already among the thirty.  The 31 names, listed with the guard's
+    own test: `scratchpad/l4yaml-row12-steps/357-relay-skipped.out`. -/
 def expectedTally : String :=
-  "edges=642 skipped=30 [DECLINE=252, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
+  "edges=642 skipped=31 [DECLINE=252, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
 SPLIT=154, VIA=36]"
 
 /-- **The row item 211 read off the compiler's error text and got wrong.**  All

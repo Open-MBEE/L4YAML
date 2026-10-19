@@ -36,7 +36,7 @@ wrapper's deletion rather than a total drifting:
 | `_stamp_offcol` | **3** in 3 definitions | the park HAS a value pack, at `nv`, and the landing is at `k ≠ nv` | a reason the two indices agree — `[187]`'s `s-indent(n)` is exact.  **Item 189 (§8) paid its first domain** and **item 190 (§9) the other two sites'**: where `nv ≠ k` because the park holds TWO frames and offered the inner one, the landing now reads the outer one — from `h_vpackUp` at the landed `?`, from `h_kslotUp` at the compact one.  ~~What is left is a landing TWO frames up~~ — **item 191 (§10) paid that too**, by carrying the ancestors as a LIST instead of naming one; **item 192 (§11)** carried the list across a flow CONSTRUCT, and **item 193 (§12)** across an awaited SEQUENCE ENTRY at the landed `?` |
 | `_stamp_nopack` | **3** in 3 definitions | the park carries no value pack at all, and its register is LIVE | a CARRIER: the `?` frame's value slot at the landing's column, U2's residue proper — priced at item 186 (§5), RE-priced at item 187 (§6), and its first DOMAIN paid at item 188 (§7) |
 | `_stamp_compact` | **2** in 2 definitions | the fill is COMPACT, and `[189]`'s value is `s-l+block-node`, so the face cannot stand in for the stamp | the stamp, or a refutation |
-| `_inline` | **2** in 2 definitions | the mid-line indicator (`inline_residue_of_landing`) | `KeyPackPunt`'s two surviving reasons (item 102) |
+| `_inline` | **2** in 2 definitions | the mid-line indicator (`inline_residue_of_landing`) | ~~`KeyPackPunt`'s two surviving reasons (item 102)~~ — **item 286 (§3.1): five callers and seven arms** — four empty at the runtime, two a relay (item 211), the seventh accepted input its park's slot serves; none refuted in the proof yet |
 | bare | **1** | `pendingFlow`'s own arm, which this escape PRODUCES | the constructor (item 35's structural note) |
 
 **The classes OVERLAP; only the sites are partitioned.**  `_stamp_compact`'s
@@ -133,7 +133,11 @@ census, agreeing row for row.
 `noKeyContext` has no NAMED input (item 102 left it "a frame class rather than
 a construct"), which by Reflection 646 is the signature of a branch that may be
 a phantom; `dedent`'s is `k:⏎  :⏎b: 2`, §3's first row.  Both are pinned below
-as the boundary, not as a claim about which of the two the escape needs. -/
+as the boundary, not as a claim about which of the two the escape needs.
+
+**Item 286: the class is wider than the pack's punt** — five callers hand its
+two sites a stream, and the implicit-key pack's punt is two of them.  §3.1 names
+the five and what the runtime says each reason stands for. -/
 
 namespace L4YAML.Tests.Guards.BlockDeferralClasses
 
@@ -361,6 +365,75 @@ gap, recorded at item 173, not a datum about this reading. -/
 -- …and the mid-line `:` the RUNTIME refuses, so no arm owes it a reading
 -- (item 48's `nestedMappingOnLine`).
 #guard pins "k: a: 1\n" == ("scan-refused L4YAML.ScanError.nestedMappingOnLine 0 4", "ERR L4YAML.ScanError.nestedMappingOnLine 0 4")
+
+/-! ## §3.1  The class's domain, re-derived (item 286)
+
+Neither of `block_dispatch_deferred_inline`'s two sites decides anything: each
+spends a STREAM its caller handed down (`h_stream_fallback`), so the class is
+the set of callers that hand a stream rather than a refutation.
+`scripts/inline_class_price.py feeders` narrows that stream to `False` in the
+three lemmas that take it and builds: a caller that refutes still elaborates,
+and a caller that hands a stream breaks once, at the stream it hands.
+
+| caller | park | what reaches the site through it |
+|---|---|---|
+| `accum_block_pending` | `pendingContent` | `colon_fires_implicit_key`'s `dedent`, `noKeyContext` and `¬ possible` arms — and its two crossed-break arms, vacuously |
+| `accum_block_pending` | `pendingBlockContent` | the same, through `h_generic` |
+| `accum_block_pending` | `pendingProps` | `colon_fires_props_key`'s `tab`, `dedent` and `noKeyContext` arms — and its two crossed-break arms, vacuously |
+| `accum_block_pending` | `pendingMapValue` | the explicit value park whose `h_vslot` declines — the seventh arm |
+| `accum_block_on_pendingBlock` | — | the dedent `-`, a LANDED branch: vacuous |
+| `accum_block_pending` | `pendingFlow` | the dead arm, which goes with the constructor |
+
+Item 184 read the class as the implicit-key pack's punt, which is the first two
+rows; item 211 had already found the props `:`'s three.
+
+The runtime decides what the reasons stand for.  `census` reads every
+yaml-test-suite case and the hand-written rows here at the scanner state the
+consumers read: a content or property park off column 0, then a same-line `:`
+dispatched as a block VALUE indicator.  Every accepted one holds a live key on
+its line, and every one whose own landing popped landed on an open MAPPING
+level.  So the `¬ possible` arm is empty over the corpus, and `dedent`'s
+`w ∉ ks` is false wherever the frames cover the stack
+(`preprocess_landing_mem_or_seq`); the sequence case is the `:`'s own
+`trailingContent` (§8.2.1), refused in the rows below.  The props park's `tab`
+input is refused too.  `noKeyContext` is still the relay item 211 measured:
+its one deciding production is reached only by refused input, and the rest
+relay their callers' contexts.
+
+The seventh arm is not empty at the runtime: `? a⏎: - b` is accepted, and the
+explicit value's `[185]` slot is what serves it.  The arm is the park that
+declines the slot, and `h_vslot` declines it with `True`.  Narrowing that
+`True` to the stamp — `sc.implicitValueLine = some sc.line`, the reason
+`h_ivl` already names — breaks 8 errors in 6 declarations: the four producers
+that decline (`colon_open_map`, `colon_open_map_implicit`, `colon_open_map_props`,
+and `compact_open_map`'s `:` branch) and two consumers that re-read the slot
+with `.imp _ id`.  Each producer pays `h_ivl` with the stamp in the same
+argument list, so the arm's carrier is named and its first ring measured. -/
+
+/-- `scripts/inline_class_price.py feeders`, checked from the script's side. -/
+def expectedInlineFeeders : String :=
+  "errors=6 decls=2 feeders=accum_block_on_pendingBlock/-,accum_block_pending/pendingBlockContent,accum_block_pending/pendingContent,accum_block_pending/pendingFlow,accum_block_pending/pendingMapValue,accum_block_pending/pendingProps"
+
+/-- `scripts/inline_class_price.py census`, checked from the script's side. -/
+def expectedInlineCensus : String :=
+  "rows=432 accepted=371 nokey=0 popped=37 onto-map=37 onto-seq=0 off-level=0"
+
+-- The dedent family: content after a landing that popped, then a same-line
+-- `:`.  Accepted where the landing is an open mapping level…
+#guard pins "- a:\n    b:\n  c: 1\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a +MAP =VAL :b =VAL : -MAP =VAL :c =VAL :1 -MAP -SEQ -DOC -STR")
+#guard pins "- a:\n    :\n  c: 1\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a +MAP =VAL : =VAL : -MAP =VAL :c =VAL :1 -MAP -SEQ -DOC -STR")
+#guard pins "a:\n  b:\n    c:\nd: 1\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :a +MAP =VAL :b +MAP =VAL :c =VAL : -MAP -MAP =VAL :d =VAL :1 -MAP -DOC -STR")
+#guard pins "a:\n  b:\n    c:\n  d: 1\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :a +MAP =VAL :b +MAP =VAL :c =VAL : -MAP =VAL :d =VAL :1 -MAP -MAP -DOC -STR")
+-- …refused where it is no level at all (preprocessing's own pop check)…
+#guard pins "k:\n    a:\n  b: 2\n" == ("scan-refused L4YAML.ScanError.trailingContent 2 2", "ERR L4YAML.ScanError.trailingContent 2 2")
+#guard pins "a:\n  b:\n    c:\n e: 1\n" == ("scan-refused L4YAML.ScanError.trailingContent 3 1", "ERR L4YAML.ScanError.trailingContent 3 1")
+-- …and refused at the `:` where it is a SEQUENCE level (§8.2.1).
+#guard pins "- a:\n    :\nb: 1\n" == ("scan-refused L4YAML.ScanError.trailingContent 2 0", "ERR L4YAML.ScanError.trailingContent 2 0")
+
+-- The props park: its `tab` arm's input is refused…
+#guard pins "k:\n \t&p : 1\n" == ("scan-refused L4YAML.ScanError.tabInIndentation 1 2", "ERR L4YAML.ScanError.tabInIndentation 1 2")
+-- …and its dedent twin is accepted, on an open mapping level.
+#guard pins "k:\n  :\n&p : 2\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :k +MAP =VAL : =VAL : -MAP =VAL &p : =VAL :2 -MAP -DOC -STR")
 
 /-! ## §4  The COMPACT route, and why its family is a refutation target
 

@@ -5555,12 +5555,12 @@ live in the sections below, the blow-by-blow history in git.
 One row per step, in order; each carries its own state and the instrument that
 re-derives it, so a number here is never a sentence's recollection of a number.
 Steps 12.1 and 12.2 are the whole of the proof work — the single obligation
-split into the lemma and the three arms that spend it — and 12.3–12.5 are
-mechanical, priced to a fixpoint before any of them is taken.
+split into the carried face with its bridge and the three arms that spend it —
+and 12.3–12.5 are mechanical, priced to a fixpoint before any of them is taken.
 
 | Step | What it is | State | The reading that moves, and who holds it |
 |---|---|---|---|
-| **12.1** | **Write `slotRun_of_dn`** — the bridge from §9.2's own reading to `ParkSlot`'s run conjunct: `scanNextToken_checkDanglingNode sc s_prep = .ok ()` plus the park's own facts imply `ParkSlot`'s payload at `s_prep`. Spend it at `ParkSlot.ofOpen`'s `hrun`, in `accum_flow_open_depth0`'s props arm. Price it as **ONE lemma, not a carrier**: item 279 ordered three carrier censuses and [item 281](#item-281-2026-10-18) §17 refuted all three from the states, so they must not be re-run. | ⬜ open — **NEXT** | `RIDE-PRICE`'s `slot` column, pinned `slot=OOO` in `ScannerFlowOpenUnderRun.expectedRidePrice` and re-read unmoved three times — which makes it a diagnosis and no longer a measurement. §17's last two `parkFace` rows are the lemma's two cases |
+| **12.1** | **Carry the slot face on the props park, and bridge it to `ParkSlot` at the open.** `pendingProps` gains `h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ slotRun sc` — gated as `h_route` is, so it is NOT the unconditional field item 281 §5 refuted — and `slotRun_of_dn` spends it at `ParkSlot.ofOpen`'s `hrun` in `accum_flow_open_depth0`'s props arm: §9.2's silence at the landing kills the gate, the under-run kills the escape, and preprocessing's own token shape carries the payload to `s_prep`. ~~Item 281 §7's ONE lemma from `h_dn` and the park's token-side facts~~ — refuted by [item 283](#item-283-2026-10-18) before it was written: those hypotheses admit a counter-model with a scalar predecessor and every check silent. | ⬜ open — **NEXT** | `ScannerFlowOpenUnderRun` §18: `slotCounterModel` (the arm's own view, `slotRun` false) and `slotSupply == (4752, 1276, 5562, 0, 3078, 2484, 0, 1068, 0, 108, 96, [blockEntry, key, value])` — the gated face holds at every reachable park and the payload at every dispatch. The bill: four fields (`h_slot`, and `h_tail` on `pendingBlock`, `pendingMapValue`, `pendingDocEnd`), fourteen tail payments, 33 binders, two lemmas; `RIDE-PRICE`'s `slot` column is the reading to re-take |
 | **12.2** | **Spend it at the three live arms** — `pendingProps`, `pendingBlock`, `pendingMapValue`, all three of which take `accum_flow_open_depth0`'s `drop_ride`. This is a move and not a copy: the `have` is built BEFORE `cases h_pending`, so no arm's binders are in scope where the frame is made, and either the frame moves inside the split or the carrier is passed in. | ⬜ open — behind 12.1 | `TRANSPORT-PRICE`'s `ride=0/3 frames=7` names the out-of-scope ring; `RIDE-PRICE`'s `prop=OOO gated=OOO prop_sc=BOO` is what the three arms hold today |
 | **12.3** | **Apply the deletion** — `pendingFlow`, its five dead arms, `block_dispatch_deferred` (whose body IS the constructor, so it goes with it), `dropClose`, and `PendingNode.close_with_ssl`'s `pendingFlow` arm. Mechanical: the edit has been elaborated for real, to a fixpoint, since item 263. | ⬜ open — behind 12.2 | `scripts/flip_beta5.py`: `rounds=23 clean=1 sorried=13 restated=0 deleted=3 pins=37`. Thirteen proofs lose a body — seven in the library, all in `StreamAccum.lean`, six in the guard tree — ONE statement goes (`dropClose`), and **no statement anywhere must be restated**, which is `ParkBill.expectedStmt`'s `Sp=0` read a second way |
 | **12.4** | **Re-pin the thirty-seven** — instrument debt, not proof debt: the top-level censuses the deletion re-reads, among them `ParkBill`'s seven pins, `DropDependents`, `FlipConsumerSurface`'s DEFERRAL lane, `DropFalsity` and `ParkGapCensus`. `expectedFixpoint` and `expectedArms` are checked from the OTHER side — the scripts read those literals out of the file — so both move by hand and the scripts must agree afterwards. | ⬜ open — behind 12.3 | the fixpoint's `pins=37` population; `scripts/flip_beta5.py` must print `FIX-PIN agrees` and `scripts/beta5_arms.py` `ARM-PIN agrees` |
@@ -39222,6 +39222,121 @@ forward is still one measurement (§10), and this one rode fifteen items.  And
 present tense as `pins=36` where the literal the script checks, twenty-five
 lines below it in the same file, reads `pins=37`; the prose is not machine-read,
 so nothing caught it.  Corrected to the checked value.
+
+### Item 283 (2026-10-18)
+
+**Item 281's NEXT is refuted before it is written, and the fact it was to
+deliver is confirmed everywhere it is needed — so step 12.1 is a GATED FIELD on
+`pendingProps`, priced per producer below, and not the one lemma item 281 §7
+ordered.**  §10's rule is that a NEXT naming a construction carries a consumer
+probe before anything is spent on it; `ScannerFlowOpenUnderRun` §18 is that
+probe.  PRICED — one guard section, no library file.
+
+**The counter-model.**  `slotCounterModel` scans `k: a⏎&x⏎[1]` to the park after
+`&x` and deletes the mapping's level from the indent stack, leaving the sentinel
+alone.  Every token-side hypothesis `accum_flow_open_depth0`'s props arm holds
+survives the edit — the trailing run, `simpleKeyAllowed = false`,
+`needIndentCheck = false`, `LastTokenReal`, `IndentFloor` at index 0, the
+sentinel base — and the edited state preprocesses to the same landing, where
+§9.2, §8.1 and the bare-document check are all SILENT and `slotRun` is FALSE at
+the park and at `s_prep` alike:
+
+    as scanned: (danglingNodePos? = some, slotRun = false, pred = scalar "a")
+    edited:     (danglingNodePos? = none, slotRun = false, pred = scalar "a",
+                 h_dn ok, h_fv ok, h_bare ok, slotRun at s_prep = false)
+
+So no lemma over those hypotheses derives the payload.  What excluded a scalar
+predecessor was the stack, and it was consumed one step EARLIER, by
+`scanNextToken_checkBareDocument` at the run's own landing: `k: a⏎&x` scans
+because the run stands at the mapping's column, `a⏎&x` is refused there because
+no level stands at 0.  The remaining hypotheses are grammar-side (`h_route`,
+`h_key`, `h_sep`, `h_run`, `h_kslot`), and reading a token fact off a
+derivation is the transport this row does not pay.  Item 281 §5's closing
+sentence — "they hold the datum and no lemma reads it" — was therefore wrong in
+its diagnosis: `h_dn` is silent at exactly the states where it would have to
+speak, and what fired at `---⏎k: a⏎&x⏎[1]` was the run's column on the stack,
+which the counter-model deletes.
+
+**The census.**  `slotSupply` walks 4 752 generated inputs (1 276 accepted) and
+reads
+
+    (4752, 1276, 5562, 0, 3078, 2484, 0, 1068, 0, 108, 96, [blockEntry, key, value])
+
+— 5 562 depth-0 props parks, at NONE of which the gated face
+`danglingNodePos? s = none → slotRun s` fails: the predecessor OFFERS at 3 078
+and the run's column stands on an open level at the other 2 484, with no park
+paid by the excess clause or by nothing.  1 068 depth-0 opens are dispatched
+from such a park across a break and `slotRun` holds at `s_prep` at all of them;
+108 land at or below the park's incoming floor, which is the half the three
+rides are taken on, and of those 12 emit a `blockEnd` — the payload's first
+disjunct, free — while the other 96 have a predecessor that offers and it is
+`-`, `?` or `:` every time.  So the obligation is TRUE where the arm stands and
+the arm cannot see why.
+
+**The field, and why it is not the one item 281 refuted.**
+
+    h_slot : danglingNodePos? sc = none →
+      sc.indents.size ≤ 1 ∨
+      propsRunStart sc.tokens sc.tokens.size = sc.tokens.size ∨
+      ∃ j, prevRealIdx? sc.tokens (propsRunStart sc.tokens sc.tokens.size) = some j ∧
+        sc.tokens[j]!.val.offersNodeSlot = true
+
+It is gated exactly as `h_route` is.  Item 281 §5 refuted `slotRun`
+UNCONDITIONALLY, at `---⏎k: a⏎&x b` read at step 5 — and there
+`danglingNodePos? sc = some _`, so this field is vacuous at that park.  The
+`size ≤ 1` escape is for the stream-start run, where no level exists and the
+arm's own under-run is vacuous: `IndentFloor` at the base floors the index at 0
+and `j < 0` is the refutation.  At the arm the bridge is `h_slot
+(dangling_none_of_check h_dn h_ska_prep)`, the escape refuted by the under-run,
+and the payload carried to `s_prep` by preprocessing's own token shape —
+`unwindIndents_tokens_shape` (a `blockEnd`, so the first disjunct) and
+`saveSimpleKey_tokens_shape` (two placeholders, which `prevRealIdx?` skips) —
+packaged as one block-context twin of `preprocess_tokens_of_inFlow`.
+
+**The bill, per producer.**  `pendingProps` is built at six sites.
+
+* `content_dispatch_routed` (anchor and tag at index 0), reached from five
+  callers, each of which pays from a fact it holds: `accum_content_on_noPending`
+  (two sites) pays `size ≤ 1` from `h_ntop` and the sentinel base;
+  `accum_content_pending`'s `pendingDocStart` arm pays the offer from
+  `h_marker_tail`, carried across preprocessing by
+  `preprocess_lastRealTokenVal_of_indents_eq` since `h_nic` forbids an unwind;
+  its `pendingContent` and `pendingBlockContent` arms (four sites) pay §9.2's
+  own non-silence — the run's column on the stack — from `h_tail :
+  CompletedTail` and `h_bare` where no level popped, and from
+  `preprocess_landing_on_stack` where one did.  Its `pendingDocEnd` arm
+  (`...⏎&x`) has NO token fact to pay with: `pendingDocEnd` gains the twin of
+  `pendingDocStart`'s `h_marker_tail`, paid at its one producer
+  (`structural_dispatch_to_pending`).
+* `indentedValue_reads_at_any_indent`, feeding
+  `accum_content_on_pendingBlock_indented` and
+  `accum_content_on_pendingMapValue_indented`: the offer is the `-`, `?` or `:`
+  the park was built on, and neither park records its last real token.  Both
+  gain `h_tail : ∃ t, lastRealTokenVal? sc.tokens = some t ∧ t.offersNodeSlot =
+  true`, paid where the indicator was just pushed — `pendingBlock` at seven
+  producers (`accum_block_on_noPending`, `accum_block_on_closeThenBlock` ×2,
+  `accum_block_on_pendingBlockContent`, `accum_block_on_pendingBlock` ×3) and
+  `pendingMapValue` at six (`colon_open_map`, `question_open_map`,
+  `colon_open_map_explicit`, `compact_open_map`, `colon_open_map_implicit`,
+  `colon_open_map_props`).
+* the two extensions in `accum_content_pending`'s `pendingProps` arm transport
+  the gate: a second property leaves the run's start and predecessor where they
+  were (`propsRunStart` caps at two), and a third is the excess clause, where
+  §9.2 is not silent.
+
+Three constructors gain a field, so every pattern that eliminates them gains a
+binder: `pendingBlock` 8, `pendingMapValue` 9, `pendingDocEnd` 8, `pendingProps`
+8 — 33 mechanical edits, counted by `grep` and therefore a floor.  In all: four
+fields, fourteen tail payments, two bridge-side lemmas (the token shape and
+`slotRun_of_dn` itself), and the spend at `ParkSlot.ofOpen`'s `hrun`.  The
+reading to re-take is `RIDE-PRICE`'s `slot` column, pinned `slot=OOO`.
+
+**What this corrects in the record.**  Item 281 §7 said "not as a carrier", and
+§5 said the three carrier candidates were refuted from the states.  The loop
+invariant and the hypothesis route stay refuted; the `PendingNode` field was
+refuted in its UNGATED form only, and the gated form is what the census confirms
+at every park.  The three carrier censuses item 279 ordered are still not
+re-run: §18 is one census over the states, read once.
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 

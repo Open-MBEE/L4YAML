@@ -2416,6 +2416,184 @@ private def parkFace (input : String) (upto : Nat) :
 #guard parkFace "a\n...\n&x\n[1]\n" 3
   == (3, "L4YAML.YamlToken.anchor \"x\"", true, "silent", "silent", true)
 
+/-! ## §18 The bridge item 281 ordered, measured before it is written (DOCS item 283)
+
+Item 281 §7 ordered ONE lemma: `slotRun_of_dn`, from `scanNextToken_checkDanglingNode
+sc s_prep = .ok ()` plus the park's own facts to `ParkSlot`'s payload at `s_prep`,
+and said to price it "against §9.2's own reading, not as a carrier".  §10's rule
+is that a NEXT naming a construction carries a consumer probe before anything is
+spent on it, so this section is that probe, and it refutes the construction as
+named while confirming the fact it was meant to deliver.
+
+**The counter-model.**  `slotCounterModel` scans `k: a⏎&x⏎[1]` to the park after
+`&x` and then deletes the mapping's level from the indent stack, leaving the
+sentinel alone.  Every TOKEN-side hypothesis `accum_flow_open_depth0`'s props arm
+holds is unchanged by that edit — the trailing run, `simpleKeyAllowed = false`,
+`needIndentCheck = false`, `LastTokenReal`, `IndentFloor` at index 0, the
+sentinel base — and the edited state preprocesses to the same landing, where §9.2,
+§8.1 and the bare-document check are all SILENT and `slotRun` is FALSE, at the
+park and at `s_prep` alike.  So no lemma over those hypotheses derives the
+payload: the datum that excluded a scalar predecessor was the indent stack, and
+it was consumed one step EARLIER, by `scanNextToken_checkBareDocument` at the
+run's own landing (`k: a⏎&x`: the run at the mapping's column is a sibling and
+scans; `a⏎&x`, with no level at 0, is refused there).  What is left to the arm
+are the GRAMMAR-side fields — `h_route`, `h_key`, `h_sep`, `h_run`, `h_kslot` —
+and spending one of those on a token fact is the transport this row does not
+pay.
+
+**The census.**  `slotSupply` walks 4 752 generated inputs (31 prefixes × 6 runs ×
+6 separators × 3 opens, with the §17 corpora's shapes among them) and reads
+three things at every depth-0 props park: whether the gated face
+`danglingNodePos? s = none → slotRun s` holds — it does at all 5 562, with the
+predecessor OFFERING at 3 078 and the run's column standing on an open level at
+the other 2 484, and no park paid by the excess clause or by nothing — and, at
+every depth-0 open dispatched from such a park across a break, whether
+`slotRun` holds at `s_prep`: it does at all 1 068.  Of those, 108 land at or
+below the park's incoming floor (the half the three rides are taken on); 12 emit
+a `blockEnd`, which makes the payload's first disjunct free, and the other 96
+have a predecessor that offers — `-`, `?` or `:` — and nothing else.
+
+**So the fact is true where it is needed and the arm cannot see why.**  The price
+is a FIELD on `pendingProps`, GATED exactly as `h_route` is:
+`danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ slotRun sc`.  It is not the
+field item 281 §5 refuted (`slotRun` unconditionally, false at `---⏎k: a⏎&x b`),
+because the gate is false there; the `size ≤ 1` escape is for the stream-start
+run, where no level exists and the arm's own under-run is vacuous
+(`IndentFloor` at the base floors the index at 0 and `j < 0` is the refutation).
+Every producer can pay it from a fact it already holds or from the last real
+token it just pushed, and the per-producer bill is DOCS item 283's. -/
+
+/-- `k: a⏎&x⏎[1]` at the park after `&x`, read twice: as scanned, and with the
+    mapping's level deleted from the stack.  Per reading: `(danglingNodePos?` is
+    `none`, `slotRun`, the predecessor)`; for the edited state also the three
+    checks at the next landing and `slotRun` at `s_prep`. -/
+private def slotCounterModel :
+    (Bool × Bool × String) × (Bool × Bool × String × Bool × Bool × Bool × Bool) := Id.run do
+  let mut s := start "k: a\n&x\n[1]\n"
+  for _ in [0:6] do
+    match Scanner.scanNextToken s with
+    | .ok (some s') => s := s'
+    | _ => pure ()
+  let pred (st : Scanner.ScannerState) : String :=
+    match Scanner.prevRealIdx? st.tokens (Scanner.propsRunStart st.tokens st.tokens.size) with
+    | some j => toString (repr st.tokens[j]!.val)
+    | none => "<none>"
+  let face (st : Scanner.ScannerState) : Bool × Bool × String :=
+    ((Scanner.danglingNodePos? st).isNone, slotRunAtIdx st.tokens st.tokens.size, pred st)
+  let t := { s with indents := #[{ column := -1, isSequence := false }] }
+  let checks := match Scanner.scanNextToken_preprocess t with
+    | .ok (some (tp, _)) =>
+      ((Scanner.scanNextToken_checkDanglingNode t tp).isOk,
+       (Scanner.scanNextToken_checkFlowValueIndent t tp).isOk,
+       (Scanner.scanNextToken_checkBareDocument tp).isOk,
+       slotRunAtIdx tp.tokens tp.tokens.size)
+    | _ => (false, false, false, false)
+  let (a, b, c) := face t
+  return (face s, (a, b, c, checks.1, checks.2.1, checks.2.2.1, checks.2.2.2))
+
+-- as scanned: §9.2 reads the run at the mapping's column (`some`), slotRun false
+-- edited: §9.2 reads nothing, slotRun false, and at the landing all three checks
+-- are silent with slotRun still false — the arm's token-side view, exactly
+#guard slotCounterModel ==
+  ((false, false, "L4YAML.YamlToken.scalar \"a\" (L4YAML.ScalarStyle.plain)"),
+   (true, false, "L4YAML.YamlToken.scalar \"a\" (L4YAML.ScalarStyle.plain)",
+    true, true, true, false))
+
+private def supplyPrefixes : List String :=
+  [ "", "---\n", "a\n...\n", "a\n...\n---\n", "k:\n  ", "k: v\n", "k: v\n  ", "-\n  ", "- a\n",
+    "- a\n  ", "k:\n  j:\n    v\n", "k:\n  j:\n    v\n  ", "k:\n  j: a\n  ", "? \n  ", "? a\n: ",
+    "[a]\n", "{a: b}\n", "%YAML 1.2\n", "%YAML 1.2\n---\n", "k: ", "- ", "? ", "--- ",
+    "k:\n  - ", "k:\n  - a\n  ", "k:\n  - a\n", "a: 1\nb: 2\n", "a: 1\n", "- - a\n  ", "- - a\n",
+    "\"a\" ", "[a] ", "{a: b} ", "&p q\n---\n*p ", "&p q\n---\n*p\n", "k: \"v\" ", "k: [v] ", "- [v] ",
+    "k:\n  j: a\n", "k:\n  j:\n    v\n", "? a\n", "? a\n: b\n", "--- a\n...\n", "a\n...\n...\n" ]
+private def supplyRuns : List String := ["&x", "!t", "&x !t", "!t &x", "&a !t &b", "&x\n!t"]
+private def supplySeps : List String := [" ", "\n", "\n ", "\n  ", "\n   ", "\n    "]
+private def supplyOpens : List String := ["[1]", "{p: q}", "[1, 2]"]
+
+private def supplyCorpus : List String := Id.run do
+  let mut out := []
+  for p in supplyPrefixes do
+    for r in supplyRuns do
+      for sp in supplySeps do
+        for o in supplyOpens do
+          out := (p ++ r ++ sp ++ o ++ "\n") :: out
+  return out
+
+/-- the park has a trailing `[96]` run -/
+private def hasRun (s : Scanner.ScannerState) : Bool :=
+  match Scanner.prevRealIdx? s.tokens s.tokens.size with
+  | some i => s.tokens[i]!.val.isNodeProperty
+  | none => false
+
+/-- the run's START column stands on the indent stack — §9.2's first clause -/
+private def runColOnStack (s : Scanner.ScannerState) : Bool :=
+  let st := Scanner.propsRunStart s.tokens s.tokens.size
+  s.indents.any (fun e => e.column == (s.tokens[st]!.pos.col : Int))
+
+/-- `(inputs, accepted, depth-0 props parks, parks where the gated face FAILS,
+    parks paid by an OFFER, parks paid by the run's column on the stack, parks
+    paid by the excess clause, depth-0 opens dispatched from a props park across a
+    break, of those with `slotRun` FALSE at `s_prep`, of those landing at or
+    below the incoming floor, of THOSE with no `blockEnd` emitted, and the
+    predecessor kinds seen there)`. -/
+private def slotSupply :
+    Nat × Nat × Nat × Nat × Nat × Nat × Nat × Nat × Nat × Nat × Nat × List String := Id.run do
+  let mut inputs := 0; let mut accepted := 0; let mut parks := 0; let mut fails := 0
+  let mut byOffer := 0; let mut byStack := 0; let mut byExcess := 0
+  let mut dispatched := 0; let mut viol := 0; let mut atOrBelow := 0; let mut noPop := 0
+  let mut preds : List String := []
+  for input in supplyCorpus do
+    inputs := inputs + 1
+    let mut s := start input
+    let mut fuel := input.utf8ByteSize * 4 + 8
+    let mut ok := false
+    while fuel > 0 do
+      fuel := fuel - 1
+      let park := s.flowLevel == 0 && hasRun s
+      if park then
+        parks := parks + 1
+        let offer := slotRunAtIdx s.tokens s.tokens.size
+        let onStack := runColOnStack s
+        let exc := (Scanner.crossedPropsExcessIdx? s.tokens).isSome
+        -- the gated face: §9.2 silent at the park → the slot is offered
+        if (Scanner.danglingNodePos? s).isNone && !offer then fails := fails + 1
+        if offer then byOffer := byOffer + 1
+        else if onStack then byStack := byStack + 1
+        else if exc then byExcess := byExcess + 1
+      match Scanner.scanNextToken s with
+      | .error _ => fuel := 0
+      | .ok none =>
+        ok := s.flowLevel == 0 && (Scanner.scanLoop_checkDanglingNode s).isOk
+          && (Scanner.scanLoop_checkFlowValueIndent s).isOk
+        fuel := 0
+      | .ok (some s') =>
+        if park && s'.flowLevel == 1 then
+          match Scanner.scanNextToken_preprocess s with
+          | .ok (some (sp, _)) =>
+            if sp.simpleKeyAllowed then
+              dispatched := dispatched + 1
+              if !slotRunAtIdx sp.tokens sp.tokens.size then viol := viol + 1
+              if (sp.col : Int) ≤ s.currentIndent then
+                atOrBelow := atOrBelow + 1
+                let pop := (sp.tokens.extract s.tokens.size sp.tokens.size).any
+                  (fun q => q.val == .blockEnd)
+                if !pop then
+                  noPop := noPop + 1
+                  let pk := match Scanner.prevRealIdx? s.tokens
+                      (Scanner.propsRunStart s.tokens s.tokens.size) with
+                    | some j => toString (repr s.tokens[j]!.val)
+                    | none => "<none>"
+                  if !preds.contains pk then preds := preds ++ [pk]
+          | _ => pure ()
+        s := s'
+    if ok then accepted := accepted + 1
+  return (inputs, accepted, parks, fails, byOffer, byStack, byExcess,
+          dispatched, viol, atOrBelow, noPop, preds)
+
+#guard slotSupply ==
+  (4752, 1276, 5562, 0, 3078, 2484, 0, 1068, 0, 108, 96,
+   ["L4YAML.YamlToken.blockEntry", "L4YAML.YamlToken.key", "L4YAML.YamlToken.value"])
+
 end L4YAML.Tests.Guards.ScannerFlowOpenUnderRun
 
 end Blanket

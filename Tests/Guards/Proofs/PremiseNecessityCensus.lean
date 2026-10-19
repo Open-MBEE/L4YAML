@@ -266,8 +266,11 @@ declarations' own binders and not by a rescoring of an existing one.
 -- fields and the six `h_src` gate parameters), BOTH censuses read their
 -- item-281 pins exactly, all eight numbers each
 -- (`scratchpad/l4yaml-row12-steps/84-peeled-check.log`).
+-- 2026-10-18 (item 285): +1 constant, +1 decl, +2 `READ` — the SAME move its
+-- sibling reads: the one matcher `slot_ride`'s `match h_optok` generates, both of
+-- whose binders are read under either peel.
 def expectedModuleTallyP : String :=
-  "constants=1343 decls=1062 eta=380 FIELD=179 READ=1125 RELAY=2125 RETURN=134 UNUSED=9"
+  "constants=1344 decls=1063 eta=380 FIELD=179 READ=1127 RELAY=2125 RETURN=134 UNUSED=9"
 
 def expectedOptTallyP : String :=
   "total=163 ETA=34 FIELD=4 READ=85 RELAY=38 RETURN=2"

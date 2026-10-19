@@ -213,9 +213,13 @@ def expectedBinders : List String :=
     reads the landing's flag once more, through `landing_or_park_ska`'s
     `h_park`, paid `Or.inr h_col0_p` exactly as its two neighbours there pay
     it — the gate `slotGateAt_of_propsPark` spends.  It is the one arm-binder
-    consumer whose application count changed (13 → 14). -/
+    consumer whose application count changed (13 → 14).
+
+    **Item 285 adds one more**: `slot_ride` builds the open's `noPending` park
+    exactly as `drop_ride` does, paying its tight `h_arm` with
+    `Or.inr (inFlow_of_flowLevel_eq h_fl1)`. -/
 def expectedTally : String :=
-  "edges=90 skipped=30 DECLINE=18 FIELD=6 PAY=9 RELAY=25 VIA=32"
+  "edges=91 skipped=30 DECLINE=19 FIELD=6 PAY=9 RELAY=25 VIA=32"
 
 run_cmd do
   let env ← getEnv

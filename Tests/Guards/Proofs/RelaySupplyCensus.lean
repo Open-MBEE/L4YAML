@@ -981,7 +981,9 @@ def expectedSiteDecided : List String :=
    "1 accum_block_on_pendingBlockContent :: dite on VIA Eq ⇒ DECLINE|PAY",
    "1 accum_content_pending :: Or.casesOn on VIA Nat.eq_zero_or_pos ⇒ \
 DECLINE|DECLINE|DECLINE|PAY",
-   "1 accum_flow_open_depth0 :: accum_flow_open_depth0.match_1_18 on SPLIT Or.casesOn \
+   -- Item 285: the same split; `slot_ride`'s `match h_optok` elaborates three
+   -- matchers ahead of it, so its auxiliary is `match_1_21` and no longer `_18`.
+   "1 accum_flow_open_depth0 :: accum_flow_open_depth0.match_1_21 on SPLIT Or.casesOn \
 on VIA preprocess_some_savedKey_shape ⇒ DECLINE|PAY",
    "2 accum_block_pending :: Or.casesOn on VIA Nat.eq_zero_or_pos ⇒ DECLINE|PAY",
    "2 question_open_map :: question_open_map.match_1_7 on VIA frameChainUnion ⇒ \

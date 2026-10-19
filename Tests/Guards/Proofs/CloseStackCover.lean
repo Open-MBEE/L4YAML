@@ -1058,9 +1058,11 @@ def expectedDoor : List String :=
     call renumbers #5 → #4 and its rows are otherwise byte-identical.  `nodes`
     96125 → 97863 is the walked terms growing — the under-run's seventh component
     destructured in `accum_flow_open_depth0`'s three arms, the producers' new
-    field payments and the gate parameters — and no door, cover or verdict moves. -/
+    field payments and the gate parameters — and no door, cover or verdict moves.
+    Item 285 moves `nodes` alone, 97863 → 98193: the walked arm lemma gains
+    `slot_ride`'s frame and its three spends; every row, door and cover holds. -/
 def expectedLine : String :=
-  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=97863"
+  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=98193"
 
 /-! ## §6 The reading -/
 

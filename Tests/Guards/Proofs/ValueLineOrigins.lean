@@ -925,9 +925,14 @@ def expectedUnborn : List String := []
     reads `alts` 4340 and `nodes` 12404: that arm moves only `liteNodes`, −211.
     The other 25 alternatives, the 78 `nodes` and the rest of `liteNodes` are
     the item's remaining edits inside walked terms — its four park fields and
-    their payments — measured as the remainder and not isolated further. -/
+    their payments — measured as the remainder and not isolated further.
+
+    Item 285 moves five readings, every one inside `accum_flow_open_depth0`: one
+    more `let`, the `have slot_ride` itself; twelve more local applications and
+    fourteen more alternatives, its three spends and its `match h_optok`;
+    `nodes` +68 as `ValueLinePacks` reads them, and `liteNodes` +1877. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=42 stamp=3 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=553 lapps=645 alts=4340 nodes=12404 liteNodes=495218"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=42 stamp=3 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=554 lapps=657 alts=4354 nodes=12472 liteNodes=497095"
 
 /-! ## §4 The reading -/
 

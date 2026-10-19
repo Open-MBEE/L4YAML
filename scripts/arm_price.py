@@ -21,7 +21,7 @@ ROOT = Path("/home/nfr/projects/lean/L4YAML")
 ACC = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 PIN = ROOT / "Tests/Guards/Proofs/ScannerFlowOpenUnderRun.lean"
 BACKSLASH = chr(92)
-SPEND = "exact drop_ride"
+SPEND = "exact slot_ride"
 
 #: The three arms, in source order, named for the park each one is.  Item 271
 #: fixed the third: the sites sit in `pendingProps`, `pendingBlock` and
@@ -94,7 +94,7 @@ def spend_lines(text):
     out = []
     for i, l in enumerate(text.split("\n")):
         s = l.strip()
-        if s == SPEND or s == "· " + SPEND:
+        if s.startswith(SPEND) or s.startswith("· " + SPEND):
             out.append(i)
     return out
 
@@ -105,7 +105,7 @@ def with_probe(line, ty, tac=None):
     have = f"have _probe270 : {ty} := by {tac or 'assumption'}"
     if line.strip().startswith("· "):
         # focused: the dot takes the probe and the spend moves in under it
-        return [f"{indent}· {have}", f"{indent}  {SPEND}"]
+        return [f"{indent}· {have}", f"{indent}  {line.strip()[2:]}"]
     return [f"{indent}{have}", line]
 
 

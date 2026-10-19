@@ -21,14 +21,14 @@ Both ends build `lake build L4YAML` — the library alone.  Item 263 already
 priced the Tests side, and mixing the guard tree's thirty-seven pinned censuses
 back in would bury the one number this gate exists to produce.
 
-**`accum_flow_open_depth0` is in BOTH ends, and that is the reading.**  Its dead
-arm goes with the other five, and `have opaque_resume` goes with it — the arm was
-its only consumer.  What does NOT go is `have drop_ride`, where β.5's `dropClose`
-is actually spent: three LIVE arms take it, one each off `pendingProps`,
-`pendingBlock` and `pendingMapValue`, all at the same place — the run-end half of
-the flow open's under-run.  So the `arms` end leaves this lemma broken at
-`dropClose` alone, with the dead branch subtracted, and that residue is the
-repair rather than the error item 263 read.
+**`accum_flow_open_depth0` is three dead blocks.**  Its dead arm goes with the
+other five, `have opaque_resume` goes with the arm — the arm is its only
+consumer — and `have drop_ride`, where β.5's `dropClose` is spent, goes with
+`opaque_resume`, its only spender.  The three LIVE arms at the run-end half of
+the flow open's under-run, one each off `pendingProps`, `pendingBlock` and
+`pendingMapValue`, take `slot_ride`, which spends no `dropClose` (DOCS item
+285).  So if the `arms` end leaves this lemma broken, something live still
+reaches the drop.
 
 Each deletion is anchored on CONTENT (item 210's rule) and asserted unique, so a
 re-indent or a rewrite re-aims the gate loudly instead of matching silently.  The
@@ -90,12 +90,14 @@ DEAD = [
      " by assumption])\n"),
     ("accum_block_pending", "accum_block_pending",
      "  | pendingFlow _ _ _ _ h_arm77 _ h_nic0F =>\n"),
+    # Item 285: the arm binds nothing since item 284 rerouted it to the escape.
     ("accum_content_pending", "accum_content_pending",
-     "  | pendingFlow _ _ _ _ _ _ h_nic0F =>\n"),
+     "  | pendingFlow _ _ _ _ _ _ _ =>\n"),
     # `accum_flow_open_depth0` is three deletions in one proof: the arm, and the
-    # two `have`s that only the arm consumes.  `drop_ride` is where β.5's
-    # `dropClose` is spent, so if this end elaborates then that spend was dead
-    # code and item 263's second real repair is not one.
+    # two `have`s that only the arm consumes, `opaque_resume` directly and
+    # `drop_ride` through it.  `drop_ride` is where β.5's `dropClose` is spent;
+    # the three live arms take `slot_ride` (item 285), so if this end
+    # elaborates the lemma, that spend is dead code.
     ("flow_arm", "accum_flow_open_depth0",
      "  | pendingFlow =>\n"
      "    -- The deferred state: its own closing strategy is the drop, and the"
@@ -103,6 +105,8 @@ DEAD = [
     ("flow_opaque_resume", "accum_flow_open_depth0",
      "  have opaque_resume : sp_scan.col ≠ 0 → GStar SSWhite sp_scan"
      " sp_prep →\n"),
+    ("flow_drop_ride", "accum_flow_open_depth0",
+     "  have drop_ride :\n"),
 ]
 
 #: A line that is only a comment, at a given indent.  A block of these directly

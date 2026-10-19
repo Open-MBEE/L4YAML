@@ -233,19 +233,25 @@ def expectedFixpoint : String :=
 
     * `control` re-derives the seven in the same run, so `dead` is a delta of
       this run rather than of item 263's;
-    * `dead=5` — five of the seven were a case arm and nothing else, and one of
-      the five (`accum_content_pending`'s) carried an application of the escape
-      with it, so a class of `block_dispatch_deferred`'s domain empties with the
-      constructor;
-    * what is LEFT is two errors of one line each.  `accum_flow_open_depth0`
+    * ~~`dead=5`~~ `dead=6` — five of the seven are a case arm and nothing else,
+      and one of the five (`accum_content_pending`'s) carried an application of
+      the escape with it, so a class of `block_dispatch_deferred`'s domain
+      empties with the constructor.  The sixth is `accum_flow_open_depth0`, three
+      dead blocks since DOCS item 285: the arm, `have opaque_resume` (the arm is
+      its only consumer) and `have drop_ride` (`opaque_resume` is its only
+      spender, since the three live arms take `slot_ride`);
+    * what is LEFT is ~~two errors of one line each.  `accum_flow_open_depth0`
       keeps `have drop_ride`, where `dropClose` is spent and which three LIVE
-      arms take (`ScannerFlowOpenUnderRun` §4 prices it), and
+      arms take (`ScannerFlowOpenUnderRun` §4 prices it), and~~ ONE error:
       `block_dispatch_deferred` is the escape, whose body IS the constructor.
+      Its three wrappers' eight applications, in three live declarations, are
+      what the escape's deletion still has to route or refute (DOCS item 285,
+      step 12.3).
 
     Checked from the other side, like `expectedFixpoint`: the script reads this
     literal and prints `ARM-PIN agrees`. -/
 def expectedArms : String :=
-  "control=7 arms=2 dead=5 left=[accum_flow_open_depth0,block_dispatch_deferred]"
+  "control=7 arms=1 dead=6 left=[block_dispatch_deferred]"
 
 /-! ## §3 Every pin above, checked against one environment pass. -/
 

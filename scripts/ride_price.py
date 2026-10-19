@@ -22,7 +22,11 @@ it was written before: **what receives the carrier.**  A ride that takes a
     prop      the same field at the LANDING's park, which is the only park this
               family can open over (item 272's P3: preprocessing's pushes sit
               between the two arrays).
-    gated     `FlowBaseAnchor (some s_prep) s' 0` — the frame argument itself.
+    gated     `FlowBaseAnchor (some s_prep) s' 0` — the frame argument itself,
+              built as `slot_ride` builds it (DOCS item 285): the slot on
+              `ParkChoice`'s right, beside the floor.  The `ParkAnchor` route
+              on its left is `prop`'s question, so the column does not ask it
+              twice.
 
     ride      the arity flip on `have drop_ride` — how many terms spend the
               ride.  A `have` has no arity to the repo, so this is the only way
@@ -57,7 +61,7 @@ from coordinate_price import (  # noqa: E402
     ACC, ARMS, ROOT, elaborate, enclosing_decl, error_loc, probe_at,
     spend_lines,
 )
-from transport_price import OPEN_TOK, patch_pay, pay_tac  # noqa: E402
+from transport_price import patch_pay, pay_tac  # noqa: E402
 
 PIN = ROOT / "Tests/Guards/Proofs/ScannerFlowOpenUnderRun.lean"
 
@@ -85,16 +89,8 @@ PROP_TERM = {
 }
 
 
-def intro(arm):
-    """(prologue, the push, the kind) as the arm holds item 165's witness."""
-    if OPEN_TOK[arm] is None:
-        return "obtain ⟨p, htok, hop, hpos⟩ := h_optok; ", "htok", "hop"
-    return "", OPEN_TOK[arm][1], OPEN_TOK[arm][2]
-
-
 def rows(arm):
     """(name, type, named derivation or None) for one arm, in report order."""
-    pre, tok, op = intro(arm)
     return [
         ("slot", "ParkSlot s_prep s' 0", pay_tac(arm)),
         ("floor", "ParkFloor s_prep s' 0", FLOOR_TERM),
@@ -102,9 +98,8 @@ def rows(arm):
         ("prop", prop_ty("s_prep"),
          None if PROP_TERM[arm] is None else PROP_TERM[arm]),
         ("gated", "FlowBaseAnchor (some s_prep) s' 0",
-         pre + f"exact ⟨Or.inl (ParkAnchor.ofOpen {tok} {op} h_ind' h_noflow_prep "
-               "(by assumption) (by assumption)), ⟨KeyFloor.cleared h_opsk, "
-               "fun i hlo hhi => absurd hhi (by omega)⟩⟩"),
+         "refine ⟨Or.inr ?_, ⟨KeyFloor.cleared h_opsk, "
+         "fun i hlo hhi => absurd hhi (by omega)⟩⟩; " + pay_tac(arm)),
     ]
 
 

@@ -1653,18 +1653,25 @@ elaboration at the three arms that spend `drop_ride`:
   at `currentPos`; the `allowDirectives` update preserves it).  `B` at all
   three says the carrier's genesis is then available with no hypothesis and no
   hole.
-* `frames` / `ride` — the second ring.  The declaration builds SEVEN frames,
-  and the one the under-run's open pushes is built by `drop_ride`, a single
-  `have` that precedes `cases h_pending`: none of the three arms' own binders
-  is in scope there, while a hypothesis of the declaration is.  A `have` has no
+* `frames` / `ride` — the second ring.  The declaration builds ~~SEVEN~~ EIGHT
+  frames since item 285, and the one the under-run's open pushes is built by
+  ~~`drop_ride`~~ `slot_ride`, a single `have` that precedes `cases h_pending`:
+  none of the three arms' own binders is in scope there, while a hypothesis of
+  the declaration is.  A `have` has no
   arity, so no flip in this repo can see that ring.
 * `genesis` / `pay` read `BBB` since item 284: `ParkSlot.ofOpen`'s `hrun` is
   `slotRun_of_dn` at the props arm and `slotRun_of_offer` at the indicator arms
   (the probes' `HRUN`), so the carrier's genesis needs nothing but the `optok`
-  ring the `pay` row simulates.  Every other column read as before. -/
+  ring the `pay` row simulates.  Every other column read as before.
+* Item 285 LANDS the ring and spends the slot, and one column moves: `frames`
+  7 → 8, `slot_ride`'s frame, the gated one the three arms take.  `optok`
+  re-reads 3 on the ringed `h_optok` — the two call sites and one site in
+  `accum_flow_open_depth0` — and `pay` reads the module as it is.  `ride` stays
+  0/3: `slot_ride` is a `have` beside `drop_ride` and takes the arms' three data
+  as PARAMETERS, so the ring is paid at the spend rather than in scope. -/
 
 def expectedTransportPrice : String :=
-  "source=BBB hcol=OOO genesis=BBB optok=3 pay=BBB frames=7 ride=0/3"
+  "source=BBB hcol=OOO genesis=BBB optok=3 pay=BBB frames=8 ride=0/3"
 
 /-! ## §13 What the ride can carry, and what the frame will receive
     (DOCS item 273)
@@ -1792,17 +1799,25 @@ four censuses taken by arity flip:
   cannot open over — preprocessing's pushes sit between the two arrays, so
   `ParkCore.ofOpen`'s push equation holds at `s_prep` and fails at `sc`.
 * `gated` — `FlowBaseAnchor (some s_prep) s' 0`, the frame argument itself.
-  `OOO` follows from `prop`.
-* `ride` — the arity flip on `have drop_ride`: FOUR terms spend the ride, all
+  ~~`OOO` follows from `prop`.~~  Since item 285 it is asked as `slot_ride`
+  builds it, the slot on `ParkChoice`'s right beside the floor: the `ParkAnchor`
+  route on the left is `prop`'s question, and asked that way the column read
+  `OOO` once more on the item-285 tree, `prop`'s refusal again.
+* `ride` — the arity flip on `have drop_ride`: ~~FOUR terms spend the ride, all
   inside one declaration.  Three are the live arms' run-end halves and the
-  fourth is `opaque_resume`, which `pendingFlow` takes and which has no
-  under-run to read a membership from.
+  fourth is~~ ONE term spends the ride since item 285, `opaque_resume`, which
+  `pendingFlow` takes and which has no under-run to read a membership from.  The
+  live arms' run-end halves take `slot_ride`.
 * `add` / `swap` / `anchor` — three reshapes of `FlowBaseAnchor`'s `some` arm.
   Item 276 PAID the `choice` reshape, so each flip now prices UN-paying it:
   `add` puts the slot beside the anchor, `swap` the slot alone, `anchor`
   restores item 162's anchor-only arm — and each costs the same three
   declarations, `FlowBaseAnchor.gate`, `FlowBaseAnchor.transport`,
-  `propsPark_open_gate` (`add` reaches `gate` at two sites).
+  `propsPark_open_gate` ~~(`add` reaches `gate` at two sites)~~ — `add` reaches
+  `propsPark_open_gate` at two sites and `gate` at one, in the item-284 run and in
+  item 285's.  Since item 285 each reshape also breaks `accum_flow_open_depth0`
+  (`add` at two sites): `slot_ride` writes the `some` arm's term itself, where the
+  props arm's gated frame calls `propsPark_open_gate`.
   ~~`slot=OOO` since item 276: `ParkSlot.ofOpen` takes `hrun`, which no arm holds
   (§15).~~  `slot=BBB` since item 284: the parks carry the slot face (§18), and
   `slotRun_of_dn` / `slotRun_of_offer` are `hrun` at all three arms.
@@ -1812,8 +1827,8 @@ four censuses taken by arity flip:
   the `anchor=2` of item 268 was taken without. -/
 
 def expectedRidePrice : String :=
-  "slot=BBB floor=BBB prop_sc=BOO prop=OOO gated=OOO ride=4/1 add=4/3 \
-   swap=3/3 anchor=3/3 transport=9/7"
+  "slot=BBB floor=BBB prop_sc=BOO prop=OOO gated=BBB ride=1/1 add=6/4 \
+   swap=4/4 anchor=4/4 transport=9/7"
 
 /-! ## §14 What the CLOSE can pay for a reshaped carrier (DOCS item 274)
 

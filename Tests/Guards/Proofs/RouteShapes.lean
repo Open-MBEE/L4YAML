@@ -797,6 +797,9 @@ def expectedSites : List String :=
    "  accum_content_pending: nil park=pendingContent stream=param:h_stream_block closedBy=[] h_closable=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_vpack=carry,h_framesS=carry,h_framesV=carry,h_seqF=punt",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_mid:=bound:h_close closedBy=[SSLComments ⇒ Stream]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=punt]",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow=bound:h_kpkg:=Exists.intro",
+   -- Item 285: `slot_ride`'s exit — the same shape as `drop_ride`'s above it,
+   -- which the three live arms spend in its place.
+   "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow=bound:h_kpkg:=Exists.intro",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=punt]",
    "  accum_flow_open_depth0: carrier park= stream=param:h_stream closedBy=[]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=carry]",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=punt]",
@@ -827,9 +830,12 @@ def expectedK : List String :=
     so it reads `carry=6 punt=1`; item 259 one more, the compact opener's
     `pendingMapValue.h_closeF` (a literal from the caller's park bound,
     carried across the indicator's step), so that spine reads `carry=5
-    punt=1` and the line `carry=160 punt=79`. -/
+    punt=1` and the line `carry=160 punt=79`.  Item 285 adds one exit and moves
+    nothing else: `slot_ride`'s frame, closed through `absorb_stacksB` like
+    `drop_ride`'s, so `slots`, `nil`, `closings` and `absorbed` each read one
+    more. -/
 def expectedLine : String :=
-  "closures=54 packed=14 optional=41 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=61 nil=43 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=3 carry=48 fwd=0 punt=3 closed=0] optional[stream=5 carry=112 fwd=8 punt=76 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=10 closedDistinct=2 closedIn=2 absorbed=3 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=18 routeCarry=42 routeFwd=50 routeClosed=40 routeToWalked=97 routeStreamToWalked=13 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
+  "closures=54 packed=14 optional=41 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=3 carry=48 fwd=0 punt=3 closed=0] optional[stream=5 carry=112 fwd=8 punt=76 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=18 routeCarry=42 routeFwd=50 routeClosed=40 routeToWalked=97 routeStreamToWalked=13 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

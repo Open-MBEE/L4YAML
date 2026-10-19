@@ -730,9 +730,16 @@ def expectedShapeComps : List String :=
     restoring that one arm on the item-284 tree reads 218 and this whole line
     again (`scratchpad/l4yaml-row12-steps/83-isolation-streamcomp.log`).  None of
     the twelve crossed a build point, which is why every site, segment and
-    composition count holds. -/
+    composition count holds.
+
+    2026-10-18 (item 285): `unmarked` 206 -> 203 and nothing else.  The three live
+    arms of `accum_flow_open_depth0` spend `slot_ride` where they spent
+    `drop_ride`: each of their paths ran to `dropClose`'s leaf, and the slot's
+    value route is refuted rather than routed, so it emits none.  Putting the
+    three spends back on `drop_ride` on the item-285 tree reads 206 again
+    (`scratchpad/l4yaml-row12-steps/153-iso-streamcomp.log`). -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=51 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=206 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=51 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=203 reach=38"
 
 /-! ## §5 The reading -/
 

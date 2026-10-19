@@ -461,8 +461,13 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `accum_content_on_noPending`, the two `accum_content_on_*_indented`, and
 -- `indentedValue_reads_at_any_indent`).  `UNUSED` holds at 9: no hypothesis
 -- this item added goes unread.
+-- 2026-10-18 (item 285): `constants` 1343 -> 1344, `decls` 1062 -> 1063, `READ`
+-- 1086 -> 1088: ONE new constant, the matcher `slot_ride`'s `match h_optok`
+-- generates inside `accum_flow_open_depth0`, whose two binders are both read.
+-- Roster `scratchpad/l4yaml-row12-steps/verdict-roster-285.out` (3954 rows)
+-- against item 284's: those two rows gained, none lost.
 def expectedModuleTally : String :=
-  "constants=1343 decls=1062 eta=380 FIELD=157 READ=1086 RELAY=2269 RETURN=51 UNUSED=9"
+  "constants=1344 decls=1063 eta=380 FIELD=157 READ=1088 RELAY=2269 RETURN=51 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",

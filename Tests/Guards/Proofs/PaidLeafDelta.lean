@@ -268,6 +268,9 @@ def expectedTransports : List String :=
 -- arm alone on the item-284 tree (24522): the item's additions to the scanned
 -- theorems are +34, and the arm's builder call leaving `accum_content_pending`
 -- is −46.  `scanned` holds at 32.
+-- 2026-10-18 (item 285): `nodes` 97863 → 98193 is `CloseStackCover`'s; `floorNodes`
+-- 24476 → 24480 is the same edits inside `accum_flow_open_depth0`, a scanned
+-- theorem; `scanned` holds at 32 and every row holds.
 /-- **The delta's own line.**  `nodes` is the proof-term size of the walked
     declarations; item 272 is the one move, and it moves nothing else, for the
     reason `CloseStackCover` records — the under-run disjunct the three
@@ -275,7 +278,7 @@ def expectedTransports : List String :=
     Lean v4.35.0 moves it again and alone: `nodes` 96158 → 96125, every other
     field byte-identical — 33 fewer term nodes for the same walk. -/
 def expectedLine : String :=
-  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=97863 floorNodes=24476"
+  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=98193 floorNodes=24480"
 
 /-! ## §4 The reading -/
 

@@ -11853,7 +11853,10 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     -- `scanFlowSequenceStart`/`scanFlowMappingStart`, supplied by the caller
     -- that ran it.
     (h_optok : ∃ p : Positioned YamlToken,
-      s'.tokens = s_prep.tokens.push p ∧ p.val.isFlowOpen = true)
+      s'.tokens = s_prep.tokens.push p ∧ p.val.isFlowOpen = true ∧
+        -- Item 285: item 272's ring — the open token stands at the landing's
+        -- column, which is what `ParkSlot`'s membership is read in.
+        p.pos.col = s_prep.col)
     (h_opsk : s'.simpleKey.possible = false)
     -- **Item 163: the open quantifies over its own GATE.**  Which verdict the
     -- base frame's node route is stated against is the ARM's to choose — a
@@ -12096,20 +12099,21 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
   -- Every other pending opens the stack at its OWN index below; what would
   -- share this arm (`  - [1]`, `  - &a [b]`) composes through the resume.
   --
-  -- **Item 265: what else rides it, and what that ride costs.**  The three
-  -- live arms below take `drop_ride` on the RUN-END half of the open's
-  -- under-run, and `dropClose` is one of the library's two
-  -- `SLYamlStream.scannerDrop` applications (the other is
+  -- **Item 265: the run-end family, and the one fact that retires the ride.**
+  -- The three live arms below are the RUN-END half of the open's under-run,
+  -- and they take `slot_ride` (item 285), so this ride's one spender is
+  -- `opaque_resume` and it goes with the constructor.  `dropClose` is one of
+  -- the library's two `SLYamlStream.scannerDrop` applications (the other is
   -- `PendingNode.close_with_ssl`'s `pendingFlow` arm, which goes with the
-  -- constructor).  So this ride is §β.5's whole remaining obligation on the
-  -- drop.  Swept at `Tests/Guards/Proofs/ScannerFlowOpenUnderRun.lean` §5:
+  -- constructor too).  Swept at `Tests/Guards/Proofs/ScannerFlowOpenUnderRun.lean` §5:
   -- of the 198 landing columns below a park's floor, 54 never reach this
   -- lemma at all (`scanNextToken_preprocess` refuses them, so `h_preprocess`
   -- contradicts), and the remaining 144 dispatch the open and die three to
   -- five steps later — 90 at §8.1's floor, 54 at §9.2's dangling run.  At
   -- every one of those 144 the collection has CLOSED, its last real token is
   -- the flow close, and the open's column is still on the indent stack: one
-  -- carried fact, not two, is what would retire the ride.
+  -- carried fact, not two, retires the ride — `ParkSlot`, which `slot_ride`
+  -- below carries.
   --
   -- **Item 266: what that carrier costs, by producers.**  The transport is
   -- already here.  `ParkAnchor` runs a fact from a depth-0 open to its close
@@ -12199,6 +12203,40 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
           InteriorGap s' (tailOf s'.tokens) sp_flow' sp_scan' ∧
           LastTokenReal s'.tokens ∧ s'.allowDirectives = false) :=
     fun _ _ => drop_ride
+  -- **Item 285 (step 12.2): the ride the SLOT pays for.**  `drop_ride`'s own
+  -- term with the gate the open's park can now name — `some s_prep`, anchored
+  -- by `ParkSlot` (the open's column on the landing's stack, the run's slot
+  -- face) and floored as `drop_ride` is.  The value route is REFUTED rather than
+  -- routed: `GateOf (some s_prep)` asks the landing's flag to be DOWN, and the
+  -- under-run's landing re-armed it.  A frame opened here owes its close no
+  -- reading — `FlowBaseAnchor.gate` refutes a parked slot — and nothing in it
+  -- spends `dropClose`, so the three live arms below take this and not that.
+  have slot_ride :
+      (s_prep.indents.any fun e => e.column == (s_prep.col : Int)) = true →
+      SlotFace s_prep.tokens → s_prep.simpleKeyAllowed = true →
+      ∃ sp_gram' sp_block' sp_flow' sp_scan',
+        SLYamlStream sp_start sp_gram' ∧
+        BlockStack sp_gram' sp_block' ∧
+        FlowStackK sp_start s' 1 s'.flowStack (tailOf s'.tokens) sp_block' sp_flow' ∧
+        PendingNode s' false sp_start sp_flow' sp_scan' ∧
+        ScannerSurfCorr s' sp_scan' ∧
+        ((1 : Nat) ≥ 1 →
+          InteriorGap s' (tailOf s'.tokens) sp_flow' sp_scan' ∧
+          LastTokenReal s'.tokens ∧ s'.allowDirectives = false) :=
+    fun hmem hrun hska =>
+      match h_optok with
+      | ⟨_, htok, hop, hpos⟩ =>
+        ⟨sp_block, sp_block, sp_open, sp_open, h_stream_block, BlockStack.nil _,
+         h_kpkg (some s_prep) 0 _ _ (Or.inr trivial) (Nat.zero_le _)
+           ⟨Or.inr (ParkSlot.ofOpen htok hop h_ind' h_noflow_prep
+              (by rw [hpos]; exact hmem) hrun),
+            ⟨KeyFloor.cleared h_opsk, fun i hlo hhi => absurd hhi (by omega)⟩⟩
+           (mkv (some s_prep) 0 sp_block (fun hg => absurd hg.2 (by rw [hska]; simp))),
+         PendingNode.noPending sp_start sp_open (Or.inr (inFlow_of_flowLevel_eq h_fl1))
+           (Or.inr (inFlow_of_flowLevel_eq h_fl1))
+           (nodoc_of_flowLevel_succ h_fl1) (noek_of_flowLevel_succ h_fl1)
+           (ntop_of_flowLevel_succ h_fl1), hcorr_open,
+         fun _ => ⟨.white (GStar.nil _) h_sync h_colon h_opencol, h_real, h_ad⟩⟩
   cases h_pending with
   | noPending _ _ h_col _ h_nodoc =>
     -- Nothing to close: the leading separation rides in the fresh bare
@@ -12292,7 +12330,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     exact main h_close_pending opaque_resume (Or.inr trivial) (Or.inr trivial)
       (Or.inr trivial) (Or.inr trivial)
   | pendingProps _ _ _ ha ht sp_node sp_p n h_sep_run h_run h_nic_p h_real_p h_anchor_p h_tag_p
-      h_route h_pkey h_floor_p h_col0_p h_ncol_p h_ska_p h_kslot_p =>
+      h_route h_pkey h_floor_p h_col0_p h_ncol_p h_ska_p h_kslot_p _ _ _ _ _ _ _ h_slot_p =>
     -- Items 9h/10, site 5's legal inhabitant: the held `[96]` run rides INTO
     -- the flow node.  The separation preprocessing crossed (break or not —
     -- `&a [b]` and `&a⏎[b]` alike) becomes the run→content `s-separate`, and
@@ -12327,7 +12365,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     -- made once here and the route term below is written once — the break arm
     -- opens ungated and pays from §9.2's own check, the no-break arm opens over
     -- the park itself and is paid at the close.
-    obtain ⟨p_br, h_br_tok, h_br_open⟩ := h_optok
+    obtain ⟨p_br, h_br_tok, h_br_open, _h_br_pos⟩ := h_optok
     obtain ⟨gp, h_anch_p, h_pay_p⟩ :=
       propsPark_open_gate h_corr h_preprocess h_noflow_sc h_noflow_prep h_col0_p
         h_nic_p h_ska_p h_dn
@@ -12337,7 +12375,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
           (fun _ h => ⟨h.1, h.2.1⟩))
         h_br_open h_br_tok h_ind' h_opsk
     rcases h_sep_or with ⟨h_sep, h_floor_prep⟩ |
-      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩
+      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, h_landed_ur, h_ska_ur⟩
     · exact ⟨sp_gram, sp_block, sp_open, sp_open, h_stream, h_stack,
              -- Item 68: the run's park is at or past its route index, so the
              -- collection this open pushes reads its interior AT that index.
@@ -12418,7 +12456,12 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- the deferred floor), so no accepted scan ever consults this ride.
       -- The TAB half is §6.1's own refusal and stands (item 68).
       rcases h_ur with ⟨j, sx, hj, h_ind, _h_ws2, h_end | h_tab⟩
-      · exact drop_ride
+      · exact slot_ride
+          (underRunEnd_landing_on_stack h_preprocess h_base h_floor_p h_col02 hj h_ind h_end
+            hcorr_prep (h_landed_ur (Nat.ne_of_gt h_col0_p) h_noflow_prep))
+          (slotRun_of_dn h_slot_p h_dn (h_ska_ur (Nat.ne_of_gt h_col0_p) h_noflow_prep) h_floor_p hj h_base
+          h_preprocess)
+          (h_ska_ur (Nat.ne_of_gt h_col0_p) h_noflow_prep)
       · exact (flowOpen_underRunTab_refuted h_floor_p h_ltsl2
           (fun h => by rw [h] at h_col02; omega) h_col02 hj h_ind h_tab
           h_c h_preprocess).elim
@@ -12449,7 +12492,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                (nodoc_of_flowLevel_succ h_fl1) (noek_of_flowLevel_succ h_fl1)
                (ntop_of_flowLevel_succ h_fl1), hcorr_open, fun _ => ⟨.white (GStar.nil _) h_sync h_colon h_opencol, h_real, h_ad⟩⟩
   | pendingBlock _ _ _ n_old h_close _ h_floor_old h_sk_old h_col59 h_kslot_old _ _ _
-      h_kslotUp_old =>
+      h_kslotUp_old _ _ h_offer_b =>
     -- Item 46: the stack opens at the ENTRY's index, so the resume's node
     -- fits `flowInBlock n_old` and `  - [1]` composes.  The landing that
     -- under-runs `s-indent(n_old)` on the OPEN itself splits by its own
@@ -12465,7 +12508,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     have h_pe : sp_gap = sp_prep := ScannerSurfCorr_unique hcorr_gap hcorr_prep
     rw [h_pe] at h_sep_or
     rcases h_sep_or with ⟨h_sep, h_floor_prep⟩ |
-      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩
+      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, h_landed_ur, h_ska_ur⟩
     · exact ⟨sp_gram, sp_block, sp_open, sp_open, h_stream, h_stack,
              h_kpkg none _ _ _ (Or.inr trivial) (openFloorT h_floor_prep) trivial (mk none (n_old + 1) sp_block ⟨(fun _ sp_ne sp_m h_content h_ssl =>
                h_close sp_m (SBlockIndented.node n_old .blockIn sp_scan sp_m
@@ -12539,12 +12582,16 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- location refutes.
       rcases h_ur with ⟨j, sx, hj, h_ind, _h_ws2, h_end | h_tab⟩
       · -- Item 172: the deferred floor — the open step scans; nothing to spend.
-        exact drop_ride
+        exact slot_ride
+          (underRunEnd_landing_on_stack h_preprocess h_base h_floor_old h_col02 hj h_ind h_end
+            hcorr_prep (h_landed_ur (h_col59 ▸ Nat.succ_ne_zero n_old) h_noflow_prep))
+          (slotRun_of_offer h_offer_b h_preprocess)
+          (h_ska_ur (h_col59 ▸ Nat.succ_ne_zero n_old) h_noflow_prep)
       · exact (flowOpen_underRunTab_refuted h_floor_old h_ltsl2
           (fun h => by rw [h, h_col59] at h_col02; omega) h_col02 hj h_ind h_tab
           h_c h_preprocess).elim
   | pendingMapValue _ _ _ n_old h_close h_floor_mv _ _ h_ivl_mv h_expl h_vslot h_sk_mv h_col0_mv
-      h_ncol_mv h_kslot_mv _ _ _ _ _ _ h_explUp_mv =>
+      h_ncol_mv h_kslot_mv _ _ _ _ _ _ h_explUp_mv h_offer_mv =>
     -- Item 13: the flow collection IS the mapping's value (`: [a]`, `: {a: b}`)
     -- — same closure type as `pendingBlock`, so the arm is its verbatim clone,
     -- indent split included.
@@ -12554,7 +12601,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     have h_pe : sp_gap = sp_prep := ScannerSurfCorr_unique hcorr_gap hcorr_prep
     rw [h_pe] at h_sep_or
     rcases h_sep_or with ⟨h_sep, h_floor_prep⟩ |
-      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩
+      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, h_landed_ur, h_ska_ur⟩
     · exact ⟨sp_gram, sp_block, sp_open, sp_open, h_stream, h_stack,
              -- Item 68: `pendingBlock`'s floor ride, on the mapping's value —
              -- `k:⏎  a: ["p⏎     q"]` reads its interior at the entry's index.
@@ -12649,7 +12696,11 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- (`k:⏎  a:⏎[1]` is §9.2's dangling reading, three steps on).
       rcases h_ur with ⟨j, sx, hj, h_ind, _h_ws2, h_end | h_tab⟩
       · -- Item 172: the deferred floor — the open step scans; nothing to spend.
-        exact drop_ride
+        exact slot_ride
+          (underRunEnd_landing_on_stack h_preprocess h_base h_floor_mv h_col02 hj h_ind h_end
+            hcorr_prep (h_landed_ur (Nat.ne_of_gt h_col0_mv) h_noflow_prep))
+          (slotRun_of_offer h_offer_mv h_preprocess)
+          (h_ska_ur (Nat.ne_of_gt h_col0_mv) h_noflow_prep)
       · exact (flowOpen_underRunTab_refuted h_floor_mv h_ltsl2
           (fun h => by rw [h] at h_col02; omega) h_col02 hj h_ind h_tab
           h_c h_preprocess).elim
@@ -17359,7 +17410,8 @@ lemma accum_step_flow (sc : ScannerState)
                   allowDirectives_update_implicitValueLine])
           h_bare h_dn h_fv h_base
           -- Item 165: the bracket's push and the key it clears.
-          ⟨_, by rw [scanFlowSequenceStart_tokens, allowDirectives_update_tokens], rfl⟩
+          ⟨_, by rw [scanFlowSequenceStart_tokens, allowDirectives_update_tokens], rfl,
+            by rw [allowDirectives_update_currentPos]; rfl⟩
           (ScannerCorrectness.scanFlowSequenceStart_simpleKey_cleared _)
           (fun _ _ _ resume => by
             rw [ScannerFlowCollection.scanFlowSequenceStart_pushes_true, h_ad_ks0,
@@ -17415,7 +17467,8 @@ lemma accum_step_flow (sc : ScannerState)
                       allowDirectives_update_implicitValueLine])
               h_bare h_dn h_fv h_base
               -- Item 165: the bracket's push and the key it clears.
-              ⟨_, by rw [scanFlowMappingStart_tokens, allowDirectives_update_tokens], rfl⟩
+              ⟨_, by rw [scanFlowMappingStart_tokens, allowDirectives_update_tokens], rfl,
+                by rw [allowDirectives_update_currentPos]; rfl⟩
               (ScannerCorrectness.scanFlowMappingStart_simpleKey_cleared _)
               (fun _ _ _ resume => by
                 rw [ScannerFlowCollection.scanFlowMappingStart_pushes_false, h_ad_ks0,

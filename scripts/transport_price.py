@@ -62,7 +62,7 @@ PIN = ROOT / "Tests/Guards/Proofs/ScannerFlowOpenUnderRun.lean"
 def source_term(arm):
     return (f"underRunEnd_landing_on_stack h_preprocess h_base {FLOOR_H[arm]} "
             f"h_col02 hj h_ind h_end hcorr_prep "
-            f"(_h_landed ({COL_TERM[arm]}) h_noflow_prep)")
+            f"(h_landed_ur ({COL_TERM[arm]}) h_noflow_prep)")
 
 
 MEM_TY = "(s_prep.indents.any fun e => e.column == (s_prep.col : Int)) = true"
@@ -93,19 +93,24 @@ OPEN_TOK = {
 #: (`slotRun_of_offer`).  None of the three binds its new field, so the probe
 #: reads it by type.
 HRUN = {
-    "pendingProps": ("(slotRun_of_dn ‹danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ "
-                     "SlotFace sc.tokens› h_dn (_h_ska_land (Nat.ne_of_gt h_col0_p) "
+    "pendingProps": ("(slotRun_of_dn h_slot_p h_dn (h_ska_ur (Nat.ne_of_gt h_col0_p) "
                      "h_noflow_prep) h_floor_p hj h_base h_preprocess)"),
-    "pendingBlock": "(slotRun_of_offer ‹OfferPred sc.tokens› h_preprocess)",
-    "pendingMapValue": "(slotRun_of_offer ‹OfferPred sc.tokens› h_preprocess)",
+    "pendingBlock": "(slotRun_of_offer h_offer_b h_preprocess)",
+    "pendingMapValue": "(slotRun_of_offer h_offer_mv h_preprocess)",
 }
 
 
-def genesis_tac(arm):
+def genesis_tac(arm, ringed=True):
+    """`ringed`: the module's `h_optok` carries item 272's ring (item 285), so
+    the existential has FOUR components and a three-component `obtain` binds
+    `hop` to a conjunction -- the genesis would fail on the harness, not on the
+    arm.  The ring itself is not used: the genesis takes the position equation
+    as its own hypothesis, which is what the column asks."""
     src = source_term(arm)
     held = OPEN_TOK[arm]
     if held is None:
-        intro = "obtain ⟨p, htok, hop⟩ := h_optok; "
+        intro = ("obtain ⟨p, htok, hop, -⟩ := h_optok; " if ringed
+                 else "obtain ⟨p, htok, hop⟩ := h_optok; ")
         p_, tok, op = "p", "htok", "hop"
     else:
         intro = ""
@@ -115,7 +120,7 @@ def genesis_tac(arm):
             f"rw [hpos {p_} {tok} {op}]; exact {src}")
 
 
-def rows(arm):
+def rows(arm, ringed=True):
     """(name, type, named derivation) for one arm, in report order."""
     src = source_term(arm)
     return [
@@ -123,7 +128,7 @@ def rows(arm):
         # The RIGHT derivation, offered at the shape the genesis names.  It
         # fails on the column and on nothing else, which is the finding.
         ("hcol", HCOL_TY, f"exact fun p _ _ => {src}"),
-        ("genesis", GENESIS_TY, genesis_tac(arm)),
+        ("genesis", GENESIS_TY, genesis_tac(arm, ringed)),
     ]
 
 
@@ -132,8 +137,9 @@ def rows(arm):
 def run_arms(base, idxs, verbose=True):
     """`source`, `hcol` and `genesis`, at each arm's run-end half."""
     cells, why = {}, {}
+    ringed = sum(1 for l in base.split("\n") if l == OPTOK) == 1
     for arm, li in zip(ARMS, idxs):
-        for name, ty, named in rows(arm):
+        for name, ty, named in rows(arm, ringed):
             ok_null, _ = probe_at(base, li, ty, "assumption", "_probe272")
             if ok_null:
                 cells[(arm, name)] = "P"
@@ -149,8 +155,10 @@ def run_arms(base, idxs, verbose=True):
 
 # --------------------------------------------------------------- the two flips
 
-OPTOK = "      s'.tokens = s_prep.tokens.push p ∧ p.val.isFlowOpen = true)"
-OPTOK2 = "      s'.tokens = s_prep.tokens.push p ∧ p.val.isFlowOpen = true ∧ 0 = 0)"
+#: The ring's own last line since item 285 landed it: the `optok` flip appends a
+#: conjunct to `h_optok` there, exactly as it appended one to the unpaid form.
+OPTOK = "        p.pos.col = s_prep.col)"
+OPTOK2 = "        p.pos.col = s_prep.col ∧ 0 = 0)"
 KPKG = "      FlowBaseAnchor g s' 0 →"
 KPKG2 = "      FlowBaseAnchor g s' 0 → 0 = 0 →"
 KPKG_FUN = "    fun g n _ _ h_st hfl h_anch h_b =>"
@@ -232,7 +240,7 @@ def run_wide(base, which, verbose=True):
 OPTOK_REAL = ("      s'.tokens = s_prep.tokens.push p ∧ p.val.isFlowOpen = true ∧" + chr(10) +
               "        p.pos.col = s_prep.col)")
 PROPS_OBTAIN = "    obtain ⟨p_br, h_br_tok, h_br_open⟩ := h_optok"
-PROPS_OBTAIN2 = "    obtain ⟨p_br, h_br_tok, h_br_open, h_br_pos⟩ := h_optok"
+PROPS_OBTAIN2 = "    obtain ⟨p_br, h_br_tok, h_br_open, _h_br_pos⟩ := h_optok"
 CALLSITE = ("              ⟨_, by rw [scanFlow{K}Start_tokens, "
             "allowDirectives_update_tokens], rfl⟩")
 CALLSITE2 = ("              ⟨_, by rw [scanFlow{K}Start_tokens, "
@@ -241,8 +249,13 @@ CALLSITE2 = ("              ⟨_, by rw [scanFlow{K}Start_tokens, "
 
 
 def patch_pay(base):
+    """Item 272's ring, PAID.  Item 285 landed it in the library, so the module
+    is already the paid module and is returned unchanged; the item-272 rewrite
+    below is kept for a tree that predates it."""
     lines = base.split("\n")
-    lines[_one(lines, OPTOK)] = OPTOK_REAL
+    if sum(1 for l in lines if l == OPTOK) == 1:
+        return base
+    lines[_one(lines, OPTOK_REAL.split("\n")[0].replace(" ∧", ")"))] = OPTOK_REAL
     lines[_one(lines, PROPS_OBTAIN)] = PROPS_OBTAIN2
     for kind in ("Sequence", "Mapping"):
         want = CALLSITE.format(K=kind)
@@ -265,7 +278,7 @@ def pay_tac(arm):
         tok, op, pos = "htok", "hop", "hpos"
     else:
         intro = ""
-        tok, op, pos = held[1], held[2], "h_br_pos"
+        tok, op, pos = held[1], held[2], "_h_br_pos"
     return (intro + f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ {HRUN[arm]}; "
             f"rw [{pos}]; exact {src}")
 

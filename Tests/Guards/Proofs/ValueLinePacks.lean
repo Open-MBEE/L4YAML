@@ -972,11 +972,15 @@ def expectedPerPos : List String := [
 -- additions inside pack-carrying terms; the old `pendingFlow` arm restored alone
 -- still reads 12374, so it is not that arm.  `rows` and every shape and verdict
 -- hold.
+-- 2026-10-18 (item 285): `apps` 50 → 51 and `nodes` 12374 → 12442, and nothing
+-- else: the walk meets item 285's edits inside pack-carrying terms — `slot_ride`'s
+-- frame, its three spends, the ring's two call-site payments — as one more
+-- application and 68 more nodes; `rows` and every shape and verdict hold.
 /-- **The pack line.**  `nodes` is the proof-term size of the walked
     declarations.  Lean v4.35.0 moves it alone: 12307 → 12296, with the other
     27 fields byte-identical. -/
 def expectedLine : String :=
-  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=50 rows=151 ctorRows=74 paramRows=77 punt=42 stamp=3 empty=0 relay=36 step=1 via=12 chain=51 route=3 frames=1 tail=0 other=0 alt=2 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=109 nodes=12374"
+  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 punt=42 stamp=3 empty=0 relay=36 step=1 via=12 chain=51 route=3 frames=1 tail=0 other=0 alt=2 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=109 nodes=12442"
 
 /-! ## §4 The reading -/
 

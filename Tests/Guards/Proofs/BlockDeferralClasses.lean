@@ -3548,9 +3548,12 @@ example {sc : ScannerState} {sp sp' : SurfPos} (h_close_lit : GLit ']' sp sp') :
 example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos}
     (h_line : sp_scan.col = 0 ∨ LineTailSuffix sp_scan.chars)
     (h_marker : SCDocumentEnd sp_block sp_scan)
-    (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col) :
+    (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col)
+    -- Item 284: and the offer the `...` records — the token the marker pushed,
+    -- which `structural_dispatch_to_pending` reads off `scanDocumentEnd`.
+    (h_offer : OfferPred sc.tokens) :
     PendingNode sc false sp_start sp_block sp_scan :=
-  PendingNode.pendingDocEnd sp_start sp_block sp_scan h_line h_marker h_arm
+  PendingNode.pendingDocEnd (h_offer := h_offer) sp_start sp_block sp_scan h_line h_marker h_arm
     (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega))
 
 /-- …and the `---` park, whose marker its producers hold but the constructor

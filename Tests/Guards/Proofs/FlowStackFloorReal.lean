@@ -59,7 +59,8 @@ example {n : Nat} {sc s_prep : ScannerState} {sp : SurfPos} {c : Char}
           LandingTabFacts sc.currentIndent sc.needIndentCheck s_prep.peek? sp sp_mid ∧
           (sp.col ≠ 0 → s_prep.inFlow = false →
             (s_prep.currentIndent ≤ (s_prep.col : Int) ∨
-              s_prep.indents.size ≤ 1))) :=
+              s_prep.indents.size ≤ 1)) ∧
+          (sp.col ≠ 0 → s_prep.inFlow = false → s_prep.simpleKeyAllowed = true)) :=
   preprocess_some_separate_at_floor n sc sp s_prep c h_floor hcorr hok
 
 /-! ## §2  The measurement: inside a flow, nothing writes the indent stack

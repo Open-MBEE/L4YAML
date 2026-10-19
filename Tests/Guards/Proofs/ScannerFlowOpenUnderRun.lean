@@ -1657,10 +1657,14 @@ elaboration at the three arms that spend `drop_ride`:
   and the one the under-run's open pushes is built by `drop_ride`, a single
   `have` that precedes `cases h_pending`: none of the three arms' own binders
   is in scope there, while a hypothesis of the declaration is.  A `have` has no
-  arity, so no flip in this repo can see that ring. -/
+  arity, so no flip in this repo can see that ring.
+* `genesis` / `pay` read `BBB` since item 284: `ParkSlot.ofOpen`'s `hrun` is
+  `slotRun_of_dn` at the props arm and `slotRun_of_offer` at the indicator arms
+  (the probes' `HRUN`), so the carrier's genesis needs nothing but the `optok`
+  ring the `pay` row simulates.  Every other column read as before. -/
 
 def expectedTransportPrice : String :=
-  "source=BBB hcol=OOO genesis=OOO optok=3 pay=OOO frames=7 ride=0/3"
+  "source=BBB hcol=OOO genesis=BBB optok=3 pay=BBB frames=7 ride=0/3"
 
 /-! ## §13 What the ride can carry, and what the frame will receive
     (DOCS item 273)
@@ -1799,15 +1803,16 @@ four censuses taken by arity flip:
   restores item 162's anchor-only arm — and each costs the same three
   declarations, `FlowBaseAnchor.gate`, `FlowBaseAnchor.transport`,
   `propsPark_open_gate` (`add` reaches `gate` at two sites).
-  `slot=OOO` since item 276: `ParkSlot.ofOpen` takes `hrun`, which no arm holds
-  (§15).
+  ~~`slot=OOO` since item 276: `ParkSlot.ofOpen` takes `hrun`, which no arm holds
+  (§15).~~  `slot=BBB` since item 284: the parks carry the slot face (§18), and
+  `slotRun_of_dn` / `slotRun_of_offer` are `hrun` at all three arms.
 * `transport` — the arity flip on `FlowBaseAnchor.transport`, the funnel every
   other carrier lemma is routed through.  Nine sites in seven declarations:
   that is the second wave any of the three reshapes pays, and it is the number
   the `anchor=2` of item 268 was taken without. -/
 
 def expectedRidePrice : String :=
-  "slot=OOO floor=BBB prop_sc=BOO prop=OOO gated=OOO ride=4/1 add=4/3 \
+  "slot=BBB floor=BBB prop_sc=BOO prop=OOO gated=OOO ride=4/1 add=4/3 \
    swap=3/3 anchor=3/3 transport=9/7"
 
 /-! ## §14 What the CLOSE can pay for a reshaped carrier (DOCS item 274)

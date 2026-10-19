@@ -86,6 +86,21 @@ OPEN_TOK = {
 }
 
 
+#: **The run's slot face at each arm** (DOCS item 284) -- `ParkSlot.ofOpen`'s
+#: `hrun`.  The props park carries the face gated on §9.2's silence, which the
+#: landing's re-armed flag opens and the under-run's own index refutes the base
+#: escape of (`slotRun_of_dn`); the two indicator parks carry their own offer
+#: (`slotRun_of_offer`).  None of the three binds its new field, so the probe
+#: reads it by type.
+HRUN = {
+    "pendingProps": ("(slotRun_of_dn ‹danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ "
+                     "SlotFace sc.tokens› h_dn (_h_ska_land (Nat.ne_of_gt h_col0_p) "
+                     "h_noflow_prep) h_floor_p hj h_base h_preprocess)"),
+    "pendingBlock": "(slotRun_of_offer ‹OfferPred sc.tokens› h_preprocess)",
+    "pendingMapValue": "(slotRun_of_offer ‹OfferPred sc.tokens› h_preprocess)",
+}
+
+
 def genesis_tac(arm):
     src = source_term(arm)
     held = OPEN_TOK[arm]
@@ -96,7 +111,7 @@ def genesis_tac(arm):
         intro = ""
         p_, tok, op = held
     return ("intro hpos; " + intro +
-            f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ (by assumption); "
+            f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ {HRUN[arm]}; "
             f"rw [hpos {p_} {tok} {op}]; exact {src}")
 
 
@@ -251,7 +266,7 @@ def pay_tac(arm):
     else:
         intro = ""
         tok, op, pos = held[1], held[2], "h_br_pos"
-    return (intro + f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ (by assumption); "
+    return (intro + f"refine ParkSlot.ofOpen {tok} {op} h_ind' h_noflow_prep ?_ {HRUN[arm]}; "
             f"rw [{pos}]; exact {src}")
 
 

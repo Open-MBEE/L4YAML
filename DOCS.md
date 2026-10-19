@@ -5543,7 +5543,7 @@ the top of this table is R3.
 
 | # | Action | Blocks | Where |
 |---|---|---|---|
-| 12 | **β.5 — retire `pendingFlow`, delete `scannerDrop`.** Items 11–281 closed it one arm at a time and **ONE proof obligation is left**: `accum_flow_open_depth0`'s `drop_ride`, taken by three live arms, where `dropClose` is spent — the source says so in as many words at [StreamAccum.lean:11759](L4YAML/Proofs/Production/StreamAccum.lean#L11759). Behind it the deletion is mechanical rather than exploratory, because it has already been elaborated to a fixpoint: deleting the park and its five dead `\| pendingFlow` arms for real leaves `control=7 arms=2 dead=5 left=[accum_flow_open_depth0, block_dispatch_deferred]`, and the second of those two is the escape, whose body IS the constructor. **The five remaining steps are the five rows below, each with its state and the one instrument that re-derives it.** The per-item record is [Row 12 — β.5 closure log](#row-12--β5-closure-log); the ordered dependencies are [REMAINING, in order](#remaining-in-order); the cell this row carried through item 281 is [archived verbatim](#row-12--the-plan-table-cell-archived-2026-10-18). | Step 5, the converse | ditto |
+| 12 | **β.5 — retire `pendingFlow`, delete `scannerDrop`.** Items 11–281 closed it one arm at a time and **ONE proof obligation is left**: `accum_flow_open_depth0`'s `drop_ride`, taken by three live arms, where `dropClose` is spent — the source says so in as many words at [StreamAccum.lean:11759](L4YAML/Proofs/Production/StreamAccum.lean#L11759). Behind it the deletion is mechanical rather than exploratory, because it has already been elaborated to a fixpoint: deleting the park and its five dead `\| pendingFlow` arms for real leaves `control=7 arms=2 dead=5 left=[accum_flow_open_depth0, block_dispatch_deferred]`, and the second of those two is the escape, whose body IS the constructor. **The five steps are the five rows below, each with its state and the one instrument that re-derives it.** The per-item record is [Row 12 — β.5 closure log](#row-12--β5-closure-log); the ordered dependencies are [REMAINING, in order](#remaining-in-order); the cell this row carried through item 281 is [archived verbatim](#row-12--the-plan-table-cell-archived-2026-10-18). | Step 5, the converse | ditto |
 | 19 | **Tighten `implicitContinue`** — the THIRD over-approximation of `[211]`, found 2026-08-13 by item 30, ~~and not yet priced~~ **priced by SHAPE 2026-09-07** (item 108) **and half-paid the same day** (item 109: the landing skeleton carries the frames, so a landed sibling resumes its level instead of re-opening at the root; item 110 then paid `pendingBlockContent` from item 99's entry-level field; item 111 paid the props landing, item 112 the block-scalar value arms, item 113 the sequence-side entry arms the same day, item 114 the props park's own five resume faces and item 115 the entry producers' props-key pack twins, leaving the CONSTRUCTOR, which item 110 measured as **LAST rather than next**: tightening it breaks 16 `StreamAccum` sites including `rootMapRoute`/`rootMapRouteF`, the fallback every punting park uses). It requires no `l-document-suffix+` and takes `SLAnyDocument`, so it admits a BARE document after another with no `...`: `- "a"⏎  - b` satisfies `InYamlLanguage` while `parseYaml` rejects it (`invalidBareDocument`, §9.2). It falsifies the converse exactly as `scannerDrop` does. ~~17 construction sites — one in `DocumentProduction` (`stream_implicit_continue`), already legal because it passes an EXPLICIT document, and 16 in `StreamAccum`, every one passing `SLAnyDocument.bare`.~~ **ELEVEN applications as of 2026-09-09**, measured from the elaborated environment and confirmed by flipping the constructor ([item 135](#item-135-2026-09-09)): one is `GOpt.none` and safe; NINE break in `StreamAccum` — seven passing `SLAnyDocument.bare`, one `.directive`, one `.explicit` — and `stream_implicit_continue` is a tenth, the same `.explicit` wrapper and NOT legal as written. Item 135 took 16 to 9 by deleting two dead sites, turning `pendingDocStart`'s document builder into a route (three sites) and spending `noPending.h_nodoc` at the seed's root sequence (two).  **Item 136 gave the landing face its HEAD arm** (2026-09-10) and paid it at all four of the virgin park's landings; **item 137 gave it the MARKER arm** the same day, at `pendingDocStart`'s two unpaid landings (the other two were routed by items 43 and 56). The count held at NINE through both, because the seven are fallback ARMS of shared lemmas and an arm goes only when its last caller can pay something else; what item 137 removes is a whole caller FAMILY rather than a site. **Item 138 moved the count** (2026-09-10): `[209] l-directive-document` has its own `[211]` arm now — `single`'s slot or `suffixContinue`'s, chosen by the flag `scanDirective` itself reads, which only `noPending` and `pendingDocEnd` can have up — so the surface is **TEN applications in nine holders** and the flip gives **eight** errors, at seven lemmas. One application (`ssl_comments_extend_stream`'s `GOpt.none`) types under either reading and never breaks, which is why the two numbers differ. Nothing DEFERS to it, so it is not an escape site and not row 12's business; it comes after row 12 only because row 12's remaining items still edit those sites. **A FOURTH over-approximation joined it 2026-08-16** (item 40), one level down and ~~also unpriced~~ **PRICED 2026-09-07 by item 107**: `SBlockNode.blockSeq`/`.blockMap` bind `[183]`/`[187]`'s auto-detected `m` as a `Nat` where both productions write `m > 0`, ~~which is harmless at the root (the encoding's `n = 0` is the spec's `n = -1`)~~ and admits a nested collection at its enclosing entry's own width otherwise — `k:⏎  :⏎  b: 2` gets a NESTED derivation where `parseYaml` reads a sibling. The root is where it is NOT harmless: three families reach `m = 0` — the root's own mapping, the seq-spaces key `?⏎- a`, and the equal-width landing — the spec reaches the first two with `m = 1` off an index of `-1`, and `seqSpaces 0 .blockOut = seqSpaces 1 .blockOut` because `Nat` subtraction truncates at exactly that index, so the encoding cannot state the floor that separates them. The repair is a re-indexing of `SBlockNode` to `n_lean = n_spec + 1`, not a side condition on four call sites; machine-checked in `Tests/Guards/Proofs/BlockCollectionWidthFloor.lean` and written up at [Item 107](#item-107-2026-09-07). **Its RUNTIME twin landed 2026-09-15 at item 177**: the props-less scalar/alias landing at an open level's own column refuses at `danglingNodePos?`'s narrowed slot-offered exemption ([Item 177](#item-177-2026-09-15)); **the `[96]` half followed at item 178** ([Item 178](#item-178-2026-09-16)), found by the re-index's own flip instrument (75 sites / 13 `StreamAccum` definitions; the props-headed at-column park is unprovable at the shifted index while the scanner accepts it), so the re-indexing can now follow without orphaning an accepted input; **and the re-indexing itself LANDED at item 179** ([Item 179](#item-179-2026-09-16)) — the FOURTH over-approximation is gone, both pack lemmas' landing splits are strict, and the two root content consumers are deleted.  What this row still owes is the `[210]` narrowing alone, whose prerequisites ~~are the crossed-window arms' root family and the `k: &x⏎a` acceptance~~ **are all LANDED** — the crossed-window arms' family refuses at the scanner as of item 180 and their proofs retired at item 181, and the `k: &x⏎a` family refuses as of [item 182](#item-182-2026-09-16), §9.2's FIFTH reading: `[96]`'s properties and the content they decorate are separated by the same `s-separate(n+1)` the run-start readings spend, so a run may park legally and cross the break BELOW its start. The narrowing's ~~prerequisite list is EMPTY~~ **RUNTIME** prerequisite list is empty, and [item 183](#item-183-2026-09-16) prices what stands after it: the flip's consumer surface is **8 definitions / 15 applications** (pinned in `Tests/Guards/Proofs/FlipConsumerSurface.lean` — not the flip instrument's own five, which count the flip's WORK), decomposing into refutable arms, three missing routes, and **`pendingFlow`**, whose `CompletedTail` is FALSE by construction and whose arms therefore cannot be paid by a field at any price. So R3's `pendingFlow` deletion is a PREREQUISITE of this narrowing, not a parallel row. | Step 5, the converse | [The over-approximation problem](#the-over-approximation-problem) |
 | 13 | **Step 5 — the converse** `grammar_completeness` — blocked on rows 12 AND 19, since the converse is false while either over-approximation stands — then **Step 6** the `parse_iff_grammar` biconditional. ~~Closing rows 12 and 19 unblocks the converse.~~ **A THIRD blocker, recorded 2026-09-27, and rows 12 and 19 do not reach it**: `parseYaml` enforces per-document conditions that are not syntactic — `*x` is refused by `scanFiltered` with `undefinedAlias` and `!h!x` by `parseStream` with `undeclaredTagHandle`, while the surface grammar derives both — and every surface relation is `SurfPos → SurfPos → Prop` with NO environment parameter anywhere in `L4YAML/Surface/`, so `InYamlLanguage` cannot STATE the condition at any tightness. This is a change of LAYER, not a fifth over-approximation: Step 6's right-hand side gains an explicit serialization-well-formedness conjunct (anchor/alias ordering, tag-handle declaration state), not yet specified. Found by an independent audit of `main` at `16562a7` by Heath Sanchez of [Metalogic Labs](https://metalogiclabs.xyz/). The same audit's flow class was already closed on this branch: `[[a][b]]`, `[[a]b]`, `["a""b"]`, `{a: b: c}` and `[[][]]` all scan clean and fail in the token parser at `16562a7`, and all five are refused by the SCANNER here with `invalidFlowEntry` — measured by running one probe against both commits, since `invalidFlowEntry` is present in `Scanner/Scanner.lean` at `16562a7` too and the executable path differs by ~3,600 inserted lines. | capstone 7.7 | [Grammar completeness plan](#grammar-completeness-plan), [The over-approximation problem](#the-over-approximation-problem) |
 
@@ -5560,8 +5560,8 @@ and 12.3–12.5 are mechanical, priced to a fixpoint before any of them is taken
 
 | Step | What it is | State | The reading that moves, and who holds it |
 |---|---|---|---|
-| **12.1** | **Carry the slot face on the props park, and bridge it to `ParkSlot` at the open.** `pendingProps` gains `h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ slotRun sc` — gated as `h_route` is, so it is NOT the unconditional field item 281 §5 refuted — and `slotRun_of_dn` spends it at `ParkSlot.ofOpen`'s `hrun` in `accum_flow_open_depth0`'s props arm: §9.2's silence at the landing kills the gate, the under-run kills the escape, and preprocessing's own token shape carries the payload to `s_prep`. ~~Item 281 §7's ONE lemma from `h_dn` and the park's token-side facts~~ — refuted by [item 283](#item-283-2026-10-18) before it was written: those hypotheses admit a counter-model with a scalar predecessor and every check silent. | ⬜ open — **NEXT** | `ScannerFlowOpenUnderRun` §18: `slotCounterModel` (the arm's own view, `slotRun` false) and `slotSupply == (4752, 1276, 5562, 0, 3078, 2484, 0, 1068, 0, 108, 96, [blockEntry, key, value])` — the gated face holds at every reachable park and the payload at every dispatch. The bill: four fields (`h_slot`, and `h_tail` on `pendingBlock`, `pendingMapValue`, `pendingDocEnd`), fourteen tail payments, 33 binders, two lemmas; `RIDE-PRICE`'s `slot` column is the reading to re-take |
-| **12.2** | **Spend it at the three live arms** — `pendingProps`, `pendingBlock`, `pendingMapValue`, all three of which take `accum_flow_open_depth0`'s `drop_ride`. This is a move and not a copy: the `have` is built BEFORE `cases h_pending`, so no arm's binders are in scope where the frame is made, and either the frame moves inside the split or the carrier is passed in. | ⬜ open — behind 12.1 | `TRANSPORT-PRICE`'s `ride=0/3 frames=7` names the out-of-scope ring; `RIDE-PRICE`'s `prop=OOO gated=OOO prop_sc=BOO` is what the three arms hold today |
+| **12.1** | **Carry the slot face on the parks a depth-0 open is dispatched from, and bridge it to `ParkSlot` at the open.** `pendingProps.h_slot` (gated as `h_route` is) and `h_offer` on the three indicator parks, paid at all twenty producers from what each already held; `slotRun_of_dn` / `slotRun_of_offer` are `ParkSlot.ofOpen`'s `hrun` at the three arms. ~~Item 281 §7's ONE lemma from `h_dn` alone~~ — refuted by item 283. | ✅ done — [item 284](#item-284-2026-10-18) | `RIDE-PRICE`'s `slot` `OOO` → **`BBB`**; `TRANSPORT-PRICE`'s `genesis`/`pay` `OOO` → `BBB`; `COORD-PRICE` unmoved; fifteen censuses moved and every move is named in the entry |
+| **12.2** | **Spend it at the three live arms** — replace `exact drop_ride` with the gated frame (`ParkSlot` in `FlowBaseAnchor (some s_prep)`, the value route refuted by the gate, since the under-run's landing re-armed the flag `GateOf` asks to be down), and land item 272's `optok` ring the genesis reads. | ⬜ open — **NEXT** | consumer probe run at item 284: the three replacements elaborate the whole module with no error on the ring-simulated module; the ring is three sites in two declarations (`TRANSPORT-PRICE optok=3`); re-take `RIDE-PRICE`'s `ride` (4/1, three of them these arms) and `gated` |
 | **12.3** | **Apply the deletion** — `pendingFlow`, its five dead arms, `block_dispatch_deferred` (whose body IS the constructor, so it goes with it), `dropClose`, and `PendingNode.close_with_ssl`'s `pendingFlow` arm. Mechanical: the edit has been elaborated for real, to a fixpoint, since item 263. | ⬜ open — behind 12.2 | `scripts/flip_beta5.py`: `rounds=23 clean=1 sorried=13 restated=0 deleted=3 pins=37`. Thirteen proofs lose a body — seven in the library, all in `StreamAccum.lean`, six in the guard tree — ONE statement goes (`dropClose`), and **no statement anywhere must be restated**, which is `ParkBill.expectedStmt`'s `Sp=0` read a second way |
 | **12.4** | **Re-pin the thirty-seven** — instrument debt, not proof debt: the top-level censuses the deletion re-reads, among them `ParkBill`'s seven pins, `DropDependents`, `FlipConsumerSurface`'s DEFERRAL lane, `DropFalsity` and `ParkGapCensus`. `expectedFixpoint` and `expectedArms` are checked from the OTHER side — the scripts read those literals out of the file — so both move by hand and the scripts must agree afterwards. | ⬜ open — behind 12.3 | the fixpoint's `pins=37` population; `scripts/flip_beta5.py` must print `FIX-PIN agrees` and `scripts/beta5_arms.py` `ARM-PIN agrees` |
 | **12.5** | **Restate the record and hand over the top of the table** — this row and its five, the state table under [item 279](#item-279-2026-10-18), and [REMAINING, in order](#remaining-in-order); then R4's narrowing takes the top, since it is marked OPEN *behind R3*. | ⬜ open — behind 12.4 | R4's flip breaks **5** definitions (`scripts/flip_210.py`) and that number has been constant since item 166, so it is the next row's opening price and not a forecast |
@@ -39337,6 +39337,122 @@ invariant and the hypothesis route stay refuted; the `PendingNode` field was
 refuted in its UNGATED form only, and the gated form is what the census confirms
 at every park.  The three carrier censuses item 279 ordered are still not
 re-run: §18 is one census over the states, read once.
+
+### Item 284 (2026-10-18)
+
+**Step 12.1 lands: the parks a depth-0 open is dispatched from CARRY the slot
+face, and all three of `accum_flow_open_depth0`'s live arms can build
+`ParkSlot` at the open.**  `RIDE-PRICE`'s `slot` column reads `BBB` where
+it read `OOO` three times, and `TRANSPORT-PRICE`'s `genesis` and `pay` read `BBB`
+where they read `OOO` — both with the probes' simulated `optok` ring, which step
+12.2 lands — while every other column of both, and all of `COORD-PRICE`, reads as
+before, each instrument restoring the module byte-identical.  Nothing in the
+library spends the bridge yet: replacing `drop_ride` with it is step 12.2.
+
+**The face, carried.**  `SlotFace ts` is `ParkSlot.slotRun` read on an array, and
+`OfferPred ts` the offer an indicator park records.  `pendingProps` gains
+
+    h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ SlotFace sc.tokens
+
+— gated as `h_route` is, the form item 283's census found true at every
+reachable park — and `pendingBlock`, `pendingMapValue` and `pendingDocEnd`
+gain `h_offer : OfferPred sc.tokens`, all four appended LAST.
+
+**The bridge.**  `slotRun_of_dn` at the props arm: §9.2's silence at the
+landing opens the gate, the under-run's own index refutes the base-stack
+escape (`indentFloor_deep_of_lt`), and `slotFace_preprocess` carries the face
+across preprocessing's three writers.  `slotRun_of_offer` at the two indicator
+arms, where the park's own offer is the face.  The props arm needed one datum
+it did not hold — the landing's re-armed flag in the under-run branch, which
+`preprocess_some_separate_at_floor` dropped although the splitter it wraps
+carries it (item 139's conjunct) — so that disjunct gains it, appended LAST.
+
+**The producers: twenty, every one paid from what it already held.**  The `...`
+pays from `scanDocumentEnd` (`scanDocumentEnd_offerPred`); the seven `-` and six
+`:`/`?` producers from the dispatch's own last token (`dispatchBlock_*_offerPred`).
+The six props producers split by what the property does to the run:
+
+* a run START (`content_dispatch_routed`'s two, the two indented readings) pays
+  from the token behind the landing, through `SlotGateAt`.  A base stack opens it
+  (the virgin park, from `h_ntop`); an offer opens it (the indicator parks' new
+  field, the `---` park's `h_marker_tail`); a completed node read through §9.2's
+  bare-document check SHUTS it, because the landing stands on an open level; and
+  a landing that popped shuts it too, standing on the level it popped to behind
+  the pop's `blockEnd`.
+* a run EXTENSION (the props arm's two same-line extensions, and its column-0
+  landing, where a property after the break extends the token run when nothing
+  popped) carries the face of the run it extends (`slotFace_push_prop`): a run one
+  property long keeps its start, and a run already two long plus a third is two
+  of one kind — §9.2's excess clause, which refutes the premise.
+
+Six lemmas gain the gate as a parameter `h_src`, passed by name at each call, and
+the content arms' shared builder gains `h_srcP : CompletedTail sc ∨ OfferPred
+sc.tokens`.
+
+**The one producer that could not pay.**  `accum_content_pending`'s `pendingFlow`
+arm sent its landings through that builder, and the opaque park holds no token
+fact, so the arm now defers at every landing.  It is one of the five dead arms
+(`ParkBill.expectedArms`) and goes with the constructor at step 12.3, so what the
+escape gains is `pendingFlow`'s own successors; its application count is
+unchanged (four textual sites in four holders).
+
+**What it cost.**  `StreamAccum.lean` +886/−189: 49 new declarations (46 lemmas,
+3 definitions), seven array basics moved above the `...` producer, the four
+fields, twenty payments, six signatures, one splitter conjunct, twelve
+patterns.  It built on the first full elaboration with no errors and no new
+warning; the harness that preceded it (`scratchpad/l4yaml-row12-steps/`) checked
+the axioms of the 16 load-bearing lemmas — `propext`, `Classical.choice`,
+`Quot.sound`, no `sorryAx`.
+
+**Fifteen censuses moved, and every move is named** — by the census's own
+classifier with this item's declarations excluded, by a roster diff, or by an
+isolation that restores one edit on the item-284 tree:
+
+| census | move | what it is |
+|---|---|---|
+| `ParkBill` gate holders | `dn/mid` 21 → 22 | `slotRun_of_dn` |
+| `DispatchPrice` steps | 1654 / 294 → 1674 / 299 | 20 new step holders, 5 of them dispatch holders |
+| `DispatchPrice` per function, `ParkGapWidth` ladder | +1 content, +11 preprocess, +4 block | the same lemmas; every `edge` and `chain` holds |
+| `RelaySupplyCensus` | `skipped` 30 (held) | two new proofs open with their `intro`s so the census can read them |
+| `ArmSpendCensus` | `edges` 89 → 90, `DECLINE` 17 → 18 | one more `landing_or_park_ska` call, paid `Or.inr h_col0_p` |
+| `HypothesisReaderCensus` | `constants` 1286 → 1343, `UNUSED` 9 held | roster diff: 124 new rows, 10 on existing declarations (4 fields, 6 `h_src`), 0 lost |
+| `PremiseNecessityCensus` | the same, peeled | excluding those rows reproduces both old pins exactly |
+| `NarrowingWorthCensus` | `theorems` 5345 → 5391 | the 46 lemmas |
+| `CloseSplitFrames` | door 16 → 17 fields; `decisions`/`apps` +1 | the door drops `h_offer`; one payment the walk meets |
+| `CloseStackCover`, `PuntCoverInputs` | `rows` 169 → 167, `nodes` +1738 | the `pendingFlow` arm's builder call; the walked terms grow |
+| `PaidLeafDelta` | the same, `floorNodes` −12 | +34 from the item, −46 from the arm (isolated) |
+| `StreamCompositions` | `unmarked` 218 → 206 | the arm's twelve paths (restoring it reads 218) |
+| `ValueLinePacks`, `ValueLineOrigins` | `nodes` +78, `alts` +28 | +3 `alts` is the under-run's seventh component (isolated); the rest is a measured remainder |
+
+Three construction exhibits name the new fields as hypotheses
+(`MapValueFloorUnconditional`, `PropsFloorUnconditional`, `BlockDeferralClasses`),
+`FlowStackFloorReal` restates the extended splitter, and two instruments follow:
+`coordinate_price.py`'s arm pattern and `transport_price.py`'s `hrun`.
+
+**What item 283 priced, against what it cost.**  Four fields — four.  "Fourteen
+tail payments, 33 binders, two lemmas": the payments were twenty (item 283
+counted the indicator parks' fourteen and not the six props producers'), the
+binders were twelve patterns, because a field appended LAST leaves every
+positional pattern standing and a named argument puts each payment at the
+constructor's head, and the lemmas were 49 — the gate machinery, `SlotGateAt`
+and its five sources, was the price item 283 did not see.
+
+**NEXT — step 12.2, with its consumer probe run in this session.**  Replace the
+three live arms' `exact drop_ride` in `accum_flow_open_depth0` with the gated
+frame: `drop_ride`'s own term with `some s_prep` for `none`, the anchor
+`⟨Or.inr (ParkSlot.ofOpen … hrun), floor⟩` for `trivial`, and the value route
+REFUTED by `GateOf (some s_prep)` — which asks the landing's flag to be down,
+and the under-run's landing re-armed it — rather than handed to `dropClose`.  On
+the module with item 272's `optok` ring simulated exactly as
+`transport_price.py` simulates it, the three replacements elaborate the whole
+module with no error (`scratchpad/l4yaml-row12-steps/120-probe-12_2.py`, log
+`121-…`).  So 12.2 is the ring — `h_optok` gains `p.pos.col = s_prep.col`, three
+sites in two declarations (`TRANSPORT-PRICE optok=3`), the two `accum_step_flow`
+call sites already holding the datum — and the three replacements.  After it,
+`drop_ride` has one spender left, `opaque_resume`, the `pendingFlow` arm's, which
+goes with the constructor at 12.3; the readings to re-take are `RIDE-PRICE`'s
+`ride` (4/1 now) and its `gated` column, which still prices the older
+`ParkAnchor` carrier.
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 

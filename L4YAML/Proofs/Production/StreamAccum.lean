@@ -1128,6 +1128,22 @@ lemma ntop_of_flowLevel_succ {sc : ScannerState} {n : Nat}
     sc.inFlow = false → sc.currentIndent < 0 :=
   fun hnf => (Bool.noConfusion (hnf ▸ inFlow_of_flowLevel_eq h) : sc.currentIndent < 0)
 
+/-- **The slot face** (item 284): `ParkSlot.slotRun`, read on an array.  The
+    `[96]` run in front of the top is absent, or the real token behind it offers
+    the next node a slot.  Item 283 measured it true at every reachable depth-0
+    props park §9.2 lets through, and showed the arm's token-side fields cannot
+    derive it, so the parks that open a depth-0 flow CARRY it. -/
+def SlotFace (ts : Array (Positioned YamlToken)) : Prop :=
+  propsRunStart ts ts.size = ts.size ∨
+    ∃ j, prevRealIdx? ts (propsRunStart ts ts.size) = some j ∧
+      ts[j]!.val.offersNodeSlot = true
+
+/-- The real token on top of the array offers the next node a slot — the
+    complement of `DanglingPred`'s third conjunct.  It is what a `-`, `?`, `:` or
+    `...` park records about itself (item 284). -/
+def OfferPred (ts : Array (Positioned YamlToken)) : Prop :=
+  ∃ i, prevRealIdx? ts ts.size = some i ∧ ts[i]!.val.offersNodeSlot = true
+
 -- ~~**The `[96]` tail window that CROSSED a break**~~ (`PropsWindowCross`,
 -- item 170) is DELETED at item 181.  It named the array whose last real token
 -- has a PROPERTY on a different line directly below it — the configuration
@@ -1653,7 +1669,14 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       (h_closeFEV : (∃ (ne nv : Nat) (ks : List Nat), n = ne + 1 ∧
         ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
         ∀ sp_end : SurfPos, SCompactSeqTail ne sp_m sp_end →
-        ResumeFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True) :
+        ResumeFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
+      -- **Item 284 — the run's SLOT face, gated as `h_route` is** (LAST, same
+      -- reason).  Wherever §9.2 is silent at this park the run stands on the
+      -- base stack or has an offer behind it: `ParkSlot.slotRun`, which the
+      -- depth-0 open's under-run arm spends and could not derive from the fields
+      -- above (item 283's counter-model).  Ungated it is false (`---⏎k: a⏎&x b`,
+      -- item 281 §5); gated it holds at every reachable park.
+      (h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ SlotFace sc.tokens) :
       PendingNode sc false sp_start sp_block sp_scan
   /-- Document end `...` scanned. The gap contains SCDocumentEnd.
       Awaiting SSLComments to form SLDocumentSuffix.
@@ -1681,7 +1704,11 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- park stands at column 3 and the premise is asked of nothing.  The
       -- field exists so the LANDING does not have to case-split on which park
       -- it is standing off — one reading, every block-context park.
-      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true) :
+      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true)
+      -- **Item 284 — the indicator this park stands on OFFERS a slot** (LAST,
+      -- same reason).  A run started off this park and an open dispatched from
+      -- it read their slot face off the token the dispatch just pushed.
+      (h_offer : OfferPred sc.tokens) :
       PendingNode sc false sp_start sp_block sp_scan
   /-- Document start `---` scanned. The gap contains SCDirectivesEnd
       (possibly preceded by directives). Awaiting content or SSLComments
@@ -2164,7 +2191,11 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- `*_open_map` lemmas needs a dispatch floor none of them holds — a
       -- further ring.  Three rings for one arm, which is why the field lands
       -- as an option and the arm lands with item 209. ═══
-      (h_park_top : sc.currentIndent ≤ (n : Int)) :
+      (h_park_top : sc.currentIndent ≤ (n : Int))
+      -- **Item 284 — the indicator this park stands on OFFERS a slot** (LAST,
+      -- same reason).  A run started off this park and an open dispatched from
+      -- it read their slot face off the token the dispatch just pushed.
+      (h_offer : OfferPred sc.tokens) :
       PendingNode sc false sp_start sp_block sp_scan
   /-- A KEYLESS block-mapping entry opened at column 0, depth 0, one node
       awaited — the mapping twin of `pendingBlock` (item 13).  The whole entry
@@ -2445,7 +2476,11 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
         ∀ nv ∈ ns, ∀ sp_v : SurfPos, SBlockMapEntry n sp_q sp_v →
         ∀ sp_i sp_c : SurfPos, SIndent nv sp_v sp_i → GLit ':' sp_i sp_c →
         ∀ sp_w : SurfPos, SBlockIndented nv .blockOut sp_c sp_w →
-        SLYamlStream sp_start sp_w) ∨ True) :
+        SLYamlStream sp_start sp_w) ∨ True)
+      -- **Item 284 — the indicator this park stands on OFFERS a slot** (LAST,
+      -- same reason).  A run started off this park and an open dispatched from
+      -- it read their slot face off the token the dispatch just pushed.
+      (h_offer : OfferPred sc.tokens) :
       PendingNode sc false sp_start sp_block sp_scan
 
 /-- **The flag's vacuous half, named** (item 207).
@@ -4675,6 +4710,308 @@ lemma ParkCore.size_lt {sc0 s : ScannerState} {d : Nat} (h : ParkCore sc0 s d) :
 
 lemma ParkAnchor.size_lt {sc0 s : ScannerState} {d : Nat} (h : ParkAnchor sc0 s d) :
     sc0.tokens.size < s.tokens.size := h.toParkCore.size_lt
+
+/-! ### The slot face (item 284)
+
+`ParkSlot.slotRun` asks one thing of the array a depth-0 open extends: the `[96]`
+run in front of the open is absent, or the real token behind it offers a node
+slot.  `SlotFace` is that question on an array and `OfferPred` the offer an
+indicator park records; this section is what both survive.  The array basics
+sit here, above their oldest users, because `structural_dispatch_to_pending`
+and `accum_flow_open_depth0` both read them. -/
+
+/-- `prevRealIdx?` returns an index strictly below the one it was asked at. -/
+lemma prevRealIdx?_lt {ts : Array (Positioned YamlToken)} :
+    ∀ {n i : Nat}, prevRealIdx? ts n = some i → i < n := by
+  intro n
+  induction n with
+  | zero => intro i h; cases h
+  | succ m ih =>
+    intro i h
+    have h' : (if ts[m]!.val == .placeholder then prevRealIdx? ts m else some m) = some i := h
+    split at h'
+    · exact Nat.lt_succ_of_lt (ih h')
+    · rw [← Option.some.inj h']; omega
+
+/-- `prevRealIdx?` reads only slots strictly below its index, so a push at the
+    top is invisible to it. -/
+lemma prevRealIdx?_push {ts : Array (Positioned YamlToken)}
+    {p : Positioned YamlToken} :
+    ∀ i, i ≤ ts.size → prevRealIdx? (ts.push p) i = prevRealIdx? ts i := by
+  intro i
+  induction i with
+  | zero => intro _; rfl
+  | succ n ih =>
+    intro hle
+    have hn : n < ts.size := by omega
+    have hget : (ts.push p)[n]! = ts[n]! := by
+      rw [getElem!_pos (ts.push p) n (by simp only [Array.size_push]; omega),
+          getElem!_pos ts n hn, Array.getElem_push_lt]
+    show (if (ts.push p)[n]!.val == .placeholder then
+            prevRealIdx? (ts.push p) n else some n)
+        = (if ts[n]!.val == .placeholder then prevRealIdx? ts n else some n)
+    rw [hget, ih (by omega)]
+
+lemma prevRealIdx?_congr_below {a b : Array (Positioned YamlToken)} {m : Nat}
+    (h : ∀ j, j < m → a[j]! = b[j]!) :
+    ∀ i, i ≤ m → prevRealIdx? a i = prevRealIdx? b i := by
+  intro i
+  induction i with
+  | zero => intro _; rfl
+  | succ n ih =>
+    intro hle
+    show (if a[n]!.val == .placeholder then prevRealIdx? a n else some n)
+        = (if b[n]!.val == .placeholder then prevRealIdx? b n else some n)
+    rw [h n (by omega), ih (by omega)]
+
+/-- The close is the last real token of the array it ends. -/
+lemma prevRealIdx?_push_top {ts : Array (Positioned YamlToken)}
+    {p : Positioned YamlToken} (hp : p.val ≠ .placeholder) :
+    prevRealIdx? (ts.push p) (ts.size + 1) = some ts.size := by
+  show (if (ts.push p)[ts.size]!.val == .placeholder then
+    prevRealIdx? (ts.push p) ts.size else some ts.size) = some ts.size
+  rw [push_getElem!_top]
+  simp [hp]
+
+/-- **The unwind either wrote nothing or ended on a `blockEnd`** — the two
+    shapes `unwindIndentsLoop` can leave the token array in. -/
+lemma unwindIndentsLoop_tokens_shape (s : ScannerState) (col : Int) (fuel : Nat) :
+    (unwindIndentsLoop s col fuel).tokens = s.tokens ∨
+      ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
+        (unwindIndentsLoop s col fuel).tokens = ts.push p ∧ p.val = .blockEnd := by
+  induction fuel generalizing s with
+  | zero => unfold unwindIndentsLoop; exact Or.inl rfl
+  | succ f ih =>
+    unfold unwindIndentsLoop
+    split
+    · have h_step : ({ (s.emit .blockEnd) with
+            indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens
+          = s.tokens.push { pos := s.currentPos, val := .blockEnd } := rfl
+      rcases ih (s := { (s.emit .blockEnd) with
+            indents := (s.emit .blockEnd).indents.pop }) with h | ⟨ts, p, hp, hv⟩
+      · exact Or.inr ⟨s.tokens, { pos := s.currentPos, val := .blockEnd },
+          by rw [h, h_step], rfl⟩
+      · exact Or.inr ⟨ts, p, hp, hv⟩
+    · exact Or.inl rfl
+
+lemma unwindIndents_tokens_shape (s : ScannerState) (col : Int) :
+    (unwindIndents s col).tokens = s.tokens ∨
+      ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
+        (unwindIndents s col).tokens = ts.push p ∧ p.val = .blockEnd :=
+  unwindIndentsLoop_tokens_shape s col s.indents.size
+
+/-- The save reserves TWO placeholders or none at all. -/
+lemma saveSimpleKey_tokens_shape (s : ScannerState) :
+    (saveSimpleKey s).tokens = s.tokens ∨
+      ∃ p : Positioned YamlToken, p.val = .placeholder ∧
+        (saveSimpleKey s).tokens = (s.tokens.push p).push p := by
+  unfold saveSimpleKey
+  split
+  · exact Or.inl rfl
+  · split
+    · exact Or.inr
+        ⟨{ pos := s.currentPos, val := .placeholder, endPos := s.currentPos }, rfl, rfl⟩
+    · exact Or.inl rfl
+
+lemma offersNodeSlot_not_isNodeProperty {t : YamlToken} (h : t.offersNodeSlot = true) :
+    t.isNodeProperty = false := by
+  cases t <;> simp_all [YamlToken.offersNodeSlot, YamlToken.isNodeProperty]
+
+lemma prevRealIdx?_push_placeholder_top {ts : Array (Positioned YamlToken)}
+    {q : Positioned YamlToken} (hq : q.val = .placeholder) :
+    prevRealIdx? (ts.push q) (ts.push q).size = prevRealIdx? ts ts.size := by
+  rw [Array.size_push]
+  show (if (ts.push q)[ts.size]!.val == .placeholder then
+    prevRealIdx? (ts.push q) ts.size else some ts.size) = _
+  rw [push_getElem!_top, hq]
+  simp only [beq_self_eq_true, ↓reduceIte]
+  exact prevRealIdx?_push ts.size (Nat.le_refl _)
+
+lemma slotFace_of_agree {a b : Array (Positioned YamlToken)}
+    (hprev : prevRealIdx? b b.size = prevRealIdx? a a.size)
+    (hagree : ∀ j, j < a.size → b[j]! = a[j]!)
+    (h : SlotFace a) : SlotFace b := by
+  unfold SlotFace propsRunStart at h ⊢
+  rw [hprev]
+  cases hp : prevRealIdx? a a.size with
+  | none => exact Or.inl rfl
+  | some j =>
+    have hj : j < a.size := prevRealIdx?_lt hp
+    rw [hp] at h
+    dsimp only [] at h ⊢
+    rw [hagree j hj, prevRealIdx?_congr_below hagree j (by omega)]
+    by_cases hpj : a[j]!.val.isNodeProperty = true
+    · rw [ite_eq_left hpj] at h ⊢
+      cases hk : prevRealIdx? a j with
+      | none =>
+        rw [hk] at h; dsimp only [] at h ⊢
+        rcases h with h | ⟨m, hm, ho⟩
+        · omega
+        · exact Or.inr ⟨m, by rw [prevRealIdx?_congr_below hagree j (by omega)]; exact hm,
+            by rw [hagree m (by have := prevRealIdx?_lt hm; omega)]; exact ho⟩
+      | some k =>
+        have hkj : k < j := prevRealIdx?_lt hk
+        rw [hk] at h; dsimp only [] at h ⊢
+        rw [hagree k (by omega)]
+        by_cases hpk : a[k]!.val.isNodeProperty = true
+        · rw [ite_eq_left hpk] at h ⊢
+          rcases h with h | ⟨m, hm, ho⟩
+          · omega
+          · exact Or.inr ⟨m, by rw [prevRealIdx?_congr_below hagree k (by omega)]; exact hm,
+              by rw [hagree m (by have := prevRealIdx?_lt hm; omega)]; exact ho⟩
+        · rw [ite_eq_right hpk] at h ⊢
+          rcases h with h | ⟨m, hm, ho⟩
+          · omega
+          · exact Or.inr ⟨m, by rw [prevRealIdx?_congr_below hagree j (by omega)]; exact hm,
+              by rw [hagree m (by have := prevRealIdx?_lt hm; omega)]; exact ho⟩
+    · rw [ite_eq_right hpj]
+      exact Or.inl rfl
+
+lemma slotFace_push_placeholder {ts : Array (Positioned YamlToken)}
+    {q : Positioned YamlToken} (hq : q.val = .placeholder) (h : SlotFace ts) :
+    SlotFace (ts.push q) :=
+  slotFace_of_agree (prevRealIdx?_push_placeholder_top hq) (fun j hj => push_getElem!_below j hj) h
+
+/-- A real non-property on top: the run is ABSENT. -/
+lemma slotFace_of_nonprop_top {ts : Array (Positioned YamlToken)}
+    (h : ∀ i, prevRealIdx? ts ts.size = some i → ts[i]!.val.isNodeProperty = false) :
+    SlotFace ts := by
+  left
+  unfold propsRunStart
+  cases hp : prevRealIdx? ts ts.size with
+  | none => rfl
+  | some i => dsimp only []; rw [h i hp]; simp
+
+lemma slotFace_of_offerPred {ts : Array (Positioned YamlToken)} (h : OfferPred ts) :
+    SlotFace ts := by
+  obtain ⟨i, hi, ho⟩ := h
+  exact slotFace_of_nonprop_top fun k hk => by
+    rw [hi] at hk; cases hk; exact offersNodeSlot_not_isNodeProperty ho
+
+lemma slotFace_push_nonprop {ts : Array (Positioned YamlToken)}
+    {p : Positioned YamlToken} (hp : p.val ≠ .placeholder)
+    (hnp : p.val.isNodeProperty = false) : SlotFace (ts.push p) :=
+  slotFace_of_nonprop_top fun i hi => by
+    rw [Array.size_push, prevRealIdx?_push_top hp] at hi
+    cases hi; rw [push_getElem!_top]; exact hnp
+
+/-- **The face survives preprocessing** — `preprocess_danglingPred`'s three
+    writers, read for the slot: `skipToContent` writes no token, the unwind's
+    `blockEnd` is a real non-property (so the run is absent behind it), and the
+    save's two placeholders are what `prevRealIdx?` walks past. -/
+lemma slotFace_preprocess {sc s_prep : ScannerState} {c : Char}
+    (h : SlotFace sc.tokens)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
+    SlotFace s_prep.tokens := by
+  obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim hpre
+  have h_tok_skip : s_skip.tokens = sc.tokens :=
+    ScannerCorrectness.skipToContent_preserves_tokens sc s_skip hsk
+  have h_u : SlotFace s_u.tokens := by
+    rcases h_cases with rfl | rfl
+    · rw [h_tok_skip]; exact h
+    · show SlotFace (unwindIndents s_skip (s_skip.col : Int)).tokens
+      rcases unwindIndents_tokens_shape s_skip (s_skip.col : Int) with hq | ⟨ts, p, hp, hv⟩
+      · rw [hq, h_tok_skip]; exact h
+      · rw [hp]
+        exact slotFace_push_nonprop (by rw [hv]; nofun) (by rw [hv]; rfl)
+  rw [h_save]
+  rcases saveSimpleKey_tokens_shape s_u with hq | ⟨p, hph, hq⟩
+  · rw [hq]; exact h_u
+  · rw [hq]
+    exact slotFace_push_placeholder hph (slotFace_push_placeholder hph h_u)
+
+/-- An under-run's index floors the stack above its base: `j < n` with
+    `IndentFloor sc n` puts a level at or right of column 0. -/
+lemma indentFloor_deep_of_lt {sc : ScannerState} {n j : Nat}
+    (h_floor : IndentFloor sc n) (hj : j < n)
+    (h_base : IndentStackBase.SentinelBase sc) : 1 < sc.indents.size := by
+  rcases Nat.lt_or_ge 1 sc.indents.size with h | h
+  · exact h
+  · exfalso
+    have hci := h_base.currentIndent_of_size_le_one (by omega)
+    have hb := h_floor.2
+    unfold minContentIndentOf at hb
+    rw [hci] at hb
+    simp at hb
+    omega
+
+/-- **The bridge, at the props arm** — item 281 §7's `slotRun_of_dn`, paid
+    through the park's carried face (item 284) rather than off `h_dn` alone,
+    which item 283's counter-model refutes.  §9.2's silence at the landing opens
+    the face's gate, the under-run shuts its base-stack escape, and
+    preprocessing carries what is left to the array the open extends. -/
+lemma slotRun_of_dn {sc s_prep : ScannerState} {c : Char} {n j : Nat}
+    (h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ SlotFace sc.tokens)
+    (h_dn : scanNextToken_checkDanglingNode sc s_prep = .ok ())
+    (h_ska : s_prep.simpleKeyAllowed = true)
+    (h_floor : IndentFloor sc n) (hj : j < n) (h_base : IndentStackBase.SentinelBase sc)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
+    SlotFace s_prep.tokens :=
+  slotFace_preprocess ((h_slot (dangling_none_of_check h_dn h_ska)).resolve_left
+    (by have := indentFloor_deep_of_lt h_floor hj h_base; omega)) hpre
+
+/-- …and at the indicator arms, where the park's own offer is the face. -/
+lemma slotRun_of_offer {sc s_prep : ScannerState} {c : Char}
+    (h_offer : OfferPred sc.tokens)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) : SlotFace s_prep.tokens :=
+  slotFace_preprocess (slotFace_of_offerPred h_offer) hpre
+
+lemma offerPred_push_placeholder {ts : Array (Positioned YamlToken)}
+    {q : Positioned YamlToken} (hq : q.val = .placeholder) (h : OfferPred ts) :
+    OfferPred (ts.push q) := by
+  obtain ⟨i, hi, ho⟩ := h
+  have hlt : i < ts.size := prevRealIdx?_lt hi
+  exact ⟨i, by rw [prevRealIdx?_push_placeholder_top hq]; exact hi,
+    by rw [push_getElem!_below i hlt]; exact ho⟩
+
+lemma offerPred_push_top {ts : Array (Positioned YamlToken)} {p : Positioned YamlToken}
+    (hp : p.val ≠ .placeholder) (ho : p.val.offersNodeSlot = true) : OfferPred (ts.push p) :=
+  ⟨ts.size, by rw [Array.size_push]; exact prevRealIdx?_push_top hp,
+    by rw [push_getElem!_top]; exact ho⟩
+
+/-- The `-` a block entry pushes offers the node after it a slot. -/
+lemma scanBlockEntry_offerPred {s s' : ScannerState} (h : scanBlockEntry s = .ok s') :
+    OfferPred s'.tokens := by
+  unfold scanBlockEntry at h
+  simp only [bind, Except.bind] at h
+  repeat' split at h
+  all_goals first
+    | contradiction
+    | (injection h with h; subst h
+       simp only [ScannerCorrectness.advance_preserves_tokens, ScannerState.emit]
+       exact offerPred_push_top (by nofun) rfl)
+
+/-- …as does the `?`. -/
+lemma scanKey_offerPred {s s' : ScannerState} (h : scanKey s = .ok s') :
+    OfferPred s'.tokens := by
+  unfold scanKey at h
+  simp only [bind, Except.bind] at h
+  repeat' split at h
+  all_goals first
+    | contradiction
+    | (injection h with h; subst h
+       simp only [ScannerCorrectness.advance_preserves_tokens, ScannerState.emit]
+       exact offerPred_push_top (by nofun) rfl)
+
+/-- …and the `:`. -/
+lemma scanValue_offerPred {s s' : ScannerState} (h : scanValue s = .ok s') :
+    OfferPred s'.tokens := by
+  unfold scanValue at h
+  simp only [bind, Except.bind] at h
+  repeat' split at h
+  all_goals first
+    | contradiction
+    | (injection h with h; subst h
+       simp only [ScannerCorrectness.advance_preserves_tokens, ScannerState.emit]
+       exact offerPred_push_top (by nofun) rfl)
+
+/-- …and the `...`: a suffix ends a document, so the run after it heads the
+    next one (item 281). -/
+lemma scanDocumentEnd_offerPred {s s' : ScannerState} (h : scanDocumentEnd s = .ok s') :
+    OfferPred s'.tokens := by
+  rw [ScannerPlainScalarValid.scanDocumentEnd_tokens_eq s s' h]
+  simp only [ScannerState.emit]
+  exact offerPred_push_top (by nofun) rfl
 
 /-! ### The CARRIER (item 267)
 
@@ -7676,7 +8013,10 @@ lemma preprocess_some_separate_at_floor (n : Nat) (sc : ScannerState) (sp : Surf
           LandingTabFacts sc.currentIndent sc.needIndentCheck s_prep.peek? sp sp_mid ∧
           (sp.col ≠ 0 → s_prep.inFlow = false →
             (s_prep.currentIndent ≤ (s_prep.col : Int) ∨
-              s_prep.indents.size ≤ 1))) := by
+              s_prep.indents.size ≤ 1)) ∧
+          -- Item 284: the same walk's FLAG, appended LAST (item 139's conjunct,
+          -- which the splitter's landed disjunct holds and this one dropped).
+          (sp.col ≠ 0 → s_prep.inFlow = false → s_prep.simpleKeyAllowed = true)) := by
   obtain ⟨sp_mid, sp_ws, sp_prep, h_disj, h_ws, h_cmt, hcorr_out, h_pk, h_ltsl⟩ :=
     preprocess_some_ssl_comments_anyCol sc sp s_prep c hcorr hok
   have h_eq : sp_prep = sp_ws := by
@@ -7702,7 +8042,8 @@ lemma preprocess_some_separate_at_floor (n : Nat) (sc : ScannerState) (sp : Surf
         omega
       · exact ⟨sp_prep, hcorr_out,
           Or.inr ⟨sp_mid, h_ssl_col.1, h_ssl_col.2.1, h_ur, h_ltsl,
-            fun hc hf => (h_ssl_col.2.2 hc hf).2.2.2⟩⟩
+            fun hc hf => (h_ssl_col.2.2 hc hf).2.2.2,
+            fun hc hf => (h_ssl_col.2.2 hc hf).2.2.1⟩⟩
     | inr h_mid_eq =>
       rw [h_mid_eq.1] at h_ws
       refine ⟨sp_prep, hcorr_out, Or.inl ⟨SSeparateLines.inline n sp sp_prep
@@ -8413,7 +8754,7 @@ lemma structural_dispatch_to_pending
     intro hat s_de hde h_eq; subst h_eq
     obtain ⟨rest, hchars, hcol⟩ := atDocumentEnd_chars s_prep sp hcorr hat
     obtain ⟨sp', h_marker, hcorr'⟩ := scanDocumentEnd_prod s_prep sp hcorr rest hchars hcol s' hde
-    exact ⟨sp', false, hcol, PendingNode.pendingDocEnd sp_start sp sp'
+    exact ⟨sp', false, hcol, PendingNode.pendingDocEnd (h_offer := scanDocumentEnd_offerPred hde) sp_start sp sp'
              (Or.inr ((scanDocumentEnd_restTailSuffix hcorr'.end_eq hde).to_surface hcorr'))
              -- Item 223: the `...` park's rung.  `scanDocumentEnd` re-arms AND
              -- clears, and the field now records both halves.
@@ -11996,7 +12337,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
           (fun _ h => ⟨h.1, h.2.1⟩))
         h_br_open h_br_tok h_ind' h_opsk
     rcases h_sep_or with ⟨h_sep, h_floor_prep⟩ |
-      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed⟩
+      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩
     · exact ⟨sp_gram, sp_block, sp_open, sp_open, h_stream, h_stack,
              -- Item 68: the run's park is at or past its route index, so the
              -- collection this open pushes reads its interior AT that index.
@@ -12124,7 +12465,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     have h_pe : sp_gap = sp_prep := ScannerSurfCorr_unique hcorr_gap hcorr_prep
     rw [h_pe] at h_sep_or
     rcases h_sep_or with ⟨h_sep, h_floor_prep⟩ |
-      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed⟩
+      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩
     · exact ⟨sp_gram, sp_block, sp_open, sp_open, h_stream, h_stack,
              h_kpkg none _ _ _ (Or.inr trivial) (openFloorT h_floor_prep) trivial (mk none (n_old + 1) sp_block ⟨(fun _ sp_ne sp_m h_content h_ssl =>
                h_close sp_m (SBlockIndented.node n_old .blockIn sp_scan sp_m
@@ -12213,7 +12554,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     have h_pe : sp_gap = sp_prep := ScannerSurfCorr_unique hcorr_gap hcorr_prep
     rw [h_pe] at h_sep_or
     rcases h_sep_or with ⟨h_sep, h_floor_prep⟩ |
-      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed⟩
+      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩
     · exact ⟨sp_gram, sp_block, sp_open, sp_open, h_stream, h_stack,
              -- Item 68: `pendingBlock`'s floor ride, on the mapping's value —
              -- `k:⏎  a: ["p⏎     q"]` reads its interior at the entry's index.
@@ -13238,38 +13579,6 @@ lemma dispatchContent_tokens_push_node {s s' : ScannerState} {c : Char}
     · obtain ⟨t, ht, h⟩ := dispatchContent_tokens_push hok h_amp h_bang
       exact ⟨t, Or.inl ht, h⟩
 
-/-- `prevRealIdx?` returns an index strictly below the one it was asked at. -/
-lemma prevRealIdx?_lt {ts : Array (Positioned YamlToken)} :
-    ∀ {n i : Nat}, prevRealIdx? ts n = some i → i < n := by
-  intro n
-  induction n with
-  | zero => intro i h; cases h
-  | succ m ih =>
-    intro i h
-    have h' : (if ts[m]!.val == .placeholder then prevRealIdx? ts m else some m) = some i := h
-    split at h'
-    · exact Nat.lt_succ_of_lt (ih h')
-    · rw [← Option.some.inj h']; omega
-
-/-- `prevRealIdx?` reads only slots strictly below its index, so a push at the
-    top is invisible to it. -/
-lemma prevRealIdx?_push {ts : Array (Positioned YamlToken)}
-    {p : Positioned YamlToken} :
-    ∀ i, i ≤ ts.size → prevRealIdx? (ts.push p) i = prevRealIdx? ts i := by
-  intro i
-  induction i with
-  | zero => intro _; rfl
-  | succ n ih =>
-    intro hle
-    have hn : n < ts.size := by omega
-    have hget : (ts.push p)[n]! = ts[n]! := by
-      rw [getElem!_pos (ts.push p) n (by simp only [Array.size_push]; omega),
-          getElem!_pos ts n hn, Array.getElem_push_lt]
-    show (if (ts.push p)[n]!.val == .placeholder then
-            prevRealIdx? (ts.push p) n else some n)
-        = (if ts[n]!.val == .placeholder then prevRealIdx? ts n else some n)
-    rw [hget, ih (by omega)]
-
 /-- **A node BODY pushed on top starts a trailing run of exactly one**, with
     the array's own last REAL slot as its predecessor — provided that slot is
     not itself a `[96]` property.  The dual of `trailingNodeRun?_push_none`. -/
@@ -13761,18 +14070,6 @@ lemma trailingNodeRun?_of_lastProp {ts : Array (Positioned YamlToken)} {i : Nat}
   unfold trailingNodeRun? propsRunStart
   rw [hprev]
   simp only [hprop, ↓reduceIte]
-
-lemma prevRealIdx?_congr_below {a b : Array (Positioned YamlToken)} {m : Nat}
-    (h : ∀ j, j < m → a[j]! = b[j]!) :
-    ∀ i, i ≤ m → prevRealIdx? a i = prevRealIdx? b i := by
-  intro i
-  induction i with
-  | zero => intro _; rfl
-  | succ n ih =>
-    intro hle
-    show (if a[n]!.val == .placeholder then prevRealIdx? a n else some n)
-        = (if b[n]!.val == .placeholder then prevRealIdx? b n else some n)
-    rw [h n (by omega), ih (by omega)]
 
 lemma propsRunStart_congr_below {a b : Array (Positioned YamlToken)} {m : Nat}
     (h : ∀ j, j < m → a[j]! = b[j]!) {i : Nat} (hi : i ≤ m) :
@@ -14883,46 +15180,6 @@ lemma danglingPred_push_placeholder {ts : Array (Positioned YamlToken)}
       ← getElem!_pos ts i hi]
     exact h_slot
 
-/-- **The unwind either wrote nothing or ended on a `blockEnd`** — the two
-    shapes `unwindIndentsLoop` can leave the token array in. -/
-lemma unwindIndentsLoop_tokens_shape (s : ScannerState) (col : Int) (fuel : Nat) :
-    (unwindIndentsLoop s col fuel).tokens = s.tokens ∨
-      ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
-        (unwindIndentsLoop s col fuel).tokens = ts.push p ∧ p.val = .blockEnd := by
-  induction fuel generalizing s with
-  | zero => unfold unwindIndentsLoop; exact Or.inl rfl
-  | succ f ih =>
-    unfold unwindIndentsLoop
-    split
-    · have h_step : ({ (s.emit .blockEnd) with
-            indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens
-          = s.tokens.push { pos := s.currentPos, val := .blockEnd } := rfl
-      rcases ih (s := { (s.emit .blockEnd) with
-            indents := (s.emit .blockEnd).indents.pop }) with h | ⟨ts, p, hp, hv⟩
-      · exact Or.inr ⟨s.tokens, { pos := s.currentPos, val := .blockEnd },
-          by rw [h, h_step], rfl⟩
-      · exact Or.inr ⟨ts, p, hp, hv⟩
-    · exact Or.inl rfl
-
-lemma unwindIndents_tokens_shape (s : ScannerState) (col : Int) :
-    (unwindIndents s col).tokens = s.tokens ∨
-      ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
-        (unwindIndents s col).tokens = ts.push p ∧ p.val = .blockEnd :=
-  unwindIndentsLoop_tokens_shape s col s.indents.size
-
-/-- The save reserves TWO placeholders or none at all. -/
-lemma saveSimpleKey_tokens_shape (s : ScannerState) :
-    (saveSimpleKey s).tokens = s.tokens ∨
-      ∃ p : Positioned YamlToken, p.val = .placeholder ∧
-        (saveSimpleKey s).tokens = (s.tokens.push p).push p := by
-  unfold saveSimpleKey
-  split
-  · exact Or.inl rfl
-  · split
-    · exact Or.inr
-        ⟨{ pos := s.currentPos, val := .placeholder, endPos := s.currentPos }, rfl, rfl⟩
-    · exact Or.inl rfl
-
 /-- **The predecessor premise, transported across preprocessing** (item 157) —
     the reading `danglingPark_of_dispatch` spends is taken at the LANDING's
     state, and the park that owns it is one preprocessing behind.
@@ -15461,14 +15718,425 @@ lemma preprocess_tokens_of_inFlow {sc s_prep : ScannerState} {c : Char}
           · exact Or.inl (h1.trans h_tok_skip)
           · exact Or.inr ⟨q, hq, by rw [h2, h_tok_skip]⟩
 
-/-- The close is the last real token of the array it ends. -/
-lemma prevRealIdx?_push_top {ts : Array (Positioned YamlToken)}
-    {p : Positioned YamlToken} (hp : p.val ≠ .placeholder) :
-    prevRealIdx? (ts.push p) (ts.size + 1) = some ts.size := by
-  show (if (ts.push p)[ts.size]!.val == .placeholder then
-    prevRealIdx? (ts.push p) ts.size else some ts.size) = some ts.size
-  rw [push_getElem!_top]
-  simp [hp]
+/-! ### The slot face, CARRIED (item 284)
+
+`pendingProps.h_slot` is the face gated as `h_route` is — wherever §9.2 is silent
+at the park — and the indicator parks carry their own offer.  The lemmas below
+are what the producers pay those with: a run START reads the token behind the
+landing (`SlotGateAt`), and a run EXTENSION reads the run it extends.  A landing
+that popped is always shut — it stands on the level it popped to, behind the
+pop's `blockEnd` — and a kept stack keeps the array up to the save's two
+placeholders. -/
+
+/-- A property pushed on a real non-property starts the run at itself. -/
+lemma propsRunStart_push_prop_of_nonprop {ts : Array (Positioned YamlToken)}
+    {a : Positioned YamlToken} (hap : a.val.isNodeProperty = true) (hane : a.val ≠ .placeholder)
+    (hnp : ∀ j, prevRealIdx? ts ts.size = some j → ts[j]!.val.isNodeProperty = false) :
+    propsRunStart (ts.push a) (ts.push a).size = ts.size := by
+  unfold propsRunStart
+  rw [Array.size_push, prevRealIdx?_push_top hane]
+  dsimp only []
+  rw [push_getElem!_top, hap]
+  simp only [↓reduceIte]
+  rw [prevRealIdx?_push ts.size (Nat.le_refl _)]
+  cases hj : prevRealIdx? ts ts.size with
+  | none => rfl
+  | some j =>
+    dsimp only []
+    rw [push_getElem!_below j (prevRealIdx?_lt hj), hnp j hj]
+    simp
+
+lemma slotFace_push_prop_of_offer {ts : Array (Positioned YamlToken)}
+    {a : Positioned YamlToken} (h : OfferPred ts) (hap : a.val.isNodeProperty = true)
+    (hane : a.val ≠ .placeholder) : SlotFace (ts.push a) := by
+  obtain ⟨j, hj, ho⟩ := h
+  have hjlt : j < ts.size := prevRealIdx?_lt hj
+  have hst := propsRunStart_push_prop_of_nonprop hap hane (ts := ts)
+    (fun k hk => by rw [hj] at hk; cases hk; exact offersNodeSlot_not_isNodeProperty ho)
+  right
+  refine ⟨j, ?_, ?_⟩
+  · rw [hst, prevRealIdx?_push ts.size (Nat.le_refl _)]; exact hj
+  · rw [push_getElem!_below j hjlt]; exact ho
+
+lemma propsRunStart_isNodeProperty {ts : Array (Positioned YamlToken)} {i : Nat}
+    (hprev : prevRealIdx? ts ts.size = some i) (hprop : ts[i]!.val.isNodeProperty = true) :
+    ts[propsRunStart ts ts.size]!.val.isNodeProperty = true := by
+  unfold propsRunStart
+  rw [hprev]
+  dsimp only []
+  rw [hprop]
+  simp only [↓reduceIte]
+  cases hk : prevRealIdx? ts i with
+  | none => exact hprop
+  | some k =>
+    dsimp only []
+    cases hkp : ts[k]!.val.isNodeProperty with
+    | false => simp only [Bool.false_eq_true, ↓reduceIte]; exact hprop
+    | true => simp only [↓reduceIte]; exact hkp
+
+/-- §9.2 silent at a property-tailed park: the run's start stands on no open level. -/
+lemma runStart_off_stack_of_dangling_none {s : ScannerState} {i : Nat}
+    (hflow : s.inFlow = false)
+    (hprev : prevRealIdx? s.tokens s.tokens.size = some i)
+    (hprop : s.tokens[i]!.val.isNodeProperty = true)
+    (hnd : danglingNodePos? s = none) :
+    (s.indents.any fun e =>
+      e.column == (s.tokens[propsRunStart s.tokens s.tokens.size]!.pos.col : Int)) = false := by
+  unfold danglingNodePos? at hnd
+  rw [hflow] at hnd
+  simp only [Bool.false_eq_true, ↓reduceIte, trailingNodeRun?_of_lastProp hprev hprop] at hnd
+  rw [ite_eq_right (by simp [propsRunStart_isNodeProperty hprev hprop])] at hnd
+  cases hon : (s.indents.any fun e =>
+      e.column == (s.tokens[propsRunStart s.tokens s.tokens.size]!.pos.col : Int)) with
+  | false => rfl
+  | true => rw [hon] at hnd; simp at hnd
+
+/-- **A property pushed on a property-tailed array** keeps the run's start when
+    the run was one property long.  A run already two long makes three adjacent
+    properties — two of one kind — which is §9.2's excess clause, so the
+    premise is refuted there rather than the conclusion supplied. -/
+lemma slotFace_push_prop {t : ScannerState} {ts : Array (Positioned YamlToken)}
+    {a : Positioned YamlToken} {k : Nat}
+    (hface : SlotFace ts)
+    (hk : prevRealIdx? ts ts.size = some k) (hkp : ts[k]!.val.isNodeProperty = true)
+    (ha : a.val.isNodeProperty = true) (hane : a.val ≠ .placeholder)
+    (htok : t.tokens = ts.push a) (hflow : t.inFlow = false)
+    (hnd : danglingNodePos? t = none) : SlotFace t.tokens := by
+  have hklt : k < ts.size := prevRealIdx?_lt hk
+  have htop : prevRealIdx? t.tokens t.tokens.size = some ts.size := by
+    rw [htok, Array.size_push]; exact prevRealIdx?_push_top hane
+  have htopp : t.tokens[ts.size]!.val.isNodeProperty = true := by
+    rw [htok, push_getElem!_top]; exact ha
+  -- the old run starts at `k` exactly when the token behind `k` is no property
+  have hold : propsRunStart ts ts.size = k ∨
+      ∃ j, prevRealIdx? ts k = some j ∧ ts[j]!.val.isNodeProperty = true := by
+    unfold propsRunStart
+    rw [hk]; dsimp only []; rw [hkp]; simp only [↓reduceIte]
+    cases hj : prevRealIdx? ts k with
+    | none => exact Or.inl rfl
+    | some j =>
+      dsimp only []
+      cases hjp : ts[j]!.val.isNodeProperty with
+      | false => exact Or.inl (by simp)
+      | true => exact Or.inr ⟨j, rfl, hjp⟩
+  rcases hold with hst | ⟨j, hj, hjp⟩
+  · -- one property long: the new run starts at `k` too
+    have hst' : propsRunStart t.tokens t.tokens.size = k := by
+      unfold propsRunStart
+      rw [htop]; dsimp only []; rw [htopp]; simp only [↓reduceIte]
+      rw [htok, prevRealIdx?_push ts.size (Nat.le_refl _), hk]
+      dsimp only []
+      rw [push_getElem!_below k hklt, hkp]
+      simp
+    rcases hface with h | ⟨m, hm, ho⟩
+    · exfalso; rw [hst] at h; omega
+    · rw [hst] at hm
+      have hmlt : m < ts.size := Nat.lt_trans (prevRealIdx?_lt hm) hklt
+      right
+      refine ⟨m, ?_, ?_⟩
+      · rw [hst', htok, prevRealIdx?_push k (by omega)]; exact hm
+      · rw [htok, push_getElem!_below m hmlt]; exact ho
+  · -- three adjacent properties
+    exfalso
+    have hx := crossedPropsExcessPos?_push_prop_three ha hk hkp hj hjp
+    have hrun := trailingNodeRun?_of_lastProp htop htopp
+    exact danglingNodePos?_ne_none_of_crossed hflow hrun
+      (propsRunStart_isNodeProperty htop htopp) (by rw [htok]; exact hx) hnd
+
+/-- **What a run-start producer hands the park its property dispatch makes**
+    (item 284): for any property pushed at this landing, §9.2's silence at the
+    new park gives its slot face or the base stack.  Each producer pays it from
+    what it knows about the token behind the landing. -/
+def SlotGateAt (s : ScannerState) : Prop :=
+  ∀ (t : ScannerState) (a : Positioned YamlToken),
+    t.tokens = s.tokens.push a → t.indents = s.indents → t.inFlow = false →
+    a.val.isNodeProperty = true → a.val ≠ .placeholder → a.pos.col = s.col →
+    danglingNodePos? t = none → t.indents.size ≤ 1 ∨ SlotFace t.tokens
+
+lemma slotGateAt_of_size {s : ScannerState} (h : s.indents.size ≤ 1) : SlotGateAt s :=
+  fun _ _ _ hind _ _ _ _ _ => Or.inl (by rw [hind]; exact h)
+
+lemma slotGateAt_of_offerPred_top {s : ScannerState} (h : OfferPred s.tokens) : SlotGateAt s :=
+  fun _ _ htok _ _ hap hane _ _ => Or.inr (by rw [htok]; exact slotFace_push_prop_of_offer h hap hane)
+
+/-- A landing that stands on an open level behind a real non-property: the run a
+    property starts there is §9.2's first clause, so the gate is shut. -/
+lemma slotGateAt_of_onStack {s : ScannerState}
+    (hnp : ∀ i, prevRealIdx? s.tokens s.tokens.size = some i → s.tokens[i]!.val.isNodeProperty = false)
+    (hon : (s.indents.any fun e => e.column == (s.col : Int)) = true) : SlotGateAt s := by
+  intro t a htok hind hflow hap hane hcol hnd
+  exfalso
+  have htop : prevRealIdx? t.tokens t.tokens.size = some s.tokens.size := by
+    rw [htok, Array.size_push]; exact prevRealIdx?_push_top hane
+  have htopp : t.tokens[s.tokens.size]!.val.isNodeProperty = true := by
+    rw [htok, push_getElem!_top]; exact hap
+  have hoff := runStart_off_stack_of_dangling_none hflow htop htopp hnd
+  rw [htok, propsRunStart_push_prop_of_nonprop hap hane hnp, push_getElem!_top, hcol, hind] at hoff
+  rw [hon] at hoff
+  cases hoff
+
+lemma any_of_back? {a : Array IndentEntry} {e : IndentEntry} (h : a.back? = some e) {c : Int}
+    (hc : e.column = c) : (a.any fun x => x.column == c) = true := by
+  rw [Array.back?_eq_getElem?] at h
+  obtain ⟨hlt, hget⟩ := Array.getElem?_eq_some_iff.mp h
+  rw [Array.any_eq_true]
+  exact ⟨a.size - 1, hlt, by rw [hget]; simp [hc]⟩
+
+/-- The unwind is the IDENTITY or it ended on a `blockEnd`. -/
+lemma unwindIndentsLoop_eq_or_blockEnd (s : ScannerState) (col : Int) (fuel : Nat) :
+    unwindIndentsLoop s col fuel = s ∨
+      ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
+        (unwindIndentsLoop s col fuel).tokens = ts.push p ∧ p.val = .blockEnd := by
+  induction fuel generalizing s with
+  | zero => unfold unwindIndentsLoop; exact Or.inl rfl
+  | succ f ih =>
+    unfold unwindIndentsLoop
+    split
+    · have h_step : ({ (s.emit .blockEnd) with
+            indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens
+          = s.tokens.push { pos := s.currentPos, val := .blockEnd } := rfl
+      rcases ih (s := { (s.emit .blockEnd) with
+            indents := (s.emit .blockEnd).indents.pop }) with h | ⟨ts, p, hp, hv⟩
+      · exact Or.inr ⟨s.tokens, { pos := s.currentPos, val := .blockEnd },
+          by rw [h, h_step], rfl⟩
+      · exact Or.inr ⟨ts, p, hp, hv⟩
+    · exact Or.inl rfl
+
+lemma unwindIndents_eq_or_blockEnd (s : ScannerState) (col : Int) :
+    unwindIndents s col = s ∨
+      ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
+        (unwindIndents s col).tokens = ts.push p ∧ p.val = .blockEnd :=
+  unwindIndentsLoop_eq_or_blockEnd s col s.indents.size
+
+/-- A landing that kept the stack kept the array, up to the save's two placeholders. -/
+lemma preprocess_tokens_of_indents_eq {sc s_prep : ScannerState} {c : Char}
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (hind : s_prep.indents = sc.indents) :
+    s_prep.tokens = sc.tokens ∨
+      ∃ q : Positioned YamlToken, q.val = .placeholder ∧
+        s_prep.tokens = (sc.tokens.push q).push q := by
+  obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim hpre
+  have h_tok_skip : s_skip.tokens = sc.tokens :=
+    ScannerCorrectness.skipToContent_preserves_tokens sc s_skip hsk
+  have h_ind_skip : s_skip.indents = sc.indents := skipToContent_preserves_indents sc s_skip hsk
+  have h_u : s_u.tokens = sc.tokens := by
+    rcases h_cases with rfl | rfl
+    · exact h_tok_skip
+    · have h_pu : (unwindIndents s_skip (s_skip.col : Int)).indents = s_skip.indents := by
+        rw [h_ind_skip, ← hind, h_save, saveSimpleKey_preserves_indents]
+      show (unwindIndents s_skip (s_skip.col : Int)).tokens = sc.tokens
+      rw [unwindIndents_of_indents_eq h_pu, h_tok_skip]
+  rw [h_save]
+  rcases saveSimpleKey_tokens_shape s_u with hq | ⟨q, hqp, hq⟩
+  · exact Or.inl (by rw [hq, h_u])
+  · exact Or.inr ⟨q, hqp, by rw [hq, h_u]⟩
+
+/-- A landing that popped stands behind the `blockEnd` the pop wrote. -/
+lemma preprocess_pop_pred_nonprop {sc s_prep : ScannerState} {c : Char}
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (hind : s_prep.indents ≠ sc.indents) :
+    ∀ i, prevRealIdx? s_prep.tokens s_prep.tokens.size = some i →
+      s_prep.tokens[i]!.val.isNodeProperty = false := by
+  intro i hi
+  obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim hpre
+  have h_ind_skip : s_skip.indents = sc.indents := skipToContent_preserves_indents sc s_skip hsk
+  obtain ⟨ts, p, hp, hv⟩ : ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
+      s_u.tokens = ts.push p ∧ p.val = .blockEnd := by
+    rcases h_cases with rfl | rfl
+    · exact absurd (by rw [h_save, saveSimpleKey_preserves_indents, h_ind_skip]) hind
+    · rcases unwindIndents_eq_or_blockEnd s_skip (s_skip.col : Int) with hid | h
+      · exfalso; apply hind
+        rw [h_save, saveSimpleKey_preserves_indents]
+        show (unwindIndents s_skip (s_skip.col : Int)).indents = sc.indents
+        rw [hid, h_ind_skip]
+      · exact h
+  have hpne : p.val ≠ .placeholder := by rw [hv]; nofun
+  have hpnp : p.val.isNodeProperty = false := by rw [hv]; rfl
+  rw [h_save] at hi ⊢
+  rcases saveSimpleKey_tokens_shape s_u with hq | ⟨q, hqp, hq⟩
+  · rw [hq, hp, Array.size_push, prevRealIdx?_push_top hpne] at hi
+    rw [hq, hp, ← Option.some.inj hi, push_getElem!_top]; exact hpnp
+  · rw [hq, prevRealIdx?_push_placeholder_top hqp, prevRealIdx?_push_placeholder_top hqp,
+      hp, Array.size_push, prevRealIdx?_push_top hpne] at hi
+    have hi' : i = ts.size := (Option.some.inj hi).symm
+    have hsz : s_u.tokens.size = ts.size + 1 := by rw [hp, Array.size_push]
+    rw [hq, hi', push_getElem!_below _ (by rw [Array.size_push]; omega),
+      push_getElem!_below _ (by omega), hp, push_getElem!_top]
+    exact hpnp
+
+/-- The popped landing's gate is shut: it stands on the level it popped to,
+    behind the pop's `blockEnd`. -/
+lemma slotGateAt_of_pop {sc s_prep : ScannerState} {c : Char}
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (hind : s_prep.indents ≠ sc.indents) (h_base : IndentStackBase.SentinelBase sc) : SlotGateAt s_prep := by
+  obtain ⟨e, h_back, _, h_col⟩ := preprocess_landing_at_level hpre hind h_base
+  exact slotGateAt_of_onStack (preprocess_pop_pred_nonprop hpre hind) (any_of_back? h_back h_col)
+
+/-- **An OFFER behind the park opens the gate at the landing** — kept through a
+    landing that kept the stack, shut by one that popped. -/
+lemma slotGateAt_of_offerPred {sc s_prep : ScannerState} {c : Char}
+    (h : OfferPred sc.tokens) (h_base : IndentStackBase.SentinelBase sc)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) : SlotGateAt s_prep := by
+  by_cases hind : s_prep.indents = sc.indents
+  · apply slotGateAt_of_offerPred_top
+    rcases preprocess_tokens_of_indents_eq hpre hind with hq | ⟨q, hqp, hq⟩
+    · rw [hq]; exact h
+    · rw [hq]; exact offerPred_push_placeholder hqp (offerPred_push_placeholder hqp h)
+  · exact slotGateAt_of_pop hpre hind h_base
+
+/-- **A COMPLETED node behind the park**, at a landing §9.2's bare-document check
+    let through: the landing stands on an open level or popped to one. -/
+lemma slotGateAt_of_bareLanding {sc s_prep : ScannerState} {c : Char}
+    (f : BareLandingFacts sc s_prep c) : SlotGateAt s_prep := by
+  obtain ⟨h_bare, hpre, h_noflow, h_ska, h_tail, h_base⟩ := f
+  by_cases hind : s_prep.indents = sc.indents
+  · obtain ⟨i, hi, hiprop, _⟩ := preprocess_danglingPred (CompletedTail.danglingPred h_tail) hpre
+    refine slotGateAt_of_onStack (fun k hk => by rw [hi] at hk; cases hk; exact hiprop) ?_
+    have h_lr := preprocess_lastRealTokenVal_of_indents_eq hind h_tail.1 hpre
+    obtain ⟨t, h_t, h_cfv⟩ := h_tail.2
+    unfold scanNextToken_checkBareDocument at h_bare
+    rw [h_noflow, h_ska, h_lr, h_t] at h_bare
+    simp only [h_cfv, Bool.not_false, Bool.true_and, Bool.and_true] at h_bare
+    cases hany : (s_prep.indents.any fun e => e.column == (s_prep.col : Int)) with
+    | true => rfl
+    | false => rw [hany] at h_bare; simp at h_bare
+  · exact slotGateAt_of_pop hpre hind h_base
+
+/-- **A props park's own face, at a landing §9.2 let through**: a pop shuts the
+    gate; a kept stack keeps the face, and the run a property extends keeps it. -/
+lemma slotGateAt_of_propsPark {sc s_prep : ScannerState} {c : Char}
+    (h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ SlotFace sc.tokens)
+    (hnd : danglingNodePos? sc = none)
+    (h_prop : ∃ k, prevRealIdx? sc.tokens sc.tokens.size = some k ∧
+      sc.tokens[k]!.val.isNodeProperty = true)
+    (h_base : IndentStackBase.SentinelBase sc)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) : SlotGateAt s_prep := by
+  obtain ⟨k, hk, hkp⟩ := h_prop
+  by_cases hind : s_prep.indents = sc.indents
+  · rcases h_slot hnd with hsz | hface
+    · exact slotGateAt_of_size (by rw [hind]; exact hsz)
+    · have hface' := slotFace_preprocess hface hpre
+      have hk' : prevRealIdx? s_prep.tokens s_prep.tokens.size = some k ∧
+          s_prep.tokens[k]!.val.isNodeProperty = true := by
+        have hklt : k < sc.tokens.size := prevRealIdx?_lt hk
+        rcases preprocess_tokens_of_indents_eq hpre hind with hq | ⟨q, hqp, hq⟩
+        · rw [hq]; exact ⟨hk, hkp⟩
+        · rw [hq, prevRealIdx?_push_placeholder_top hqp, prevRealIdx?_push_placeholder_top hqp,
+            push_getElem!_below k (by rw [Array.size_push]; omega), push_getElem!_below k hklt]
+          exact ⟨hk, hkp⟩
+      intro t a htok _ hflow hap hane _ hnd'
+      exact Or.inr (slotFace_push_prop hface' hk'.1 hk'.2 hap hane htok hflow hnd')
+  · exact slotGateAt_of_pop hpre hind h_base
+
+/-- The stack at its base is the sentinel alone. -/
+lemma size_le_one_of_currentIndent_neg {s : ScannerState} (h_base : IndentStackBase.SentinelBase s)
+    (h_mono : IndentStackMono.Mono s) (h : s.currentIndent < 0) : s.indents.size ≤ 1 := by
+  rcases Nat.lt_or_ge s.indents.size 2 with hlt | hge
+  · omega
+  · exfalso
+    have h01 := h_mono 0 (by omega)
+    have h0 : s.indents[0]'(by omega) = { column := -1, isSequence := false } := by
+      have hb := h_base
+      rw [IndentStackBase.SentinelBase, Array.getElem?_eq_getElem (by omega)] at hb
+      exact Option.some.inj hb
+    have h1le := h_mono.le_currentIndent (s.indents[1]'(by omega)) (Array.getElem_mem _)
+    rw [h0] at h01
+    simp at h01
+    omega
+
+/-- Preprocessing at the base stack keeps it. -/
+lemma preprocess_indents_of_size_le_one {sc s_prep : ScannerState} {c : Char}
+    (h : sc.indents.size ≤ 1)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) : s_prep.indents = sc.indents := by
+  obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim hpre
+  have h_ind_skip : s_skip.indents = sc.indents := skipToContent_preserves_indents sc s_skip hsk
+  rw [h_save, saveSimpleKey_preserves_indents]
+  rcases h_cases with rfl | rfl
+  · exact h_ind_skip
+  · show (unwindIndents s_skip (s_skip.col : Int)).indents = sc.indents
+    rw [unwindIndents_of_size_le_one (by rw [h_ind_skip]; exact h), h_ind_skip]
+
+/-- The marker a `---` park records is an offer. -/
+lemma offerPred_of_lastRealToken {ts : Array (Positioned YamlToken)} {t : Positioned YamlToken}
+    (h_real : LastTokenReal ts) (h_t : lastRealToken? ts = some t)
+    (ho : t.val.offersNodeSlot = true) : OfferPred ts := by
+  refine ⟨ts.size - 1, lastTokenReal_prevRealIdx h_real, ?_⟩
+  rw [lastRealToken_of_real h_real] at h_t
+  rw [Option.some.inj h_t]; exact ho
+
+/-- **The gate a run-start producer pays** at the park its `&`/`!` dispatch makes. -/
+lemma slotGateAt_spend {s_prep s' : ScannerState} {c : Char}
+    (h_src : SlotGateAt s_prep) (hc : c = '&' ∨ c = '!')
+    (h_flow : (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep).inFlow = false)
+    (h_dispatch : scanNextToken_dispatchContent
+        (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep) c = .ok s') :
+    danglingNodePos? s' = none → s'.indents.size ≤ 1 ∨ SlotFace s'.tokens := by
+  intro hnd
+  obtain ⟨t, htp, htok⟩ := dispatchContent_tokens_push_prop h_dispatch hc
+  have h_flow' : s'.inFlow = false := by
+    unfold ScannerState.inFlow at h_flow ⊢
+    rw [ScannerCorrectness.dispatchContent_preserves_flowLevel _ c _ h_dispatch]
+    exact h_flow
+  have hpush : s'.tokens = s_prep.tokens.push
+      { pos := (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep).currentPos, val := t } := by
+    rw [htok, allowDirectives_update_tokens]
+  have hane : t ≠ .placeholder := by rintro rfl; cases htp
+  exact h_src s' _ hpush
+    (by rw [IndentStackBase.dispatchContent_preserves_indents h_dispatch,
+      allowDirectives_update_indents]) h_flow' htp hane
+    (by show (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep).currentPos.col = s_prep.col
+        rw [allowDirectives_update_currentPos]; rfl) hnd
+
+/-- **A same-line extension carries the face**: §9.2's silence at the extended
+    park is its silence at the park extended, and the run keeps its start. -/
+lemma slotFace_extend {sc s' : ScannerState} {ts : Array (Positioned YamlToken)}
+    {a : Positioned YamlToken}
+    (h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ SlotFace sc.tokens)
+    (h_nd : danglingNodePos? s' = none → danglingNodePos? sc = none)
+    (h_prop : ∃ k, prevRealIdx? sc.tokens sc.tokens.size = some k ∧
+      sc.tokens[k]!.val.isNodeProperty = true)
+    (htok : s'.tokens = ts.push a) (hts : ts = sc.tokens)
+    (ha : a.val.isNodeProperty = true) (hane : a.val ≠ .placeholder)
+    (hind : s'.indents = sc.indents) (hflow : s'.inFlow = false) :
+    danglingNodePos? s' = none → s'.indents.size ≤ 1 ∨ SlotFace s'.tokens := by
+  intro hnd
+  obtain ⟨k, hk, hkp⟩ := h_prop
+  rcases h_slot (h_nd hnd) with hsz | hface
+  · exact Or.inl (by rw [hind]; exact hsz)
+  · exact Or.inr (slotFace_push_prop hface hk hkp ha hane (by rw [htok, hts]) hflow hnd)
+
+/-- The gate a landing pays from the park it closed: a completed node or an offer. -/
+lemma slotGateAt_of_parkSource {sc s_prep : ScannerState} {c : Char}
+    (h_srcP : CompletedTail sc ∨ OfferPred sc.tokens)
+    (h_bare : scanNextToken_checkBareDocument s_prep = .ok ())
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h_noflow : s_prep.inFlow = false) (h_ska : s_prep.simpleKeyAllowed = true)
+    (h_base : IndentStackBase.SentinelBase sc) : SlotGateAt s_prep :=
+  h_srcP.elim (fun tl => slotGateAt_of_bareLanding ⟨h_bare, hpre, h_noflow, h_ska, tl, h_base⟩)
+    (fun off => slotGateAt_of_offerPred off h_base hpre)
+
+/-- A virgin park stands at the base stack, and preprocessing keeps it. -/
+lemma slotGateAt_of_noPending {sc s_prep : ScannerState} {c : Char}
+    (h_base : IndentStackBase.SentinelBase sc) (h_mono : IndentStackMono.Mono sc)
+    (h_ntop : sc.currentIndent < 0)
+    (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) : SlotGateAt s_prep := by
+  have hsz := size_le_one_of_currentIndent_neg h_base h_mono h_ntop
+  exact slotGateAt_of_size (by rw [preprocess_indents_of_size_le_one hsz hpre]; exact hsz)
+
+/-- The `---` a document-start park records is an offer. -/
+lemma offerPred_of_docStart {sc : ScannerState} (h_real : LastTokenReal sc.tokens)
+    (h_marker : ∃ t, lastRealToken? sc.tokens = some t ∧
+      t.val = .documentStart ∧ t.pos.line = sc.line) : OfferPred sc.tokens := by
+  obtain ⟨t, ht, htv, -⟩ := h_marker
+  exact offerPred_of_lastRealToken h_real ht (by rw [htv]; rfl)
 
 -- ~~`propsWindowCross_push_refute`~~ (item 170) is DELETED with the field it
 -- discharged (item 181): a same-line extension refuted the crossed window by
@@ -19061,6 +19729,25 @@ lemma dispatchBlock_question_scanKey {s s' : ScannerState}
       exact hk
   · cases h
 
+lemma dispatchBlock_dash_offerPred {s s' : ScannerState}
+    (h : scanNextToken_dispatchBlockIndicators s '-' = .ok (some s')) : OfferPred s'.tokens :=
+  scanBlockEntry_offerPred (dispatchBlock_dash_scanBlockEntry h)
+
+lemma dispatchBlock_colon_offerPred {s s' : ScannerState}
+    (h : scanNextToken_dispatchBlockIndicators s ':' = .ok (some s')) : OfferPred s'.tokens :=
+  scanValue_offerPred (dispatchBlock_colon_scanValue h)
+
+lemma dispatchBlock_question_offerPred {s s' : ScannerState}
+    (h : scanNextToken_dispatchBlockIndicators s '?' = .ok (some s')) : OfferPred s'.tokens :=
+  scanKey_offerPred (dispatchBlock_question_scanKey h)
+
+lemma dispatchBlock_colon_or_question_offerPred {s s' : ScannerState} {c : Char}
+    (hc : c = ':' ∨ c = '?')
+    (h : scanNextToken_dispatchBlockIndicators s c = .ok (some s')) : OfferPred s'.tokens := by
+  rcases hc with rfl | rfl
+  · exact dispatchBlock_colon_offerPred h
+  · exact dispatchBlock_question_offerPred h
+
 /-- The `?` step's park-side facts (item 48): the `.key` push ends the array
     real and the flag rides through — `implicitValueLine` is not stamped
     (`[192]`'s explicit entry admits a compact collection on the line). -/
@@ -19944,7 +20631,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
           rootMapRouteF_or_refused h_ref_land hcol_land h_stream_land h_ind⟩
   exact ⟨sp_land, sp_land, sp_land, sp_scan', h_stream_land,
          BlockStack.nil sp_land, FlowStackB.nil sp_land .sep,
-         PendingNode.pendingMapValue sp_start sp_land sp_scan' k
+         PendingNode.pendingMapValue (h_offer := dispatchBlock_colon_offerPred h_dispatch) sp_start sp_land sp_scan' k
            (fun sp_v h_node =>
              h_routeE sp_v
                (SBlockMapEntry.emptyKeyNode k sp_ind sp_scan' sp_v h_lit
@@ -20257,7 +20944,7 @@ lemma question_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) 
        | Or.inr _ => Or.inr trivial)
   exact ⟨sp_land, sp_land, sp_land, sp_scan', h_stream_land,
          BlockStack.nil sp_land, FlowStackB.nil sp_land .sep,
-         PendingNode.pendingMapValue sp_start sp_land sp_scan' k
+         PendingNode.pendingMapValue (h_offer := dispatchBlock_question_offerPred h_dispatch) sp_start sp_land sp_scan' k
            (fun sp_k h_node =>
              h_route51 sp_k
                (SBlockMapEntry.explicitEmpty k sp_ind sp_scan' sp_k h_lit
@@ -20450,7 +21137,7 @@ lemma colon_open_map_explicit (sp_start sp_scan sp_mid sp_ind : SurfPos) (nv : N
     fun sp_v h_sbi => hvp sp_mid sp_ind sp_scan' h_ssl h_ind h_lit sp_v h_sbi
   exact ⟨sp_mid, sp_mid, sp_mid, sp_scan', h_stream_mid,
          BlockStack.nil sp_mid, FlowStackB.nil sp_mid .sep,
-         PendingNode.pendingMapValue sp_start sp_mid sp_scan' nv
+         PendingNode.pendingMapValue (h_offer := dispatchBlock_colon_offerPred h_dispatch) sp_start sp_mid sp_scan' nv
            (fun sp_v h_node =>
              h_slot sp_v (SBlockIndented.node nv .blockOut sp_scan' sp_v
                (SBlockNode_blockIn_to_blockOut h_node)))
@@ -20752,7 +21439,7 @@ lemma compact_open_map (sp_start sp_entry sp_ind : SurfPos) (n m : Nat)
         (compactExplicitKeyFrame h_close_old h_ind (h_qlit h)).2⟩
   exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
          BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-         PendingNode.pendingMapValue sp_start sp_block sp_scan' (n + 1 + m)
+         PendingNode.pendingMapValue (h_offer := dispatchBlock_colon_or_question_offerPred hc h_dispatch) sp_start sp_block sp_scan' (n + 1 + m)
            (fun sp_v h_node =>
              h_close_old sp_v
                (SBlockIndented.compactMap n ctx m sp_entry sp_ind sp_v h_ind
@@ -21132,7 +21819,7 @@ lemma colon_open_map_implicit (sp_start sp_block sp_key sp_gram sp_ws : SurfPos)
       (hc.of_indents_eq (by split <;> rfl))).dedup_head
   exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
          BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-         PendingNode.pendingMapValue sp_start sp_block sp_scan' k
+         PendingNode.pendingMapValue (h_offer := dispatchBlock_colon_offerPred h_dispatch) sp_start sp_block sp_scan' k
            (fun sp_v h_node =>
              h_route sp_v
                (SBlockMapEntry.implicitKeyNode k sp_key sp_ws sp_scan' sp_v h_ik h_lit
@@ -21357,7 +22044,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
       (hc.of_indents_eq (by split <;> rfl))).dedup_head
   exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
          BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-         PendingNode.pendingMapValue sp_start sp_block sp_scan' k
+         PendingNode.pendingMapValue (h_offer := dispatchBlock_colon_offerPred h_dispatch) sp_start sp_block sp_scan' k
            (fun sp_v h_node =>
              h_route sp_v
                (SBlockMapEntry.implicitKeyNode k sp_p sp_prep sp_scan' sp_v h_ik h_lit
@@ -22302,7 +22989,7 @@ lemma accum_block_on_noPending
           (GStar.nil _)
     exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
            BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-           PendingNode.pendingBlock sp_start sp_block sp_scan' k
+           PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_block sp_scan' k
              (fun sp_final (h_indented : SBlockIndented k .blockIn sp_scan' sp_final) =>
                have h_entry :=
                  SBlockSeqEntries.single k sp_mid _ sp_scan' sp_scan' sp_final
@@ -22727,7 +23414,7 @@ lemma accum_block_on_closeThenBlock
         rw [hsp_dash2_eq] at h_dash2 h_gnot2
         exact ⟨sp_a, sp_a, sp_a, sp_scan', h_stream_a,
                BlockStack.nil sp_a, FlowStackB.nil sp_a .sep,
-               PendingNode.pendingBlock sp_start sp_a sp_scan' (nv + 1 + m)
+               PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_a sp_scan' (nv + 1 + m)
                  (fun sp_final (h_bi : SBlockIndented (nv + 1 + m) .blockIn sp_scan' sp_final) =>
                    hvs sp_final
                      (SBlockIndented.compactSeq nv .blockOut m sp_mid _ sp_final h_ind
@@ -23157,7 +23844,7 @@ lemma accum_block_on_closeThenBlock
       · exact Or.inr trivial
     exact ⟨sp_mid, sp_mid, sp_mid, sp_scan', h_stream_new,
            BlockStack.nil sp_mid, FlowStackB.nil sp_mid .sep,
-           PendingNode.pendingBlock sp_start sp_mid sp_scan' k
+           PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_mid sp_scan' k
              -- Item 118: where the route is `h_docRoute`'s, the sequence
              -- document lands wherever the closed park says.  Item 167: where
              -- the park names an open collection at this width, both
@@ -24020,7 +24707,7 @@ lemma accum_block_on_pendingBlockContent
         have h_cont := h_entry_old sp_mid h_ssl
         exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
                BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-               PendingNode.pendingBlock sp_start sp_block sp_scan' k
+               PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_block sp_scan' k
                  (fun sp_final (h_indented : SBlockIndented k .blockIn sp_scan' sp_final) =>
                    h_cont sp_final (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_final sp_final
                      h_ind h_dash2 h_gnot2 h_indented (SCompactSeqTail.nil k sp_final)))
@@ -24491,7 +25178,7 @@ lemma accum_block_on_pendingBlock
       have h_cont := h_close_entry_old sp_mid h_node_old
       exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
              BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-             PendingNode.pendingBlock sp_start sp_block sp_scan' k
+             PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_block sp_scan' k
                (fun sp_final (h_indented : SBlockIndented k .blockIn sp_scan' sp_final) =>
                  h_cont sp_final (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_final sp_final
                    h_ind h_dash2 h_gnot2 h_indented (SCompactSeqTail.nil k sp_final)))
@@ -24576,7 +25263,7 @@ lemma accum_block_on_pendingBlock
             sp_end (SCompactSeqTail.nil n sp_end)
         exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
                BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-               PendingNode.pendingBlock sp_start sp_block sp_scan' k
+               PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_block sp_scan' k
                  (fun sp_final (h_indented : SBlockIndented k .blockIn sp_scan' sp_final) =>
                    h_close_inner sp_final
                      (SBlockSeqEntries.single k sp_mid _ sp_scan' sp_scan' sp_final
@@ -24929,7 +25616,7 @@ lemma accum_block_on_pendingBlock
       rw [hsp_dash2_eq] at h_dash2 h_gnot2
       exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
              BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-             PendingNode.pendingBlock sp_start sp_block sp_scan' (n + 1 + m)
+             PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_block sp_scan' (n + 1 + m)
                (fun sp_final (h_bi : SBlockIndented (n + 1 + m) .blockIn sp_scan' sp_final) =>
                  h_close_old sp_final
                    (SBlockIndented.compactSeq n .blockIn m sp_mid sp_sc sp_final h_ind
@@ -29335,7 +30022,10 @@ lemma content_dispatch_routed
         sp_land.col = 0 ∧ PropsRideRoute sp_start sp_land sp_prep ∧
         SIndent k sp_land sp_prep) ∧
       s_prep.simpleKey.possible = true ∧
-      s_prep.simpleKey.pos = s_prep.currentPos) ∨ True) :
+      s_prep.simpleKey.pos = s_prep.currentPos) ∨ True)
+    -- Item 284: what the token behind this landing pays a property run's
+    -- slot face with (`SlotGateAt`).
+    (h_src : SlotGateAt s_prep) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -29534,7 +30224,7 @@ lemma content_dispatch_routed
         h_nic_ad (by simp) (by simp [YamlToken.isNodeProperty])
       exact ⟨sp_res, sp_res, sp_res, sp_scan', h_stream_res,
              BlockStack.nil sp_res, FlowStackB.nil sp_res .sep,
-             PendingNode.pendingProps sp_start sp_res sp_scan' true false sp_anchor sp_prep 0
+             PendingNode.pendingProps (h_slot := slotGateAt_spend h_src (Or.inl rfl) h_flow_disp h_dispatch) sp_start sp_res sp_scan' true false sp_anchor sp_prep 0
                h_sep (PropsRun.anchor _ _ ha_ev) h_nic_s h_real_s
                (fun _ => h_any YamlToken.isAnchorProperty
                  (by simp [YamlToken.isAnchorProperty]))
@@ -29575,7 +30265,7 @@ lemma content_dispatch_routed
         h_nic_ad (by simp) (by simp [YamlToken.isNodeProperty])
       exact ⟨sp_res, sp_res, sp_res, sp_scan', h_stream_res,
              BlockStack.nil sp_res, FlowStackB.nil sp_res .sep,
-             PendingNode.pendingProps sp_start sp_res sp_scan' false true sp_anchor sp_prep 0
+             PendingNode.pendingProps (h_slot := slotGateAt_spend h_src (Or.inr rfl) h_flow_disp h_dispatch) sp_start sp_res sp_scan' false true sp_anchor sp_prep 0
                h_sep (PropsRun.tag _ _ ht_ev) h_nic_s h_real_s
                (fun h => nomatch h)
                (fun _ => h_any YamlToken.isTagProperty
@@ -29963,14 +30653,17 @@ lemma content_dispatch_after_close
         sp_land.col = 0 ∧ PropsRideRoute sp_start sp_land sp_prep ∧
         SIndent k sp_land sp_prep) ∧
       s_prep.simpleKey.possible = true ∧
-      s_prep.simpleKey.pos = s_prep.currentPos) ∨ True) :
+      s_prep.simpleKey.pos = s_prep.currentPos) ∨ True)
+    -- Item 284: what the token behind this landing pays a property run's
+    -- slot face with (`SlotGateAt`).
+    (h_src : SlotGateAt s_prep) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
       FlowStackB sp_start 0 0 none 0 #[] #[] .sep sp_block' sp_flow' ∧
       PendingNode s' false sp_start sp_flow' sp_scan' ∧
       ScannerSurfCorr s' sp_scan' :=
-  content_dispatch_routed sp_start sp_block sp_block s_prep s' c sp_prep sp_scan'
+  content_dispatch_routed (h_src := h_src) sp_start sp_block sp_block s_prep s' c sp_prep sp_scan'
     h_stream_block h_sep h_nic_prep hcorr_prep hcorr_result h_not_doc hpeek
     h_flow_disp h_dispatch
     -- Item 139: the same route, named — this lemma is the INDENTED callers'
@@ -30037,7 +30730,10 @@ lemma accum_content_on_noPending
     -- and `single`'s `l-any-document?` slot is the one row 19's 1c leaves
     -- untouched — where `content_dispatch_after_close` handed the same node
     -- to the implicit continuation of a stream that has started nothing.
-    (h_nodoc : GStar SLDocumentPrefix sp_start sp_block) :
+    (h_nodoc : GStar SLDocumentPrefix sp_start sp_block)
+    -- Item 284: what the token behind this landing pays a property run's
+    -- slot face with (`SlotGateAt`).
+    (h_src : SlotGateAt s_prep) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -30064,7 +30760,7 @@ lemma accum_content_on_noPending
   · obtain ⟨sp_sep, h_sep, hcorr_sep⟩ :=
       preprocess_some_separate_lines_0 sc sp_block s_prep c h_corr hcol h_preprocess
     have hsp_eq := ScannerSurfCorr_unique hcorr_prep hcorr_sep; subst hsp_eq
-    exact content_dispatch_routed sp_start sp_block sp_block s_prep s' c sp_prep sp_scan'
+    exact content_dispatch_routed (h_src := h_src) sp_start sp_block sp_block s_prep s' c sp_prep sp_scan'
       h_stream_block h_sep (nic_false_of_flow_disp h_preprocess h_flow_disp)
       hcorr_prep hcorr_result h_not_doc hpeek h_flow_disp h_dispatch
       (fun _ => nodocNodeRoute h_nodoc)
@@ -30077,7 +30773,7 @@ lemma accum_content_on_noPending
   · obtain ⟨sp_sep, h_sep, hcorr_sep⟩ :=
       preprocess_some_separate_0_anyCol sc sp_block s_prep c h_corr h_preprocess
     have hsp_eq := ScannerSurfCorr_unique hcorr_prep hcorr_sep; subst hsp_eq
-    exact content_dispatch_routed sp_start sp_block sp_block s_prep s' c sp_prep sp_scan'
+    exact content_dispatch_routed (h_src := h_src) sp_start sp_block sp_block s_prep s' c sp_prep sp_scan'
       h_stream_block h_sep (nic_false_of_flow_disp h_preprocess h_flow_disp)
       hcorr_prep hcorr_result h_not_doc hpeek h_flow_disp h_dispatch
       (fun _ => nodocNodeRoute h_nodoc)
@@ -30162,7 +30858,10 @@ lemma indentedValue_reads_at_any_indent
     (h_dispatch : scanNextToken_dispatchContent
         (if s_prep.allowDirectives then
           { s_prep with allowDirectives := false, documentEverStarted := true }
-        else s_prep) c = .ok s') :
+        else s_prep) c = .ok s')
+    -- Item 284: what the token behind this landing pays a property run's
+    -- slot face with (`SlotGateAt`).
+    (h_src : SlotGateAt s_prep) :
     (∃ sp_gram,
       SSeparate n .flowOut sp_scan sp_prep ∧
       (∀ n : Nat, SFlowNode n .flowOut sp_prep sp_gram) ∧
@@ -30202,7 +30901,9 @@ lemma indentedValue_reads_at_any_indent
       -- run's park hand `KeyPackPunt.implicitValue` on (`k: &p a: 1`).
       s'.implicitValueLine = (if s_prep.allowDirectives then
           { s_prep with allowDirectives := false, documentEverStarted := true }
-        else s_prep).implicitValueLine) ∨
+        else s_prep).implicitValueLine ∧
+      -- Item 284: the new park's slot face, paid from the landing's gate.
+      (danglingNodePos? s' = none → s'.indents.size ≤ 1 ∨ SlotFace s'.tokens)) ∨
     ((SCLLiteral n sp_prep sp_scan' ∨ SCLFolded n sp_prep sp_scan') ∧
       -- Item 95: the landing walk at the scalar's stop, absorbable into the
       -- SAME node through `[169] l-trail-comments` (or forced empty by the
@@ -30355,7 +31056,8 @@ lemma indentedValue_reads_at_any_indent
             exact h_floor_at),
           Or.inr rfl, (dispatchContent_anchor_simpleKey h_dispatch).1, h_line',
           (dispatchContent_anchor_simpleKey h_dispatch).2,
-          dispatchContent_implicitValueLine h_dispatch⟩)
+          dispatchContent_implicitValueLine h_dispatch,
+          slotGateAt_spend h_src (Or.inl rfl) h_flow_disp h_dispatch⟩)
       | inr h =>
         subst h
         obtain ⟨sp_t, ht_ev, hc⟩ := dispatchContent_tagProp_prod _ sp_prep
@@ -30377,7 +31079,8 @@ lemma indentedValue_reads_at_any_indent
             exact h_floor_at),
           Or.inl rfl, (dispatchContent_tag_simpleKey h_dispatch).1, h_line',
           (dispatchContent_tag_simpleKey h_dispatch).2,
-          dispatchContent_implicitValueLine h_dispatch⟩)
+          dispatchContent_implicitValueLine h_dispatch,
+          slotGateAt_spend h_src (Or.inr rfl) h_flow_disp h_dispatch⟩)
     · by_cases hbs : c = '|' ∨ c = '>'
       · -- Item 26: a block scalar is not a one-line reading and never will be,
         -- but it does not need to be — `[170]`/`[174]` bind their content indent
@@ -30595,7 +31298,10 @@ lemma accum_content_on_pendingBlock_indented
     (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat),
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True) :
+      ResumeFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
+    -- Item 284: what the token behind this landing pays a property run's
+    -- slot face with (`SlotGateAt`).
+    (h_src : SlotGateAt s_prep) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -30611,11 +31317,11 @@ lemma accum_content_on_pendingBlock_indented
       IndentStackCover.dispatchContent_cover h_dispatch
         ((IndentStackCover.preprocess_cover h_preprocess hc).of_indents_eq
           (by split <;> rfl))
-  rcases indentedValue_reads_at_any_indent sc sp_scan (n + 1) s_prep s' c sp_prep sp_scan'
+  rcases indentedValue_reads_at_any_indent (h_src := h_src) sc sp_scan (n + 1) s_prep s' c sp_prep sp_scan'
       h_floor_old (by omega) hcorr_prep hcorr_result h_corr h_preprocess h_not_doc h_flow_disp h_dispatch with
     ⟨sp_gram, h_sep_all, h_flow_all, h_trailing_ws, h_line, hna, hnt⟩ |
     ⟨ha, ht, h_sep_all, h_run_all, h_nic_s, h_real_s, h_anchor_s, h_tag_s, h_ind_s,
-      h_single, h_sk_s, h_line_s, h_ska_s, h_ivl_s⟩ |
+      h_single, h_sk_s, h_line_s, h_ska_s, h_ivl_s, h_slot_s⟩ |
     ⟨h_read, h_absorb95, h_sep_all, h_line, ⟨hna, hnt⟩, hbs⟩ |
     ⟨sp_gramf, h_node_f, h_tws_f, h_sep_all, h_line, hna, hnt⟩ | h_ded
   · exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
@@ -30796,7 +31502,7 @@ lemma accum_content_on_pendingBlock_indented
     -- optional argument item 40 gave the scalar pack.
     exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
            BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-           PendingNode.pendingProps sp_start sp_block sp_scan' ha ht sp_scan sp_prep (n + 1)
+           PendingNode.pendingProps (h_slot := h_slot_s) sp_start sp_block sp_scan' ha ht sp_scan sp_prep (n + 1)
              h_sep_all (h_run_all (n + 1)) h_nic_s h_real_s h_anchor_s h_tag_s
              (fun _ sp_m h_bn => h_close_old sp_m
                (SBlockIndented.node n .blockIn sp_scan sp_m h_bn))
@@ -31235,7 +31941,7 @@ lemma accum_content_on_pendingBlock_indented
             (IndentStackCover.preprocess_cover h_preprocess h_cv0) hmemw h_ww)
         · exact Or.inr trivial
       · exact Or.inr trivial
-    exact content_dispatch_after_close sp_start sp_mid s_prep s' c sp_prep sp_scan'
+    exact content_dispatch_after_close (h_src := h_src) sp_start sp_mid s_prep s' c sp_prep sp_scan'
       h_stream_mid h_sep_del (nic_false_of_flow_disp h_preprocess h_flow_disp)
       hcorr_prep hcorr_result h_not_doc (preprocess_some_peek h_preprocess)
       h_flow_disp h_dispatch
@@ -31391,7 +32097,10 @@ lemma accum_content_on_pendingMapValue_indented
     (h_seqF168 : (∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
       ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
       ∀ sp_e : SurfPos, SCompactMapTail n sp_mid sp_e →
-      ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True) :
+      ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
+    -- Item 284: what the token behind this landing pays a property run's
+    -- slot face with (`SlotGateAt`).
+    (h_src : SlotGateAt s_prep) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -31457,11 +32166,11 @@ lemma accum_content_on_pendingMapValue_indented
                 h_qlit (SBlockIndented_blockIn_to_blockOut h_bi) h_iv h_lit h_sbi))⟩
         | Or.inr _ => Or.inr trivial⟩
     | Or.inr _ => Or.inr trivial
-  rcases indentedValue_reads_at_any_indent sc sp_scan (n + 1) s_prep s' c sp_prep sp_scan'
+  rcases indentedValue_reads_at_any_indent (h_src := h_src) sc sp_scan (n + 1) s_prep s' c sp_prep sp_scan'
       h_floor_old h_col0_old hcorr_prep hcorr_result h_corr h_preprocess h_not_doc h_flow_disp h_dispatch with
     ⟨sp_gram, h_sep_all, h_flow_all, h_trailing_ws, h_line, hna, hnt⟩ |
     ⟨ha, ht, h_sep_all, h_run_all, h_nic_s, h_real_s, h_anchor_s, h_tag_s, h_ind_s,
-      h_single, h_sk_s, h_line_s, h_ska_s, h_ivl_s⟩ |
+      h_single, h_sk_s, h_line_s, h_ska_s, h_ivl_s, h_slot_s⟩ |
     ⟨h_read, h_absorb95, h_sep_all, h_line, ⟨hna, hnt⟩, hbs⟩ |
     ⟨sp_gramf, h_node_f, h_tws_f, h_sep_all, h_line, hna, hnt⟩ | h_ded
   · -- Item 39 stopped here, reading the value route's side condition `n ≤ k` as
@@ -31616,7 +32325,7 @@ lemma accum_content_on_pendingMapValue_indented
     -- arm above instead.
     exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
            BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-           PendingNode.pendingProps sp_start sp_block sp_scan' ha ht sp_scan sp_prep (n + 1)
+           PendingNode.pendingProps (h_slot := h_slot_s) sp_start sp_block sp_scan' ha ht sp_scan sp_prep (n + 1)
              h_sep_all (h_run_all (n + 1)) h_nic_s h_real_s h_anchor_s h_tag_s
              (fun _ => h_close_old)
              (entryPropsKeyPack_of_dispatch sc sp_start sp_scan n s_prep s' c
@@ -31940,7 +32649,7 @@ lemma accum_content_on_pendingMapValue_indented
             (IndentStackCover.preprocess_cover h_preprocess h_cv0) hmemw h_ww)
         · exact Or.inr trivial
       · exact Or.inr trivial
-    exact content_dispatch_after_close sp_start sp_mid s_prep s' c sp_prep sp_scan'
+    exact content_dispatch_after_close (h_src := h_src) sp_start sp_mid s_prep s' c sp_prep sp_scan'
       h_stream_mid h_sep_del (nic_false_of_flow_disp h_preprocess h_flow_disp)
       hcorr_prep hcorr_result h_not_doc (preprocess_some_peek h_preprocess)
       h_flow_disp h_dispatch
@@ -32176,13 +32885,16 @@ lemma accum_content_pending (sc : ScannerState)
           FlowStackB sp_start 0 0 none 0 #[] #[] .sep sp_block' sp_flow' ∧
           PendingNode s' false sp_start sp_flow' sp_scan' ∧
           ScannerSurfCorr s' sp_scan') →
+      -- **Item 284: what the park hands a property run started at the landing**
+      -- — a completed node (read through §9.2's bare-document check) or an offer.
+      (h_srcP : CompletedTail sc ∨ OfferPred sc.tokens) →
       ∃ sp_gram' sp_block' sp_flow' sp_scan',
         SLYamlStream sp_start sp_gram' ∧
         BlockStack sp_gram' sp_block' ∧
         FlowStackB sp_start 0 0 none 0 #[] #[] .sep sp_block' sp_flow' ∧
         PendingNode s' false sp_start sp_flow' sp_scan' ∧
         ScannerSurfCorr s' sp_scan' := by
-    intro h_fS h_fV h_sfx h_mk h_tail139 h_nic0 h_fQ h_noBreak
+    intro h_fS h_fV h_sfx h_mk h_tail139 h_nic0 h_fQ h_noBreak h_srcP
     by_cases hcol : sp_scan.col = 0
     · obtain ⟨sp_mid, sp_ws, sp_prep2, h_ssl, hcol_mid, h_ws, h_cmt, hcorr_prep2, h_pk⟩ :=
         preprocess_some_ssl_comments_col0 sc sp_scan s_prep c h_corr hcol h_preprocess
@@ -32240,7 +32952,7 @@ lemma accum_content_pending (sc : ScannerState)
       -- `---⏎a: 1` are ONE explicit document each. ═══
       rcases h_mk with h_mk_on | _
       · obtain ⟨sp_mk, h_ssl_mk, mkroute⟩ := h_mk_on sp_mid h_ssl
-        exact content_dispatch_routed sp_start sp_mk sp_mid s_prep s' c sp_prep sp_scan'
+        exact content_dispatch_routed (h_src := slotGateAt_of_parkSource h_srcP h_bare h_preprocess h_noflow_prep h_ska h_base) sp_start sp_mk sp_mid s_prep s' c sp_prep sp_scan'
           h_stream_mid
           (SSeparateLines.commented 0 sp_mk sp_mid sp_prep h_ssl_mk
             (SFlowLinePrefix.mk 0 sp_mid sp_mid sp_prep (SIndent.zero sp_mid)
@@ -32287,7 +32999,7 @@ lemma accum_content_pending (sc : ScannerState)
         | Or.inr _ =>
             bareNodeRoute_or_refused_content h_stream_mid h_bare h_preprocess
               h_noflow_prep h_ska h_base h_tail139 h_dispatch h_noflow_s' h_gate
-      exact content_dispatch_routed sp_start sp_mid sp_mid s_prep s' c sp_prep sp_scan'
+      exact content_dispatch_routed (h_src := slotGateAt_of_parkSource h_srcP h_bare h_preprocess h_noflow_prep h_ska h_base) sp_start sp_mid sp_mid s_prep s' c sp_prep sp_scan'
         h_stream_mid h_sep (nic_false_of_flow_disp h_preprocess h_flow_disp)
         hcorr_prep hcorr_result h_not_doc
         (preprocess_some_peek h_preprocess) h_flow_disp h_dispatch h_route_mid h_keyctx
@@ -32363,7 +33075,7 @@ lemma accum_content_pending (sc : ScannerState)
         -- `---⏎a: 1` are ONE explicit document each. ═══
         rcases h_mk with h_mk_on | _
         · obtain ⟨sp_mk, h_ssl_mk, mkroute⟩ := h_mk_on sp_mid h_ssl
-          exact content_dispatch_routed sp_start sp_mk sp_mid s_prep s' c sp_prep sp_scan'
+          exact content_dispatch_routed (h_src := slotGateAt_of_parkSource h_srcP h_bare h_preprocess h_noflow_prep h_ska h_base) sp_start sp_mk sp_mid s_prep s' c sp_prep sp_scan'
             h_stream_mid
             (SSeparateLines.commented 0 sp_mk sp_mid sp_prep h_ssl_mk
               (SFlowLinePrefix.mk 0 sp_mid sp_mid sp_prep (SIndent.zero sp_mid)
@@ -32400,7 +33112,7 @@ lemma accum_content_pending (sc : ScannerState)
           | Or.inr _ =>
               bareNodeRoute_or_refused_content h_stream_mid h_bare h_preprocess
                 h_noflow_prep h_ska h_base h_tail139 h_dispatch h_noflow_s' h_gate
-        exact content_dispatch_routed sp_start sp_mid sp_mid s_prep s' c sp_prep sp_scan'
+        exact content_dispatch_routed (h_src := slotGateAt_of_parkSource h_srcP h_bare h_preprocess h_noflow_prep h_ska h_base) sp_start sp_mid sp_mid s_prep s' c sp_prep sp_scan'
           h_stream_mid h_sep (nic_false_of_flow_disp h_preprocess h_flow_disp)
           hcorr_prep hcorr_result h_not_doc
           (preprocess_some_peek h_preprocess) h_flow_disp h_dispatch h_route_mid h_keyctx
@@ -32420,17 +33132,17 @@ lemma accum_content_pending (sc : ScannerState)
       | inr h_mid =>
         exact h_noBreak hcol sp_ws (h_mid.1 ▸ h_ws) h_pk h_mid.2.1 h_mid.2.2.2
   cases h_pending with
-  | noPending _ _ _ h_arm76 h_nodoc =>
+  | noPending _ _ _ h_arm76 h_nodoc _ h_ntop76 =>
     -- ═══ Item 136: the virgin park pays the HEAD arm.  The content this
     -- dispatch starts is the stream's FIRST document, so it lands in
     -- `single`'s own `l-any-document?` slot instead of the implicit
     -- continuation of a stream that has started nothing. ═══
-    exact accum_content_on_noPending sc sp_start sp_block s_prep s' c sp_prep sp_scan'
+    exact accum_content_on_noPending (h_src := slotGateAt_of_noPending h_base h_mono (h_ntop76 h_scflow) h_preprocess) sc sp_start sp_block s_prep s' c sp_prep sp_scan'
       h_stream_block hcorr_prep hcorr_result h_corr h_preprocess h_dn h_fv
       (Or.inl (h_arm76.resolve_right (by rw [h_scflow]; simp)).left)
       h_not_doc h_flow_disp h_dispatch
       (h_nodoc h_scflow)
-  | pendingDocEnd _ _ _ h_line h_marker _ h_nic0E =>
+  | pendingDocEnd _ _ _ h_line h_marker _ h_nic0E h_offerE =>
     -- ═══ Item 42: the no-break arm is EMPTY.  `[204]` stops the marker's line
     -- at a break or a `#`, and the content dispatch returns `.ok` on neither
     -- (`...#foo` never scans a marker at all — `[206] c-forbidden` wants a
@@ -32443,7 +33155,7 @@ lemma accum_content_pending (sc : ScannerState)
     -- faces are, and the stream behind the marker is the invariant's own.  So
     -- `...⏎a: 1` and `a: 1⏎...⏎b: 2` land their next document in
     -- `suffixContinue`'s own slot instead of a fresh `implicitContinue` one. ═══
-    exact h_defer_split (Or.inr trivial) (Or.inr trivial)
+    exact h_defer_split (h_srcP := Or.inr h_offerE) (Or.inr trivial) (Or.inr trivial)
       (Or.inl (fun sp_m h_ssl =>
         ⟨sp_block, sp_m, h_stream_block,
          GPlus.mk sp_block sp_m sp_m
@@ -32478,7 +33190,7 @@ lemma accum_content_pending (sc : ScannerState)
     -- where `?⏎  a: b⏎  c: d⏎: - w`'s `c` was re-opened at the root; with the
     -- park's own frames the landed key resumes the width-2 level instead, and
     -- the `?`'s value line is still owed when `: - w` arrives. ═══
-    refine h_defer_split h_fS109 h_fV109 (Or.inr trivial) (Or.inr trivial)
+    refine h_defer_split (h_srcP := Or.inl h_tail139c) h_fS109 h_fV109 (Or.inr trivial) (Or.inr trivial)
       -- ═══ Item 139: and the park pays its §9.2 face.  A completed content
       -- park's last real token IS a node body, so a landing off it with the
       -- stack at the sentinel alone is the second bare document the scanner
@@ -32512,7 +33224,7 @@ lemma accum_content_pending (sc : ScannerState)
     -- entries; the root context could only give its `b` a second bare
     -- document.  No new field: item 99 sized this one at the entry level for
     -- exactly this reason. ═══
-    refine h_defer_split
+    refine h_defer_split (h_srcP := Or.inl h_tail139b)
       (match h_closeF110 with
        | Or.inl ⟨ks, _, h_cv, closeF⟩ =>
            -- ~~Item 152: the cover punts — `pendingBlockContent.h_closeF` carries
@@ -32546,7 +33258,7 @@ lemma accum_content_pending (sc : ScannerState)
     subst h_colon
     exact absurd h_adj
       (checkAdjacentValue_refutes_stale (h_stale h_res) h_flow_disp h_pay h_pay_sk)
-  | pendingDocStart _ _ _ h_doc_route _ _ _ _ _ h_nic0S =>
+  | pendingDocStart _ _ _ h_doc_route _ h_realS h_markerS _ _ h_nic0S =>
     -- ═══ Item 43: `--- a` — `[208] l-explicit-document`'s one-line body.
     -- A mid-line park cannot close first, so the dispatch runs ROUTED: the
     -- node anchors at the park (just after the `---`), the crossed whites are
@@ -32560,7 +33272,7 @@ lemma accum_content_pending (sc : ScannerState)
     -- same route this branch has spent on the marker's own line since item 43,
     -- now stated over the landing's `[79] s-l-comments` so `---⏎hello` and
     -- `---⏎a: 1` are one explicit document each instead of two. ═══
-    refine h_defer_split (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
+    refine h_defer_split (h_srcP := Or.inr (offerPred_of_docStart h_realS h_markerS)) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
       (Or.inl (fun sp_m h_ssl => ⟨sp_scan, h_ssl, fun sp h_bn =>
         h_doc_route sp (GAlt.left sp_scan sp (SLBareDocument.mk sp_scan sp h_bn))⟩))
       -- Item 139: a `---` park's tail is a `.documentStart` token — excluded
@@ -32580,7 +33292,7 @@ lemma accum_content_pending (sc : ScannerState)
     have h_sep : SSeparateLines 0 sp_scan sp_prep :=
       SSeparateLines.inline 0 sp_scan sp_prep
         (GStar_SSWhite_to_SSeparateInLine sp_scan sp_prep h_ws)
-    exact content_dispatch_routed sp_start sp_scan sp_block s_prep s' c sp_prep sp_scan'
+    exact content_dispatch_routed (h_src := slotGateAt_of_offerPred (offerPred_of_docStart h_realS h_markerS) h_base h_preprocess) sp_start sp_scan sp_block s_prep s' c sp_prep sp_scan'
       h_stream_block h_sep (nic_false_of_flow_disp h_preprocess h_flow_disp)
       hcorr_prep hcorr_result h_not_doc (preprocess_some_peek h_preprocess)
       h_flow_disp h_dispatch
@@ -32597,38 +33309,22 @@ lemma accum_content_pending (sc : ScannerState)
       sc (Or.inr trivial)
       -- Item 174: no held run stands behind a `---` park.
       (Or.inr trivial)
-  | pendingFlow _ _ _ _ _ _ h_nic0F =>
-    -- ~~`pendingFlow` carries no line fact to read — the escape is what
-    -- produces it, and it narrows only by the constructor's own elimination
-    -- (item 35's structural note).~~  **Item 206: it carries ONE.**  Item 35's
-    -- note is about the GRAMMAR — the park holds a stream and nothing to
-    -- compose — and says nothing about the scanner facts its producer can
-    -- measure.  The producer is a dispatch like any other, and a dispatch
-    -- knows where it left the cursor.
-    exact h_defer_split (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
-      -- Item 139: `pendingFlow`'s producer is `block_dispatch_deferred`, the
-      -- block INDICATOR dispatch's escape, so the token behind this park is a
-      -- `-`/`?`/`:` and `CompletedTail` is FALSE here rather than merely unstated.
-      (Or.inr trivial)
-      -- ~~Item 154: `pendingFlow`'s park is a block INDICATOR, never a
-      -- scalar.~~  **Item 206 pays it instead of punting it.**  That sentence
-      -- was true and was the reason to punt; it is also the reason the
-      -- measurement is FREE, and the field now carries it.
-      h_nic0F
-      -- Item 168: this park stands inside no compact mapping of its own.
-      (Or.inr trivial)
-      (fun _ _ _ _ _ _ =>
-      block_dispatch_deferred sp_start sp_block sp_scan' s' h_stream_block
-        -- Item 222: the projection is GONE — `content_park_arm` proves the
-        -- tight arm and the escape's park now asks for it.
-        (content_park_arm (preprocess_some_peek h_preprocess) h_flow_disp h_not_doc h_dispatch
-          hcorr_result) hcorr_result
-        (nodir_of_content_dispatch h_dispatch)
-        (content_park_nic_any (preprocess_some_peek h_preprocess)
-          h_flow_disp h_not_doc h_dispatch hcorr_result))
+  | pendingFlow _ _ _ _ _ _ _ =>
+    -- Item 284: the opaque park defers at EVERY landing, not only the inline
+    -- one.  Its landing branches were the one producer of a property run with
+    -- nothing to pay the run's slot face with — the park carries no token
+    -- fact — and the whole arm goes with the constructor at step 12.3
+    -- (`ParkBill.expectedArms`'s `dead=5`), so what the escape gains here is
+    -- `pendingFlow`'s own successors and nothing else.
+    exact block_dispatch_deferred sp_start sp_block sp_scan' s' h_stream_block
+      (content_park_arm (preprocess_some_peek h_preprocess) h_flow_disp h_not_doc h_dispatch
+        hcorr_result) hcorr_result
+      (nodir_of_content_dispatch h_dispatch)
+      (content_park_nic_any (preprocess_some_peek h_preprocess)
+        h_flow_disp h_not_doc h_dispatch hcorr_result)
   | pendingProps _ _ _ ha ht sp_node sp_p n h_sep_run h_run h_nic_p h_real_p h_anchor_p h_tag_p
       h_route h_key_p h_floor_p h_col0_p h_ncol_p h_ska_p h_kslot_p
-      h_routeE_p h_kslotE_p h_closeFE_p h_closeFS_p h_closeFVS_p _h_nodir_p h_closeFEV_p =>
+      h_routeE_p h_kslotE_p h_closeFE_p h_closeFS_p h_closeFVS_p _h_nodir_p h_closeFEV_p h_slot_p =>
     -- ═══ Item 12: a held depth-0 run meets a CONTENT character — the
     -- content-dispatch escape RETIRES.  Across a break the run closes as
     -- `propsEmpty` (the parked couplings go stale with the line, and are not
@@ -32758,7 +33454,7 @@ lemma accum_content_pending (sc : ScannerState)
                 h_indk⟩, hkc.2.1, hkc.2.2⟩
             · exact Or.inr trivial
         · exact Or.inr trivial
-      exact content_dispatch_after_close sp_start sp_mid s_prep s' c sp_prep sp_scan'
+      exact content_dispatch_after_close (h_src := slotGateAt_of_propsPark h_slot_p (dangling_none_of_check h_dn (landing_or_park_ska h_noflow_prep hcol_mid.2 (Or.inr h_col0_p) h_preprocess)) ((propsPark_prevReal_prop h_real_p h_run h_anchor_p h_tag_p).imp (fun _ h => ⟨h.1, h.2.1⟩)) h_base h_preprocess) sp_start sp_mid s_prep s' c sp_prep sp_scan'
         h_stream_mid h_sep (nic_false_of_flow_disp h_preprocess h_flow_disp)
         hcorr_prep hcorr_result h_not_doc
           (preprocess_some_peek h_preprocess) h_flow_disp h_dispatch h_keyctx
@@ -32903,7 +33599,7 @@ lemma accum_content_pending (sc : ScannerState)
             h_t2_tag
         exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
                BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-               PendingNode.pendingProps sp_start sp_block sp_scan' true true sp_node sp_p n
+               PendingNode.pendingProps (h_slot := slotFace_extend h_slot_p (fun h_nd => propsPark_dangling_of_prop h_corr h_preprocess h_noflow_sc h_noflow_prep h_col0_p h_nic_p h_ska_p h_dn h_prop_park h_ad_toks h_ad_ind0 h_ad_flow0 (Or.inl rfl) h_dispatch h_nd) h_prop_park h_tokens (by rw [h_ad_toks, (h_stale0 h_nic_p h_ska_p).2.1]) (by simp [YamlToken.isNodeProperty]) (by simp) (by rw [IndentStackBase.dispatchContent_preserves_indents h_dispatch, h_ad_ind0, h_indents0 h_nic_p]) h_noflow_s') sp_start sp_block sp_scan' true true sp_node sp_p n
                  h_sep_run (h_run.addAnchor h_sep2 h_prop) h_nic_s h_real_s
                  (fun _ => h_any YamlToken.isAnchorProperty
                    (by simp [YamlToken.isAnchorProperty]))
@@ -33046,7 +33742,7 @@ lemma accum_content_pending (sc : ScannerState)
               h_t2_anchor
           exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
                  BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
-                 PendingNode.pendingProps sp_start sp_block sp_scan' true true sp_node sp_p n
+                 PendingNode.pendingProps (h_slot := slotFace_extend h_slot_p (fun h_nd => propsPark_dangling_of_prop h_corr h_preprocess h_noflow_sc h_noflow_prep h_col0_p h_nic_p h_ska_p h_dn h_prop_park h_ad_toks h_ad_ind0 h_ad_flow0 (Or.inr rfl) h_dispatch h_nd) h_prop_park h_tokens (by rw [h_ad_toks, (h_stale0 h_nic_p h_ska_p).2.1]) (by simp [YamlToken.isNodeProperty]) (by simp) (by rw [IndentStackBase.dispatchContent_preserves_indents h_dispatch, h_ad_ind0, h_indents0 h_nic_p]) h_noflow_s') sp_start sp_block sp_scan' true true sp_node sp_p n
                    h_sep_run (h_run.addTag h_sep2 h_prop) h_nic_s h_real_s
                    (fun _ => h_anchor_new)
                    (fun _ => h_any YamlToken.isTagProperty
@@ -33995,14 +34691,14 @@ lemma accum_content_pending (sc : ScannerState)
                            h_flow_disp h_not_doc h_dispatch hcorr_result) (Or.inr trivial),
                        hcorr_result⟩
   | pendingBlock _ _ _ n_old h_close_old h_close_entry_old h_floor_old h_sk_old h_col_old
-      h_kslot92 h_closeF99 _ h_seqF167 h_kslotUp190 h_closeFV198 =>
+      h_kslot92 h_closeF99 _ h_seqF167 h_kslotUp190 h_closeFV198 _ h_offer_b =>
     -- Item 22 split this arm on the pending's own index because every content
     -- reading was stated at 0; item 23 gave the nonzero side its own arm, and
     -- item 179 retired the split: the indented arm's splitter answers at every
     -- index, the root's extra readings (the props run, the block scalar) have
     -- been its cases since items 24/26, and the root entry is the `n = 0`
     -- instance — faces included.
-    exact accum_content_on_pendingBlock_indented sc sp_start sp_block sp_scan n_old
+    exact accum_content_on_pendingBlock_indented (h_src := slotGateAt_of_offerPred h_offer_b h_base h_preprocess) sc sp_start sp_block sp_scan n_old
       s_prep s' c sp_prep sp_scan' h_stream_block h_close_old h_close_entry_old h_kslot92
       h_closeF99 h_seqF167 h_floor_old h_col_old h_sk_old
       hcorr_prep hcorr_result h_corr h_preprocess h_not_doc h_flow_disp h_dispatch
@@ -34013,11 +34709,11 @@ lemma accum_content_pending (sc : ScannerState)
       h_closeFV198
   | pendingMapValue _ _ _ n_old h_close_old h_floor_old h_nic101 h_real101 h_ivl101
       h_expl51 h_vslot51 h_sk58 h_col0_old h_ncol_old
-      h_kslot93 h_closeF99 h_frames99 h_closeFV108 h_framesV108 h_nodir_old h_seqF168 =>
+      h_kslot93 h_closeF99 h_frames99 h_closeFV108 h_framesV108 h_nodir_old h_seqF168 _ h_offer_mv =>
     -- Item 179 retired the 0/nonzero split, as at the `pendingBlock` arm
     -- above: the mapping twin answers at every index and the root entry is
     -- the `n = 0` instance.
-    exact accum_content_on_pendingMapValue_indented sc sp_start sp_block sp_scan n_old
+    exact accum_content_on_pendingMapValue_indented (h_src := slotGateAt_of_offerPred h_offer_mv h_base h_preprocess) sc sp_start sp_block sp_scan n_old
       s_prep s' c sp_prep sp_scan' h_stream_block h_close_old h_floor_old h_col0_old
       -- Item 209: the content lane reads the SLOT and not the top beside it,
       -- so the top is projected away here rather than restated downstream — a

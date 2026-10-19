@@ -696,9 +696,22 @@ def expectedDecisions : List String :=
 def expectedArgs : List String :=
   ["accum_block_on_pendingBlockContent → indicator_open_map: h_sfx_land=punt h_nodoc_land=punt h_mk_land=punt h_res_land=cond[opt,kmem] h_ref_land=paid h_cov=cond[col0] h_pr_land=punt h_explUp_chain=punt h_resV_land=cond[opt,kmem]",
    "accum_block_on_pendingBlock → indicator_open_map: h_sfx_land=punt h_nodoc_land=punt h_mk_land=punt h_res_land=punt h_ref_land=punt h_cov=cond[col0] h_pr_land=punt h_explUp_chain=cond[kn,opt] h_resV_land=cond[opt,kmem]"]
+-- Item 284: `pendingBlock` gains a seventeenth field, `h_offer`, and this door
+-- DROPS it — the `-` dispatched off the park reads the offer of the `-` it pushes,
+-- never the park's own — so the row reads one more field, one more face and one
+-- more drop, and every field the door used it still uses.
 def expectedDoor : List String :=
-  ["PendingNode.pendingBlock: fields=16 data=4 faces=12 equations=5 used=9 dropped=3 h_close(_h_close),h_closeF(h_closeF✝),h_nodir(h_nodir✝)",
+  ["PendingNode.pendingBlock: fields=17 data=4 faces=13 equations=5 used=9 dropped=4 h_close(_h_close),h_closeF(h_closeF✝),h_nodir(h_nodir✝),h_offer(h_offer✝)",
    "PendingNode.pendingBlockContent: fields=18 data=4 faces=14 equations=5 used=12 dropped=2 h_closable(_h_closable),h_nodir(h_nodir✝)"]
+-- 2026-10-18 (item 284): `decisions` 126 → 127, `apps` 39 → 40 and `doorDropped`
+-- 3/2 → 4/2, and nothing else.  The door's extra drop is `pendingBlock.h_offer`
+-- (above).  The other two are ONE payment: the walk meets the `-` producer's
+-- new field in `accum_block_on_closeThenBlock`, so it records the application
+-- `dispatchBlock_dash_offerPred` and, inside its implicit state argument, the
+-- allowDirectives-update `if` as a decision.  Dumped and diffed against the
+-- item-281 source with this file's own walk, those two records are the whole
+-- difference (`scratchpad/l4yaml-row12-steps/87-door-284.txt` against
+-- `89-door-orig.txt`).
 /-- Item 256 adds one decision to the content sibling's arm — the `match` on
     `h_closeF_old` that relays the park's frames — and one spend of the
     landing's comments on each of that arm's four decision rows.  Item 258 adds no decision and one effect: the compact re-park's resume
@@ -709,7 +722,7 @@ def expectedDoor : List String :=
     whose domain is the inner collection's entries, which this census does
     not read as an entry-closure spend. -/
 def expectedLine : String :=
-  "asked=13 both=8 lemmas=2 walked=6 feedFunnel=2 feedExplicit=2 feedDeferred=4 feedTuple=0 entry=8 entrySBI=4 kslot=8 kslotUp=8 closeF=4 closeFV=8 seqF=8 top=4 floor=0 cover=4 cover2=4 floorB=4 aboveKN=0 aboveKMem=0 aboveKNv=2 aboveKEx=2 hands=4 besideKN=1 besideKMem=2 besideKNv=0 puntKN=1 puntKMem=2 besideNone=2 decisions=126 decOnK=23 decKN=9 decKMem=9 decKNv=5 apps=39 funnelArgs=2 doorDropped=3/2 closeSites=8 params=7"
+  "asked=13 both=8 lemmas=2 walked=6 feedFunnel=2 feedExplicit=2 feedDeferred=4 feedTuple=0 entry=8 entrySBI=4 kslot=8 kslotUp=8 closeF=4 closeFV=8 seqF=8 top=4 floor=0 cover=4 cover2=4 floorB=4 aboveKN=0 aboveKMem=0 aboveKNv=2 aboveKEx=2 hands=4 besideKN=1 besideKMem=2 besideKNv=0 puntKN=1 puntKMem=2 besideNone=2 decisions=127 decOnK=23 decKN=9 decKMem=9 decKNv=5 apps=40 funnelArgs=2 doorDropped=4/2 closeSites=8 params=7"
 
 /-! ## §5 The reading -/
 

@@ -724,8 +724,15 @@ def expectedShapeComps : List String :=
    "[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream ⟶ (fact)",
    "[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]"]
 
+/-- 2026-10-18 (item 284): `unmarked` 218 -> 206 and nothing else.  The twelve are
+    `accum_content_pending`'s `pendingFlow` arm, whose landings ran through the
+    shared builder's four routes and now defer to the escape at every landing:
+    restoring that one arm on the item-284 tree reads 218 and this whole line
+    again (`scratchpad/l4yaml-row12-steps/83-isolation-streamcomp.log`).  None of
+    the twelve crossed a build point, which is why every site, segment and
+    composition count holds. -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=51 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=218 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=51 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=206 reach=38"
 
 /-! ## §5 The reading -/
 

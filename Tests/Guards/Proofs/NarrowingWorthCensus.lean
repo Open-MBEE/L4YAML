@@ -678,7 +678,11 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- so `offersNodeSlot.eq_7` counts and the match auxiliary `match_1.eq_7`, which
 -- the module system privatises, does not.  The four numbers this pin carries are
 -- unchanged.  Both are named in [[HypothesisReaderCensus]].
-def expectedNoopTally : String := "theorems=5345 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- 2026-10-18 (item 284): population 5345 → 5391, the 46 LEMMAS of item 284's 49
+-- new declarations (the other three — `SlotFace`, `OfferPred`, `SlotGateAt` —
+-- are definitions).  None concludes a no-op, so the four numbers this pin
+-- carries hold; the declarations are named in [[HypothesisReaderCensus]].
+def expectedNoopTally : String := "theorems=5391 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

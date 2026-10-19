@@ -54,9 +54,11 @@ example {sc : ScannerState} {sp_start sp_block sp_scan sp_node sp_p : SurfPos}
     (h_ska : sc.simpleKeyAllowed = false)
     -- Item 138: and the park's directive face.  (~~Item 170: and the crossed
     -- tail window's UNGATED route~~ — RETIRED at item 181, with the window.)
-    (h_nodir : sc.allowDirectives = false) :
+    (h_nodir : sc.allowDirectives = false)
+    -- Item 284: and the run's slot face, gated as `h_route` is.
+    (h_slot : danglingNodePos? sc = none → sc.indents.size ≤ 1 ∨ SlotFace sc.tokens) :
     PendingNode sc false sp_start sp_block sp_scan :=
-  PendingNode.pendingProps sp_start sp_block sp_scan true false sp_node sp_p n
+  PendingNode.pendingProps (h_slot := h_slot) sp_start sp_block sp_scan true false sp_node sp_p n
     h_sep h_run h_nic h_real (fun _ => h_anchor) (fun h => nomatch h) h_route
     -- Item 102: the key field's `True` became `KeyPackPunt`, so a pin that
     -- offers no pack has to NAME why — here, a caller with no key context.

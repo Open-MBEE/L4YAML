@@ -915,9 +915,19 @@ def expectedUnborn : List String := []
 
     Lean v4.35.0 moves the two size readings and nothing else: `nodes` 12337 →
     12326 and `liteNodes` 491982 → 491884.  `alts` holds at 4312, so the walk
-    crosses the same alternatives over smaller terms. -/
+    crosses the same alternatives over smaller terms.
+
+    Item 284 moves the same three and nothing else: `alts` 4312 → 4340, `nodes`
+    12326 → 12404, `liteNodes` 491886 → 495218.  Two isolations on the item-284
+    tree split it.  Restoring the under-run's SIX components reads `alts` 4337:
+    the flag it gains is item 272's yardstick exactly, one alternative per
+    flow-open arm, with +501 `liteNodes`.  Restoring the old `pendingFlow` arm
+    reads `alts` 4340 and `nodes` 12404: that arm moves only `liteNodes`, −211.
+    The other 25 alternatives, the 78 `nodes` and the rest of `liteNodes` are
+    the item's remaining edits inside walked terms — its four park fields and
+    their payments — measured as the remainder and not isolated further. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=42 stamp=3 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=553 lapps=645 alts=4312 nodes=12326 liteNodes=491886"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=42 stamp=3 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=553 lapps=645 alts=4340 nodes=12404 liteNodes=495218"
 
 /-! ## §4 The reading -/
 

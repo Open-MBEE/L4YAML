@@ -23,14 +23,14 @@ the one that holds `scanNextToken_dispatchContent … = .ok s'`, and its second
 correspondence is its CONCLUSION rather than a hypothesis.  So the census below
 is taken over the whole population instead of over that ring.
 
-## The answer: availability is 294 and derivation is 1
+## The answer: availability is 299 and derivation is 1
 
 §2 reads every authored statement for a scanner step equation `f … = .ok …`
 and for a grammar path landing on the position the step's output names.
 
 | rung | what it asks | count |
 |---|---|---|
-| `dispHolders` | a `scanNextToken_dispatch*` equation is held | **294** |
+| `dispHolders` | a `scanNextToken_dispatch*` equation is held | **299** |
 | `dispTwoCorr` | …with two correspondences beside it | **28** |
 | `edge` | a production LANDS on the step's output position | **4** |
 | `chain` | a production path RUNS from a known point to it | **1** |
@@ -42,7 +42,7 @@ carry any Surface relation at all — `scanNextToken_preprocess` (6 of its 186
 holders) and `scanNextToken_dispatchContent` (1 of its 129).  The step that
 consumes SEPARATION is grammar-visible and routine; the step that consumes
 CONTENT is grammar-visible once.  **A census that counts equations measures
-availability, and the two numbers are 294 and 1.**
+availability, and the two numbers are 299 and 1.**
 
 `indentedValue_reads_at_any_indent` is in neither item 238's transitive set nor
 either repair thread, so the one worked precedent stands outside β.5's bill.
@@ -225,7 +225,7 @@ def readDecl (prods : Std.HashSet Name) (n : Name) : MetaM R := do
 def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
 
 /-- The step population, which no choice of grammar moves: 1649 statements hold
-    a scanner step equation, 294 of them a dispatch equation, and 28 of those
+    a scanner step equation, 299 of them a dispatch equation, and 28 of those
     hold it with two correspondences — the pair item 241's NEXT called the first
     thing that could turn a point into a path.  Of the 72 step functions, 26 are
     the indexed twin's.
@@ -257,15 +257,24 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
     step its sibling does.  Its indexed twin takes `FlowAwarePSVIx` rather than
     `scanFilteredIx` and names none, which is why this is +1 and not +2 —
     `fns` holds at 72 and `fnsIx` at 26, so the step population itself is
-    unmoved and only the holder count changed. -/
+    unmoved and only the holder count changed.
+
+    Moved to 1674 / 299 on 2026-10-18 by item 284's token lemmas and no new
+    step: twenty of its new declarations hold a step equation, five of those a
+    dispatch equation — `dispatchBlock_dash_offerPred`,
+    `dispatchBlock_colon_offerPred`, `dispatchBlock_question_offerPred`,
+    `dispatchBlock_colon_or_question_offerPred` and `slotGateAt_spend`.  None
+    holds two correspondences (`dispTwoCorr` stays 28), `fns` and `fnsIx` hold,
+    and with the 49 declarations excluded the census reads 1654 / 294 again, so
+    availability rose by what the slot face reads and derivation did not move. -/
 def expectedSteps : String :=
-  "stepHolders=1654 dispHolders=294 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1674 dispHolders=299 dispTwoCorr=28 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
     correspondence's position, existential midpoints allowed — which is what
     `implicitKeyHead_of_dispatch` needs and a single edge misses.  The counts
-    fall 294 → 28 → 18 → 6 → 1 as the question tightens from availability to
+    fall 299 → 28 → 18 → 6 → 1 as the question tightens from availability to
     derivation. -/
 def expectedLadder : List String :=
   ["TYPED edge=20 chain=7 fnEdge=3 fnChain=2",
@@ -296,10 +305,19 @@ def expectedChainSpec : List Name :=
     where both of those now spend the equation; it carries no path either.
     Item 272 adds the fourth, `underRunEnd_landing_on_stack`, which hands the
     equation to the source rather than reading a position off it — so it is a
-    holder and not a path, and the second number stays at six. -/
+    holder and not a path, and the second number stays at six.  Item 284 adds
+    eleven holders of preprocessing's equation and one of the content
+    dispatch's, all of them the slot face's transport and gate lemmas —
+    `slotFace_preprocess`, `slotRun_of_dn`, `slotRun_of_offer`,
+    `preprocess_tokens_of_indents_eq`, `preprocess_pop_pred_nonprop`,
+    `preprocess_indents_of_size_le_one`, `slotGateAt_of_pop`,
+    `slotGateAt_of_offerPred`, `slotGateAt_of_propsPark`,
+    `slotGateAt_of_parkSource`, `slotGateAt_of_noPending`, and
+    `slotGateAt_spend` for the dispatch — and none carries a path, so both
+    second numbers hold. -/
 def expectedPerFn : List String :=
-  ["scanNextToken_dispatchContent decls=129 chain=1",
-   "scanNextToken_preprocess decls=190 chain=6"]
+  ["scanNextToken_dispatchContent decls=130 chain=1",
+   "scanNextToken_preprocess decls=201 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

@@ -207,9 +207,15 @@ def expectedBinders : List String :=
     is the supply route to the one reader.  `skipped` is `RelaySupplyCensus`'s
     counter over the same module, and it moved 31 → 30 for that file's reason:
     v4.34.0 no longer generates the derived enum's `FrameTail.toCtorIdx`, the
-    one refused constant that left the module. -/
+    one refused constant that left the module.
+
+    **Item 284 adds one edge, a DECLINE**: the props arm's column-0 landing
+    reads the landing's flag once more, through `landing_or_park_ska`'s
+    `h_park`, paid `Or.inr h_col0_p` exactly as its two neighbours there pay
+    it — the gate `slotGateAt_of_propsPark` spends.  It is the one arm-binder
+    consumer whose application count changed (13 → 14). -/
 def expectedTally : String :=
-  "edges=89 skipped=30 DECLINE=17 FIELD=6 PAY=9 RELAY=25 VIA=32"
+  "edges=90 skipped=30 DECLINE=18 FIELD=6 PAY=9 RELAY=25 VIA=32"
 
 run_cmd do
   let env ← getEnv

@@ -912,10 +912,10 @@ def expectedRows : List String :=
    "accum_content_pending #2 fnp:accum_content_pending.h_defer_split.h_fV := punt",
    "accum_content_pending #3 fnp:accum_content_pending.h_defer_split.h_fS := punt",
    "accum_content_pending #3 fnp:accum_content_pending.h_defer_split.h_fV := punt",
-   "accum_content_pending #4 fnp:accum_content_pending.h_defer_split.h_fS := punt",
+   -- Item 284: `pendingFlow`'s call (#4, punt/punt) is gone — that arm defers at
+   -- every landing now — so `pendingBlockContent`'s call, #5, is #4.
+   "accum_content_pending #4 fnp:accum_content_pending.h_defer_split.h_fS := match[paid{cover=step(relay(door:pendingBlockContent.h_closeF))}|punt]",
    "accum_content_pending #4 fnp:accum_content_pending.h_defer_split.h_fV := punt",
-   "accum_content_pending #5 fnp:accum_content_pending.h_defer_split.h_fS := match[paid{cover=step(relay(door:pendingBlockContent.h_closeF))}|punt]",
-   "accum_content_pending #5 fnp:accum_content_pending.h_defer_split.h_fV := punt",
    "accum_content_pending #1 param:accum_content_on_pendingBlock_indented.h_closeF_old := relay(door:pendingBlock.h_closeF)",
    "accum_content_pending #1 param:accum_content_on_pendingMapValue_indented.h_closeF99 := relay(door:pendingMapValue.h_closeF)",
    "accum_content_pending #1 param:accum_content_on_pendingMapValue_indented.h_frames99 := relay(door:pendingMapValue.h_frames)",
@@ -1050,9 +1050,17 @@ def expectedDoor : List String :=
     Lean v4.35.0 moves it again, downward and alone: `nodes` 96158 → 96125.
     Every other field on this line — and every named roster above — is
     byte-identical, so the toolchain elaborates these twenty-four declarations
-    to 33 fewer term nodes and changes nothing the walk concludes. -/
+    to 33 fewer term nodes and changes nothing the walk concludes.
+
+    Item 284 moves three fields.  `rows` 169 → 167 and `fnpRows` 10 → 8 are
+    `accum_content_pending`'s `pendingFlow` arm, whose builder call (two `punt`
+    rows) is gone because the arm defers at every landing; `pendingBlockContent`'s
+    call renumbers #5 → #4 and its rows are otherwise byte-identical.  `nodes`
+    96125 → 97863 is the walked terms growing — the under-run's seventh component
+    destructured in `accum_flow_open_depth0`'s three arms, the producers' new
+    field payments and the gate parameters — and no door, cover or verdict moves. -/
 def expectedLine : String :=
-  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=169 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=10 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=96125"
+  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=97863"
 
 /-! ## §6 The reading -/
 

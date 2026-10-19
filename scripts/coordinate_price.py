@@ -174,7 +174,7 @@ def run_ident(base, idxs, verbose=True):
 #: something when this disjunct changes shape.
 CONCL = "        ∃ sp_mid, SSLComments sp sp_mid ∧ sp_mid.col = 0 ∧"
 RETURN = "          Or.inr ⟨sp_mid, h_ssl_col.1, h_ssl_col.2.1, h_ur, h_ltsl,"
-ARM_PAT = "      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed⟩"
+ARM_PAT = "      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed, _h_ska_land⟩"
 FLOOR_HEAD = "lemma preprocess_some_separate_at_floor (n : Nat) (sc : ScannerState)"
 
 DUMMY_CONCL = CONCL.replace("sp sp_mid ∧", "sp sp_mid ∧ 0 = 0 ∧")

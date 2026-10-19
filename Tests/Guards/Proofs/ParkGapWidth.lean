@@ -491,11 +491,16 @@ corrBlock=0 corrScan=1 via="]
     272 adds a fourth holder, the composition that applies the source at an arm
     holding the `[63]` failure located; it hands the equation on rather than
     reading a position off it, so the row reads 190 and both crossings are
-    still where item 242 left them. -/
+    still where item 242 left them.  Item 284 adds sixteen holders and no
+    crossing: the four `dispatchBlock_*_offerPred` read the `-`/`?`/`:`
+    dispatch's last token, `slotGateAt_spend` the content dispatch's, and the
+    slot face's eleven transport and gate lemmas hand preprocessing's equation
+    on — so the rows read 101, 130 and 201 with every `edge` and `chain` where
+    they were. -/
 def expectedLadder : List String :=
-  ["scanNextToken_dispatchBlockIndicators holders=97 edge=0 chain=0",
-   "scanNextToken_dispatchContent holders=129 edge=2 chain=1",
-   "scanNextToken_preprocess holders=190 edge=17 chain=6"]
+  ["scanNextToken_dispatchBlockIndicators holders=101 edge=0 chain=0",
+   "scanNextToken_dispatchContent holders=130 edge=2 chain=1",
+   "scanNextToken_preprocess holders=201 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

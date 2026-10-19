@@ -447,8 +447,22 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `L4YAML.YamlToken.*` and counted HERE because they are generated on demand,
 -- when this module's own `simp` first unfolds the predicate -- which is why an
 -- edit to `Token.lean` moves a census scoped to `StreamAccum`.
+-- 2026-10-18 (item 284): `constants` 1286 -> 1343, `decls` 1010 -> 1062, and
+-- every lane but `UNUSED` moves, with ZERO rows lost.  The roster NAMES it --
+-- `scratchpad/l4yaml-row12-steps/verdict-roster-284.out` (3952 rows) against
+-- item 281's (3818), compared per declaration with matcher numbering and the
+-- private prefix normalized.  The 49 new declarations (the slot face, its gate
+-- and their transports) and their auxiliaries bring 124 rows: RELAY 90, READ
+-- 28, RETURN 3, FIELD 3.  Existing declarations gain exactly ten: four ETA,
+-- the four new park FIELDS (`pendingProps.h_slot` and the three
+-- `h_offer`s -- a constructor has no body to read them in), and six RELAY,
+-- the gate parameter `h_src` on the six lemmas that hand it on
+-- (`content_dispatch_routed`, `content_dispatch_after_close`,
+-- `accum_content_on_noPending`, the two `accum_content_on_*_indented`, and
+-- `indentedValue_reads_at_any_indent`).  `UNUSED` holds at 9: no hypothesis
+-- this item added goes unread.
 def expectedModuleTally : String :=
-  "constants=1286 decls=1010 eta=376 FIELD=154 READ=1058 RELAY=2173 RETURN=48 UNUSED=9"
+  "constants=1343 decls=1062 eta=380 FIELD=157 READ=1086 RELAY=2269 RETURN=51 UNUSED=9"
 
 def expectedUnused : List String :=
   [ "block_dispatch_deferred_inline#10 (_h_res)",

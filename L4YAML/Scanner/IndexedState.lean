@@ -11,13 +11,12 @@ public import L4YAML.Token.Token
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `IndexedState` — Phase 3 Step 5a scanner state (staging)
+/-! # `IndexedState` — Phase 3 Step 5a scanner state
 
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6). Mirrors `L4YAML.Scanner.ScannerState`
-(`L4YAML/Scanner/State.lean`) but threads `IxCursor input` instead of
-the un-indexed (offset, line, col) triple, and accumulates an
-indexed `TokenStream input` rather than `Array (Positioned YamlToken)`.
+Mirrors `L4YAML.Scanner.ScannerState` (`L4YAML/Scanner/State.lean`)
+but threads `IxCursor input` instead of the un-indexed (offset, line,
+col) triple, and accumulates an indexed `TokenStream input` rather
+than `Array (Positioned YamlToken)`.
 
 ## Scope (Step 5a)
 
@@ -47,7 +46,7 @@ open L4YAML L4YAML.Indexed L4YAML.CharPredicates
 
 /-- Re-export the legacy `IndentEntry` — column + isSequence flag.
     The shape is identical to `L4YAML.Scanner.IndentEntry`; we re-export
-    so the staging file does not depend on `L4YAML.Scanner.State`. -/
+    so this file does not depend on `L4YAML.Scanner.State`. -/
 structure IndentEntryIx where
   column : Int
   isSequence : Bool

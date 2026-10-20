@@ -11,15 +11,13 @@ public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
 
 @[expose] public section Blanket
 
-/-! # `IndexedScannerPlainScalarValid` — Phase 3 Step 6d.1e foundation (staging)
+/-! # `IndexedScannerPlainScalarValid` — Phase 3 Step 6d.1e foundation
 
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit (Guardrail 1). Imports
-`IndexedWellBehaved` (for the indexed predicates
+Imports `IndexedWellBehaved` (for the indexed predicates
 `PlainScalarsValidIx` / `FlowAwarePSVIx` / `FlowBracketsMatchedIx`)
-and `L4YAML.Proofs.Scanner.IndexedDispatch` (for the existing
-indexed scanner monotonicity lemmas — `emit_tokens_size`,
-`advance_tokens`, `unwindIndentsIx_tokens_size_le`, etc.).
+and `L4YAML.Proofs.Scanner.IndexedDispatch` (for the existing indexed
+scanner monotonicity lemmas — `emit_tokens_size`, `advance_tokens`,
+`unwindIndentsIx_tokens_size_le`, etc.).
 
 ## Scope of Step 6d.1e (this file)
 

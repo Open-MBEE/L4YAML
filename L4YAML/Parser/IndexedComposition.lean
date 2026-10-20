@@ -10,10 +10,7 @@ public import L4YAML.Parser.TokenParserIx
 
 @[expose] public section Blanket
 
-/-! # `IndexedComposition` — Phase 3 Step 6e indexed pipeline (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedComposition` — Phase 3 Step 6e indexed pipeline
 
 ## Role
 

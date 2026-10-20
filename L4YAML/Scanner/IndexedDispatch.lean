@@ -12,10 +12,7 @@ public import L4YAML.Proofs.Scanner.IndexedScalar
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `IndexedDispatch` — Phase 3 top-level scanner (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedDispatch` — Phase 3 top-level scanner
 
 This file ties the per-rule recognisers from
 `L4YAML/Scanner/IndexedScanner.lean` to a top-level scanner over

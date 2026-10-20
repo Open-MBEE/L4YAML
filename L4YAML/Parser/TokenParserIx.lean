@@ -13,10 +13,7 @@ public import L4YAML.Parser.FuelIx
 
 @[expose] public section Blanket
 
-/-! # `TokenParserIx` — Phase 3 Step 6b indexed token parser (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `TokenParserIx` — Phase 3 Step 6b indexed token parser
 
 ## Role
 

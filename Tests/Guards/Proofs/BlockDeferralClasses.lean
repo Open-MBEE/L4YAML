@@ -128,7 +128,11 @@ close's own pack, the routed content dispatch twice, and the same three
 consumers once each).  Deleting each constructor and building breaks exactly
 those applications, and `FlipConsumerSurface`'s PACK PUNT lane counts the same
 rows from the elaborated environment — a narrowing patch and an environment
-census, agreeing row for row.
+census, agreeing row for row.  **Item 297 deletes `dedent`**: both producers
+key a fresh document at a landing whose width names no frame (items 296/297,
+row 19's over-approximation), so the lane reads no `dedent` row and the
+escape's inline applications are the two `noKeyContext` arms' and the dead
+arm's.
 
 `noKeyContext` has no NAMED input (item 102 left it "a frame class rather than
 a construct"), which by Reflection 646 is the signature of a branch that may be
@@ -357,7 +361,8 @@ The reference here is the suite, not PyYAML: `k:⏎  :⏎b: 2`'s inner entry has
 empty implicit key, and PyYAML refuses every one of those — its known `[192]`
 gap, recorded at item 173, not a datum about this reading. -/
 
--- `KeyPackPunt.dedent`'s named input (items 39/40/99) and its value twin.
+-- The dedent landing's named input (items 39/40/99; `KeyPackPunt.dedent`'s
+-- until item 297) and its value twin.
 #guard pins "k:\n  :\nb: 2\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :k +MAP =VAL : =VAL : -MAP =VAL :b =VAL :2 -MAP -DOC -STR")
 #guard pins "k:\n  : v\nb: 2\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :k +MAP =VAL : =VAL :v -MAP =VAL :b =VAL :2 -MAP -DOC -STR")
 
@@ -453,9 +458,14 @@ def expectedInlineFeeders : String :=
     **Item 293 refutes the implicit consumer's `¬ possible`**: every content
     park carries `h_live` — an inline `:` finds a live key — so five
     applications are left, at the four arms (`dedent` and `noKeyContext` at
-    both consumers) and the dead one. -/
+    both consumers) and the dead one.
+
+    **Item 297 deletes `dedent`**: both pack exits key a fresh document at the
+    landing, so the constructor has no production and its two arms go with it.
+    Three applications are left, at the two `noKeyContext` arms and the dead
+    one. -/
 def expectedInlineArms : String :=
-  "apps=5 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext"
+  "apps=3 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/noKeyContext,colon_fires_props_key/noKeyContext"
 
 /-- `scripts/inline_class_price.py census`, checked from the script's side. -/
 def expectedInlineCensus : String :=

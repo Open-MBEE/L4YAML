@@ -109,13 +109,14 @@ example : ∃ (ska skp : Bool) (col : Nat),
 
 `colon_fires_implicit_key`'s pack obligation looks like the reason only a
 content park could call it — a park with no content behind it has no key head
-to offer.  It is not: `KeyPackPunt` has two argument-free constructors, so ANY
-caller can discharge the obligation by punting.  The price of the punt is paid
-at `h_punt` in §5, which is a parameter and therefore visible. -/
+to offer.  It is not: `KeyPackPunt` has ~~two~~ one argument-free constructor
+(`noKeyContext`; `dedent` went at item 297), so ANY caller can discharge the
+obligation by punting.  The price of the punt is paid at `h_punt` in §5, which
+is a parameter and therefore visible. -/
 
 example : sc.simpleKey.possible = true → sc.simpleKey.pos.line = sc.line →
     ImplicitKeyPack sc sp_start sp_scan ∨ KeyPackPunt sc :=
-  fun _ _ => Or.inr .dedent
+  fun _ _ => Or.inr .noKeyContext
 
 /-! ## §4  …and the obligation the tight arm makes HARDER, not easier
 
@@ -157,7 +158,7 @@ lemma colon_fires_from_any_park
     (h_scf : StaleCursorFloor.StaleKeyCursorFloor sc)
     -- — item 293's live key at an inline `:` (a content park's `h_live`) —
     (h_live : InlineResidue sp_scan ':' → sc.simpleKey.possible = true)
-    -- — and the punt §3's `.dedent` defers to.
+    -- — and the punt §3's `.noKeyContext` defers to (`.dedent` until item 297).
     (h_punt : ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -182,7 +183,7 @@ lemma colon_fires_from_any_park
   colon_fires_implicit_key sc sp_start sp_block sp_scan s_prep s' sp_prep sp_scan'
     h_stream_block
     -- §3: the pack obligation, punted.
-    (fun _ _ => Or.inr .dedent)
+    (fun _ _ => Or.inr .noKeyContext)
     h_stale
     -- **The arm, from ANY park** — the one blocker item 223 paid.
     (PendingNode.arm_tight_or_col h_noflow_sc h_pending)

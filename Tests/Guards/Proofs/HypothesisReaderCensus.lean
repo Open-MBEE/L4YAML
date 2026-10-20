@@ -43,7 +43,8 @@ pendingFlow`'s field").  Eight agreements at one build instead of eight.
   `rootMapRoute_or_refused` and `rootMapRouteF_or_refused`, where the left
   disjunct refutes the `h_op = false` branch outright.  **Not carried.**
 * **R3's seven productions cannot be priced by readership, and §6 proves why.**
-  `KeyPackPunt.dedent` and `.noKeyContext` are NULLARY, so `KeyPackPunt sc` is
+  `KeyPackPunt.noKeyContext` is NULLARY (`.dedent` was too, until item 297
+  deleted it), so `KeyPackPunt sc` is
   inhabited at every state — `punt_is_unconditional` — and therefore any
   consumer that takes `A ∨ KeyPackPunt sc` as a premise proves its conclusion
   without it (`punt_premise_buys_nothing`).  There is nothing to read, not
@@ -499,8 +500,17 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- and `entryPropsKeyPack_of_dispatch#9` (`h_node`), which item 293's roster
 -- reads RELAY, are applied at the dedent branch's frameless exit: the awaited
 -- entry's empty close (`SBlockNode.emptyNode`).
+-- 2026-10-20 (item 297): `constants` 1364 → 1363, `eta` 387 → 386, `RELAY`
+-- 2304 → 2302 — `KeyPackPunt.dedent` is deleted, and the roster
+-- (`scratchpad/l4yaml-row12-steps/501-roster-297.out` against
+-- `365-roster-293.out`: 4027 → 4024 rows) loses exactly its three eliminator
+-- rows, `KeyPackPunt.rec#3 (dedent)` ETA, `KeyPackPunt.casesOn#4 (dedent)` and
+-- `KeyPackPunt.recOn#4 (dedent)` RELAY; the later minor premises renumber and
+-- keep their verdicts.  No other row moves: the deleted alternatives bound
+-- nothing, and the `w ∉ ks` exits apply binders the frameless exit already
+-- reads (item 296's two `h_node` rows read READ, as pinned).
 def expectedModuleTally : String :=
-  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1121 RELAY=2304 RETURN=48 UNUSED=9"
+  "constants=1363 decls=1082 eta=386 FIELD=158 READ=1121 RELAY=2302 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
@@ -693,7 +703,9 @@ R3's remaining debt is seven PRODUCTIONS of two `KeyPackPunt` reasons, and the
 reader census does not apply to them — not because the instrument is short, but
 because the reasons carry nothing.  `dedent` and `noKeyContext` are nullary, so
 the type is inhabited at every state, so a premise of that shape constrains
-nothing and a consumer that takes one proves its conclusion without it.
+nothing and a consumer that takes one proves its conclusion without it.  (Item
+297 deletes `dedent`; `noKeyContext` keeps the type inhabited, and the point
+stands.)
 
 **A premise has no reader for two different reasons, and only one of them is
 about proofs.** -/
@@ -701,12 +713,12 @@ about proofs.** -/
 /-- The two unpayable reasons are argument-free; the two payable ones are not. -/
 def expectedPuntFields : String :=
   -- Item 289: `tab` carries the saved key's possibility and line beside the
-  -- scan's reading and the park's flags.
-  "tab=4 dedent=0 implicitValue=3 noKeyContext=0"
+  -- scan's reading and the park's flags.  Item 297: `dedent` is deleted.
+  "tab=4 implicitValue=3 noKeyContext=0"
 
 run_cmd do
   let env ← getEnv
-  let got := String.intercalate " " ([``KeyPackPunt.tab, ``KeyPackPunt.dedent,
+  let got := String.intercalate " " ([``KeyPackPunt.tab,
       ``KeyPackPunt.implicitValue, ``KeyPackPunt.noKeyContext].map (fun c =>
     match env.find? c with
     | some (.ctorInfo cv) => s!"{c.getString!}={cv.numFields}"
@@ -716,9 +728,9 @@ run_cmd do
       expectedPuntFields}\ngot:      {got}"
 
 /-- **`KeyPackPunt sc` is inhabited at every state.**  This is the whole of R3's
-    seven productions as a proposition: while `dedent` stands, producing one is
-    free. -/
-lemma punt_is_unconditional (sc : ScannerState) : KeyPackPunt sc := .dedent
+    seven productions as a proposition: while ~~`dedent`~~ `noKeyContext` stands
+    (`dedent` went at item 297), producing one is free. -/
+lemma punt_is_unconditional (sc : ScannerState) : KeyPackPunt sc := .noKeyContext
 
 /-- …so a consumer that takes a punt as a premise proves its goal without it. -/
 lemma punt_premise_buys_nothing {sc : ScannerState} {P : Prop}

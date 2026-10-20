@@ -62,15 +62,15 @@ open L4YAML L4YAML.Scanner L4YAML.Surface
 
 /-! ## §1  The field, and what the constructor no longer has
 
-`KeyPackPunt` has FOUR reasons.  A `match` that covers them is total, which
-is what pins the deletion: were `noFrame` still there, this would not
-elaborate.  (Item 289: `tab` has four fields — the saved key's possibility and
-line beside the scan's reading and the park's flags.) -/
+`KeyPackPunt` has ~~FOUR~~ THREE reasons.  A `match` that covers them is total,
+which is what pins the deletions: were `noFrame` (item 125) or `dedent` (item
+297) still there, this would not elaborate.  (Item 289: `tab` has four fields
+— the saved key's possibility and line beside the scan's reading and the
+park's flags.) -/
 
 example {sc : ScannerState} (h : L4YAML.Proofs.StreamAccum.KeyPackPunt sc) : True :=
   match h with
   | .tab _ _ _ _ => trivial
-  | .dedent => trivial
   | .implicitValue _ _ _ => trivial
   | .noKeyContext => trivial
 

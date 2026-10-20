@@ -31,7 +31,8 @@ cross-line floors; this item lands the invariant itself and spends it:
   is refuted by the floor carried across the no-break step, so the stale-key
   `:` is refuted OUTRIGHT (`invalidImplicitKey` / the pair now both
   machine-decided).  `KeyPackPunt.noFrame` / `.noKeyContext` (U2) and
-  `.dedent` (R4) are unchanged.
+  `.dedent` (R4) are unchanged here (`noFrame` went at item 125, `dedent` at
+  item 297).
 * §2 re-checks the invariant in its EXACT landed form (with the block-context
   premise) as a step-trace fold over the pinned families, and §4 pins the
   accepted multiline families' event streams — the change is byte-invisible

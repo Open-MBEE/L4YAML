@@ -40,8 +40,8 @@ off the scanner state.  Two readings per row:
   (`colon_fires_implicit_key`'s `¬ possible` arm, and its stale-key twin);
 * `popped` — the park's OWN step popped the indent stack, and what the top
   entry is at the landing's column: a MAPPING level (a frame, wherever the
-  cover holds), a SEQUENCE level, or no level at all.  That is what
-  `KeyPackPunt.dedent`'s `w ∉ ks` stands for.
+  cover holds), a SEQUENCE level, or no level at all.  That is what the pack
+  producers' `w ∉ ks` exit stands for (`KeyPackPunt.dedent`'s until item 297).
 
 The probe is written to `Scratch/` (gitignored), elaborated, and deleted.
 
@@ -232,7 +232,7 @@ def arm_label(lines, i, decl_line):
     # a punt REASON's own arm, written on the application's line; any other
     # `| …` there (a `match` on the slot, say) is not the arm it stands in
     m = re.match(r"^\s*\| (\w+)", lines[i])
-    if m and m.group(1) in ("tab", "dedent", "implicitValue", "noKeyContext"):
+    if m and m.group(1) in ("tab", "implicitValue", "noKeyContext"):  # item 297: no `dedent`
         return m.group(1)
     ind = len(lines[i]) - len(lines[i].lstrip())
     for j in range(i - 1, decl_line, -1):

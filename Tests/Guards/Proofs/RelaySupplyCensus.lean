@@ -873,9 +873,12 @@ def hopName (env : Environment) (e : Edge) : String :=
     **Item 296 moves `edges` 656 → 660, `DECLINE` 265 → 269**: the two entry
     pack producers' frameless dedent exit applies `rootMapRoute_or_refused`
     and `rootMapRouteF_or_refused`, and each declines its one optional binder,
-    `h_ref` (a dedenting landing completes no value). -/
+    `h_ref` (a dedenting landing completes no value).
+
+    **Item 297 moves `edges` 660 → 664, `DECLINE` 269 → 273**: the same pair
+    at the producers' `w ∉ ks` exit, `h_ref` declined for the same reason. -/
 def expectedTally : String :=
-  "edges=660 skipped=31 [DECLINE=269, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
+  "edges=664 skipped=31 [DECLINE=273, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
 SPLIT=154, VIA=37]"
 
 /-- **The row item 211 read off the compiler's error text and got wrong.**  All
@@ -1111,9 +1114,10 @@ def expectedBranchPremises : List String :=
 -- fourteen new edges reach no new pair, orphan or split.
 -- Item 296: and again (656 → 660); the four new edges, each a declined
 -- `h_ref`, reach no new pair, orphan or split either.
+-- Item 297: and again (660 → 664), the `w ∉ ks` exit's four `h_ref`s.
 def expectedDeclineReach : String :=
   "pairs=35 orphan=4 direct=7 closureDecline=31 dead=0 maxDepth=2 liveSplits=89 \
-deadSplits=0 accounted=660/660 nodes=159 fieldEdges=58 fieldResolved=58 withCycle=8 \
+deadSplits=0 accounted=664/664 nodes=159 fieldEdges=58 fieldResolved=58 withCycle=8 \
 declineWriters=19 parkHop=21"
 
 /-- **Every branch premise, with what its own callers supply and where that

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Price `KeyPackPunt`'s four reasons, and decide the phantom (item 211).
+"""Price `KeyPackPunt`'s ~~four~~ three reasons, and decide the phantom (item 211).
+
+Item 297 deletes `dedent`: the `w ∉ ks` exit keys a fresh document at the
+landing, as the frameless exit does since item 296, so the constructor has no
+production and its four alternatives go with it.  REASONS lists the three that
+remain; the `dedent` rows below are the record of items 211-296.
 
 Item 184 measured the two surviving reasons twice and recorded the agreement:
 
@@ -80,7 +85,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 
-REASONS = ["tab", "dedent", "implicitValue", "noKeyContext"]
+# Item 297 deleted `dedent`.
+REASONS = ["tab", "implicitValue", "noKeyContext"]
 
 # The declaration the PACK PUNT lane skips, and why.  Printed apart rather than
 # dropped: an instrument that hides a row cannot be asked about it.

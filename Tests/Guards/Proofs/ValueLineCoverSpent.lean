@@ -266,9 +266,14 @@ decided.  What would move the domain is the opposite change: a PAYLOAD on the
 constructor, so that a consumer holding the cover can refute the punt instead of
 the producer deriving around it.  That is the shape the `tab` and
 `implicitValue` reasons already have, and the shape `noFrame` had before it was
-deleted. -/
+deleted.
 
-example (s : ScannerState) : KeyPackPunt s := KeyPackPunt.dedent
+**Item 297 deletes `dedent`.**  The `w ∉ ks` exit keys a fresh document at the
+landing (items 296/297, row 19's over-approximation), so the constructor has no
+production.  The exhibit below stands on `noKeyContext`, the nullary reason
+that remains. -/
+
+example (s : ScannerState) : KeyPackPunt s := KeyPackPunt.noKeyContext
 
 /-- The derivation also stops short of total, and of a requirement item 149 did
     not name: `preprocess_landing_mem_or_seq` wants the landing at or right of

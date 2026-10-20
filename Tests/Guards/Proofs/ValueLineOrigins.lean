@@ -981,9 +981,15 @@ def expectedUnborn : List String := []
     `accum_flow_open_depth0`'s, the one declaration whose term changed —
     `slot_ride`'s frame built field by field around `flowKeyRoute_of_root`'s
     route, the two indicator parks' own flags, and the props arm's fallback
-    route.  No row, class or origin moves. -/
+    route.  No row, class or origin moves.
+
+    Item 297 moves `lapps` 672 → 670 and `liteNodes` 506370 → 506315: the two
+    `:` consumers' `dedent` arms, each one application of the punt builder,
+    are deleted with the constructor, and `liteNodes` is the net over the
+    declarations whose terms changed (the two producers' `w ∉ ks` exits grow,
+    the `dedent` alternatives go).  No row, class or origin moves. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=557 lapps=672 alts=4421 nodes=12491 liteNodes=506370"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=557 lapps=670 alts=4421 nodes=12491 liteNodes=506315"
 
 /-! ## §4 The reading -/
 

@@ -728,10 +728,17 @@ lemma underIndented_none_of_eof {s : ScannerState}
       hold the two facts anyway (the implicit pack under that guard, the
       props pack off the fresh save) — so the reason carries them, and it is
       refuted at both consumers.
-    * `dedent` — the landing under-ran the pending's index, so the value is
+    * ~~`dedent` — the landing under-ran the pending's index, so the value is
       not this entry's at all.  Item 64's boundary, and row 19's to close: the
       enclosing collection resumes, which needs a frame stack the pending does
-      not carry.
+      not carry.~~  **GONE at item 297.**  A dedent landing is the pack
+      producers' own business: where the landing width names a frame of the
+      park's stack, the frames resume there (item 99); where it names none, or
+      the park carries no frames, the producers key a fresh document at the
+      landing (items 297 and 296) — row 19's over-approximation of the sibling
+      reading, and row 19's to refine.  The reason carried no payload, so a
+      consumer could only defer it; deleting it retires the two `:`
+      consumers' `dedent` arms.
     (A fourth reason, `noFrame` — a same-line key at a park with no compact
     alternative to close — is GONE, item 125.  A park that owns a frame hands
     it: item 89 threads `pendingMapValue.h_vslot` through the content
@@ -783,7 +790,6 @@ inductive KeyPackPunt (sc : ScannerState) : Prop where
       (h_st : StalePark sc)
       (h_poss : sc.simpleKey.possible = true)
       (h_kline : sc.simpleKey.pos.line = sc.line) : KeyPackPunt sc
-  | dedent : KeyPackPunt sc
   | implicitValue (h_ivl : sc.implicitValueLine = some sc.line)
       (h_kline : sc.simpleKey.pos.line = sc.line)
       (h_st : StalePark sc) : KeyPackPunt sc
@@ -797,7 +803,8 @@ inductive KeyPackPunt (sc : ScannerState) : Prop where
     What each reason reads is exactly the premise list — the input and the
     saved key's POSITION for the tab's backward scan, the line and the stamp
     for the implicit value, the park's three flags for both, and nothing at
-    all for the ~~three~~ two unpayable names (`noFrame` went at item 125).
+    all for the ~~three~~ ~~two~~ one unpayable name (`noFrame` went at item
+    125, `dedent` at item 297).
     **Item 289: the tab also reads the saved key's possibility and line.**
     The line travels by the same two routes as the implicit value's; the
     possibility is the one new premise, `h_poss`, which a property extension
@@ -827,7 +834,6 @@ lemma keyPackPunt_transport {sc s' : ScannerState} (h_punt : KeyPackPunt sc)
         cases h_line with
         | inl h => rw [h_skpos, h]; exact h_kl
         | inr h => exact h)
-  | dedent => exact KeyPackPunt.dedent
   | implicitValue h_ivl0 h_kl _ =>
     have h_ln : s'.line = sc.line := by
       cases h_line with
@@ -6436,9 +6442,11 @@ lemma preprocess_indents_or_underIndent {sc s_prep : ScannerState} {c : Char}
 
     `ResumeFrames.resumeAt` asks only for MEMBERSHIP of the landing width in the
     frames; this says the scanner knows something stronger.  What is still
-    missing to refute `KeyPackPunt.dedent` is the surface direction — that every
-    open mapping level of `sc.indents` is one of the frames — which is an
-    accumulation-invariant conjunct no carrier holds today (§0b).
+    missing to refute the pack producers' `w ∉ ks` exit where the frames cover
+    the stack (~~`KeyPackPunt.dedent`~~ until item 297; the exit keys a fresh
+    document since, row 19's over-approximation) is the surface direction —
+    that every open mapping level of `sc.indents` is one of the frames — which
+    is an accumulation-invariant conjunct no carrier holds today (§0b).
 
     **The sentinel escape is DISCHARGED** (item 128; item 127 carried it as a
     `s_prep.indents.size ≤ 1` disjunct).  A stack popped to a single entry rests
@@ -7046,7 +7054,8 @@ lemma gstar_white_sIndent_or_tab {s s' : SurfPos} (h : GStar SSWhite s s') :
     the indented ARM and gave the route to the root value only; item 40 reads it
     as a statement about the LANDING, which is what it is — both numbers are in
     hand where the pack is built, so the producer decides and only the dedent
-    defers (Reflection 666).
+    ~~defers~~ takes its own branch (Reflection 666; served there — items 99,
+    296 and 297).
 
     Item 22 wrote this lemma's `n = 0` instance inline as `rootBlockMap` and, in
     doing so, wrote the general one and threw away the parameter: the proof is
@@ -12512,7 +12521,6 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
         | implicitValue h_ivl _ _ =>
           exact flowOpen_stamp (Or.inl h_ivl) h_preprocess h_ivl_open
         | tab _ _ => exact Or.inr trivial
-        | dedent => exact Or.inr trivial
         | noKeyContext => exact Or.inr trivial
     -- **Item 165: the gate this arm opens at, and what it pays for.**  The
     -- frame's construction is polymorphic in `g` (item 163), so the choice is
@@ -18813,8 +18821,10 @@ lemma scanValue_prod (sc : ScannerState) (sp : SurfPos)
     - `unwindIndents` pops back to the landing's column, which
       `ResumeFrames.resumeAt` matches by popping the widths above it.
 
-    The two are not yet coupled, and that gap is what `KeyPackPunt.dedent`
-    names: `resumeAt` needs the landing width to be a MEMBER of the frames,
+    The two are not yet coupled, and that gap is what the pack producers'
+    `w ∉ ks` exit stands at (~~`KeyPackPunt.dedent`~~, deleted at item 297; the
+    exit keys a fresh document): `resumeAt` needs the landing width to be a
+    MEMBER of the frames,
     and only `sc.indents` knows that it is (item 127's §1c pins the scanner
     half — an accepted popping landing sits exactly AT the level it lands on).
 
@@ -22916,18 +22926,20 @@ lemma block_dispatch_deferred
       `.elim`, and the wrapper is deleted.  The class was measured empty at
       item 185 and re-measured at item 204; what it cost to PROVE empty was
       one number (`pendingBlock.h_park_top`) and one dropped conjunct.
-    * `block_dispatch_deferred_inline` (~~2~~ ~~8~~ ~~7~~ ~~6~~ **5**) — the inline residue.  The
+    * `block_dispatch_deferred_inline` (~~2~~ ~~8~~ ~~7~~ ~~6~~ ~~5~~ **3**) — the inline residue.  The
       park is off column 0 and the step crossed no break, so the indicator is a
       MID-LINE one.  ~~The residue is the implicit-key pack's punt (item 102),
       whose surviving reasons are `KeyPackPunt.dedent` and `.noKeyContext`.~~
       **Item 286 measured five callers and seven arms**, and since item 287 each
-      arm applies the wrapper itself: `dedent` and `noKeyContext` at both `:`
-      consumers, ~~`¬ possible` at `colon_fires_implicit_key`~~ (**refuted at
+      arm applies the wrapper itself: ~~`dedent` and~~ `noKeyContext` at both `:`
+      consumers (**`dedent` is deleted at item 297**: the pack producers key a
+      fresh document at every dedent landing the frames do not resume, and the
+      two `dedent` arms go with the constructor), ~~`¬ possible` at `colon_fires_implicit_key`~~ (**refuted at
       item 293**, an inline `:` finding a live key at every content park), ~~`tab` at
       `colon_fires_props_key`~~ (**refuted at item 289**, the reason carrying
       the saved key's possibility and line), and ~~the value park whose slot
       declines~~ — **refuted at item 288**, since that park holds the stamp.
-      The ~~seventh~~ ~~sixth~~ fifth application is the dead `pendingFlow` arm's.
+      The ~~seventh~~ ~~sixth~~ ~~fifth~~ third application is the dead `pendingFlow` arm's.
     * `block_dispatch_deferred` itself (1) — `pendingFlow`'s own arm, which
       this escape PRODUCES.  It cannot close while the escape stands and goes
       with the constructor (item 35's structural note).
@@ -24381,8 +24393,10 @@ lemma accum_block_on_closeThenBlock
     Item 287 moved it here, beside `colon_fires_implicit_key`: its pack-less
     arms apply `block_dispatch_deferred_inline` themselves, and `h_punt` is a
     builder for the same reason as there.  **Item 289: the `tab` arm refutes**,
-    on the saved key's possibility and line the reason carries, so two arms
-    apply the wrapper — `dedent` and `noKeyContext`. -/
+    on the saved key's possibility and line the reason carries, so ~~two arms
+    apply the wrapper — `dedent` and `noKeyContext`~~ one arm applies the
+    wrapper, `noKeyContext` (**item 297 deletes `dedent`**: the producers key a
+    fresh document at the landing instead of punting). -/
 lemma colon_fires_props_key (sc : ScannerState)
     (sp_start sp_block sp_p sp_scan : SurfPos)
     (s_prep s' : ScannerState) (sp_prep sp_scan' : SurfPos)
@@ -24436,8 +24450,9 @@ lemma colon_fires_props_key (sc : ScannerState)
     -- the sibling, one construct over.  `k: &p : 1` and `k: !!str : 1` are an
     -- implicit value's second value indicator, and the property scan is not
     -- `scanValue`, so the stamp the indicator left is still on the park's
-    -- line.  Two ride the deferral: the dedent is row 19's and
-    -- `noKeyContext` nobody's.  **Item 289: the TAB is refuted here, as at
+    -- line.  ~~Two ride the deferral: the dedent is row 19's and
+    -- `noKeyContext` nobody's.~~  One rides the deferral, `noKeyContext`;
+    -- `dedent` is deleted at item 297.  **Item 289: the TAB is refuted here, as at
     -- the sibling.**  Its refutation (`scanValue_tab_keyrun_ne`, item 65)
     -- also wants the saved key's LINE and its possibility, which
     -- `colon_fires_implicit_key` reads off the guard its own field is stated
@@ -24484,7 +24499,6 @@ lemma colon_fires_props_key (sc : ScannerState)
             else s_prep).input = sc.input := by split <;> exact h_inp
           rw [h_i, allowDirectives_update_simpleKey, h_sk_eq]
           exact h_run
-    | dedent => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
     | noKeyContext => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
   | inl pack =>
     obtain ⟨⟨k, h_route, h_kcol, h_kslot_pk, h_resF_pk, h_resFV_pk⟩,
@@ -24560,8 +24574,9 @@ lemma colon_fires_props_key (sc : ScannerState)
 
     **Item 293: `¬ possible` refutes.**  Every content park's inline `:` finds
     a live key (`h_live`), so the arm item 286 measured empty at the runtime
-    is a proof's; two arms ride the deferral here, `dedent` and
-    `noKeyContext`. -/
+    is a proof's; ~~two arms ride the deferral here, `dedent` and
+    `noKeyContext`~~ one arm rides the deferral here, `noKeyContext` (`dedent`
+    is deleted at item 297). -/
 lemma colon_fires_implicit_key
     (sc : ScannerState) (sp_start sp_block sp_scan : SurfPos)
     (s_prep s' : ScannerState) (sp_prep sp_scan' : SurfPos)
@@ -24646,8 +24661,8 @@ lemma colon_fires_implicit_key
           -- too: with the flag down and no break, preprocessing re-saved
           -- nothing, so the key the `:` resolves IS the key the tab precedes.
           -- The other three reasons are not this step's (the dedent is row
-          -- 19's frame stack, the frameless park item 51's threading, an
-          -- inherited key nobody's) and ride the deferral. ═══
+          -- 19's frame stack, deleted at item 297; the frameless park item 51's
+          -- threading; an inherited key nobody's) and ride the deferral. ═══
           cases punt with
           | tab h_run h_st =>
             exfalso
@@ -24670,7 +24685,6 @@ lemma colon_fires_implicit_key
                 else s_prep).input = sc.input := by split <;> exact h_inp
               rw [h_i, allowDirectives_update_simpleKey, h_sk_eq]
               exact h_run
-          | dedent => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
           | implicitValue h_ivl _h_kline h_st =>
             -- ═══ Item 101: the second reason that is REFUTABLE here, and for
             -- the same shape as the tab's.  The park is an implicit value's
@@ -29367,7 +29381,11 @@ lemma dedent_cover_of_landing {sc s_prep s' : ScannerState} {c : Char}
     landed at, and both numbers are in hand at the split — so the arm serves
     every landing that nests and defers every DEDENT.  Item 39 read the same
     inequality as a property of the indented ARM and left it punting whole; what
-    is permanent is the dedent, not the arm (Reflection 666).
+    is permanent is the dedent, not the arm (Reflection 666).  **Items 99, 296
+    and 297: the dedent is served too.**  A landing width naming a frame of the
+    park's stack resumes there (item 99); a width naming none, and a park
+    without frames, key a fresh document at the landing (items 297 and 296) —
+    row 19's over-approximation of the sibling reading.
 
     **What punts, and why each one is a different question** (item 65).  The
     `&`/`!` head is not among them any more: a `[96]` run parks `pendingProps`,
@@ -29647,8 +29665,8 @@ lemma entryKeyPack_of_dispatch
       | inl h_land =>
         -- Across a break: the entry is `[187]`'s at the landing's own width,
         -- inside the node this pending awaits.  The side condition is
-        -- `nestedBlockMap`'s and it is decidable here, so the DEDENT defers
-        -- and nothing else does (item 40).  Item 179: the bound is STRICT —
+        -- `nestedBlockMap`'s and it is decidable here, so the DEDENT ~~defers~~
+        -- takes the branch below and nothing else does (item 40).  Item 179: the bound is STRICT —
         -- the awaited node reads at `n + 1`, so a landing AT the entry's own
         -- column joins the dedent branch (R4's rewiring, as `h_nodeF`'s
         -- docstring has said since item 99).
@@ -29760,8 +29778,10 @@ lemma entryKeyPack_of_dispatch
           -- mapping level: the pending's frames close the awaited entry
           -- empty, the landing width pops to its own level, and the key
           -- conses there — `k:⏎  :⏎b: 2` reads as ONE outer mapping.  A
-          -- width naming no frame defers; a caller without frames keys a fresh
-          -- document at the landing (item 296, the last arm).
+          -- width naming no frame keys a fresh document at the landing too
+          -- (item 297; where the frames cover the stack the scanner refuses
+          -- that landing as `trailingContent`), as does a caller without
+          -- frames (item 296).
           rcases h_dframes with ⟨ks, h_dcov, dframes⟩ | _
           · by_cases hmem : w ∈ ks
             · have h_ind' : SIndent w sp_mid sp_prep := h_ind
@@ -29871,7 +29891,35 @@ lemma entryKeyPack_of_dispatch
                                h_ind' h_entry h_tail)⟩
                      else Or.inr trivial
                  | Or.inr _ => Or.inr trivial), Or.inr trivial⟩
-            · exact Or.inr KeyPackPunt.dedent
+            · -- **Item 297: a width naming no frame keys a fresh document at the
+              -- landing too**, with the frameless exit's terms (item 296): the
+              -- park's own `h_node` closes the awaited entry empty, so the
+              -- stream stands at the landing.  Where the frames cover the
+              -- scanner's stack the scanner refuses this landing
+              -- (`trailingContent`, `k:⏎  a:⏎ b: 2`, measured at item 296), so
+              -- the reading is spent on no input there; where they do not —
+              -- the fresh document's own `[w]` frames carry no cover —
+              -- `k:⏎  ? a⏎  :⏎  b:⏎d: 3` is accepted, and `d` keys a document
+              -- where the sibling reading conses at `k`'s level.  Both halves
+              -- are row 19's: the refused one to refute, the accepted one to
+              -- refine.
+              have h_kcol : s'.simpleKey.pos.col = w := by
+                rw [h_pp, allowDirectives_update_simpleKey, h_sk.2]
+                show s_prep.col = w
+                rw [← hcorr_prep.col_eq]
+                have := SIndent_col h_ind
+                rw [h_land.2.1] at this
+                omega
+              have h_stream_mid : SLYamlStream sp_start sp_mid :=
+                h_node sp_mid (SBlockNode.emptyNode (n + 1) .blockIn sp_scan sp_mid h_land.1)
+              exact Or.inl ⟨w, sp_prep, sp_gram2,
+                rootMapRoute_or_refused (sc := sc) (s_prep := s_prep) (c := c) (Or.inr trivial)
+                  h_land.2.1 h_stream_mid h_ind, h_ol, h_tws2, h_kcol,
+                Or.inr trivial,
+                Or.inl ⟨[], fun _ h => absurd h (List.not_mem_nil), Or.inr trivial,
+                  rootMapRouteF_or_refused (sc := sc) (s_prep := s_prep) (c := c) (Or.inr trivial)
+                    h_land.2.1 h_stream_mid h_ind⟩,
+                Or.inr trivial, Or.inr trivial⟩
           · -- **Item 296: a caller WITHOUT frames keys a fresh document at the
             -- landing.**  The pop spends the frames on one thing, the awaited
             -- entry's EMPTY close, and the park's own `h_node` has it:
@@ -30023,8 +30071,9 @@ lemma entryKeyPack_of_dispatch
     break to column 0, `[187] l+block-mapping` nested inside the node the pending
     awaits (`-⏎  &p a: 1`, `k:⏎  &p a: 1`).  `h_compact` is the frame only a
     pending whose slot is `SBlockIndented` can offer, and the `n ≤ w` side
-    condition is decided HERE, per input, so a dedent defers and nothing else
-    does (Reflection 666).
+    condition is decided HERE, per input, so a dedent ~~defers~~ takes the
+    dedent branch and nothing else does (Reflection 666; the branch serves it —
+    items 99, 296 and 297).
 
     What is NOT shared is the head, and that is the whole difference: a `[96]`
     run is not a complete key, so this lemma takes the run's `block-key` re-read
@@ -30296,8 +30345,9 @@ lemma entryPropsKeyPack_of_dispatch
         -- frames close the awaited entry empty, the landing width pops to
         -- its own level, and the key conses there — `k:⏎  a:⏎&p b: 2` reads
         -- as ONE outer mapping with the anchor on `b`.  A width naming no
-        -- frame defers (`k:⏎  a:⏎ &p b: 2` = `trailingContent`); a caller
-        -- without frames keys a fresh document (item 296).  The value-line stack
+        -- frame keys a fresh document too (item 297; `k:⏎  a:⏎ &p b: 2` is
+        -- `trailingContent` where the frames cover the stack), as does a
+        -- caller without frames (item 296).  The value-line stack
         -- pops independently, its membership test taken twice, exactly as at
         -- `entryKeyPack_of_dispatch`'s dedent (item 108) —
         -- `?⏎  a:⏎    b:⏎  &p c: 2⏎: - w` keeps the `?` open.
@@ -30370,7 +30420,31 @@ lemma entryPropsKeyPack_of_dispatch
                | Or.inr _ => Or.inr trivial)⟩,
               h_props, h_sk_line,
               by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1⟩
-          · exact Or.inr KeyPackPunt.dedent
+          · -- **Item 297: the run-headed key's width naming no frame keys a
+            -- fresh document too**, as at `entryKeyPack_of_dispatch`, with the
+            -- frameless exit's terms (item 296): the park's own `h_node` closes
+            -- the awaited entry empty, so the stream stands at the landing
+            -- (`k:⏎  ? a⏎  :⏎  b:⏎&p d: 3`; `k:⏎  a:⏎ &p b: 2` is refused as
+            -- `trailingContent` where the frames cover the stack).
+            have h_ind' : SIndent w sp_mid sp_prep := by rw [h_pe]; exact h_ind
+            have h_kcol : s'.simpleKey.pos.col = w := by
+              rw [h_sk, allowDirectives_update_simpleKey, h_shape.2]
+              show s_prep.col = w
+              rw [← hcorr_prep.col_eq]
+              have := SIndent_col h_ind'
+              rw [h_land.2.1] at this
+              omega
+            have h_stream_mid : SLYamlStream sp_start sp_mid :=
+              h_node sp_mid (SBlockNode.emptyNode (n + 1) .blockIn sp_scan sp_mid h_land.1)
+            exact Or.inl ⟨⟨w, rootMapRoute_or_refused (sc := sc) (s_prep := s_prep) (c := c)
+                  (Or.inr trivial) h_land.2.1 h_stream_mid h_ind', h_kcol,
+                Or.inr trivial,
+                Or.inl ⟨[], fun _ h => absurd h (List.not_mem_nil), Or.inr trivial,
+                  rootMapRouteF_or_refused (sc := sc) (s_prep := s_prep) (c := c) (Or.inr trivial)
+                    h_land.2.1 h_stream_mid h_ind'⟩,
+                Or.inr trivial⟩,
+              h_props, h_sk_line,
+              by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1⟩
         · -- **Item 296: the run-headed key keys a fresh document too**, as at
           -- `entryKeyPack_of_dispatch` — the park's own `h_node` closes the
           -- awaited entry empty, so the stream stands at the landing
@@ -32754,7 +32828,8 @@ lemma accum_content_on_pendingMapValue_indented
     -- value), and there the datum is false.  Item 40: it is false at the
     -- dedent, not at the arm — `entryKeyPack_of_dispatch` decides `n ≤ w` from
     -- the two numbers it already holds, so `  :⏎    a: 1` composes and only the
-    -- dedent takes the deferral (Reflection 666).
+    -- dedent ~~takes the deferral~~ takes the pack's dedent branch (Reflection
+    -- 666; served there since items 99, 296 and 297).
     exact ⟨sp_block, sp_block, sp_block, sp_scan', h_stream_block,
            BlockStack.nil sp_block, FlowStackB.nil sp_block .sep,
            PendingNode.pendingContent (h_live := live_of_dispatch h_dispatch hna hnt (by rw [allowDirectives_update_simpleKey]; exact (preprocess_saved_key_fresh h_ska (noflow_of_noflow_disp h_flow_disp) h_preprocess).1) hcorr_result) sp_start sp_block sp_scan' h_line

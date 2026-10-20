@@ -120,7 +120,8 @@ def raws : List Name :=
     dedent branch's frameless exit, with `h_ref` declined: a landing that
     dedents emits a `blockEnd` first, which completes no value, so §9.2's
     check stands aside.  They go through the guards so that RAW ROUTES keeps
-    its one row. -/
+    its one row.  **Item 297: the `w ∉ ks` exit applies the same pair**, so
+    each producer reads two of each. -/
 def guards : List Name :=
   [`rootMapRoute_or_refused, `rootMapRouteF_or_refused,
    `bareNodeRoute_or_refused, `bareNodeRoute_or_refused_content,
@@ -167,8 +168,8 @@ def deferral : List Name :=
     `keyPackPunt_transport` is skipped for the same reason the wrappers are: it
     re-WRITES a reason it was handed rather than spending one. -/
 def packPunt : List Name :=
-  [`KeyPackPunt.tab, `KeyPackPunt.dedent,
-   `KeyPackPunt.implicitValue, `KeyPackPunt.noKeyContext]
+  -- Item 297 deletes `KeyPackPunt.dedent`: both pack exits key a fresh document.
+  [`KeyPackPunt.tab, `KeyPackPunt.implicitValue, `KeyPackPunt.noKeyContext]
 
 /-- One census: the targets counted, and the definitions where the term is
     WRITTEN rather than spent, excluded. -/
@@ -434,7 +435,9 @@ site list.
 
 **Item 296: `dedent` reads 5 sites, two productions and three consumer arms.**
 The dedent branch's frameless exit keys a fresh document at the landing in both
-entry pack producers, so each writes `dedent` once, on its `w ∉ ks` exit. -/
+entry pack producers, so each writes `dedent` once, on its `w ∉ ks` exit.
+**Item 297 deletes it**: the `w ∉ ks` exit keys a fresh document too, and the
+three consumer arms go with the constructor. -/
 
 /-! ## The gate
 
@@ -450,9 +453,9 @@ All three lanes, in one walk of the module. -/
        "accum_flow_open_depth0: topLevelFlowResumeSep_or_refused=1",
        "colon_open_map: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
        "content_dispatch_routed: rootMapRoute_or_refused=2 rootMapRouteF_or_refused=2",
-       -- Item 296: the dedent branch's frameless exit, in both pack producers.
-       "entryKeyPack_of_dispatch: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
-       "entryPropsKeyPack_of_dispatch: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
+       -- Items 296/297: the dedent branch's two exits, in both pack producers.
+       "entryKeyPack_of_dispatch: rootMapRoute_or_refused=2 rootMapRouteF_or_refused=2",
+       "entryPropsKeyPack_of_dispatch: rootMapRoute_or_refused=2 rootMapRouteF_or_refused=2",
        "flowKeyRoute_of_root: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
        "question_open_map: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1"]⟩,
     ⟨⟨"DEFERRAL", deferral, deferral.map (ns ++ ·)⟩,
@@ -464,22 +467,24 @@ All three lanes, in one walk of the module. -/
        "accum_block_pending: block_dispatch_deferred_inline=1",
        "accum_content_pending: block_dispatch_deferred=1",
        -- Item 293: the `¬ possible` arm refutes, on the park's `h_live`.
-       "colon_fires_implicit_key: block_dispatch_deferred_inline=2",
+       -- Item 297: the `dedent` arm goes with the constructor.
+       "colon_fires_implicit_key: block_dispatch_deferred_inline=1",
        -- Item 289: the `tab` arm refutes, on the saved key's possibility and
-       -- line the reason carries.
-       "colon_fires_props_key: block_dispatch_deferred_inline=2"]⟩,
+       -- line the reason carries.  Item 297: the `dedent` arm goes with the
+       -- constructor.
+       "colon_fires_props_key: block_dispatch_deferred_inline=1"]⟩,
     ⟨⟨"PACK PUNT", packPunt,
        [ns ++ `keyPackPunt_transport,
         -- the type's own generated eliminators, which mention every
         -- constructor by construction and spend none
         ns ++ `KeyPackPunt.casesOn, ns ++ `KeyPackPunt.recOn]⟩,
-      ["accum_flow_open_depth0: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
-       "colon_fires_implicit_key: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
-       "colon_fires_props_key: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
+      -- Item 297: no `dedent` row anywhere — the constructor is deleted.
+      ["accum_flow_open_depth0: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
+       "colon_fires_implicit_key: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
+       "colon_fires_props_key: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
        "content_dispatch_routed: KeyPackPunt.noKeyContext=2",
-       -- Item 296: one `dedent` each, the `w ∉ ks` exit.
-       "entryKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1",
-       "entryPropsKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1",
+       "entryKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1",
+       "entryPropsKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1",
        "flowKeyPack_of_close: KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1"]⟩]
 
 end L4YAML.Tests.Guards.FlipConsumerSurface

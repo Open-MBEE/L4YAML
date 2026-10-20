@@ -40,8 +40,9 @@ inline-residue defer sites still PRODUCE the pending whenever the key packs
 punt, and the punts that remain are `KeyPackPunt.dedent` (R4's landing pad,
 by design) and `noKeyContext`, which has no named input (items 101/104/105's
 measured chain).  §4 pins the counts so the blockage is measured, not
-assumed.  (Two names have since left this list: `noFrame` with item 125, and
-`FlowStackB.shape` with item 126, which measured the collapse unreachable.) -/
+assumed.  (Three names have since left this list: `noFrame` with item 125,
+`FlowStackB.shape` with item 126, which measured the collapse unreachable, and
+`dedent` with item 297, whose exits key a fresh document.) -/
 
 namespace L4YAML.Tests.Guards.FlowFrameResumeRider
 

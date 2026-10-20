@@ -780,9 +780,14 @@ def expectedShapeComps : List String :=
     `accum_flow_open_depth0` (`new` 5 -> 4, `newVsStyle` with it, and that
     site's row loses its `NEW`), and `slot_ride`'s `mk.key`, which no
     composition here reads (`missing` 1 -> 2, `styleOnly` with it).  No
-    composition moved. -/
+    composition moved.
+
+    2026-10-20 (item 297): `unmarked` 200 -> 198 and nothing else — the two
+    `:` consumers' `dedent` deferrals, leaf-to-top paths that cross no build
+    point, deleted with the constructor (both pack exits key a fresh document,
+    so `dedent` has no production). -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=21 new=4 missing=2 prevStyle=21 prevStyleOff=0 newVsStyle=4 styleOnly=2 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=200 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=21 new=4 missing=2 prevStyle=21 prevStyleOff=0 newVsStyle=4 styleOnly=2 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=198 reach=38"
 
 /-! ## §5 The reading -/
 

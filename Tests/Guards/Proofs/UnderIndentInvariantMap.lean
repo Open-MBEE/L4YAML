@@ -72,7 +72,8 @@ carrier, consumer, and price:
   lists `ks` are SURFACE data; the runtime's misindented-sibling refusal
   reads the SCANNER's indent stack (`scanNextToken_preprocess`'s unwind
   check — §2's pins).  The membership test's deferred case
-  (`KeyPackPunt.dedent`'s `w ∉ ks`, items 65/99/109) becomes a refutation
+  (the pack producers' `w ∉ ks` exit, items 65/99/109; `KeyPackPunt.dedent`
+  until item 297, a fresh-document reading since) becomes a refutation
   only when `ks` is coupled to the columns of `sc.indents`' open entries.
   Serves R4's landing pad narrowing; its carrier is an accumulation-
   invariant conjunct, not a park field — the widest of the three.

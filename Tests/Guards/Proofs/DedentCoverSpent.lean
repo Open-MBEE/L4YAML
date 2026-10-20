@@ -329,7 +329,9 @@ was projected down to its widths now pass it through unchanged.
   the constructor.  There is also a fourth requirement this list did not name:
   `preprocess_landing_mem_or_seq` wants the landing at or right of the cover's
   floor, and a dedent lands strictly left of the park's index.  Both are
-  machine-checked in `ValueLineCoverSpent`'s §5.
+  machine-checked in `ValueLineCoverSpent`'s §5.  Item 297 deletes `dedent`:
+  the `w ∉ ks` exit keys a fresh document at the landing, row 19's
+  over-approximation.
 * **A park at a line start.**  The walk that reached the landing crossed nothing,
   so preprocessing armed no unwind and there is no floor to measure — item 147's
   own residue, at the indicator lane's payers as well.

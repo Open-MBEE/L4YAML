@@ -292,8 +292,13 @@ declarations' own binders and not by a rescoring of an existing one.
 -- 2026-10-19 (item 296): the same two rows its sibling moves, `h_node` at both
 -- entry pack producers (#9), RELAY under this peel too (`368-rosterP-293.out`)
 -- and READ now that the frameless dedent exit applies it.
+-- 2026-10-20 (item 297): `constants` 1364 → 1363, `eta` 387 → 386, `RELAY`
+-- 2153 → 2151 — `KeyPackPunt.dedent` is deleted, and its three eliminator rows
+-- with it (`KeyPackPunt.rec#3 (dedent)` ETA, `KeyPackPunt.casesOn#4 (dedent)`
+-- and `KeyPackPunt.recOn#4 (dedent)` RELAY), as at its sibling.  No verdict
+-- moves under this peel either.
 def expectedModuleTallyP : String :=
-  "constants=1364 decls=1082 eta=387 FIELD=180 READ=1160 RELAY=2153 RETURN=138 UNUSED=9"
+  "constants=1363 decls=1082 eta=386 FIELD=180 READ=1160 RELAY=2151 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

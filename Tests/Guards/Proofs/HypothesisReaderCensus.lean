@@ -495,8 +495,12 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- relays (`h_live` at the two block consumers, `h_possD` at the two routed
 -- lemmas, `h_live0` at the two stamp wrappers, `km_push_at_open.h_poss_new`).
 -- The two narrowed binders change type and keep their verdicts.
+-- 2026-10-19 (item 296): `READ` +2, `RELAY` -2 — `entryKeyPack_of_dispatch#9`
+-- and `entryPropsKeyPack_of_dispatch#9` (`h_node`), which item 293's roster
+-- reads RELAY, are applied at the dedent branch's frameless exit: the awaited
+-- entry's empty close (`SBlockNode.emptyNode`).
 def expectedModuleTally : String :=
-  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1119 RELAY=2306 RETURN=48 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1121 RELAY=2304 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is

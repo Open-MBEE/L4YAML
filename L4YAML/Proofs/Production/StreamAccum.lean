@@ -10961,19 +10961,21 @@ lemma flowKeyRoute_of_root {m : Nat} {sp_start sp_scan sp_prep : SurfPos}
       (∀ sp_end, SFlowContent m .flowOut sp_prep sp_end →
         ImplicitKeyHead sp_key sp_end ∨ True) ∧
       s_prep.simpleKey.pos.col = k ∧
-      -- Item 96: the ROOT's entry has no enclosing value line — its sibling
-      -- `: v` is `[187]`'s own next entry, not a `[188]` close — so the pair
-      -- is not owed here and both arms punt it (item 93's root boundary).
+      -- Item 96: the route's VALUE-LINE pair.  The landing arm closes it off
+      -- the park's own `?` frame level when `h_mapFV` names the landing's width
+      -- (item 201); otherwise the root's entry has no enclosing value line —
+      -- its sibling `: v` is `[187]`'s own next entry, not a `[188]` close.
       ((∃ ns : List Nat, ∀ nv ∈ ns,
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ∀ sp_i sp_c : SurfPos, SIndent nv sp_e sp_i → GLit ':' sp_i sp_c →
         ∀ sp_w : SurfPos, SBlockIndented nv .blockOut sp_c sp_w →
         SLYamlStream sp_start sp_w) ∨ True) ∧
-      -- Item 120: the resume twins (the frame's rider) — the ROOT's levels
-      -- are the stream itself, so both arms punt; paying `ks = []` here is
-      -- the recorded residue, gated on an accepted input that needs it (the
-      -- bare flow key at a level's own column is §8.1-refused).
+      -- Item 120: the resume twins (the frame's rider).  The stream twin is
+      -- paid on both arms (item 176): the level's own resume where `h_mapF`
+      -- names the landing's width, `ks = []` under the suffix, head or root
+      -- reading otherwise.  The value-line twin is the landing arm's, off
+      -- `h_mapFV`, as the pair above is.
       ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
@@ -29758,8 +29760,8 @@ lemma entryKeyPack_of_dispatch
           -- mapping level: the pending's frames close the awaited entry
           -- empty, the landing width pops to its own level, and the key
           -- conses there — `k:⏎  :⏎b: 2` reads as ONE outer mapping.  A
-          -- width naming no frame (a caller without frames included) defers
-          -- exactly as before.
+          -- width naming no frame defers; a caller without frames keys a fresh
+          -- document at the landing (item 296, the last arm).
           rcases h_dframes with ⟨ks, h_dcov, dframes⟩ | _
           · by_cases hmem : w ∈ ks
             · have h_ind' : SIndent w sp_mid sp_prep := h_ind
@@ -29870,7 +29872,38 @@ lemma entryKeyPack_of_dispatch
                      else Or.inr trivial
                  | Or.inr _ => Or.inr trivial), Or.inr trivial⟩
             · exact Or.inr KeyPackPunt.dedent
-          · exact Or.inr KeyPackPunt.dedent
+          · -- **Item 296: a caller WITHOUT frames keys a fresh document at the
+            -- landing.**  The pop spends the frames on one thing, the awaited
+            -- entry's EMPTY close, and the park's own `h_node` has it:
+            -- `[189]`'s `e-node` value (`SBlockNode.emptyNode`, the term
+            -- `PendingNode.close_with_ssl` closes both parks with).  So the
+            -- stream stands at the landing, and `rootMapRoute_or_refused` keys
+            -- the entry as a new document's root mapping (`? a⏎:⏎b: 1`, whose
+            -- explicit `:` builds its park without frames).  Its `h_ref` is
+            -- declined: a landing that dedents emits a `blockEnd` first, which
+            -- completes no value, so §9.2's check stands aside.  That is row 19's
+            -- over-approximation, the reading every landing no face claims
+            -- takes (item 295's under-run open); the sibling reading is the
+            -- frames', and paying them is row 19's.
+            have h_kcol : s'.simpleKey.pos.col = w := by
+              rw [h_pp, allowDirectives_update_simpleKey, h_sk.2]
+              show s_prep.col = w
+              rw [← hcorr_prep.col_eq]
+              have := SIndent_col h_ind
+              rw [h_land.2.1] at this
+              omega
+            have h_stream_mid : SLYamlStream sp_start sp_mid :=
+              h_node sp_mid (SBlockNode.emptyNode (n + 1) .blockIn sp_scan sp_mid h_land.1)
+            exact Or.inl ⟨w, sp_prep, sp_gram2,
+              rootMapRoute_or_refused (sc := sc) (s_prep := s_prep) (c := c) (Or.inr trivial)
+                h_land.2.1 h_stream_mid h_ind, h_ol, h_tws2, h_kcol,
+              Or.inr trivial,
+              -- The fresh document's root level is the key's own, so the park
+              -- made after its value resumes it (`ks = []`, nothing below).
+              Or.inl ⟨[], fun _ h => absurd h (List.not_mem_nil), Or.inr trivial,
+                rootMapRouteF_or_refused (sc := sc) (s_prep := s_prep) (c := c) (Or.inr trivial)
+                  h_land.2.1 h_stream_mid h_ind⟩,
+              Or.inr trivial, Or.inr trivial⟩
       | inr h_mid =>
         -- On the line: `[195]`, closing the enclosing entry.  ═══ Item 125:
         -- the frame is `h_compact`'s or the field's own FACE — a park with
@@ -30263,8 +30296,8 @@ lemma entryPropsKeyPack_of_dispatch
         -- frames close the awaited entry empty, the landing width pops to
         -- its own level, and the key conses there — `k:⏎  a:⏎&p b: 2` reads
         -- as ONE outer mapping with the anchor on `b`.  A width naming no
-        -- frame (a caller without frames included) defers exactly as before
-        -- (`k:⏎  a:⏎ &p b: 2` = `trailingContent`).  The value-line stack
+        -- frame defers (`k:⏎  a:⏎ &p b: 2` = `trailingContent`); a caller
+        -- without frames keys a fresh document (item 296).  The value-line stack
         -- pops independently, its membership test taken twice, exactly as at
         -- `entryKeyPack_of_dispatch`'s dedent (item 108) —
         -- `?⏎  a:⏎    b:⏎  &p c: 2⏎: - w` keeps the `?` open.
@@ -30338,7 +30371,31 @@ lemma entryPropsKeyPack_of_dispatch
               h_props, h_sk_line,
               by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1⟩
           · exact Or.inr KeyPackPunt.dedent
-        · exact Or.inr KeyPackPunt.dedent
+        · -- **Item 296: the run-headed key keys a fresh document too**, as at
+          -- `entryKeyPack_of_dispatch` — the park's own `h_node` closes the
+          -- awaited entry empty, so the stream stands at the landing
+          -- (`? a⏎:⏎&p b: 1`).  This is the exit whose `dedent` rode a flow
+          -- frame into `noKeyContext` (`? a⏎:⏎&p [1]: b`): the props arm of
+          -- `accum_flow_open_depth0` now holds the run's own route.
+          have h_ind' : SIndent w sp_mid sp_prep := by rw [h_pe]; exact h_ind
+          have h_kcol : s'.simpleKey.pos.col = w := by
+            rw [h_sk, allowDirectives_update_simpleKey, h_shape.2]
+            show s_prep.col = w
+            rw [← hcorr_prep.col_eq]
+            have := SIndent_col h_ind'
+            rw [h_land.2.1] at this
+            omega
+          have h_stream_mid : SLYamlStream sp_start sp_mid :=
+            h_node sp_mid (SBlockNode.emptyNode (n + 1) .blockIn sp_scan sp_mid h_land.1)
+          exact Or.inl ⟨⟨w, rootMapRoute_or_refused (sc := sc) (s_prep := s_prep) (c := c)
+                (Or.inr trivial) h_land.2.1 h_stream_mid h_ind', h_kcol,
+              Or.inr trivial,
+              Or.inl ⟨[], fun _ h => absurd h (List.not_mem_nil), Or.inr trivial,
+                rootMapRouteF_or_refused (sc := sc) (s_prep := s_prep) (c := c) (Or.inr trivial)
+                  h_land.2.1 h_stream_mid h_ind'⟩,
+              Or.inr trivial⟩,
+            h_props, h_sk_line,
+            by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1⟩
     | inr h_mid =>
       -- ═══ Item 125: the frame is `h_compact`'s or the field's own FACE, as
       -- on the sibling — the frameless punt has no arm left here either. ═══

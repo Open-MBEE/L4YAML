@@ -115,7 +115,12 @@ def raws : List Name :=
 
 /-- The five guards that stand in front of them, each with §9.2's landing
     refusal (and, at the content landing, its dangling reading) taken out of
-    the raw route's domain. -/
+    the raw route's domain.  **Item 296: the two entry pack producers apply
+    `rootMapRoute_or_refused` and `rootMapRouteF_or_refused` once each**, on the
+    dedent branch's frameless exit, with `h_ref` declined: a landing that
+    dedents emits a `blockEnd` first, which completes no value, so §9.2's
+    check stands aside.  They go through the guards so that RAW ROUTES keeps
+    its one row. -/
 def guards : List Name :=
   [`rootMapRoute_or_refused, `rootMapRouteF_or_refused,
    `bareNodeRoute_or_refused, `bareNodeRoute_or_refused_content,
@@ -425,7 +430,11 @@ is the `cases` label that spends it, and it goes when the last production does.
 What R3 has to pay is seven productions, not thirteen sites — and this lane
 cannot make that split, because an application is an application.
 `punt_reason_price.py split` does, from the source, against this lane's own
-site list. -/
+site list.
+
+**Item 296: `dedent` reads 5 sites, two productions and three consumer arms.**
+The dedent branch's frameless exit keys a fresh document at the landing in both
+entry pack producers, so each writes `dedent` once, on its `w ∉ ks` exit. -/
 
 /-! ## The gate
 
@@ -441,6 +450,9 @@ All three lanes, in one walk of the module. -/
        "accum_flow_open_depth0: topLevelFlowResumeSep_or_refused=1",
        "colon_open_map: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
        "content_dispatch_routed: rootMapRoute_or_refused=2 rootMapRouteF_or_refused=2",
+       -- Item 296: the dedent branch's frameless exit, in both pack producers.
+       "entryKeyPack_of_dispatch: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
+       "entryPropsKeyPack_of_dispatch: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
        "flowKeyRoute_of_root: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
        "question_open_map: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1"]⟩,
     ⟨⟨"DEFERRAL", deferral, deferral.map (ns ++ ·)⟩,
@@ -465,8 +477,9 @@ All three lanes, in one walk of the module. -/
        "colon_fires_implicit_key: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
        "colon_fires_props_key: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
        "content_dispatch_routed: KeyPackPunt.noKeyContext=2",
-       "entryKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.dedent=2 KeyPackPunt.implicitValue=1",
-       "entryPropsKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.dedent=2 KeyPackPunt.implicitValue=1",
+       -- Item 296: one `dedent` each, the `w ∉ ks` exit.
+       "entryKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1",
+       "entryPropsKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.dedent=1 KeyPackPunt.implicitValue=1",
        "flowKeyPack_of_close: KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1"]⟩]
 
 end L4YAML.Tests.Guards.FlipConsumerSurface

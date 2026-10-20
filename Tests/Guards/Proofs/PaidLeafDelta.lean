@@ -284,6 +284,10 @@ def expectedTransports : List String :=
 -- payments in the accumulation lemmas (+1 to +7 each).  Every row holds.
 -- 2026-10-19 (item 295): `nodes` 100079 → 100098 is `CloseStackCover`'s, all
 -- of it `accum_flow_open_depth0`'s.
+-- 2026-10-19 (item 296): `nodes` 100098 → 100108 is `CloseStackCover`'s, the
+-- two entry pack producers' frameless dedent exit; `floorNodes` 24525 → 25101
+-- is the floor walk over the same 32 scanned theorems, all of it those two
+-- producers', the only declarations whose terms changed.  Every row holds.
 /-- **The delta's own line.**  `nodes` is the proof-term size of the walked
     declarations; item 272 is the one move, and it moves nothing else, for the
     reason `CloseStackCover` records — the under-run disjunct the three
@@ -291,7 +295,7 @@ def expectedTransports : List String :=
     Lean v4.35.0 moves it again and alone: `nodes` 96158 → 96125, every other
     field byte-identical — 33 fewer term nodes for the same walk. -/
 def expectedLine : String :=
-  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=100098 floorNodes=24525"
+  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=100108 floorNodes=25101"
 
 /-! ## §4 The reading -/
 

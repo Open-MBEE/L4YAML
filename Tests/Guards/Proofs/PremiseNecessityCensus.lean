@@ -289,8 +289,11 @@ declarations' own binders and not by a rescoring of an existing one.
 -- `preprocess_saved_key_possible_post.h_noflow` are RETURN here and RELAY
 -- there, each spent by its proof's final `exact` — so the sibling's `RELAY`
 -- +30 reads +28 here, with `RETURN` +2.
+-- 2026-10-19 (item 296): the same two rows its sibling moves, `h_node` at both
+-- entry pack producers (#9), RELAY under this peel too (`368-rosterP-293.out`)
+-- and READ now that the frameless dedent exit applies it.
 def expectedModuleTallyP : String :=
-  "constants=1364 decls=1082 eta=387 FIELD=180 READ=1158 RELAY=2155 RETURN=138 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=180 READ=1160 RELAY=2153 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

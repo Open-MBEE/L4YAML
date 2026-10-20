@@ -255,9 +255,20 @@ lemma dump_scalar_anchor :
     dump (.scalar ⟨"val", .plain, none, some "a1", none⟩) = "&a1 val" := by
   native_decide
 
-/-- Tag is emitted in dump output for scalars. -/
+/-- A Core Schema tag that plain resolution already implies is elided. -/
+lemma dump_scalar_core_tag_elided :
+    dump (.scalar ⟨"42", .plain, some "!!int", none, none⟩) = "42" := by
+  native_decide
+
+/-- With `plainCoreScalars := false` the tag is written out. -/
 lemma dump_scalar_tag :
-    dump (.scalar ⟨"42", .plain, some "!!int", none, none⟩) = "!!int 42" := by
+    dump (.scalar ⟨"42", .plain, some "!!int", none, none⟩) { plainCoreScalars := false }
+      = "!!int 42" := by
+  native_decide
+
+/-- A tag the content does not satisfy is never elided. -/
+lemma dump_scalar_tag_kept :
+    dump (.scalar ⟨"abc", .plain, some "!!int", none, none⟩) = "!!int abc" := by
   native_decide
 
 /-- Tag + anchor both emitted. -/

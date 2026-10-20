@@ -3,6 +3,7 @@ module
 public import Lean.Data.Json
 public import L4YAML.Spec.Types
 public import L4YAML.Spec.CharPredicates
+public import L4YAML.Schema.Schema
 
 @[expose] public section Blanket
 
@@ -133,6 +134,13 @@ structure DumpConfig where
       on its own line.  The compact form is the conventional YAML style
       used by most serializers and config files. -/
   compactSequenceMap : Bool := false
+  /-- Emit a plain scalar tagged `!!null`/`!!bool`/`!!int`/`!!float` whose content
+      already resolves to that type under the Core Schema as the bare scalar
+      (`true`, `null`, `-7`): the tag is redundant for a Core Schema reader, and
+      the reserved-word quoting does not apply because the value is not a
+      string.  This is how `toYaml` marks non-string primitives.  When `false`
+      the tag is written out (`!!bool true`). -/
+  plainCoreScalars : Bool := true
   deriving Repr, BEq, Inhabited, ToJson
 
 /-- Manual `FromJson` instance for `DumpConfig` that uses structure defaults
@@ -155,8 +163,10 @@ instance : Lean.FromJson DumpConfig where
       | .ok v => v | _ => false
     let compactSequenceMap := match json.getObjValAs? Bool "compactSequenceMap" with
       | .ok v => v | _ => false
+    let plainCoreScalars := match json.getObjValAs? Bool "plainCoreScalars" with
+      | .ok v => v | _ => true
     .ok { indent, defaultStyle, scalarStyle, lineWidth, sortKeys,
-          allowReservedPlain, omitEmpty, compactSequenceMap }
+          allowReservedPlain, omitEmpty, compactSequenceMap, plainCoreScalars }
 
 /-! ## Private Helpers -/
 
@@ -266,6 +276,31 @@ def isPlainSafe (s : String) (allowReserved : Bool := false) : Bool :=
       -- Must not be a reserved word (unless allowed)
       (allowReserved || !isReservedWord s)
 
+/-- A plain scalar whose Core Schema tag (`!!null`/`!!bool`/`!!int`/`!!float`) says
+    exactly what implicit resolution of its content would say anyway, and whose
+    content can be written plain.  Such a scalar may be emitted bare: a Core
+    Schema reader recovers the same type, and quoting (which would make it a
+    string) must not happen. -/
+def isRedundantCoreTag (s : Scalar) : Bool :=
+  s.style == .plain &&
+  (match s.tag with
+   | some t =>
+     let ty := Schema.resolveImplicit s.content
+     match Schema.normalizeTag t with
+     | "tag:yaml.org,2002:null"  => ty.isNull
+     | "tag:yaml.org,2002:bool"  => ty.isBool
+     | "tag:yaml.org,2002:int"   => ty.isInt
+     | "tag:yaml.org,2002:float" => ty.isFloat
+     | _ => false
+   | none => false)
+
+/-- An untagged scalar whose own style is not plain means a *string* (§10.3.2);
+    writing it plain would hand its content to implicit resolution, so plain is
+    allowed only when that resolution is a string anyway.  (`toYaml "42"` is such
+    a scalar: it must come out as `"42"`, not `42`.) -/
+def plainWouldRetype (s : Scalar) : Bool :=
+  s.style != .plain && s.tag.isNone && !(Schema.resolveImplicit s.content).isStr
+
 /-- Check if string contains newlines. -/
 def hasNewlines (s : String) : Bool :=
   s.any (· == '\n')
@@ -330,7 +365,7 @@ def chooseScalarStyle (s : Scalar) (cfg : DumpConfig)
         .doubleQuoted
       else .singleQuoted
     | .plain =>
-      if isPlainSafe s.content cfg.allowReservedPlain &&
+      if isPlainSafe s.content cfg.allowReservedPlain && !plainWouldRetype s &&
           (ctx == .block || !isFlowUnsafe s.content) then
         .plain
       else .doubleQuoted
@@ -344,7 +379,7 @@ def chooseScalarStyle (s : Scalar) (cfg : DumpConfig)
         else
           -- Block context: use block scalar style from annotation, or default to literal
           if s.style == .literal || s.style == .folded then s.style else .literal
-      else if isPlainSafe s.content cfg.allowReservedPlain &&
+      else if isPlainSafe s.content cfg.allowReservedPlain && !plainWouldRetype s &&
               (ctx == .block || !isFlowUnsafe s.content) then
         .plain
       else .doubleQuoted
@@ -460,6 +495,12 @@ where
   dumpValue : YamlValue → DumpConfig → Nat → DumpContext → String
     | .scalar s, cfg, depth, ctx =>
       let anchorStr := match s.anchor with | some n => "&" ++ n ++ " " | none => ""
+      if cfg.plainCoreScalars && isRedundantCoreTag s &&
+          isPlainSafePreserve s.content true &&
+          (ctx == .block || !isFlowUnsafe s.content) then
+        -- A `toYaml`-style non-string primitive: bare, untagged, never quoted.
+        anchorStr ++ s.content
+      else
       let tagStr := match s.tag with | some t => t ++ " " | none => ""
       let pfx := tagStr ++ anchorStr
       let effectiveStyle := chooseScalarStyle s cfg ctx

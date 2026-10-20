@@ -73,13 +73,18 @@ namespace L4YAML.Tests.Guards.GateVocabulary
     that name the last of those are code.  Item 275's add two, over the two
     checks whose success it carries beside §9.2's; both resolve, and `names`
     does not move because neither check is a new name to the prose.
+    Items 280–281's prose in `ScannerFlowOpenUnderRun` adds four, all resolving,
+    over three step functions and one check (`names` unmoved); one wildcard
+    `…_preserves_*` is the fourteenth family, and one check split by a line
+    break is the fourth wrap.  Re-pinned after the fact, when the script
+    disagreed with the literal on an otherwise green tree.
     `unresolved` is what the check is for;
     `mentions` is the population it was taken over, and a `mentions` that never
     moved would mean the scan had stopped seeing new prose.  (The names are not
     spelled here: this file is the one the scan skips, so a name written in this
     docstring would move `self` instead, for no reading.) -/
 def expectedGateVocab : String :=
-  "names=107 mentions=444 families=13 refuted=7 wrapped=3 self=2 unresolved=0"
+  "names=107 mentions=448 families=14 refuted=7 wrapped=4 self=2 unresolved=0"
 
 end L4YAML.Tests.Guards.GateVocabulary
 

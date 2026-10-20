@@ -13,6 +13,12 @@ text-swap mirror — and yet the axiom audit comes out DIFFERENT:
 * `seqWholeStreamWellTyped` → `[propext, Classical.choice, Quot.sound]` (clean)
 * `mapWholeStreamWellTyped` → `[propext, sorryAx, Classical.choice, Quot.sound]` (carries `sorryAx`)
 
+(Postscript.  The audit above is R516's reading.  The map relocation has since landed — the
+`FlowSubrangesOk` residual is discharged in `parseStream_emitMapping` — so both structure lemmas and
+both context pairs now audit `[propext, Classical.choice, Quot.sound]`, pinned by
+`Tests/Guards/Proofs/FlowContextProviderAxioms.lean`.  The lesson below stands; its model axiom
+`relocated_residual` plays the part the inline `sorry` played then.)
+
 The asymmetry is invisible in the proof TEXT.  It comes entirely from a DEPENDENCY: both lemmas read
 boundary/`WellTyped` facts off a structure lemma, but the SEQ structure lemma
 (`scanFiltered_emitSeq_nonempty_structure`) had its `FlowSubrangesOk := sorry` residual RELOCATED out

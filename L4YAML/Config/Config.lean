@@ -107,6 +107,7 @@ instance : FromYaml DumpConfig where
       allowReservedPlain := (← getFieldOpt pairs "allowReservedPlain").getD dflt.allowReservedPlain
       omitEmpty := (← getFieldOpt pairs "omitEmpty").getD dflt.omitEmpty
       compactSequenceMap := (← getFieldOpt pairs "compactSequenceMap").getD dflt.compactSequenceMap
+      plainCoreScalars := (← getFieldOpt pairs "plainCoreScalars").getD dflt.plainCoreScalars
     }
 
 instance : ToYaml DumpConfig where
@@ -118,7 +119,8 @@ instance : ToYaml DumpConfig where
     ("sortKeys", toYaml cfg.sortKeys),
     ("allowReservedPlain", toYaml cfg.allowReservedPlain),
     ("omitEmpty", toYaml cfg.omitEmpty),
-    ("compactSequenceMap", toYaml cfg.compactSequenceMap)
+    ("compactSequenceMap", toYaml cfg.compactSequenceMap),
+    ("plainCoreScalars", toYaml cfg.plainCoreScalars)
   ]
 
 /-! ## Parser Limits Types -/

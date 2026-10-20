@@ -319,6 +319,17 @@ def isPlainSafePreserve (s : String) (allowReserved : Bool := false) : Bool :=
      c != ' ' && c != '\t' && isPlainSafe (String.ofList (c :: rest)) allowReserved
    | _ => false)
 
+/-- Whether `s` can be written plain without changing what it means.  For an
+    untagged plain scalar whose content resolves to a non-string (`-7`, `-1.5`,
+    `-.inf`), the leading sign YAML [126] allows is accepted, since quoting it
+    would turn the number into a string; everything else goes through
+    `isPlainSafe` unchanged. -/
+def plainKeepsType (s : Scalar) (allowReserved : Bool) : Bool :=
+  if s.style == .plain && s.tag.isNone && !(Schema.resolveImplicit s.content).isStr then
+    isPlainSafePreserve s.content allowReserved
+  else
+    isPlainSafe s.content allowReserved && !plainWouldRetype s
+
 /-- Whether content can be carried VERBATIM inside single quotes:
     printable characters only (plus tab; C0, DEL, and C1 excluded per
     c-printable §5.1). A raw CR reparses as line folding (silent
@@ -365,7 +376,7 @@ def chooseScalarStyle (s : Scalar) (cfg : DumpConfig)
         .doubleQuoted
       else .singleQuoted
     | .plain =>
-      if isPlainSafe s.content cfg.allowReservedPlain && !plainWouldRetype s &&
+      if plainKeepsType s cfg.allowReservedPlain &&
           (ctx == .block || !isFlowUnsafe s.content) then
         .plain
       else .doubleQuoted
@@ -379,7 +390,7 @@ def chooseScalarStyle (s : Scalar) (cfg : DumpConfig)
         else
           -- Block context: use block scalar style from annotation, or default to literal
           if s.style == .literal || s.style == .folded then s.style else .literal
-      else if isPlainSafe s.content cfg.allowReservedPlain && !plainWouldRetype s &&
+      else if plainKeepsType s cfg.allowReservedPlain &&
               (ctx == .block || !isFlowUnsafe s.content) then
         .plain
       else .doubleQuoted

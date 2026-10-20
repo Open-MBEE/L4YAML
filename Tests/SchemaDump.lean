@@ -7,6 +7,7 @@ public import L4YAML.Schema.Dump
 public import L4YAML.Schema.Api
 public import L4YAML.Schema.Deriving
 public import L4YAML.Output.Json
+public import L4YAML.Config.Config
 public import L4YAML.Output.Dump
 public import L4YAML.Output.Emitter
 public import L4YAML.Parser.Composition
@@ -337,6 +338,28 @@ def testStyleAware (state : IO.Ref TestCollector) : IO Unit := do
     (dumpTyped (0.0 / 0.0 : Float) == ".nan")
   check state "Float 1.5 round-trips"
     (roundTripsTo (1.5 : Float))
+
+  -- Parsed untagged numbers keep their type through dump (leading sign stays plain)
+  check state "plain -7 (untagged) dumps plain"
+    (dump (.plainScalar "-7") == "-7")
+  check state "plain -1.5 (untagged) dumps plain"
+    (dump (.plainScalar "-1.5") == "-1.5")
+  check state "plain -7 round-trips as an int"
+    (match parseYamlSingle (dump (.plainScalar "-7")) with
+     | .ok v => (resolve v).isInt
+     | .error _ => false)
+  check state "plain -x (a string) is still quoted"
+    (dump (.plainScalar "-x") == "\"-x\"")
+  check state "HashMap key 0xFF stays the string \"0xFF\" in JSON"
+    (jsonOf (dumpTyped ((Std.HashMap.emptyWithCapacity 1).insert "0xFF" (1 : Nat))) ==
+      some "{\"0xFF\":1}")
+  check state "HashMap key true stays a string key"
+    (dumpTyped ((Std.HashMap.emptyWithCapacity 1).insert "true" (1 : Nat)) == "\"true\": 1")
+
+  check state "DumpConfig YAML round-trip keeps plainCoreScalars := false"
+    (match parseAs DumpConfig (dumpTyped ({ plainCoreScalars := false } : DumpConfig)) with
+     | .ok c => c.plainCoreScalars == false
+     | .error _ => false)
 
   -- The JSON axis reads the dumps the same way
   check state "yamlToJson (dumpTyped true) = true"

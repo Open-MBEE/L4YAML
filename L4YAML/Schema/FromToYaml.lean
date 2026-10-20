@@ -217,8 +217,7 @@ instance {α : Type} [FromYamlType α] : FromYamlType (Std.HashMap String α) wh
 
 instance {α : Type u} [ToYaml α] : ToYaml (Std.HashMap String α) where
   toYaml hm :=
-    let pairs := hm.toArray.map fun (k, v) =>
-      (YamlValue.scalar { content := k, style := .plain }, toYaml v)
+    let pairs := hm.toArray.map fun (k, v) => (toYaml k, toYaml v)
     YamlValue.mapping .block pairs
 
 /-- Direct `FromYaml` instance for `HashMap String String` without schema resolution.

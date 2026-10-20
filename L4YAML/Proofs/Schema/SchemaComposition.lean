@@ -179,8 +179,8 @@ lemma resolve_toYaml_str (s : String) : resolve (toYaml s) = .str s := by
   have hdq : (ScalarStyle.doubleQuoted == ScalarStyle.plain) = false := rfl
   have hpp : (ScalarStyle.plain == ScalarStyle.plain) = true := rfl
   cases h : (resolveImplicit s).isStr
-  · simp [scalarType, h]
-  · simp [scalarType, h]
+  · simp [scalarType, hdq]
+  · simp [scalarType, hpp]
     unfold resolveImplicit at h ⊢
     cases hn : isNull s <;> cases hb : isBool s <;> cases hi : isInt s <;>
       cases hf : isFloat s <;> simp_all [YamlType.isStr]

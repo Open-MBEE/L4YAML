@@ -232,6 +232,37 @@ dispatcher must set `needIndentCheck` itself (RZT7, KK5P complex4). -/
 #guard single "block: > # comment\n  scalar\n"
 #guard single "a: |\n \n  x\n"
 
+/-! ### Escaped trailing white char across a double-quoted fold (B2, DE56)
+
+The six inputs of `Tests/Reflections/EscapedTrailingTab.lean`. An escaped
+tab (`\t`, `\<TAB>`) before a line break is `ns-double-char` content and
+survives the fold; a bare literal tab is `s-white` layout and is trimmed.
+The legacy fix threads a `protectedLen` boundary through
+`collectDoubleQuotedLoop`; `collectDoubleQuotedLoopIx` carries its own
+copy, so these rows keep the two from drifting. `single` only says the
+pipelines agree, so `ixContent` additionally pins what the indexed
+pipeline keeps. -/
+
+/-- The content of the scalar `parseYamlSingleIx` composes, if any. -/
+def ixContent (s : String) : Option String :=
+  match parseYamlSingleIx s with
+  | .ok (.scalar sc) => some sc.content
+  | _ => none
+
+#guard single "\"1 trailing\\t\n    tab\"\n"
+#guard single "\"2 trailing\\t  \n    tab\"\n"
+#guard single "\"3 trailing\\\t\n    tab\"\n"
+#guard single "\"4 trailing\\\t  \n    tab\"\n"
+#guard single "\"5 trailing\t\n    tab\"\n"
+#guard single "\"6 trailing\t  \n    tab\"\n"
+
+#guard ixContent "\"1 trailing\\t\n    tab\"\n" == some "1 trailing\t tab"
+#guard ixContent "\"2 trailing\\t  \n    tab\"\n" == some "2 trailing\t tab"
+#guard ixContent "\"3 trailing\\\t\n    tab\"\n" == some "3 trailing\t tab"
+#guard ixContent "\"4 trailing\\\t  \n    tab\"\n" == some "4 trailing\t tab"
+#guard ixContent "\"5 trailing\t\n    tab\"\n" == some "5 trailing tab"
+#guard ixContent "\"6 trailing\t  \n    tab\"\n" == some "6 trailing tab"
+
 /-! ### Comments + whitespace -/
 #guard single "# leading\nabc"
 #guard single "a: b  # trailing"

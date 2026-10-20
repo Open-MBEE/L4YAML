@@ -404,9 +404,16 @@ and `dedent`'s
 `w ∉ ks` is false wherever the frames cover the stack
 (`preprocess_landing_mem_or_seq`); the sequence case is the `:`'s own
 `trailingContent` (§8.2.1), refused in the rows below.  The props park's `tab`
-input is refused too, and item 289 refutes its arm.  `noKeyContext` is still the relay item 211 measured:
+input is refused too, and item 289 refutes its arm.  ~~`noKeyContext` is still the relay item 211 measured:
 its one deciding production is reached only by refused input, and the rest
-relay their callers' contexts.
+relay their callers' contexts.~~  Corrected at item 294 (DOCS) and item 295:
+six of item 211's seven "relays" call a producer (item 212), and the content
+cascade's four decisions are reached only by refused input or refuted by the
+sites' own facts — but the depth-0 flow close hands `noKeyContext` too, and
+three of its classes were ACCEPTED: the under-run open (`k:⏎[1]: b`), the
+compact open at a `-`/`?`/`:` park (`- [1]: b`, M2N8's `? []: x`), and a
+property run with a break before the bracket (`&p⏎[1]: b`).  Item 295 gives
+each of their frames the landing's key route.
 
 The seventh arm is not empty at the runtime: `? a⏎: - b` is accepted, and the
 explicit value's `[185]` slot is what serves it.  The arm is the park that

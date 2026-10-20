@@ -10480,7 +10480,9 @@ lemma FlowOpenStack.receivePropsNodeColon {g : Option ScannerState} {sp_start : 
     * `pendingBlock`/`pendingMapValue` — the flow is the entry's value: route
       through `h_close ∘ flowInBlock` AT THE PENDING'S INDEX (item 46), so
       `key: [a]` and `  - [1]` alike stay ONE document.  A landing that
-      under-runs `s-indent(n)` on the open takes the drop route instead.
+      under-runs `s-indent(n)` on the open takes ~~the drop route~~
+      `slot_ride` instead (item 285): no node reading, and the landing's own
+      key route (item 295).
 
     The open itself is uniform (`mk` abstracts `openSeqBase`/`openMapBase`,
     closing over the bracket's `GLit`): the new interior `PendingNode` is
@@ -12342,8 +12344,17 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
   -- face) and floored as `drop_ride` is.  The value route is REFUTED rather than
   -- routed: `GateOf (some s_prep)` asks the landing's flag to be DOWN, and the
   -- under-run's landing re-armed it.  A frame opened here owes its close no
-  -- reading — `FlowBaseAnchor.gate` refutes a parked slot — and nothing in it
-  -- spends `dropClose`, so the three live arms below take this and not that.
+  -- NODE reading — `FlowBaseAnchor.gate` refutes a parked slot — and nothing in
+  -- it spends `dropClose`, so the three live arms below take this and not that.
+  --
+  -- **Item 295: it owes the KEY reading.**  The collection an under-run landing
+  -- opens can be the next implicit key of the level the landing stands at —
+  -- `k:⏎[1]: b` is `{k: null, [1]: b}`, accepted, and so are `?⏎[1]: b` and
+  -- `k: &p⏎[1]: b` — so the frame carries the route `main`'s landing arm
+  -- builds (`flowKeyRoute_of_root`), from the park's own close.  Its faces are
+  -- punted, so the route is `rootMapRoute_or_refused`'s fresh-document reading
+  -- rather than the sibling entry the events emit; that sibling waits on the
+  -- three parks' own mapping levels (`h_mapF`).
   have slot_ride :
       (s_prep.indents.any fun e => e.column == (s_prep.col : Int)) = true →
       SlotFace s_prep.tokens → s_prep.simpleKeyAllowed = true →
@@ -12364,7 +12375,11 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
            ⟨Or.inr (ParkSlot.ofOpen htok hop h_ind' h_noflow_prep
               (by rw [hpos]; exact hmem) hrun),
             ⟨KeyFloor.cleared h_opsk, fun i hlo hhi => absurd hhi (by omega)⟩⟩
-           (mkv (some s_prep) 0 sp_block (fun hg => absurd hg.2 (by rw [hska]; simp))),
+           (mk (some s_prep) 0 sp_block ⟨(fun hg => absurd hg.2 (by rw [hska]; simp)),
+             flowKeyRoute_of_root (Or.inr trivial) h_noflow_prep h_park h_close_pending h_dn h_fv
+               h_corr hcorr_prep h_preprocess (Or.inr trivial) (Or.inr trivial) h_bare h_base
+               (Or.inr trivial) (Or.inr trivial) (Or.inr trivial),
+             Or.inr trivial⟩),
          PendingNode.noPending sp_start sp_open (Or.inr (inFlow_of_flowLevel_eq h_fl1))
            (Or.inr (inFlow_of_flowLevel_eq h_fl1))
            (nodoc_of_flowLevel_succ h_fl1) (noek_of_flowLevel_succ h_fl1)
@@ -12566,7 +12581,15 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                     -- Item 150: and the value-line twin's, dropped at the same
                     -- boundary.
                     (h_tw108p.imp (fun ⟨nv, ks, h_lt, _, r⟩ => ⟨nv, ks, h_lt, r⟩) id)⟩
-                | _, _ => Or.inr trivial),
+                -- Item 295: no inherited pack, and the collection may still be a
+                -- key — a break between the run and the bracket re-saved the key
+                -- AT the bracket (`&p⏎[1]: b`, accepted), so the landing's own
+                -- route stands where the run's cannot.  Its faces are punted:
+                -- the fresh-document reading, not item 174's `+MAP &p` ride.
+                | _, _ => flowKeyRoute_of_root (Or.inr trivial) h_noflow_prep h_park
+                    h_close_pending h_dn h_fv h_corr hcorr_prep h_preprocess (Or.inr trivial)
+                    (Or.inr trivial) h_bare h_base (Or.inr trivial) (Or.inr trivial)
+                    (Or.inr trivial)),
                -- Item 96: the run's value line — the collection completes the
                -- props-headed KEY of an open `[188]` entry and the landed `:`
                -- closes it (`? &p [1]⏎: - w`); the twin item 91 installed
@@ -12587,10 +12610,13 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
     · -- Item 172: the run-end half of the under-run is no longer the scanner's
       -- refusal — §8.1's floor is read at the CLOSE now, so the open STEP
       -- scans (`k:⏎  b:⏎    &x⏎[1]`) and this arm has to build.  The park is
-      -- under-run, so there is nothing to spend: the open rides the opaque
-      -- resume, exactly as item 46 designed it for deferred states — and the
-      -- runtime refuses the input at the next gate (the dangling reading or
-      -- the deferred floor), so no accepted scan ever consults this ride.
+      -- under-run, so there is nothing to spend: the open rides ~~the opaque
+      -- resume, exactly as item 46 designed it for deferred states~~
+      -- `slot_ride` (item 285) — and the runtime refuses the VALUE reading at
+      -- the next gate (the dangling reading or the deferred floor).
+      -- ~~So no accepted scan ever consults this ride.~~  **Item 294: the KEY
+      -- reading is accepted** (`k: &p⏎[1]: b`), and it spends the key route
+      -- the frame carries (item 295).
       -- The TAB half is §6.1's own refusal and stands (item 68).
       rcases h_ur with ⟨j, sx, hj, h_ind, _h_ws2, h_end | h_tab⟩
       · exact slot_ride
@@ -12671,7 +12697,10 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                         kslot sp h_bi sp (SCompactSeqTail.nil n_old sp)
                           sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
                   | Or.inr _ => Or.inr trivial)
-                 h_noflow_prep h_park h_corr hcorr_prep
+                 -- Item 295: the park's own FLAG — the compact arm crosses no
+                 -- break and builds from that half alone, and `arm_or_col`
+                 -- reads this park's COLUMN (`arm_tight_or_col`).
+                 h_noflow_prep (Or.inl h_sk_old) h_corr hcorr_prep
                  h_preprocess,
                -- Item 96: the entry's value line, off the same twin — the
                -- completed collection is the `-`'s node, the entry heads the
@@ -12769,7 +12798,8 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                           route sp_v (SBlockMapEntry.explicit n_old sp_q sp_scan sp sp_i sp_c sp_v
                             h_qlit h_bo h_iv h_lit h_sbi))⟩
                   | Or.inr _ => Or.inr trivial)
-                 h_noflow_prep h_park h_corr hcorr_prep h_preprocess,
+                 -- Item 295: the park's own FLAG, as at `pendingBlock`.
+                 h_noflow_prep (Or.inl h_sk_mv) h_corr hcorr_prep h_preprocess,
                -- …and under an open `?` the collection is the KEY half of the
                -- `[188]` entry that `h_expl` routes (`? [1]⏎: v`).
                -- Item 96: an IMPLICIT park has no `?` of its own, but the twin

@@ -636,7 +636,7 @@ def expectedSites : List String :=
    "accum_content_pending→keyctx_of_preprocess.h_close [SSLComments ⇒ Stream] segments=3 comps=3",
    "accum_content_pending→content_dispatch_routed.h_route [SBlockNode(0,blockIn) ⇒ Stream] segments=6 comps=3",
    "accum_content_on_noPending→keyctx_of_preprocess.h_close [SSLComments ⇒ Stream] segments=1 comps=1",
-   "accum_flow_open_depth0→flowKeyRoute_of_root.h_close [SSLComments ⇒ Stream] segments=3 comps=3 NEW",
+   "accum_flow_open_depth0→flowKeyRoute_of_root.h_close [SSLComments ⇒ Stream] segments=3 comps=3",
    "accum_block_pending→accum_block_on_pendingContent.h_close_pending [SSLComments ⇒ Stream] segments=3 comps=3",
    "accum_block_pending→accum_block_on_closeThenBlock.h_close_pending [SSLComments ⇒ Stream] segments=3 comps=3",
    "accum_block_pending→accum_block_on_pendingBlockContent.h_close_pending [SSLComments ⇒ Stream] segments=3 comps=3",
@@ -772,9 +772,17 @@ def expectedShapeComps : List String :=
     2026-10-19 (item 293): `unmarked` 201 -> 200 and nothing else — the
     implicit-key consumer's `¬ possible` deferral, refuted on the park's
     `h_live`.  Putting the escape back at that one arm on the item-293 tree
-    reads 201 again (`scratchpad/l4yaml-row12-steps/371-iso-streamcomp-293.log`). -/
+    reads 201 again (`scratchpad/l4yaml-row12-steps/371-iso-streamcomp-293.log`).
+
+    2026-10-19 (item 295): `prev` 19 -> 21 and `prevStyle` with it.  `prev` is
+    `RouteShapes.expectedK`'s provenance, and item 295's K table names two more
+    stream-built sites: `flowKeyRoute_of_root.h_close` in
+    `accum_flow_open_depth0` (`new` 5 -> 4, `newVsStyle` with it, and that
+    site's row loses its `NEW`), and `slot_ride`'s `mk.key`, which no
+    composition here reads (`missing` 1 -> 2, `styleOnly` with it).  No
+    composition moved. -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=19 new=5 missing=1 prevStyle=19 prevStyleOff=0 newVsStyle=5 styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=200 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=21 new=4 missing=2 prevStyle=21 prevStyleOff=0 newVsStyle=4 styleOnly=2 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=200 reach=38"
 
 /-! ## §5 The reading -/
 

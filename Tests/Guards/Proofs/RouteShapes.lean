@@ -802,10 +802,15 @@ def expectedSites : List String :=
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_mid:=bound:h_close closedBy=[SSLComments ⇒ Stream]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=punt]",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow=bound:h_kpkg:=Exists.intro",
    -- Item 285: `slot_ride`'s exit — the same shape as `drop_ride`'s above it,
-   -- which the three live arms spend in its place.
-   "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow=bound:h_kpkg:=Exists.intro",
+   -- which the three live arms spend in its place.  Item 295: its frame is
+   -- built field by field — the gate-refuted node reading (`closed`), the
+   -- landing's key route, which closes the park to the stream (`stream`), and
+   -- no `vslot` (`punt`).
+   "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow[value=closed,key=stream,key=stream,key=stream,key=stream,vslot=punt]",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=punt]",
-   "  accum_flow_open_depth0: carrier park= stream=param:h_stream closedBy=[]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=carry]",
+   -- Item 295: the props arm's key route falls back to the landing's, which
+   -- closes the park to the stream, so its four key slots read `stream`.
+   "  accum_flow_open_depth0: carrier park= stream=param:h_stream closedBy=[]  flow[value=carry,key=stream,key=stream,key=stream,key=stream,vslot=carry]",
    "  accum_flow_open_depth0: nil park=noPending stream=bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB closedBy=[lemma:absorb_stacksB]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=punt]",
    "  accum_flow_open_depth0: carrier park= stream=param:h_stream closedBy=[]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=carry]",
    "  accum_flow_open_depth0: carrier park= stream=param:h_stream closedBy=[]  flow[value=carry,key=carry,key=carry,key=carry,key=carry,vslot=carry]",
@@ -813,15 +818,25 @@ def expectedSites : List String :=
    "  accum_structural_pending: nil park=bound:obtained:h_pend_new stream=bound:h_stream_mid:=bound:h_close closedBy=[SSLComments ⇒ Stream] ",
    "  accum_structural_pending: nil park=bound:obtained:h_pend_new stream=bound:h_stream_mid:=bound:h_close closedBy=[SSLComments ⇒ Stream] ",
    "  accum_structural_pending: nil park=bound:obtained:h_pend' stream=bound:h_stream_old closedBy=[obtained] "]
+/-- Item 295: four spines are first built from the stream at the flow open's
+    key (`mk.key`).  `slot_ride`'s route and the props arm's fallback close the
+    park to the stream (`h_close_pending`), so the route's four conjuncts —
+    the entry, the value-line pair and the two resume twins — each head a
+    spine there, and `flowKeyRoute_of_root.h_close` joins the
+    `SSLComments ⇒ Stream` closure's sites. -/
 def expectedK : List String :=
   ["  SBlockNode(_+1,blockIn) ⇒ Stream  ← question_open_map:pendingMapValue.h_close, colon_open_map:pendingMapValue.h_close  [pendingMapValue.h_close]",
    "  [col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream  ← question_open_map:pendingMapValue.h_ivl, question_open_map:pendingMapValue.h_vslot, accum_block_pending→accum_block_on_closeThenBlock.h_vslot  [pendingMapValue.h_ivl, pendingMapValue.h_vslot]",
    "  SBlockMapEntry(_) ⇒ Stream  ← question_open_map:pendingMapValue.h_expl  [pendingMapValue.h_expl]",
    "  SBlockNode(_+1,blockIn) ⇒ Resume(_)▹ExplValueLine(_)  ← question_open_map:pendingMapValue.h_closeFV, colon_open_map:pendingMapValue.h_closeFV  [pendingMapValue.h_closeFV]",
    "  SSLComments ⇒ Resume(_)▹ExplValueLine(_)  ← question_open_map:pendingMapValue.h_framesV  [pendingContent.h_framesV, pendingMapValue.h_framesV]",
+   "  [_=_] SBlockMapEntry(_) ⇒ Stream  ← accum_flow_open_depth0:mk.key  []",
+   "  [_=_] SBlockMapEntry(_) > SCompactMapTail(_) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← accum_flow_open_depth0:mk.key  []",
+   "  [_=_] SBlockMapEntry(_) > SCompactMapTail(_) ⇒ Resume(_)▹Stream  ← accum_flow_open_depth0:mk.key  []",
+   "  [_=_] SBlockMapEntry(_) > SCompactMapTail(_) ⇒ Resume(_)▹ExplValueLine(_)  ← accum_flow_open_depth0:mk.key  []",
    "  GAlt(SLBareDocument,GSeq(SENode,SSLComments)) ⇒ Stream  ← structural_dispatch_to_pending:pendingDocStart.h_doc_route  [pendingDocStart.h_doc_route]",
    "  SBlockNode(0,blockIn) ⇒ Stream  ← content_dispatch_after_close→content_dispatch_routed.h_route, accum_content_pending→content_dispatch_routed.h_route  []",
-   "  SSLComments ⇒ Stream  ← accum_content_pending→keyctx_of_preprocess.h_close, accum_content_on_noPending→keyctx_of_preprocess.h_close, accum_block_pending→accum_block_on_pendingContent.h_close_pending, accum_block_pending→accum_block_on_closeThenBlock.h_close_pending, accum_block_pending→accum_block_on_pendingBlockContent.h_close_pending, accum_block_pending→accum_block_on_pendingBlock.h_close_pending  [pendingContent.h_closable, pendingBlockContent.h_closable]",
+   "  SSLComments ⇒ Stream  ← accum_content_pending→keyctx_of_preprocess.h_close, accum_content_on_noPending→keyctx_of_preprocess.h_close, accum_flow_open_depth0→flowKeyRoute_of_root.h_close, accum_block_pending→accum_block_on_pendingContent.h_close_pending, accum_block_pending→accum_block_on_closeThenBlock.h_close_pending, accum_block_pending→accum_block_on_pendingBlockContent.h_close_pending, accum_block_pending→accum_block_on_pendingBlock.h_close_pending  [pendingContent.h_closable, pendingBlockContent.h_closable]",
    "  [col(_)=_+1] SBlockIndented(_,blockOut) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← accum_block_pending→accum_block_on_closeThenBlock.h_vslot  []",
    "  SLDirectiveDocument ⇒ Stream  ← accum_structural_pending→dispatch_new_pending.h_dir_route  [pendingDirective.h_dir_route]"]
 /-- Item 256 moves two closure slots from `punt` to `carry` — the root `-`'s
@@ -846,9 +861,23 @@ def expectedK : List String :=
     `closed` (`scratchpad/l4yaml-row12-steps/238-routeargs-287.txt`).  Item
     288 moves one closure from `optional` to `mandatory`:
     `pendingMapValue.h_vslot` declines with the stamp, so its six producer
-    slots — one `stream`, two `carry`, three `punt` — change bucket with it. -/
+    slots — one `stream`, two `carry`, three `punt` — change bucket with it. 
+
+    **Item 295 moves the flow and build tallies, and four spines.**
+    `slot_ride`'s frame is built field by field (`flowSites` 6 → 7,
+    `flowSlots` 36 → 42: the gate-refuted node reading `closed`, the landing's
+    key route `stream` ×4, the declined `vslot` `punt`), and the props arm's
+    key reads `stream` where it read `carry` (4 slots) — so `flow` reads
+    `stream=8 carry=29 punt=4 closed=1`, and the build tally moves the same
+    way (`builds` +1, `buildSlots` +6, `stream` +8, `carry` −4, `punt` +1,
+    `closed` +1).  The two new `flowKeyRoute_of_root` applications add their
+    route arguments (`routeArgs` +4: `stream` +2 — `h_close_pending` — and
+    `closed` +2), one new stream-fed pair (`routePairs` +1,
+    `flowKeyRoute_of_root.h_close`) and one new stream builder
+    (`accum_flow_open_depth0`); the route's four conjuncts head the four new
+    spines (`buildSpines` 6 → 10, `k` 10 → 14, `expectedK`). -/
 def expectedLine : String :=
-  "closures=54 packed=14 optional=40 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 closed=0] optional[stream=4 carry=110 fwd=8 punt=73 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=6 flowSlots=36 flow[stream=0 carry=33 fwd=0 punt=3 closed=0] routeArgs=150 routeStream=19 routeCarry=44 routeFwd=50 routeClosed=37 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 builders=13 builds=169 buildSlots=1095 build[stream=9 carry=279 fwd=705 punt=82 closed=20] buildStreamSlots=9 buildSpines=6 routePairs=8 routeSpines=5 k=10 kHeads=6 streamBuilders=8"
+  "closures=54 packed=14 optional=40 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 closed=0] optional[stream=4 carry=110 fwd=8 punt=73 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=7 flowSlots=42 flow[stream=8 carry=29 fwd=0 punt=4 closed=1] routeArgs=154 routeStream=21 routeCarry=44 routeFwd=50 routeClosed=39 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 builders=13 builds=170 buildSlots=1101 build[stream=17 carry=275 fwd=705 punt=83 closed=21] buildStreamSlots=17 buildSpines=10 routePairs=9 routeSpines=5 k=14 kHeads=6 streamBuilders=9"
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

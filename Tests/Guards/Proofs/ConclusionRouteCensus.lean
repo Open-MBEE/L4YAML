@@ -451,13 +451,15 @@ def expectedCross : List String :=
 
     The two censuses reconcile on item 212's published figure: the surviving
     producer surface (`producers`) plus everything the pipes landed on
-    (`landed`) is `total=79`, which is the `VIA` count item 212 pinned before
-    either direction could follow a pipe.  `landed-producers=0` is the finding:
+    (`landed`) is the 79 `VIA` edges item 212 pinned before either direction
+    could follow a pipe, plus **item 295's one**: `slot_ride`'s key route is a
+    `VIA flowKeyRoute_of_root` edge (`RelaySupplyCensus.expectedProducers`), so
+    `producers` reads 37 and `total` 80.  `landed-producers=0` is the finding:
     **not one of the 43 reaches a producer.**  The landing table's own parts are
     summed here too, so a row added to it without its total moving fails.  If
     item 212's lists move, its gate fails before this one does. -/
 def expectedPipeSplit : String :=
-  "pipes=0/0 producers=36/11 landed=43 landed-producers=0 total=79"
+  "pipes=0/0 producers=37/11 landed=43 landed-producers=0 total=80"
 
 end L4YAML.Tests.Guards.ConclusionRouteCensus
 

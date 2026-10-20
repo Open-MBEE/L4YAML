@@ -859,10 +859,19 @@ def hopName (env : Environment) (e : Edge) : String :=
     concludes in an arrow and case-splits before it introduces it, so its value
     has nine leading lambdas for ten binders — the shape of `stale_of_dispatch`,
     its twin, already among the thirty.  The 31 names, listed with the guard's
-    own test: `scratchpad/l4yaml-row12-steps/357-relay-skipped.out`. -/
+    own test: `scratchpad/l4yaml-row12-steps/357-relay-skipped.out`.
+
+    **Item 295 moves `edges` 642 → 656, all in `accum_flow_open_depth0`**: two
+    new applications of `flowKeyRoute_of_root` — `slot_ride`'s and the props
+    arm's fallback — each decline its six optional faces (`DECLINE` +12), and
+    `slot_ride` builds its frame field by field instead of through `mkv`, so
+    `FlowBaseRoutes.mk` gains a key supplied VIA `flowKeyRoute_of_root`
+    (`VIA` 36 → 37) and a declined `vslot` (`DECLINE` 264 → 265).  Each of the
+    six binders reads 2 → 4 applications by the guard's own walk
+    (`scratchpad/l4yaml-row12-steps/427-relaydump-295.out`). -/
 def expectedTally : String :=
-  "edges=642 skipped=31 [DECLINE=252, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
-SPLIT=154, VIA=36]"
+  "edges=656 skipped=31 [DECLINE=265, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
+SPLIT=154, VIA=37]"
 
 /-- **The row item 211 read off the compiler's error text and got wrong.**  All
     eight of these print `h_keyctx` when the premise is narrowed; six of them
@@ -892,16 +901,21 @@ def expectedSeed : List String :=
     79 edges named a combinator and not a decider.  **Item 214 followed them and
     they are gone from this list**: the surface is 36 edges over the 11 constants
     below, and every row names a lemma.  Where the 43 went is
-    `expectedPipeLanding`, and the answer is that NONE of them is a producer. -/
+    `expectedPipeLanding`, and the answer is that NONE of them is a producer.
+
+    **Item 295: `flowKeyRoute_of_root` 2 → 3** — `slot_ride`'s frame key.  The
+    props arm's fallback is the other new application, and it sits inside the
+    arm's split on the run's pack, so it is a `SPLIT` branch and not an edge
+    here. -/
 def expectedProducers : List String :=
   ["2 VIA FlowBaseRoutes.key",
    "2 VIA FlowBaseRoutes.vslot",
-   "2 VIA flowKeyRoute_of_root",
    "2 VIA flowVPack_of_close",
    "2 VIA markerctx_of_landing",
    "2 VIA nodocctx_of_preprocess",
    "2 VIA suffixctx_of_landing",
    "3 VIA flowKeyRoute_of_open",
+   "3 VIA flowKeyRoute_of_root",
    "4 VIA explFrameValueLine",
    "7 VIA keyctx_of_preprocess",
    "8 VIA frameChainUnion"]
@@ -950,12 +964,18 @@ Or.imp⇒SPLIT=3, dite⇒SPLIT=4]"
     left with the binder it supplied (`expectedTally`): `survived` 156 → 155,
     `leaves` 330 → 328, one `DECLINE|PAY`.  **Item 288: one more**,
     `compact_open_map`'s split on the indicator, which supplied
-    `pendingMapValue.h_vslot` and left with it: 155 → 154, 328 → 326. -/
+    `pendingMapValue.h_vslot` and left with it: 155 → 154, 328 → 326.
+
+    **Item 295: one leaf is decided elsewhere.**  The props arm's split on the
+    run's pack wrote `Or.inr trivial` on its fallback branch, and that branch
+    takes the landing's route now (`flowKeyRoute_of_root`): one `DECLINE|PAY`
+    split becomes `PAY|VIA` (`DECLINE` 167 → 166, `VIA` 0 → 1, `elsewhere`
+    0 → 1), and no split is added or lost. -/
 def expectedSplitLanding : String :=
-  "survived=154 collapsed=1 leaves=326 elsewhere=0 [DECLINE=167, PAY=159] \
+  "survived=154 collapsed=1 leaves=326 elsewhere=1 [DECLINE=166, PAY=159, VIA=1] \
 [DECLINE|DECLINE|DECLINE|PAY=1, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|PAY=8, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=142, \
-DECLINE|PAY|PAY=1]"
+DECLINE|DECLINE|PAY=8, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=141, \
+DECLINE|PAY|PAY=1, PAY|VIA=1]"
 
 /-- **Which BRANCH is taken (DOCS item 217).**  Item 216 resolved what a split
     WRITES — both answers, one per arm.  What it could not say was which arm the
@@ -997,10 +1017,14 @@ DECLINE|PAY|PAY=1]"
     146 → 145, one `DECLINE-closed` and one `PAY-free` with it): `plainRoot`
     46 + 5 − 1 = 50.  **Item 288** removes `compact_open_map`'s split on the
     indicator `hc`, a plain root and a bare relay, with the field it supplied:
-    `relayRooted` 145 → 144, `plainRoot` 50 → 49, the control 100 → 99. -/
+    `relayRooted` 145 → 144, `plainRoot` 50 → 49, the control 100 → 99.
+    **Item 295**: the props arm's fallback branch is a producer call, not a
+    closed decline (`DECLINE-closed` 163 → 162, one `VIA flowKeyRoute_of_root`
+    leaf); no split or root moves. -/
 def expectedSplitBranch : String :=
   "splits=154 leaves=326 relayRooted=144 siteDecided=10 optionalRoot=95 \
-plainRoot=49 agree=99/99 disagree=0 [DECLINE-closed=163, DECLINE-free=4, PAY-free=159]"
+plainRoot=49 agree=99/99 disagree=0 [DECLINE-closed=162, DECLINE-free=4, PAY-free=159, \
+VIA L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue
     of the branch question after `expectedSplitBranch`.  Four are a `dite` on a
@@ -1020,8 +1044,11 @@ def expectedSiteDecided : List String :=
 DECLINE|DECLINE|DECLINE|PAY",
    -- Item 285: the same split; `slot_ride`'s `match h_optok` elaborates three
    -- matchers ahead of it, so its auxiliary is `match_1_21` and no longer `_18`.
+   -- Item 295: the props arm's route split — the run's pack and the INHERITED
+   -- key (`preprocess_some_savedKey_shape`'s arm) — whose fallback takes the
+   -- landing's route (`flowKeyRoute_of_root`) instead of declining.
    "1 accum_flow_open_depth0 :: accum_flow_open_depth0.match_1_21 on SPLIT Or.casesOn \
-on VIA preprocess_some_savedKey_shape ⇒ DECLINE|PAY",
+on VIA preprocess_some_savedKey_shape ⇒ PAY|VIA",
    "2 accum_block_pending :: Or.casesOn on VIA Nat.eq_zero_or_pos ⇒ DECLINE|PAY",
    "2 question_open_map :: question_open_map.match_1_7 on VIA frameChainUnion ⇒ \
 DECLINE|PAY"]
@@ -1075,9 +1102,11 @@ def expectedBranchPremises : List String :=
 -- `_ ∨ True` now, so the chase stops at it: one more `orphan`, one fewer
 -- `closureDecline`, its three splits no longer live, the field's node gone
 -- (`expectedBranchSupply`'s row for it reads `ORPHAN`).
+-- Item 295: `accounted` follows `edges` (642 → 656, `expectedTally`); the
+-- fourteen new edges reach no new pair, orphan or split.
 def expectedDeclineReach : String :=
   "pairs=35 orphan=4 direct=7 closureDecline=31 dead=0 maxDepth=2 liveSplits=89 \
-deadSplits=0 accounted=642/642 nodes=159 fieldEdges=58 fieldResolved=58 withCycle=8 \
+deadSplits=0 accounted=656/656 nodes=159 fieldEdges=58 fieldResolved=58 withCycle=8 \
 declineWriters=19 parkHop=21"
 
 /-- **Every branch premise, with what its own callers supply and where that

@@ -975,9 +975,15 @@ def expectedUnborn : List String := []
     the refuted `¬ possible` arm (`lapps` +1, `liteNodes` +57).  The two
     `pendingDocStart` producers shrink by 25 each, paying the narrowed field
     without its `Or.inl`; `nodes` +75 is the new fields bound at each
-    eliminator and the threading.  No row, class or origin moves. -/
+    eliminator and the threading.  No row, class or origin moves.
+
+    Item 295 moves `liteNodes` alone, 506219 → 506370: all of it is
+    `accum_flow_open_depth0`'s, the one declaration whose term changed —
+    `slot_ride`'s frame built field by field around `flowKeyRoute_of_root`'s
+    route, the two indicator parks' own flags, and the props arm's fallback
+    route.  No row, class or origin moves. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=557 lapps=672 alts=4421 nodes=12491 liteNodes=506219"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=557 lapps=672 alts=4421 nodes=12491 liteNodes=506370"
 
 /-! ## §4 The reading -/
 

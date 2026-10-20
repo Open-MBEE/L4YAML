@@ -255,9 +255,17 @@ def expectedBinders : List String :=
     on to a disjunctive binder now pay it with `Or.inl` (a `RELAY` and a
     `FIELD` each become a `PAY`).  The last is a second application of
     `landing_or_park_ska`, at the props park's landing (`DECLINE` 1).
-    `skipped` 30 → 31 is `live_of_dispatch`, as at `RelaySupplyCensus`. -/
+    `skipped` 30 → 31 is `live_of_dispatch`, as at `RelaySupplyCensus`.
+
+    **Item 295: 102 → 104, `PAY` 15 → 17.**  `accum_flow_open_depth0`'s
+    `h_park` is `h_pending.arm_or_col`, a `VIA PendingNode.arm_or_col` edge at
+    every use.  The `pendingBlock` and `pendingMapValue` arms pay
+    `flowKeyRoute_of_open`'s `h_park` with the park's own flag now
+    (`Or.inl h_sk_old`, `Or.inl h_sk_mv`), so two `VIA` edges become `PAY`;
+    and `slot_ride` and the props arm's fallback apply `flowKeyRoute_of_root`,
+    each reading `h_park`, two `VIA` edges in their place. -/
 def expectedTally : String :=
-  "edges=102 skipped=31 DECLINE=21 FIELD=7 PAY=15 RELAY=27 VIA=32"
+  "edges=104 skipped=31 DECLINE=21 FIELD=7 PAY=17 RELAY=27 VIA=32"
 
 run_cmd do
   let env ← getEnv

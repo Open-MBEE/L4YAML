@@ -202,8 +202,15 @@ def testStylePreservation (state : IO.Ref TestCollector) : IO Unit := do
   -- Anchor/tag emission
   check state "anchor emitted"
     (dump (.scalar ⟨"val", .plain, none, some "a1", none⟩) == "&a1 val")
-  check state "tag emitted"
-    (dump (.scalar ⟨"42", .plain, some "!!int", none, none⟩) == "!!int 42")
+  check state "redundant core tag elided (plain 42 is already an int)"
+    (dump (.scalar ⟨"42", .plain, some "!!int", none, none⟩) == "42")
+  check state "redundant core tag kept with plainCoreScalars := false"
+    (dump (.scalar ⟨"42", .plain, some "!!int", none, none⟩)
+      { plainCoreScalars := false } == "!!int 42")
+  check state "non-redundant core tag emitted (!!str on 42)"
+    (dump (.scalar ⟨"42", .plain, some "!!str", none, none⟩) == "!!str 42")
+  check state "core tag that content does not satisfy is emitted (!!int abc)"
+    (dump (.scalar ⟨"abc", .plain, some "!!int", none, none⟩) == "!!int abc")
   check state "tag + anchor both emitted"
     (dump (.scalar ⟨"v", .plain, some "!!str", some "anc", none⟩) ==
       "!!str &anc v")

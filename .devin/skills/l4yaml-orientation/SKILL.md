@@ -13,7 +13,7 @@ description: First ten minutes on Open-MBEE/L4YAML — where the sources of trut
    python3 scripts/docs_nav.py next            # latest item's **NEXT —** paragraph
    python3 scripts/docs_nav.py items --last 5  # what the last five items did
    python3 scripts/docs_nav.py steps           # Row 12 six-step table with state
-   python3 scripts/docs_nav.py remaining       # ordered open work and dependencies
+   python3 scripts/docs_nav.py remaining       # open six-step rows, then the dated dependency chain
    python3 scripts/docs_nav.py item 264        # read one item in full
    python3 scripts/docs_nav.py grep -i 'noKeyContext'   # which items touched a name
    ```

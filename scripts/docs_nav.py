@@ -10,7 +10,8 @@ DOCS.md is a 45k-line consolidated history; the Row 12 closure log alone holds
     docs_nav.py item N [--lines]      the full entry for item N (N may carry a suffix: 67a)
     docs_nav.py next [N]              the NEXT (mandate) paragraph of item N
                                       (default: the latest item)
-    docs_nav.py remaining             the "REMAINING, in order" dependency section (dated; see `steps`)
+    docs_nav.py remaining             open work: the six-step rows not yet done, then the
+                                      dated "REMAINING, in order" dependency chain
     docs_nav.py steps                 the Row 12 six-step table and next-actions table
     docs_nav.py grep REGEX [-i]       items whose body matches, with hit counts
     docs_nav.py section PREFIX        a `## ` section by heading prefix
@@ -199,16 +200,45 @@ def cmd_next(lines: list[str], args) -> None:
         print(f"# read `item {it.label}`")
 
 
+STEP_ROW_RE = re.compile(r"^\| \*\*(12(?:\.\d+)*)\*\* \| ")
+
+
+def step_rows(lines: list[str]) -> list[tuple[int, str, str, str]]:
+    """(line, step, state, what) for every row of the six-step table."""
+    start, end = heading_block(lines, SIX_STEPS_HEADING, lambda l: l.startswith("#"))
+    rows = []
+    for i in range(start, end - 1):
+        m = STEP_ROW_RE.match(lines[i])
+        if not m:
+            continue
+        cells = [c.strip() for c in lines[i].strip().strip("|").split(" | ")]
+        if len(cells) < 3:
+            continue
+        rows.append((i + 1, m.group(1), cells[2], cells[1]))
+    return rows
+
+
 def cmd_remaining(lines: list[str], args) -> None:
-    start, end = heading_block(lines, REMAINING_HEADING, lambda l: ITEM_RE.match(l) or H2_RE.match(l))
     items = find_items(lines)
+    rows = step_rows(lines)
+    open_rows = [r for r in rows if not r[2].startswith("✅")]
+    table_line = lines.index(SIX_STEPS_HEADING) + 1
+    print(f"# open steps of Row 12 (the six-step table, DOCS.md:{table_line}; `steps` prints it whole):")
+    for _line, step, state, what in open_rows:
+        head = re.match(r"\*\*(.+?)\*\*", what)
+        print(f"{step:>8}  {state[: args.width]}")
+        print(f"          {head.group(1) if head else what[: args.width]}")
+    if not open_rows:
+        print("          (every row is ✅ done)")
+    print(f"# latest mandate: `next` (item {items[-1].label}, {items[-1].date})")
+    start, end = heading_block(lines, REMAINING_HEADING, lambda l: ITEM_RE.match(l) or H2_RE.match(l))
     before = [it for it in items if it.start < start]
     after = [it for it in items if it.start > start]
     where = f"DOCS.md:{start}"
     if before and after:
         where += f", written between items {before[-1].label} and {after[0].label} ({after[0].date})"
-    print(f"# {where}.  Items after it may have moved its rows; the per-step state is `steps`,")
-    print(f"# the latest mandate is `next` (item {items[-1].label}).")
+    print(f"# the dependency chain, as recorded at {where};")
+    print("# its item ranges stop there — the rows above are the current state:")
     emit(lines, start, end, args.lines)
 
 
@@ -272,6 +302,7 @@ def main(argv: list[str] | None = None) -> None:
     sp.set_defaults(fn=cmd_next)
     sp = sub.add_parser("remaining")
     add_lines(sp)
+    add_width(sp)
     sp.set_defaults(fn=cmd_remaining)
     sp = sub.add_parser("steps")
     add_lines(sp)

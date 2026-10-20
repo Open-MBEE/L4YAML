@@ -509,8 +509,18 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- keep their verdicts.  No other row moves: the deleted alternatives bound
 -- nothing, and the `w ∉ ks` exits apply binders the frameless exit already
 -- reads (item 296's two `h_node` rows read READ, as pinned).
+-- 2026-10-20 (item 299): `constants` 1363 → 1364, `eta` 386 → 387, `RELAY`
+-- 2302 → 2301.  The roster (`scratchpad/l4yaml-row12-steps/525-roster-299.out`
+-- against `501-roster-297.out`, 4024 rows both) loses the three deleted token
+-- walk lemmas' six RELAY binders (`docStartOnLineLoop_hit#3/#4`,
+-- `docStartOnLineLoop_skip_ph#3`, `docStartOnLine_of_lastReal#3/#4/#5`) and
+-- gains six: `PendingNode.pendingDocStart#11 (h_docline)` ETA, and five RELAY
+-- — `dispatch_refutes_sameLine#8 (h_dsl_eq)`, `ad_docStartLine#4/#5`,
+-- `dispatchContent_docStartLine#3`, `preprocess_preserves_docStartLine#3`.
+-- `dispatch_refutes_sameLine`'s later binders renumber and keep their
+-- verdicts; no other row moves.
 def expectedModuleTally : String :=
-  "constants=1363 decls=1082 eta=386 FIELD=158 READ=1121 RELAY=2302 RETURN=48 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1121 RELAY=2301 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is

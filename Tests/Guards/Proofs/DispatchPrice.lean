@@ -279,9 +279,15 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
     `preprocess_possible_of_live0` and `close_poss_of_base` a preprocessing
     one, `live_of_dispatch`, `dispatchContent_blockScalar_ska` and
     `content_live0` a content dispatch (`content_live0` both).  None holds two
+    correspondences, and `fns` and `fnsIx` hold.
+
+    Moved to 1706 / 305 by DOCS item 299 and no new step: the `docStartLine`
+    preservation family cloned from `implicitValueLine`'s holds a step
+    equation at 25 of its lemmas, two of them a content dispatch
+    (`dispatchContent_preserves_docStartLine` and `dispatchContent_docStartLine`); the rest state pure functions.  None holds two
     correspondences, and `fns` and `fnsIx` hold. -/
 def expectedSteps : String :=
-  "stepHolders=1681 dispHolders=303 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1706 dispHolders=305 dispTwoCorr=28 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -332,10 +338,14 @@ def expectedChainSpec : List Name :=
     adds four holders of preprocessing's (`preprocess_saved_key_possible_post`,
     `preprocess_possible_of_live0`, `close_poss_of_base`, `content_live0`) and
     three of the content dispatch's (`live_of_dispatch`,
-    `dispatchContent_blockScalar_ska`, `content_live0`), none with a path. -/
+    `dispatchContent_blockScalar_ska`, `content_live0`), none with a path.
+    DOCS item 299 adds two holders of each, the `docStartLine` field's
+    transport: `preprocess_preserves_docStartLine` and `ad_docStartLine` hold
+    preprocessing's equation, `dispatchContent_preserves_docStartLine` and
+    `dispatchContent_docStartLine` the content dispatch's, none with a path. -/
 def expectedPerFn : List String :=
-  ["scanNextToken_dispatchContent decls=133 chain=1",
-   "scanNextToken_preprocess decls=206 chain=6"]
+  ["scanNextToken_dispatchContent decls=135 chain=1",
+   "scanNextToken_preprocess decls=208 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

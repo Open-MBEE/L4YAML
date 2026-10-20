@@ -21,7 +21,8 @@ the escape, so the fourth arm costs DOMAIN rather than soundness
 
 **The instance** (item 48).  `scanBlockEntry`/`scanKey` refuse on
 `implicitValueLine == some line || lastTokenIsNodePropertyOnLine ||
-docStartOnLine`, and `scanValueValidate` on the first and third.
+markerOnLine` (item 299's `docStartLine` field; the token walk
+`docStartOnLine` until then), and `scanValueValidate` on the first and third.
 `dispatch_refutes_sameLine` takes the three facts as one disjunction;
 `pendingMapValue` pays the stamp (implicit `:` only — the explicit `:` pays
 `∨ True` and stays escapable), `pendingProps` pays the trailing-token read,

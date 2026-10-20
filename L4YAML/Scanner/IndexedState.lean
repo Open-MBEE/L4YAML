@@ -117,6 +117,14 @@ structure ScannerStateIx (input : String) where
       `s-l+block-indented` with the compact alternatives) does not set it,
       which is what keeps `? a⏎: - b` and `? a⏎: b: c` served. -/
   implicitValueLine : Option Nat := none
+  /-- Line of the most recent `---` document-start marker (item 299).  §9.1.1's
+      `[203] c-directives-end` line admits `s-l-comments` or one same-line
+      node and nothing else, so a block indicator or value indicator
+      dispatched with the marker still on the line has no derivation.  Set by
+      `scanDocumentStart` and written by nothing else; never cleared, since
+      lines only grow and a marker on an earlier line never reads as "on the
+      line" again.  `markerOnLine` is the read the three block checks make. -/
+  docStartLine : Option Nat := none
   /-- Column of the pending `?` (item 48), meaningful only while
       `explicitKeyLine` is set: an implicit `:` whose resolved key sits
       DEEPER than this column is inside the explicit key's own content
@@ -236,6 +244,13 @@ def emitAt {input : String} (s : ScannerStateIx input) (startPos : YamlPos)
   let t : IxToken input :=
     IxToken.mk' (input := input) startPos tok s.cursor.pos hOrder s.cursor.posBound
   { s with tokens := s.tokens.push t }
+
+/-- Indexed twin of `L4YAML.Scanner.ScannerState.markerOnLine` (item 299): the
+    `---` marker is on the cursor's line, off the `docStartLine` field
+    `scanDocumentStartIx` writes. -/
+@[yaml_spec "9.1.1" 203 "c-directives-end"]
+def markerOnLine {input : String} (s : ScannerStateIx input) : Bool :=
+  s.docStartLine == some s.cursor.pos.line
 
 /-- Emit a zero-width token at the saved cursor `sk` (its `posBound`
     discharges the indexed-token bound obligation). Used for tokens

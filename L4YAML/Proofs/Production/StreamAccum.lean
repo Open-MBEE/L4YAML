@@ -1797,7 +1797,13 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- evidence, so the width `[203] c-directives-end` spends is stated as
       -- the field and measured at the two producers, which is where the
       -- marker scan is in hand.
-      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true) :
+      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true)
+      -- **Item 299: the marker's line, as the scanner's own field reads it**
+      -- (`docStartLine`, written by `scanDocumentStart` alone) — what
+      -- `dispatch_refutes_sameLine` reads for a `-`/`?`/`:` at this park, and
+      -- what a content park can carry past the marker where the last-real
+      -- token form above cannot (item 300).
+      (h_docline : sc.docStartLine = some sc.line) :
       PendingNode sc false sp_start sp_block sp_scan
   /-- Directive `%` scanned. The gap contains directive content.
       Awaiting next `%` (accumulate) or `---` (form directive document).
@@ -8433,6 +8439,13 @@ lemma allowDirectives_update_implicitValueLine (s : ScannerState) :
     else s).implicitValueLine = s.implicitValueLine := by
   split <;> rfl
 
+/-- `docStartLine` twin of `allowDirectives_update_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma allowDirectives_update_docStartLine (s : ScannerState) :
+    (if s.allowDirectives then
+      { s with allowDirectives := false, documentEverStarted := true }
+    else s).docStartLine = s.docStartLine := by
+  split <;> rfl
+
 lemma allowDirectives_update_line (s : ScannerState) :
     (if s.allowDirectives then
       { s with allowDirectives := false, documentEverStarted := true }
@@ -8538,6 +8551,37 @@ lemma preprocess_preserves_implicitValueLine (s s1 : ScannerState) (c : Char)
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
             rw [ScannerCorrectness.saveSimpleKey_preserves_implicitValueLine]; exact h_fl_skip
+
+/-- `docStartLine` twin of `preprocess_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma preprocess_preserves_docStartLine (s s1 : ScannerState) (c : Char)
+    (h : scanNextToken_preprocess s = .ok (some (s1, c))) :
+    s1.docStartLine = s.docStartLine := by
+  unfold scanNextToken_preprocess at h
+  simp only [bind, pure, Pure.pure, Except.pure] at h
+  simp only [Except.bind] at h
+  split at h
+  · contradiction
+  · rename_i s_skip h_skip
+    have h_fl_skip := ScannerCorrectness.skipToContent_preserves_docStartLine s s_skip h_skip
+    split at h
+    · simp at h
+    · split at h
+      · split at h
+        · contradiction
+        · split at h
+          · simp at h
+          · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
+            obtain ⟨rfl, _⟩ := h
+            rw [ScannerCorrectness.saveSimpleKey_preserves_docStartLine]
+            show (unwindIndents s_skip s_skip.col).docStartLine = s.docStartLine
+            rw [ScannerCorrectness.unwindIndents_preserves_docStartLine]; exact h_fl_skip
+      · split at h
+        · contradiction
+        · split at h
+          · simp at h
+          · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
+            obtain ⟨rfl, _⟩ := h
+            rw [ScannerCorrectness.saveSimpleKey_preserves_docStartLine]; exact h_fl_skip
 
 /-- In block context preprocessing puts the entry flag DOWN (item 48): the
     armed branch clears it, and the unarmed one had it down already. -/
@@ -8654,6 +8698,13 @@ lemma advance_line_of_corr_cons (sc : ScannerState) (c : Char) (rest : List Char
   | .cons _ hlt _ _ hc _ =>
     exact advance_line_non_newline sc (by rw [hcorr.end_eq]; exact hlt)
       (by rw [hc]; simp [hnl]) (by rw [hc]; simp [hcr])
+
+/-- **The `---` park's own line field** (item 299): `scanDocumentStart` is
+    `docStartLine`'s one writer, and it writes the marker's line. -/
+lemma scanDocumentStart_docStartLine (sc : ScannerState) :
+    (scanDocumentStart sc).docStartLine = some (scanDocumentStart sc).line := by
+  unfold scanDocumentStart
+  rfl
 
 /-- **The `---` park's scanner-side facts** (item 48): the marker's token ends
     the array real on the marker's own line, the three advances stay on it,
@@ -8873,7 +8924,9 @@ lemma structural_dispatch_to_pending
       rfl
       -- Item 207: and `[203]`'s three columns, off the marker this producer
       -- built but the park does not keep.
-      (nic0_of_col_pos (by rw [scDirectivesEnd_col h_marker]; omega)),
+      (nic0_of_col_pos (by rw [scDirectivesEnd_col h_marker]; omega))
+      -- Item 299: the marker's line, off the field `scanDocumentStart` sets.
+      (scanDocumentStart_docStartLine _),
     fun h => Bool.noConfusion h, hcorr'⟩
 
 -- Every `.ok (some _)` branch of `scanNextToken_dispatchStructural` requires
@@ -9046,7 +9099,9 @@ lemma structural_dispatch_after_directives
       rfl
       -- Item 207: and `[203]`'s three columns, off the marker this producer
       -- built but the park does not keep.
-      (nic0_of_col_pos (by rw [scDirectivesEnd_col h_marker]; omega)),
+      (nic0_of_col_pos (by rw [scDirectivesEnd_col h_marker]; omega))
+      -- Item 299: the marker's line, off the field `scanDocumentStart` sets.
+      (scanDocumentStart_docStartLine _),
     fun h => Bool.noConfusion h, hcorr'⟩
 
 -- Helper (4f.3): gap closure + dispatch → PendingNode at SSLComments midpoint.
@@ -13437,6 +13492,12 @@ lemma dispatchContent_implicitValueLine {s s' : ScannerState} {c : Char}
     s'.implicitValueLine = s.implicitValueLine :=
   ScannerCorrectness.dispatchContent_preserves_implicitValueLine s c s' hok
 
+/-- `docStartLine` twin of `dispatchContent_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma dispatchContent_docStartLine {s s' : ScannerState} {c : Char}
+    (hok : scanNextToken_dispatchContent s c = .ok s') :
+    s'.docStartLine = s.docStartLine :=
+  ScannerCorrectness.dispatchContent_preserves_docStartLine s c s' hok
+
 /-- The value-completing arms leave a stale node tail. -/
 lemma staleNodeTail_of_dispatchContent_value {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchContent s c = .ok s')
@@ -17193,6 +17254,17 @@ lemma ad_implicitValueLine {sc s_prep s_ad : ScannerState} {c : Char}
   rw [← h_ad_def]
   split <;> exact h
 
+/-- `docStartLine` twin of `ad_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma ad_docStartLine {sc s_prep s_ad : ScannerState} {c : Char}
+    (h_pre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h_ad_def : (if s_prep.allowDirectives = true then
+        { s_prep with allowDirectives := false, documentEverStarted := true }
+      else s_prep) = s_ad) :
+    s_ad.docStartLine = sc.docStartLine := by
+  have h := preprocess_preserves_docStartLine sc s_prep c h_pre
+  rw [← h_ad_def]
+  split <;> exact h
+
 /-- The mask a nested flow open leaves (item 10): the incoming mask rides
     through preprocessing and the bracket push, and the pushed bit's evidence
     — when it is armed — is the dispatch-time key the open stacks. -/
@@ -20124,71 +20196,6 @@ contradicts the block dispatch's own success on the no-break step — the same
 shape item 47 gave the content dispatch, at the three reads the new checks
 make. -/
 
-/-- A `documentStart` read by `lastRealToken?` sits within two reservation
-    placeholders of the top, and `docStartOnLineLoop` skips every placeholder —
-    so the walk's first real hit is the marker. -/
-lemma docStartOnLineLoop_hit {ts : Array (Positioned YamlToken)} {j : Nat} {line : Nat}
-    (hj : ts[j]!.val = .documentStart) (hl : ts[j]!.pos.line = line) :
-    docStartOnLineLoop ts (j + 1) line = true := by
-  unfold docStartOnLineLoop
-  simp [hj, hl]
-
-lemma docStartOnLineLoop_skip_ph {ts : Array (Positioned YamlToken)} {j : Nat} {line : Nat}
-    (hj : ts[j]!.val = .placeholder) :
-    docStartOnLineLoop ts (j + 1) line = docStartOnLineLoop ts j line := by
-  rw [docStartOnLineLoop.eq_def]
-  dsimp only []
-  split
-  · rename_i hcond; simp [hj] at hcond
-  · split
-    · rfl
-    · rename_i hcond; simp [hj] at hcond
-
-lemma docStartOnLine_of_lastReal {ts : Array (Positioned YamlToken)}
-    {t : Positioned YamlToken} {line : Nat}
-    (h : lastRealToken? ts = some t)
-    (h_ds : t.val = .documentStart) (h_line : t.pos.line = line) :
-    docStartOnLine ts line = true := by
-  unfold lastRealToken? at h
-  split at h
-  case isFalse => cases h
-  case isTrue hsz =>
-    unfold docStartOnLine
-    obtain ⟨n, hn⟩ : ∃ n, ts.size = n + 1 :=
-      ⟨ts.size - 1, (Nat.succ_pred_eq_of_pos hsz).symm⟩
-    rw [hn]
-    dsimp only [] at h
-    rw [hn, Nat.add_sub_cancel] at h
-    split at h
-    case isFalse hc1 =>
-      have ht' : ts[n]! = t := Option.some.inj h
-      exact docStartOnLineLoop_hit (ht' ▸ h_ds) (ht' ▸ h_line)
-    case isTrue hc1 =>
-      obtain ⟨hph1, hn0⟩ := Bool.and_eq_true_iff.mp hc1
-      have hph1' : ts[n]!.val = .placeholder := beq_iff_eq.mp hph1
-      have hn0' : 0 < n := by simpa using of_decide_eq_true hn0
-      rw [docStartOnLineLoop_skip_ph hph1']
-      obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, (Nat.succ_pred_eq_of_pos hn0').symm⟩
-      rw [hm]
-      rw [hm, Nat.add_sub_cancel] at h
-      split at h
-      case isFalse hc2 =>
-        have ht' : ts[m]! = t := Option.some.inj h
-        exact docStartOnLineLoop_hit (ht' ▸ h_ds) (ht' ▸ h_line)
-      case isTrue hc2 =>
-        obtain ⟨hph2, hm0⟩ := Bool.and_eq_true_iff.mp hc2
-        have hph2' : ts[m]!.val = .placeholder := beq_iff_eq.mp hph2
-        have hm0' : 0 < m := by
-          have := of_decide_eq_true hm0
-          omega
-        rw [docStartOnLineLoop_skip_ph hph2']
-        obtain ⟨k, hk⟩ : ∃ k, m = k + 1 := ⟨m - 1, (Nat.succ_pred_eq_of_pos hm0').symm⟩
-        rw [hk]
-        have ht' : ts[k]! = t := by
-          have : ts[m - 1]! = t := Option.some.inj h
-          rwa [hk, Nat.add_sub_cancel] at this
-        exact docStartOnLineLoop_hit (ht' ▸ h_ds) (ht' ▸ h_line)
-
 /-- A nonempty trailing property run puts a property token at `lastRealToken?`
     on `line` — the read `scanBlockEntry`/`scanKey`'s check makes. -/
 lemma lastTokenIsNodePropertyOnLine_of_run_any {ts : Array (Positioned YamlToken)}
@@ -20209,7 +20216,7 @@ lemma scanBlockEntry_ok_sameLine_false {s s' : ScannerState}
     (h : scanBlockEntry s = .ok s') (h_noflow : s.inFlow = false) :
     (s.implicitValueLine == some s.line
       || lastTokenIsNodePropertyOnLine s.tokens s.line
-      || docStartOnLine s.tokens s.line) = false := by
+      || s.markerOnLine) = false := by
   unfold scanBlockEntry at h
   simp only [bind, Except.bind] at h
   rw [ite_eq_left (show (!s.inFlow) = true by rw [h_noflow]; rfl)] at h
@@ -20224,7 +20231,7 @@ lemma scanKey_ok_sameLine_false {s s' : ScannerState}
     (h : scanKey s = .ok s') (h_noflow : s.inFlow = false) :
     (s.implicitValueLine == some s.line
       || lastTokenIsNodePropertyOnLine s.tokens s.line
-      || docStartOnLine s.tokens s.line) = false := by
+      || s.markerOnLine) = false := by
   unfold scanKey scanKeyValidate at h
   simp only [bind, Except.bind] at h
   rw [ite_eq_left (show (!s.inFlow) = true by rw [h_noflow]; rfl)] at h
@@ -20245,7 +20252,7 @@ lemma scanKey_ok_sameLine_false {s s' : ScannerState}
 lemma scanValueValidate_ok_sameLine_false {s : ScannerState}
     (h : scanValueValidate s = .ok ()) (h_noflow : s.inFlow = false) :
     (s.implicitValueLine == some s.line) = false ∧
-      docStartOnLine s.tokens s.line = false := by
+      s.markerOnLine = false := by
   unfold scanValueValidate at h
   simp only [Bind.bind, Except.bind, Pure.pure, Except.pure, throw, throwThe,
              MonadExceptOf.throw] at h
@@ -20264,25 +20271,27 @@ lemma scanValueClearKey_sameLine_reads (s : ScannerState) :
     (scanValueClearKey s).implicitValueLine = s.implicitValueLine ∧
     (scanValueClearKey s).line = s.line ∧
     (scanValueClearKey s).tokens = s.tokens ∧
-    (scanValueClearKey s).inFlow = s.inFlow := by
+    (scanValueClearKey s).inFlow = s.inFlow ∧
+    (scanValueClearKey s).docStartLine = s.docStartLine := by
   unfold scanValueClearKey
   repeat' split
-  all_goals exact ⟨rfl, rfl, rfl, rfl⟩
+  all_goals exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 
 /-- `scanValue`'s success propagates the validate stage's refusals. -/
 lemma scanValue_ok_sameLine_false {s s' : ScannerState}
     (h : scanValue s = .ok s') (h_noflow : s.inFlow = false) :
     (s.implicitValueLine == some s.line) = false ∧
-      docStartOnLine s.tokens s.line = false := by
+      s.markerOnLine = false := by
   unfold scanValue at h
   simp only [bind, Except.bind] at h
   split at h
   case h_1 => cases h
   case h_2 u hval =>
-    obtain ⟨h_ivl, h_ln, h_tok, h_fl⟩ := scanValueClearKey_sameLine_reads s
+    obtain ⟨h_ivl, h_ln, _h_tok, h_fl, h_dsl⟩ := scanValueClearKey_sameLine_reads s
     have := scanValueValidate_ok_sameLine_false (s := scanValueClearKey s)
       (by cases u; exact hval) (h_fl.trans h_noflow)
-    rw [h_ivl, h_ln, h_tok] at this
+    unfold ScannerState.markerOnLine at this ⊢
+    rw [h_ivl, h_ln, h_dsl] at this
     exact this
 
 /-- The block dispatch's success, per character: whichever of the three
@@ -20291,7 +20300,7 @@ lemma dispatchBlock_ok_sameLine_false {s s' : ScannerState} {c : Char}
     (h : scanNextToken_dispatchBlockIndicators s c = .ok (some s'))
     (h_noflow : s.inFlow = false) :
     (s.implicitValueLine == some s.line) = false ∧
-      docStartOnLine s.tokens s.line = false ∧
+      s.markerOnLine = false ∧
       (c ≠ ':' → lastTokenIsNodePropertyOnLine s.tokens s.line = false) := by
   unfold scanNextToken_dispatchBlockIndicators at h
   simp only [Bind.bind, Except.bind, Pure.pure, Except.pure] at h
@@ -20323,19 +20332,22 @@ lemma dispatchBlock_ok_sameLine_false {s s' : ScannerState} {c : Char}
       · cases h
 
 /-- **…and a park that recorded one of the three facts refutes it** (item 48).
-    The no-break payload carries the last-real reading, the line, and
-    `implicitValueLine` to the dispatch state; whichever fact the pending
-    holds, the check's read is then TRUE there — and the dispatch's success
-    says it was false. -/
+    The no-break payload carries the last-real reading, the line,
+    `implicitValueLine` and (item 299) `docStartLine` to the dispatch state;
+    whichever fact the pending holds, the check's read is then TRUE there —
+    and the dispatch's success says it was false.  **Item 299: the marker
+    fact is the field** `sc.docStartLine = some sc.line`, which the `---` park
+    carries (`pendingDocStart.h_docline`) and a content park can carry past
+    the marker; the last-real token form it replaces could not. -/
 lemma dispatch_refutes_sameLine {sc s_prep s' : ScannerState} {c : Char}
     (h_nic : sc.needIndentCheck = false)
     (h_real : LastTokenReal sc.tokens)
     (h_fact :
       sc.implicitValueLine = some sc.line ∨
-      (∃ t, lastRealToken? sc.tokens = some t ∧ t.val = .documentStart ∧
-        t.pos.line = sc.line) ∨
+      sc.docStartLine = some sc.line ∨
       (lastTokenIsNodePropertyOnLine sc.tokens sc.line = true ∧ c ≠ ':'))
     (h_ivl_eq : s_prep.implicitValueLine = sc.implicitValueLine)
+    (h_dsl_eq : s_prep.docStartLine = sc.docStartLine)
     (h_noflow : (if s_prep.allowDirectives then
         { s_prep with allowDirectives := false, documentEverStarted := true }
       else s_prep).inFlow = false)
@@ -20353,19 +20365,20 @@ lemma dispatch_refutes_sameLine {sc s_prep s' : ScannerState} {c : Char}
   -- rewrites land on plain projections.
   have hmain : ∀ sd : ScannerState, sd.tokens = s_prep.tokens →
       sd.line = s_prep.line → sd.implicitValueLine = s_prep.implicitValueLine →
+      sd.docStartLine = s_prep.docStartLine →
       sd.inFlow = false →
       scanNextToken_dispatchBlockIndicators sd c = .ok (some s') → False := by
-    intro sd hdt hdl hdi hdf hdd
+    intro sd hdt hdl hdi hdsl hdf hdd
     obtain ⟨hF_ivl, hF_doc, hF_prop⟩ := dispatchBlock_ok_sameLine_false hdd hdf
     rcases h_fact with h_ivl | h_doc | ⟨h_prop, hc⟩
     · -- implicit `:` on the line
       rw [hdi, h_ivl_eq, h_ivl, hdl, h_line_eq] at hF_ivl
       simp at hF_ivl
-    · -- `---` on the line
-      obtain ⟨t, h_last, h_ds, h_ln⟩ := h_doc
-      have hT : docStartOnLine sd.tokens sd.line = true := by
-        rw [hdt, hdl, h_line_eq]
-        exact docStartOnLine_of_lastReal (h_tok_eq.trans h_last) h_ds h_ln
+    · -- `---` on the line: the field (item 299)
+      have hT : sd.markerOnLine = true := by
+        unfold ScannerState.markerOnLine
+        rw [hdsl, h_dsl_eq, h_doc, hdl, h_line_eq]
+        simp
       rw [hF_doc] at hT
       cases hT
     · -- property run on the line
@@ -20376,7 +20389,7 @@ lemma dispatch_refutes_sameLine {sc s_prep s' : ScannerState} {c : Char}
         exact h_prop
       rw [hF_prop hc] at hT
       cases hT
-  exact hmain _ (by split <;> rfl) (by split <;> rfl) (by split <;> rfl)
+  exact hmain _ (by split <;> rfl) (by split <;> rfl) (by split <;> rfl) (by split <;> rfl)
     h_noflow h_dispatch
 
 /-! ### Item 104 — the key from an EARLIER line is not this `:`'s key
@@ -24471,6 +24484,7 @@ lemma colon_fires_props_key (sc : ScannerState)
       | inr h_mid =>
         exact (dispatch_refutes_sameLine h_nic h_real (Or.inl h_ivl)
           (preprocess_preserves_implicitValueLine sc s_prep ':' h_preprocess)
+          (preprocess_preserves_docStartLine sc s_prep ':' h_preprocess)
           (noflow_disp_of_noflow h_noflow) h_mid.2.1 h_dispatch).elim
     | tab h_run h_st h_poss h_kline =>
       obtain ⟨_sp_mid, _sp_ws, _sp_prep2, h_disj, _h_ws, _h_cmt, hcorr_prep2, _h_pk, _⟩ :=
@@ -24698,6 +24712,7 @@ lemma colon_fires_implicit_key
             -- this step's — the `:` observes the guard on its own state.) ═══
             exact (dispatch_refutes_sameLine h_st.1 h_st.2.2 (Or.inl h_ivl)
               (preprocess_preserves_implicitValueLine sc s_prep ':' h_preprocess)
+              (preprocess_preserves_docStartLine sc s_prep ':' h_preprocess)
               (noflow_disp_of_noflow h_noflow) h_mid.2.1 h_dispatch).elim
           | noKeyContext => exact h_punt (fun h_res _ => block_dispatch_deferred_inline sp_start sp_block sp_scan' h_stream_block h_preprocess h_dispatch hcorr_result h_res)
         | inl pack =>
@@ -26381,15 +26396,16 @@ lemma accum_block_pending (sc : ScannerState)
       (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
       -- Item 208: item 207's field.
       h_nic0E
-  | pendingDocStart _ _ _ h_doc_route h_nic48 h_real48 h_ds48 h_arm77 _ h_nic0S =>
+  | pendingDocStart _ _ _ h_doc_route h_nic48 h_real48 _ h_arm77 _ h_nic0S h_docline48 =>
     -- ═══ Item 48: the marker still on the line refutes all three indicators
-    -- — B1/B2's `docStartOnLine` for `-`/`?`, B4 for `:` — so the arm's
+    -- — B1/B2's `markerOnLine` for `-`/`?`, B4 for `:` — so the arm's
     -- inline residue is EMPTY and only the landed close remains. ═══
     exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' c sp_prep sp_scan'
       h_close_pending
       (Or.inr trivial) (Or.inr (fun _ h_pay =>
-        (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inr (Or.inl h_ds48))
+        (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inr (Or.inl h_docline48))
           (preprocess_preserves_implicitValueLine sc s_prep c h_preprocess)
+          (preprocess_preserves_docStartLine sc s_prep c h_preprocess)
           (noflow_disp_of_noflow h_noflow) h_pay h_dispatch).elim)) hcorr_prep hcorr_result h_corr h_noflow
       (Or.inl h_arm77)
       h_preprocess h_dispatch (Or.inr trivial)
@@ -26498,6 +26514,7 @@ lemma accum_block_pending (sc : ScannerState)
         (Or.inr trivial) (Or.inr (fun _ h_pay =>
           (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inr (Or.inr ⟨h_prop, hc48⟩))
             (preprocess_preserves_implicitValueLine sc s_prep c h_preprocess)
+            (preprocess_preserves_docStartLine sc s_prep c h_preprocess)
             (noflow_disp_of_noflow h_noflow) h_pay h_dispatch).elim)) hcorr_prep hcorr_result h_corr h_noflow (Or.inr h_col0_p)
         h_preprocess h_dispatch (Or.inr trivial) (Or.inr trivial) h_bare h_dn h_fv h_base h_mono
         (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
@@ -26556,6 +26573,7 @@ lemma accum_block_pending (sc : ScannerState)
         (Or.inr (fun _ h_pay =>
           (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inl h_ivl48)
             (preprocess_preserves_implicitValueLine sc s_prep c h_preprocess)
+            (preprocess_preserves_docStartLine sc s_prep c h_preprocess)
             (noflow_disp_of_noflow h_noflow) h_pay h_dispatch).elim)) hcorr_prep hcorr_result h_corr h_noflow (Or.inr h_col0_mv)
         h_preprocess h_dispatch (Or.inr trivial) (Or.inr trivial) h_bare h_dn h_fv h_base h_mono
         -- Item 142: the token behind a value park is the `:` that opened it.
@@ -26671,6 +26689,7 @@ lemma accum_block_pending (sc : ScannerState)
               | Or.inr _ => Or.inr trivial)⟩
          | Or.inr h_st => Or.inr (fun _ h_pay => (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inl h_st)
             (preprocess_preserves_implicitValueLine sc s_prep c h_preprocess)
+            (preprocess_preserves_docStartLine sc s_prep c h_preprocess)
             (noflow_disp_of_noflow h_noflow) h_pay h_dispatch).elim))
         hcorr_prep hcorr_result h_corr h_noflow (Or.inr h_col0_mv) h_preprocess h_dispatch
         (Or.inr trivial) (Or.inr trivial) h_bare h_dn h_fv h_base h_mono (Or.inr trivial)

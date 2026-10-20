@@ -498,26 +498,6 @@ def lastTokenIsNodePropertyOnLine (tokens : Array (Positioned YamlToken)) (line 
   | some t => t.val.isNodeProperty && t.pos.line == line
   | none => false
 
-/-- Walk this line's tokens backwards looking for a `---` (item 48): the
-    marker's line admits `s-l-comments` or one same-line node and nothing
-    else, so a block indicator or value indicator dispatched with a `---`
-    still on the line has no derivation.  Bounded by the line: the walk
-    stops at the first token of an earlier line. -/
-def docStartOnLineLoop (tokens : Array (Positioned YamlToken)) (i : Nat)
-    (line : Nat) : Bool :=
-  match i with
-  | 0 => false
-  | j + 1 =>
-    let t := tokens[j]!
-    if t.val == .documentStart && t.pos.line == line then true
-    else if t.pos.line == line || t.val == .placeholder then
-      docStartOnLineLoop tokens j line
-    else false
-
-@[yaml_spec "9.1.1" 203 "c-directives-end"]
-def docStartOnLine (tokens : Array (Positioned YamlToken)) (line : Nat) : Bool :=
-  docStartOnLineLoop tokens tokens.size line
-
 end L4YAML.Scanner
 
 end Blanket

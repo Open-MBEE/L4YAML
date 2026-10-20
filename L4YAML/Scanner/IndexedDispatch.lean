@@ -526,25 +526,6 @@ def lastRealTokenIdxIx? {input : String} (ts : Indexed.TokenStream input) :
     else some lastIdx
   else none
 
-/-- Walk this line's tokens backwards looking for a `---` — the indexed twin
-    of `docStartOnLine` (item 48). -/
-def docStartOnLineLoopIx {input : String} (ts : Indexed.TokenStream input)
-    (i : Nat) (line : Nat) : Bool :=
-  match i with
-  | 0 => false
-  | j + 1 =>
-    match ts.tokens[j]? with
-    | none => false
-    | some t =>
-      if t.token == .documentStart && t.start.line == line then true
-      else if t.start.line == line || t.token == .placeholder then
-        docStartOnLineLoopIx ts j line
-      else false
-
-def docStartOnLineIx {input : String} (ts : Indexed.TokenStream input)
-    (line : Nat) : Bool :=
-  docStartOnLineLoopIx ts ts.size line
-
 /-- The real token *before* the one `lastRealTokenValIx?` reads (indexed twin of
     `L4YAML.Scanner.penultRealTokenVal?`). -/
 def penultRealTokenValIx? {input : String} (ts : Indexed.TokenStream input) :
@@ -692,7 +673,7 @@ def scanBlockEntryIx {input : String} (s : ScannerStateIx input) :
     -- Item 48: mirror of the legacy same-line check — see `scanBlockEntry`.
     else if s.implicitValueLine == some s.cursor.pos.line
         || lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
-        || docStartOnLineIx s.tokens s.cursor.pos.line then
+        || s.markerOnLine then
       throw (.sameLineBlockCollection s.cursor.pos.line s.cursor.pos.col)
     -- §9.2 [211] (item 134): mirror of the legacy check — see
     -- `scanBlockEntryValidate`.
@@ -718,7 +699,7 @@ def scanKeyValidateIx {input : String} (s : ScannerStateIx input) :
   -- Item 48: mirror of the legacy same-line check — see `scanKey`.
   if s.implicitValueLine == some s.cursor.pos.line
       || lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
-      || docStartOnLineIx s.tokens s.cursor.pos.line then
+      || s.markerOnLine then
     throw (.sameLineBlockCollection s.cursor.pos.line s.cursor.pos.col)
   -- §8.2.1: mirror of the legacy check — see `scanKey`.
   if atSequenceIndentIx s then
@@ -816,7 +797,7 @@ def scanValueValidateIx {input : String} (s : ScannerStateIx input) :
   -- Item 48: mirror of the legacy same-line checks — see `scanValueValidate`.
   if !s.inFlow && s.implicitValueLine == some s.cursor.pos.line then
     throw (.nestedMappingOnLine s.cursor.pos.line s.cursor.pos.col)
-  if !s.inFlow && docStartOnLineIx s.tokens s.cursor.pos.line then
+  if !s.inFlow && s.markerOnLine then
     throw (.contentOnDocumentStartLine s.cursor.pos.line s.cursor.pos.col)
 
 /-- Resolve a pending simple key by overwriting placeholders at
@@ -933,7 +914,9 @@ def scanDocumentStartIx {input : String} (s : ScannerStateIx input) :
       seenYamlDirective := false,
       directivesPresent := false,
       documentEverStarted := true,
-      definedAnchors := #[] }
+      definedAnchors := #[],
+      -- Item 299: the marker's line, for §9.1.1's three block checks.
+      docStartLine := some s.cursor.pos.line }
 
 /-- Scan `...` document-end marker. -/
 def scanDocumentEndIx {input : String} (s : ScannerStateIx input) :

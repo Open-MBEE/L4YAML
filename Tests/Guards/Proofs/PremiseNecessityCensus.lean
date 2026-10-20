@@ -297,8 +297,17 @@ declarations' own binders and not by a rescoring of an existing one.
 -- with it (`KeyPackPunt.rec#3 (dedent)` ETA, `KeyPackPunt.casesOn#4 (dedent)`
 -- and `KeyPackPunt.recOn#4 (dedent)` RELAY), as at its sibling.  No verdict
 -- moves under this peel either.
+-- 2026-10-20 (item 299): `constants` 1363 → 1364, `eta` 386 → 387, `READ`
+-- 1160 → 1159 — the same rows its sibling's roster names (`525-roster-299.out`:
+-- the three deleted token walk lemmas' six binders go, `pendingDocStart#11
+-- (h_docline)` ETA and five binders of the `docStartLine` transport arrive),
+-- read under this peel: `docStartOnLine_of_lastReal#3 (h)` was READ here
+-- (RELAY at the sibling), the other five walk binders RELAY, and the five
+-- arriving transport binders RELAY — so one READ fewer and RELAY unmoved
+-- (`526-rosterP-299.out` against `368-rosterP-293.out`, which also shows
+-- items 296 and 297's rows and nothing else).
 def expectedModuleTallyP : String :=
-  "constants=1363 decls=1082 eta=386 FIELD=180 READ=1160 RELAY=2151 RETURN=138 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=180 READ=1159 RELAY=2151 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

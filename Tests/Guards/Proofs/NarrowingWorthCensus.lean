@@ -702,7 +702,16 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- `sslComments_refutes_inline_residue` — none a no-op.
 -- Item 293: eight more — the possibility lemmas named in
 -- [[HypothesisReaderCensus]] — none a no-op.
-def expectedNoopTally : String := "theorems=5404 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- Item 299: 5404 → 5459.  Gained 59, counted by this census's own filters
+-- (`scratchpad/l4yaml-row12-steps/528-population-299.log`): the `docStartLine`
+-- field's preservation family (54 lemmas in `ScannerCorrectness`, 4 in
+-- `StreamAccum`) and `scanDocumentStart_docStartLine`; `markerOnLine`'s
+-- generated equations are not in the population.  Lost 4, the remainder: the
+-- three token walk lemmas and one equation Lean generated for the deleted
+-- walk — `docStartOnLineLoop.eq_def`, the one the proofs named; inferred
+-- from the remainder, not re-measured on the old tree.  None concludes a
+-- no-op; the four numbers hold.
+def expectedNoopTally : String := "theorems=5459 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

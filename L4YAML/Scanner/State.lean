@@ -134,6 +134,14 @@ structure ScannerState where
       `s-l+block-indented` with the compact alternatives) does not set it,
       which is what keeps `? a⏎: - b` and `? a⏎: b: c` served. -/
   implicitValueLine : Option Nat := none
+  /-- Line of the most recent `---` document-start marker (item 299).  §9.1.1's
+      `[203] c-directives-end` line admits `s-l-comments` or one same-line
+      node and nothing else, so a block indicator or value indicator
+      dispatched with the marker still on the line has no derivation.  Set by
+      `scanDocumentStart` and written by nothing else; never cleared, since
+      lines only grow and a marker on an earlier line never reads as "on the
+      line" again.  `markerOnLine` is the read the three block checks make. -/
+  docStartLine : Option Nat := none
   /-- Column of the pending `?` (item 48), meaningful only while
       `explicitKeyLine` is set: an implicit `:` whose resolved key sits
       DEEPER than this column is inside the explicit key's own content
@@ -311,6 +319,13 @@ def ScannerState.emit (s : ScannerState) (tok : YamlToken) : ScannerState :=
 /-- Emit a token at a previously saved position (for post-hoc token attribution). -/
 def ScannerState.emitAt (s : ScannerState) (pos : YamlPos) (tok : YamlToken) : ScannerState :=
   { s with tokens := s.tokens.push { pos := pos, val := tok } }
+
+/-- The `---` marker is on the current line (item 299): the read §9.1.1's three
+    block checks make (`scanBlockEntry`, `scanKey`, `scanValueValidate`), off
+    the `docStartLine` field `scanDocumentStart` writes. -/
+@[yaml_spec "9.1.1" 203 "c-directives-end"]
+def ScannerState.markerOnLine (s : ScannerState) : Bool :=
+  s.docStartLine == some s.line
 
 end L4YAML.Scanner
 

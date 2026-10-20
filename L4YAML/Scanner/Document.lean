@@ -296,7 +296,9 @@ def scanDocumentStart (s : ScannerState) : ScannerState :=
     seenYamlDirective := false
     directivesPresent := false
     documentEverStarted := true
-    definedAnchors := #[] }
+    definedAnchors := #[]
+    -- Item 299: the marker's line, for §9.1.1's three block checks.
+    docStartLine := some s_advanced.line }
 
 /-- Helper: skip whitespace (spaces + tabs) using structural recursion.
     Used by scanDocumentEnd for trailing content validation. -/

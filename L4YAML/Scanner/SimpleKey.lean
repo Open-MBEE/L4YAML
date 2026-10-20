@@ -135,7 +135,7 @@ def scanBlockEntry (s : ScannerState) : Except ScanError ScannerState := do
     -- (compact collections, `[185]`/`[192]`/`[201]`) set none of the three.
     else if s.implicitValueLine == some s.line
         || lastTokenIsNodePropertyOnLine s.tokens s.line
-        || docStartOnLine s.tokens s.line then
+        || s.markerOnLine then
       throw (.sameLineBlockCollection s.line s.col)
     -- §9.2 [211] (item 134): the `-` at a block mapping's own column with the
     -- entry complete — see `scanBlockEntryValidate`.
@@ -184,7 +184,7 @@ def scanKeyValidate (s : ScannerState) : Except ScanError Unit := do
   -- `&a ? b` and `--- ? a` have no derivation for the same three reasons.
   if s.implicitValueLine == some s.line
       || lastTokenIsNodePropertyOnLine s.tokens s.line
-      || docStartOnLine s.tokens s.line then
+      || s.markerOnLine then
     throw (.sameLineBlockCollection s.line s.col)
   -- §8.2.1: the `?` at a block sequence's own indent, the check
   -- `scanValueValidate` has always run for the `:`.
@@ -323,7 +323,9 @@ def scanValueValidate (s : ScannerState) : Except ScanError Unit := do
   -- Item 48: §9.1.1 — the `---` line admits one same-line NODE, not a
   -- same-line mapping entry, so a block-context `:` with the marker still on
   -- the line has no derivation (`--- : a`, `--- k: v`, `--- "a": b`).
-  if !s.inFlow && docStartOnLine s.tokens s.line then
+  -- Item 299: read off the `docStartLine` field, which `scanDocumentStart`
+  -- alone writes, in place of a walk over the line's tokens.
+  if !s.inFlow && s.markerOnLine then
     throw (.contentOnDocumentStartLine s.line s.col)
 
 /-- Build the prepared state: resolve a pending simple key by overwriting

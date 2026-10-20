@@ -1108,8 +1108,25 @@ lemma advance_preserves_implicitValueLine (s : ScannerState) :
     · split <;> rfl
   · rfl
 
+/-- `docStartLine` twin of `advance_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma advance_preserves_docStartLine (s : ScannerState) :
+    s.advance.docStartLine = s.docStartLine := by
+  unfold ScannerState.advance
+  split
+  · simp only []
+    split
+    · rfl
+    · split <;> rfl
+  · rfl
+
 lemma emit_preserves_implicitValueLine (s : ScannerState) (tok : YamlToken) :
     (s.emit tok).implicitValueLine = s.implicitValueLine := by
+  unfold ScannerState.emit
+  rfl
+
+/-- `docStartLine` twin of `emit_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma emit_preserves_docStartLine (s : ScannerState) (tok : YamlToken) :
+    (s.emit tok).docStartLine = s.docStartLine := by
   unfold ScannerState.emit
   rfl
 
@@ -1123,13 +1140,37 @@ lemma unwindIndentsLoop_preserves_implicitValueLine (s : ScannerState) (col : In
     · rw [ih]; exact emit_preserves_implicitValueLine s .blockEnd
     · rfl
 
+/-- `docStartLine` twin of `unwindIndentsLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma unwindIndentsLoop_preserves_docStartLine (s : ScannerState) (col : Int) (fuel : Nat) :
+    (unwindIndentsLoop s col fuel).docStartLine = s.docStartLine := by
+  induction fuel generalizing s with
+  | zero => unfold unwindIndentsLoop; rfl
+  | succ fuel' ih =>
+    unfold unwindIndentsLoop
+    split
+    · rw [ih]; exact emit_preserves_docStartLine s .blockEnd
+    · rfl
+
 lemma unwindIndents_preserves_implicitValueLine (s : ScannerState) (col : Int) :
     (unwindIndents s col).implicitValueLine = s.implicitValueLine := by
   unfold unwindIndents
   exact unwindIndentsLoop_preserves_implicitValueLine s col s.indents.size
 
+/-- `docStartLine` twin of `unwindIndents_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma unwindIndents_preserves_docStartLine (s : ScannerState) (col : Int) :
+    (unwindIndents s col).docStartLine = s.docStartLine := by
+  unfold unwindIndents
+  exact unwindIndentsLoop_preserves_docStartLine s col s.indents.size
+
 lemma saveSimpleKey_preserves_implicitValueLine (s : ScannerState) :
     (saveSimpleKey s).implicitValueLine = s.implicitValueLine := by
+  unfold saveSimpleKey
+  split <;> (try rfl)
+  split <;> rfl
+
+/-- `docStartLine` twin of `saveSimpleKey_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma saveSimpleKey_preserves_docStartLine (s : ScannerState) :
+    (saveSimpleKey s).docStartLine = s.docStartLine := by
   unfold saveSimpleKey
   split <;> (try rfl)
   split <;> rfl
@@ -1145,6 +1186,18 @@ lemma consumeNewline_preserves_implicitValueLine (s : ScannerState) :
     · exact advance_preserves_implicitValueLine s
   · rfl
 
+/-- `docStartLine` twin of `consumeNewline_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma consumeNewline_preserves_docStartLine (s : ScannerState) :
+    (consumeNewline s).docStartLine = s.docStartLine := by
+  unfold consumeNewline
+  split
+  · exact advance_preserves_docStartLine s
+  · dsimp only []
+    split
+    · exact advance_preserves_docStartLine s
+    · exact advance_preserves_docStartLine s
+  · rfl
+
 lemma skipSpaces_preserves_implicitValueLine (s : ScannerState) :
     (skipSpaces s).implicitValueLine = s.implicitValueLine := by
   unfold skipSpaces
@@ -1154,6 +1207,18 @@ lemma skipSpaces_preserves_implicitValueLine (s : ScannerState) :
   | succ fuel' IH =>
     unfold skipSpacesLoop; split
     · rw [IH, advance_preserves_implicitValueLine]
+    · rfl
+
+/-- `docStartLine` twin of `skipSpaces_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipSpaces_preserves_docStartLine (s : ScannerState) :
+    (skipSpaces s).docStartLine = s.docStartLine := by
+  unfold skipSpaces
+  generalize s.inputEnd - s.offset = fuel
+  induction fuel generalizing s with
+  | zero => unfold skipSpacesLoop; rfl
+  | succ fuel' IH =>
+    unfold skipSpacesLoop; split
+    · rw [IH, advance_preserves_docStartLine]
     · rfl
 
 lemma skipWhitespace_preserves_implicitValueLine (s : ScannerState) :
@@ -1169,6 +1234,20 @@ lemma skipWhitespace_preserves_implicitValueLine (s : ScannerState) :
       · rfl
     · rfl
 
+/-- `docStartLine` twin of `skipWhitespace_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipWhitespace_preserves_docStartLine (s : ScannerState) :
+    (skipWhitespace s).docStartLine = s.docStartLine := by
+  unfold skipWhitespace
+  generalize s.inputEnd - s.offset = fuel
+  induction fuel generalizing s with
+  | zero => unfold skipWhitespaceLoop; rfl
+  | succ fuel' IH =>
+    unfold skipWhitespaceLoop; split
+    · split
+      · rw [IH, advance_preserves_docStartLine]
+      · rfl
+    · rfl
+
 lemma collectCommentTextLoop_preserves_implicitValueLine (s : ScannerState)
     (text : String) (fuel : Nat) :
     (collectCommentTextLoop s text fuel).2.implicitValueLine = s.implicitValueLine := by
@@ -1179,6 +1258,19 @@ lemma collectCommentTextLoop_preserves_implicitValueLine (s : ScannerState)
     · split
       · rfl
       · rw [IH, advance_preserves_implicitValueLine]
+    · rfl
+
+/-- `docStartLine` twin of `collectCommentTextLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectCommentTextLoop_preserves_docStartLine (s : ScannerState)
+    (text : String) (fuel : Nat) :
+    (collectCommentTextLoop s text fuel).2.docStartLine = s.docStartLine := by
+  induction fuel generalizing s text with
+  | zero => unfold collectCommentTextLoop; rfl
+  | succ fuel' IH =>
+    unfold collectCommentTextLoop; split
+    · split
+      · rfl
+      · rw [IH, advance_preserves_docStartLine]
     · rfl
 
 lemma skipToContentWs_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
@@ -1206,6 +1298,32 @@ lemma skipToContentWs_preserves_implicitValueLine (s : ScannerState) (s' : Scann
         skipSpaces_preserves_implicitValueLine]
   · simp at h; rw [← h, skipWhitespace_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `skipToContentWs_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipToContentWs_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : skipToContentWs s = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  unfold skipToContentWs at h
+  split at h
+  · simp only [] at h
+    split at h
+    · split at h
+      · split at h
+        · simp at h; rw [← h, skipWhitespace_preserves_docStartLine,
+            skipSpaces_preserves_docStartLine]
+        · split at h
+          · simp at h; rw [← h, skipWhitespace_preserves_docStartLine,
+              skipSpaces_preserves_docStartLine]
+          · split at h
+            · simp at h; rw [← h, skipWhitespace_preserves_docStartLine,
+                skipSpaces_preserves_docStartLine]
+            · simp at h
+        · simp at h; rw [← h, skipWhitespace_preserves_docStartLine,
+            skipSpaces_preserves_docStartLine]
+      · simp at h; rw [← h, skipSpaces_preserves_docStartLine]
+    · simp at h; rw [← h, skipWhitespace_preserves_docStartLine,
+        skipSpaces_preserves_docStartLine]
+  · simp at h; rw [← h, skipWhitespace_preserves_docStartLine]
+
 lemma skipToContentComment_preserves_implicitValueLine (s : ScannerState) :
     (skipToContentComment s).implicitValueLine = s.implicitValueLine := by
   unfold skipToContentComment
@@ -1219,6 +1337,23 @@ lemma skipToContentComment_preserves_implicitValueLine (s : ScannerState) :
     · split
       · simp only []
         rw [collectCommentTextLoop_preserves_implicitValueLine, advance_preserves_implicitValueLine]
+      · rfl
+  · rfl
+
+/-- `docStartLine` twin of `skipToContentComment_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipToContentComment_preserves_docStartLine (s : ScannerState) :
+    (skipToContentComment s).docStartLine = s.docStartLine := by
+  unfold skipToContentComment
+  split
+  · simp only []
+    split
+    · split
+      · simp only []
+        rw [collectCommentTextLoop_preserves_docStartLine, advance_preserves_docStartLine]
+      · rfl
+    · split
+      · simp only []
+        rw [collectCommentTextLoop_preserves_docStartLine, advance_preserves_docStartLine]
       · rfl
   · rfl
 
@@ -1253,12 +1388,52 @@ lemma skipToContentLoop_preserves_implicitValueLine (s : ScannerState) (s' : Sca
       · simp at h; rw [← h, skipToContentComment_preserves_implicitValueLine]
         exact skipToContentWs_preserves_implicitValueLine s s1 hws
 
+/-- `docStartLine` twin of `skipToContentLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipToContentLoop_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (fuel : Nat)
+    (h : skipToContentLoop s fuel = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  induction fuel generalizing s with
+  | zero =>
+    unfold skipToContentLoop at h
+    simp at h; rw [← h]
+  | succ fuel' IH =>
+    unfold skipToContentLoop at h
+    split at h
+    · simp at h
+    · rename_i s1 hws
+      simp only [] at h
+      split at h
+      · rename_i c hpeek
+        split at h
+        · split at h
+          · have ih := IH _ h
+            rw [ih, consumeNewline_preserves_docStartLine,
+                skipToContentComment_preserves_docStartLine]
+            exact skipToContentWs_preserves_docStartLine s s1 hws
+          · have ih := IH _ h
+            rw [ih, consumeNewline_preserves_docStartLine,
+                skipToContentComment_preserves_docStartLine]
+            exact skipToContentWs_preserves_docStartLine s s1 hws
+        · simp at h; rw [← h, skipToContentComment_preserves_docStartLine]
+          exact skipToContentWs_preserves_docStartLine s s1 hws
+      · simp at h; rw [← h, skipToContentComment_preserves_docStartLine]
+        exact skipToContentWs_preserves_docStartLine s s1 hws
+
 lemma skipToContent_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState) :
     skipToContent s = .ok s' →
     s'.implicitValueLine = s.implicitValueLine := by
   intro h
   unfold skipToContent at h
   exact skipToContentLoop_preserves_implicitValueLine s s' _ h
+
+/-- `docStartLine` twin of `skipToContent_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipToContent_preserves_docStartLine (s : ScannerState) (s' : ScannerState) :
+    skipToContent s = .ok s' →
+    s'.docStartLine = s.docStartLine := by
+  intro h
+  unfold skipToContent at h
+  exact skipToContentLoop_preserves_docStartLine s s' _ h
 
 
 /-! ## Helper Lemmas for scan* Functions
@@ -3651,6 +3826,22 @@ lemma collectHexDigitsLoop_preserves_implicitValueLine (s : ScannerState) (hex :
         rw [ih, h_adv]
       · rfl
 
+/-- `docStartLine` twin of `collectHexDigitsLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectHexDigitsLoop_preserves_docStartLine (s : ScannerState) (hex : String) (n : Nat) :
+    (collectHexDigitsLoop s hex n).snd.docStartLine = s.docStartLine := by
+  induction n generalizing s hex with
+  | zero => unfold collectHexDigitsLoop; rfl
+  | succ n' ih =>
+    unfold collectHexDigitsLoop
+    cases h_peek : s.peek? with
+    | none => simp []
+    | some c =>
+      simp []
+      split
+      · have h_adv := advance_preserves_docStartLine s
+        rw [ih, h_adv]
+      · rfl
+
 
 lemma parseHexEscape_preserves_implicitValueLine (s : ScannerState) (n : Nat) (ch : Char) (s' : ScannerState)
     (h : parseHexEscape s n = .ok (ch, s')) :
@@ -3658,6 +3849,18 @@ lemma parseHexEscape_preserves_implicitValueLine (s : ScannerState) (n : Nat) (c
   unfold parseHexEscape at h
   simp only [] at h
   have h_collect := collectHexDigitsLoop_preserves_implicitValueLine s "" n
+  split at h <;> try contradiction
+  split at h <;> try contradiction
+  injection h with h_eq; cases h_eq
+  rw [h_collect]
+
+/-- `docStartLine` twin of `parseHexEscape_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma parseHexEscape_preserves_docStartLine (s : ScannerState) (n : Nat) (ch : Char) (s' : ScannerState)
+    (h : parseHexEscape s n = .ok (ch, s')) :
+    s'.docStartLine = s.docStartLine := by
+  unfold parseHexEscape at h
+  simp only [] at h
+  have h_collect := collectHexDigitsLoop_preserves_docStartLine s "" n
   split at h <;> try contradiction
   split at h <;> try contradiction
   injection h with h_eq; cases h_eq
@@ -3678,6 +3881,25 @@ lemma processEscape_preserves_implicitValueLine (s : ScannerState) (ch : Char) (
     | (injection h with h_eq; cases h_eq; exact advance_preserves_implicitValueLine s)
     | (have h_adv := advance_preserves_implicitValueLine s
        have h_hex := parseHexEscape_preserves_implicitValueLine s.advance _ ch s' h
+       rw [h_hex, h_adv])
+    | contradiction
+  )
+
+/-- `docStartLine` twin of `processEscape_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma processEscape_preserves_docStartLine (s : ScannerState) (ch : Char) (s' : ScannerState)
+    (h : processEscape s = .ok (ch, s')) :
+    s'.docStartLine = s.docStartLine := by
+  unfold processEscape at h
+  simp only [] at h
+  split at h <;> try contradiction
+  -- Split on each character case
+  repeat' (split at h)
+  -- Handle all goals
+  all_goals (
+    first
+    | (injection h with h_eq; cases h_eq; exact advance_preserves_docStartLine s)
+    | (have h_adv := advance_preserves_docStartLine s
+       have h_hex := parseHexEscape_preserves_docStartLine s.advance _ ch s' h
        rw [h_hex, h_adv])
     | contradiction
   )
@@ -3704,6 +3926,28 @@ lemma skipBlankLinesLoop_preserves_implicitValueLine (s : ScannerState) (cnt fue
         · rfl
         · rw [ih, h_cn, h_sp]
 
+/-- `docStartLine` twin of `skipBlankLinesLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma skipBlankLinesLoop_preserves_docStartLine (s : ScannerState) (cnt fuel inputEnd : Nat) :
+    (skipBlankLinesLoop s cnt fuel inputEnd).snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s cnt with
+  | zero => unfold skipBlankLinesLoop; rfl
+  | succ fuel' ih =>
+    unfold skipBlankLinesLoop
+    cases h_peek : (skipWhitespace s).peek? with
+    | none => simp [h_peek]
+    | some c =>
+      simp [h_peek]
+      cases h_lb : isLineBreakBool c with
+      | false => simp []
+      | true =>
+        simp []
+        have h_sp := skipWhitespace_preserves_docStartLine s
+        have h_cn := consumeNewline_preserves_docStartLine (skipWhitespace s)
+        -- item 100: the gate's arm keeps the state untouched
+        split
+        · rfl
+        · rw [ih, h_cn, h_sp]
+
 
 lemma foldQuotedNewlinesLoop_preserves_implicitValueLine (s : ScannerState) (emptyCount fuel : Nat) :
     (foldQuotedNewlinesLoop s emptyCount fuel).fst.implicitValueLine = s.implicitValueLine := by
@@ -3725,6 +3969,27 @@ lemma foldQuotedNewlinesLoop_preserves_implicitValueLine (s : ScannerState) (emp
         · rfl
         · rw [ih, h_cn, h_sp]
 
+/-- `docStartLine` twin of `foldQuotedNewlinesLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma foldQuotedNewlinesLoop_preserves_docStartLine (s : ScannerState) (emptyCount fuel : Nat) :
+    (foldQuotedNewlinesLoop s emptyCount fuel).fst.docStartLine = s.docStartLine := by
+  induction fuel generalizing s emptyCount with
+  | zero => unfold foldQuotedNewlinesLoop; rfl
+  | succ fuel' ih =>
+    unfold foldQuotedNewlinesLoop
+    cases h_peek : (skipWhitespace s).peek? with
+    | none => simp [h_peek]
+    | some c =>
+      simp [h_peek]
+      cases h_lb : isLineBreakBool c with
+      | false => simp []
+      | true =>
+        simp []
+        have h_sp := skipWhitespace_preserves_docStartLine s
+        have h_cn := consumeNewline_preserves_docStartLine (skipWhitespace s)
+        split
+        · rfl
+        · rw [ih, h_cn, h_sp]
+
 
 lemma foldQuotedNewlines_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState) (content : String)
     (h : foldQuotedNewlines s = .ok (content, s')) :
@@ -3736,6 +4001,24 @@ lemma foldQuotedNewlines_preserves_implicitValueLine (s : ScannerState) (s' : Sc
   have h_fold := foldQuotedNewlinesLoop_preserves_implicitValueLine (consumeNewline s) 0 fuel
   have h_sp := skipSpaces_preserves_implicitValueLine (foldQuotedNewlinesLoop (consumeNewline s) 0 fuel).fst
   have h_sw := skipWhitespace_preserves_implicitValueLine (skipSpaces (foldQuotedNewlinesLoop (consumeNewline s) 0 fuel).fst)
+  -- 4.32.0 reshaped the do-notation match tree; split fully, then close every
+  -- leaf uniformly (error leaves by contradiction, ok leaves by the fold chain).
+  repeat' split at h
+  all_goals first
+    | contradiction
+    | (injection h with heq; cases heq; rw [h_sw, h_sp, h_fold, h_cn])
+
+/-- `docStartLine` twin of `foldQuotedNewlines_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma foldQuotedNewlines_preserves_docStartLine (s : ScannerState) (s' : ScannerState) (content : String)
+    (h : foldQuotedNewlines s = .ok (content, s')) :
+    s'.docStartLine = s.docStartLine := by
+  unfold foldQuotedNewlines at h
+  simp only [bind, Except.bind, pure] at h
+  have h_cn := consumeNewline_preserves_docStartLine s
+  let fuel := s.inputEnd - (consumeNewline s).offset + 1
+  have h_fold := foldQuotedNewlinesLoop_preserves_docStartLine (consumeNewline s) 0 fuel
+  have h_sp := skipSpaces_preserves_docStartLine (foldQuotedNewlinesLoop (consumeNewline s) 0 fuel).fst
+  have h_sw := skipWhitespace_preserves_docStartLine (skipSpaces (foldQuotedNewlinesLoop (consumeNewline s) 0 fuel).fst)
   -- 4.32.0 reshaped the do-notation match tree; split fully, then close every
   -- leaf uniformly (error leaves by contradiction, ok leaves by the fold chain).
   repeat' split at h
@@ -3831,6 +4114,94 @@ lemma collectPlainScalarLoop_preserves_implicitValueLine (s : ScannerState) (con
               have h_adv := advance_preserves_implicitValueLine s
               rw [ih s.advance _ "" h, h_adv]
 
+/-- `docStartLine` twin of `collectPlainScalarLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectPlainScalarLoop_preserves_docStartLine (s : ScannerState) (content lastLine : String)
+    (fuel : Nat) (inFlow : Bool) (contentIndent inputEnd : Nat) :
+    ∀ result, collectPlainScalarLoop s content lastLine fuel inFlow contentIndent inputEnd = .ok result →
+    result.state.docStartLine = s.docStartLine := by
+  intro result h
+  induction fuel generalizing s content lastLine with
+  | zero =>
+    unfold collectPlainScalarLoop at h
+    injection h with h_eq; cases h_eq; rfl
+  | succ fuel' ih =>
+    unfold collectPlainScalarLoop at h
+    split at h
+    · -- peek = none
+      injection h with h_eq; cases h_eq; rfl
+    · -- peek = some c
+      rename_i c
+      split at h
+      · -- collectPlainScalar_terminates? = some → state = s
+        rename_i hterm
+        injection h with h_eq; cases h_eq
+        rw [ScanHelpers.collectPlainScalar_terminates?_state _ _ _ _ _ _ hterm]
+      · -- collectPlainScalar_terminates? = none → continue
+        split at h
+        · -- isLineBreak c
+          split at h
+          · -- inFlow
+            simp only [bind, Except.bind] at h
+            split at h <;> try contradiction
+            rename_i fold_result heq
+            cases fold_result with
+            | mk content_fold s_fold =>
+              have h_fold := foldQuotedNewlines_preserves_docStartLine s s_fold content_fold heq
+              split at h
+              · injection h with h_eq; cases h_eq; rfl  -- '#' → state = s
+              · -- recurse with content-length check
+                -- item 50: the flow floor's throw contradicts `.ok`
+                split at h
+                · contradiction
+                dsimp only [] at h
+                generalize h_loop : collectPlainScalarLoop s_fold (content ++ content_fold) "" fuel' inFlow contentIndent inputEnd = cont_result at h
+                cases cont_result with
+                | ok inner_result =>
+                  dsimp only [] at h
+                  split at h
+                  · injection h with h_eq; cases h_eq; rfl
+                  · have h_eq := Except.ok.inj h; subst h_eq
+                    rw [ih s_fold (content ++ content_fold) "" h_loop, h_fold]
+                | error e => simp at h
+          · -- !inFlow: block line break
+            split at h
+            · -- _handleBlockLineBreak = none → terminate
+              injection h with h_eq; cases h_eq; rfl
+            · -- _handleBlockLineBreak = some → recurse
+              rename_i content' s' hblk
+              have hprop : s'.docStartLine = s.docStartLine := by
+                unfold collectPlainScalar_handleBlockLineBreak at hblk
+                simp only [] at hblk
+                split at hblk <;> try contradiction
+                split at hblk <;> try contradiction
+                have := Prod.mk.inj (Option.some.inj hblk)
+                rw [← this.2, skipWhitespace_preserves_docStartLine, skipSpaces_preserves_docStartLine,
+                    skipBlankLinesLoop_preserves_docStartLine, consumeNewline_preserves_docStartLine]
+              split at h
+              · injection h with h_eq; cases h_eq; rfl  -- '#' → state = s
+              · dsimp only [] at h
+                generalize h_loop : collectPlainScalarLoop s' content' "" fuel' inFlow contentIndent inputEnd = cont_result at h
+                cases cont_result with
+                | ok inner_result =>
+                  dsimp only [] at h
+                  split at h
+                  · injection h with h_eq; cases h_eq; rfl
+                  · have h_eq := Except.ok.inj h; subst h_eq
+                    rw [ih _ _ _ h_loop, hprop]
+                | error e => simp at h
+        · split at h
+          · -- isWhiteSpace c
+            have h_adv := advance_preserves_docStartLine s
+            rw [ih s.advance content (lastLine.push _) h, h_adv]
+          · -- regular content
+            split at h
+            · -- !isPlainSafe → terminate
+              injection h with h_eq; cases h_eq; rfl
+            · -- plainSafe → recurse
+              simp only [] at h
+              have h_adv := advance_preserves_docStartLine s
+              rw [ih s.advance _ "" h, h_adv]
+
 
 lemma collectDoubleQuotedLoop_preserves_implicitValueLine (s : ScannerState) (content : String)
     (fuel : Nat) (startPos : YamlPos) (inFlow : Bool) (currentIndent : Int) (inputEnd : Nat) :
@@ -3895,6 +4266,70 @@ lemma collectDoubleQuotedLoop_preserves_implicitValueLine (s : ScannerState) (co
         have h_adv := advance_preserves_implicitValueLine s
         rw [ih _ _ _ h, h_adv]
 
+/-- `docStartLine` twin of `collectDoubleQuotedLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectDoubleQuotedLoop_preserves_docStartLine (s : ScannerState) (content : String)
+    (fuel : Nat) (startPos : YamlPos) (inFlow : Bool) (currentIndent : Int) (inputEnd : Nat) :
+    ∀ result, collectDoubleQuotedLoop s content fuel startPos inFlow currentIndent inputEnd = .ok result →
+    result.snd.docStartLine = s.docStartLine := by
+  -- protectedLen (default 0) is generalised so the IH covers the fold
+  -- boundary the recursive call shifts (B2).
+  suffices H : ∀ (p : Nat) (s : ScannerState) (content : String) (result : String × ScannerState),
+      collectDoubleQuotedLoop s content fuel startPos inFlow currentIndent inputEnd p = .ok result →
+      result.snd.docStartLine = s.docStartLine by
+    intro result h; exact H 0 s content result h
+  intro p s content result h
+  induction fuel generalizing s content p with
+  | zero =>
+    unfold collectDoubleQuotedLoop at h
+    contradiction
+  | succ fuel' ih =>
+    unfold collectDoubleQuotedLoop at h
+    split at h
+    · -- none case
+      contradiction
+    · -- some '"' case (closing quote)
+      injection h with h_eq; cases h_eq
+      exact advance_preserves_docStartLine s
+    · -- some '\\' case (escape sequence)
+      simp only [] at h
+      split at h <;> try contradiction
+      -- some c after backslash
+      split at h
+      · -- isLineBreak c (escaped line break; item 53 splits the branch)
+        have h_adv := advance_preserves_docStartLine s
+        simp only [bind, Except.bind] at h
+        split at h <;> try contradiction
+        rename_i fold_result heq
+        cases fold_result with
+        | mk folded s_fold =>
+          have h_fold := foldQuotedNewlines_preserves_docStartLine s.advance s_fold folded heq
+          repeat' split at h
+          all_goals (first | contradiction | rw [ih _ _ _ h, h_fold, h_adv])
+      · -- regular escape sequence
+        simp only [bind, Except.bind] at h
+        split at h <;> try contradiction
+        rename_i escape_result heq
+        cases escape_result with
+        | mk ch s_after_escape =>
+          have h_proc := processEscape_preserves_docStartLine s.advance ch s_after_escape heq
+          have h_adv := advance_preserves_docStartLine s
+          rw [ih _ _ _ h, h_proc, h_adv]
+    · -- some c case (regular character)
+      split at h
+      · -- isLineBreak c
+        simp only [bind, Except.bind] at h
+        split at h <;> try contradiction
+        rename_i fold_result heq
+        cases fold_result with
+        | mk folded s_fold =>
+          have h_fold := foldQuotedNewlines_preserves_docStartLine s s_fold folded heq
+          repeat' split at h
+          all_goals (first | contradiction | rw [ih _ _ _ h, h_fold])
+      · -- regular character
+        split at h <;> try contradiction  -- isNbJsonBool check
+        have h_adv := advance_preserves_docStartLine s
+        rw [ih _ _ _ h, h_adv]
+
 
 lemma collectSingleQuotedLoop_preserves_implicitValueLine (s : ScannerState) (content : String)
     (fuel : Nat) (startPos : YamlPos) (inFlow : Bool) (currentIndent : Int) (inputEnd : Nat) :
@@ -3936,6 +4371,47 @@ lemma collectSingleQuotedLoop_preserves_implicitValueLine (s : ScannerState) (co
         have h_adv := advance_preserves_implicitValueLine s
         rw [ih s.advance _ h, h_adv]
 
+/-- `docStartLine` twin of `collectSingleQuotedLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectSingleQuotedLoop_preserves_docStartLine (s : ScannerState) (content : String)
+    (fuel : Nat) (startPos : YamlPos) (inFlow : Bool) (currentIndent : Int) (inputEnd : Nat) :
+    ∀ result, collectSingleQuotedLoop s content fuel startPos inFlow currentIndent inputEnd = .ok result →
+    result.snd.docStartLine = s.docStartLine := by
+  intro result h
+  induction fuel generalizing s content with
+  | zero =>
+    unfold collectSingleQuotedLoop at h
+    contradiction
+  | succ fuel' ih =>
+    unfold collectSingleQuotedLoop at h
+    split at h
+    · -- none case
+      contradiction
+    · -- some '\'' case
+      simp only [] at h
+      split at h
+      · -- escaped quote: '\''\''
+        have h_adv1 := advance_preserves_docStartLine s
+        have h_adv2 := advance_preserves_docStartLine s.advance
+        rw [ih _ _ h, h_adv2, h_adv1]
+      · -- closing quote
+        injection h with h_eq; cases h_eq
+        exact advance_preserves_docStartLine s
+    · -- some c case (not quote)
+      split at h
+      · -- isLineBreak c = true
+        simp only [bind, Except.bind] at h
+        split at h <;> try contradiction
+        rename_i fold_result heq
+        cases fold_result with
+        | mk folded s_fold =>
+          have h_fold := foldQuotedNewlines_preserves_docStartLine s s_fold folded heq
+          repeat' split at h
+          all_goals (first | contradiction | rw [ih s_fold _ h, h_fold])
+      · -- isLineBreak c = false, regular character
+        split at h <;> try contradiction  -- isNbJsonBool check
+        have h_adv := advance_preserves_docStartLine s
+        rw [ih s.advance _ h, h_adv]
+
 
 lemma collectAnchorNameLoop_preserves_implicitValueLine (s : ScannerState) (acc : String) (fuel : Nat) :
     (collectAnchorNameLoop s acc fuel).snd.implicitValueLine = s.implicitValueLine := by
@@ -3956,8 +4432,33 @@ lemma collectAnchorNameLoop_preserves_implicitValueLine (s : ScannerState) (acc 
     · -- none
       rfl
 
+/-- `docStartLine` twin of `collectAnchorNameLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectAnchorNameLoop_preserves_docStartLine (s : ScannerState) (acc : String) (fuel : Nat) :
+    (collectAnchorNameLoop s acc fuel).snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s acc with
+  | zero =>
+    unfold collectAnchorNameLoop
+    rfl
+  | succ fuel' ih =>
+    unfold collectAnchorNameLoop
+    split
+    · -- some c
+      split
+      · -- condition true: recurse with advance
+        rw [ih]
+        exact advance_preserves_docStartLine s
+      · -- condition false: return
+        rfl
+    · -- none
+      rfl
+
 lemma emitAt_preserves_implicitValueLine (s : ScannerState) (pos : YamlPos) (tok : YamlToken) :
     (s.emitAt pos tok).implicitValueLine = s.implicitValueLine := by
+  unfold ScannerState.emitAt; rfl
+
+/-- `docStartLine` twin of `emitAt_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma emitAt_preserves_docStartLine (s : ScannerState) (pos : YamlPos) (tok : YamlToken) :
+    (s.emitAt pos tok).docStartLine = s.docStartLine := by
   unfold ScannerState.emitAt; rfl
 
 lemma scanAnchorOrAlias_preserves_implicitValueLine (s : ScannerState) (isAnchor : Bool)
@@ -3970,6 +4471,17 @@ lemma scanAnchorOrAlias_preserves_implicitValueLine (s : ScannerState) (isAnchor
     simp [emitAt_preserves_implicitValueLine, collectAnchorNameLoop_preserves_implicitValueLine,
           advance_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `scanAnchorOrAlias_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanAnchorOrAlias_preserves_docStartLine (s : ScannerState) (isAnchor : Bool)
+    (s' : ScannerState) (hok : scanAnchorOrAlias s isAnchor = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  unfold scanAnchorOrAlias at hok; dsimp only [] at hok
+  split at hok
+  · exact absurd hok (by simp)
+  · have h := Except.ok.inj hok; subst h; dsimp only []
+    simp [emitAt_preserves_docStartLine, collectAnchorNameLoop_preserves_docStartLine,
+          advance_preserves_docStartLine]
+
 lemma scanPlainScalar_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
     (h : scanPlainScalar s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
   unfold scanPlainScalar at h
@@ -3979,6 +4491,17 @@ lemma scanPlainScalar_preserves_implicitValueLine (s : ScannerState) (s' : Scann
   simp only [Except.ok.injEq] at h; subst h
   simp [emitAt_preserves_implicitValueLine]
   exact collectPlainScalarLoop_preserves_implicitValueLine s "" "" _ _ _ _ result heq
+
+/-- `docStartLine` twin of `scanPlainScalar_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanPlainScalar_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : scanPlainScalar s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanPlainScalar at h
+  simp only [bind, Except.bind] at h
+  split at h <;> try contradiction
+  rename_i result heq
+  simp only [Except.ok.injEq] at h; subst h
+  simp [emitAt_preserves_docStartLine]
+  exact collectPlainScalarLoop_preserves_docStartLine s "" "" _ _ _ _ result heq
 
 lemma scanDoubleQuoted_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
     (h : scanDoubleQuoted s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
@@ -3997,6 +4520,24 @@ lemma scanDoubleQuoted_preserves_implicitValueLine (s : ScannerState) (s' : Scan
     have := collectDoubleQuotedLoop_preserves_implicitValueLine s.advance "" _ _ _ _ _ result heq
     rw [this, advance_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `scanDoubleQuoted_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanDoubleQuoted_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : scanDoubleQuoted s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanDoubleQuoted at h
+  simp only [bind, Except.bind] at h
+  split at h <;> try contradiction
+  rename_i result heq
+  split at h
+  · split at h <;> try contradiction
+    simp only [Except.ok.injEq] at h; subst h
+    simp [emitAt_preserves_docStartLine]
+    have := collectDoubleQuotedLoop_preserves_docStartLine s.advance "" _ _ _ _ _ result heq
+    rw [this, advance_preserves_docStartLine]
+  · simp only [Except.ok.injEq] at h; subst h
+    simp [emitAt_preserves_docStartLine]
+    have := collectDoubleQuotedLoop_preserves_docStartLine s.advance "" _ _ _ _ _ result heq
+    rw [this, advance_preserves_docStartLine]
+
 lemma scanSingleQuoted_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
     (h : scanSingleQuoted s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
   unfold scanSingleQuoted at h
@@ -4013,6 +4554,24 @@ lemma scanSingleQuoted_preserves_implicitValueLine (s : ScannerState) (s' : Scan
     simp [emitAt_preserves_implicitValueLine]
     have := collectSingleQuotedLoop_preserves_implicitValueLine s.advance "" _ _ _ _ _ result heq
     rw [this, advance_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanSingleQuoted_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanSingleQuoted_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : scanSingleQuoted s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanSingleQuoted at h
+  simp only [bind, Except.bind] at h
+  split at h <;> try contradiction
+  rename_i result heq
+  split at h
+  · split at h <;> try contradiction
+    simp only [Except.ok.injEq] at h; subst h
+    simp [emitAt_preserves_docStartLine]
+    have := collectSingleQuotedLoop_preserves_docStartLine s.advance "" _ _ _ _ _ result heq
+    rw [this, advance_preserves_docStartLine]
+  · simp only [Except.ok.injEq] at h; subst h
+    simp [emitAt_preserves_docStartLine]
+    have := collectSingleQuotedLoop_preserves_docStartLine s.advance "" _ _ _ _ _ result heq
+    rw [this, advance_preserves_docStartLine]
 
 /-! ### … and through the TAG scan (item 102)
 
@@ -4036,6 +4595,20 @@ lemma collectVerbatimTagLoop_preserves_implicitValueLine (s : ScannerState) (uri
       · rfl  -- not uri char, return (uri, s)
     · simp only []  -- none, return (uri, s)
 
+/-- `docStartLine` twin of `collectVerbatimTagLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectVerbatimTagLoop_preserves_docStartLine (s : ScannerState) (uri : String) (fuel : Nat) :
+    (collectVerbatimTagLoop s uri fuel).snd.snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s uri with
+  | zero => unfold collectVerbatimTagLoop; rfl
+  | succ fuel' ih =>
+    unfold collectVerbatimTagLoop
+    split
+    · simp only []; exact advance_preserves_docStartLine s  -- found '>', return (uri, s.advance)
+    · split  -- isUriCharBool
+      · rw [ih]; exact advance_preserves_docStartLine s  -- uri char, recurse
+      · rfl  -- not uri char, return (uri, s)
+    · simp only []  -- none, return (uri, s)
+
 lemma collectTagSuffixLoop_preserves_implicitValueLine (s : ScannerState) (suffix : String) (fuel : Nat) :
     (collectTagSuffixLoop s suffix fuel).snd.implicitValueLine = s.implicitValueLine := by
   induction fuel generalizing s suffix with
@@ -4045,6 +4618,19 @@ lemma collectTagSuffixLoop_preserves_implicitValueLine (s : ScannerState) (suffi
     split
     · split
       · rw [ih]; exact advance_preserves_implicitValueLine s  -- tag char, recurse
+      · simp only []  -- not tag char, return
+    · simp only []  -- none, return
+
+/-- `docStartLine` twin of `collectTagSuffixLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectTagSuffixLoop_preserves_docStartLine (s : ScannerState) (suffix : String) (fuel : Nat) :
+    (collectTagSuffixLoop s suffix fuel).snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s suffix with
+  | zero => unfold collectTagSuffixLoop; rfl
+  | succ fuel' ih =>
+    unfold collectTagSuffixLoop
+    split
+    · split
+      · rw [ih]; exact advance_preserves_docStartLine s  -- tag char, recurse
       · simp only []  -- not tag char, return
     · simp only []  -- none, return
 
@@ -4061,6 +4647,20 @@ lemma collectTagHandleLoop_preserves_implicitValueLine (s : ScannerState) (chars
       · simp only []  -- not word char, return
     · simp only []  -- none, return
 
+/-- `docStartLine` twin of `collectTagHandleLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectTagHandleLoop_preserves_docStartLine (s : ScannerState) (chars : String) (fuel : Nat) :
+    (collectTagHandleLoop s chars fuel).snd.snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s chars with
+  | zero => unfold collectTagHandleLoop; rfl
+  | succ fuel' ih =>
+    unfold collectTagHandleLoop
+    split
+    · simp only []; exact advance_preserves_docStartLine s  -- found '!', return (chars, true, s.advance)
+    · split  -- split on the if condition
+      · rw [ih]; exact advance_preserves_docStartLine s  -- word char, recurse
+      · simp only []  -- not word char, return
+    · simp only []  -- none, return
+
 lemma scanVerbatimTag_preserves_implicitValueLine (s : ScannerState) (startPos : YamlPos)
     (s' : ScannerState) (hok : scanVerbatimTag s startPos = .ok s') :
     s'.implicitValueLine = s.implicitValueLine := by
@@ -4073,11 +4673,31 @@ lemma scanVerbatimTag_preserves_implicitValueLine (s : ScannerState) (startPos :
       simp [emitAt_preserves_implicitValueLine, collectVerbatimTagLoop_preserves_implicitValueLine,
             advance_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `scanVerbatimTag_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanVerbatimTag_preserves_docStartLine (s : ScannerState) (startPos : YamlPos)
+    (s' : ScannerState) (hok : scanVerbatimTag s startPos = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  unfold scanVerbatimTag at hok; dsimp only [] at hok
+  split at hok
+  · exact absurd hok (by simp)
+  · split at hok
+    · exact absurd hok (by simp)
+    · have h := Except.ok.inj hok; subst h
+      simp [emitAt_preserves_docStartLine, collectVerbatimTagLoop_preserves_docStartLine,
+            advance_preserves_docStartLine]
+
 lemma scanSecondaryTag_preserves_implicitValueLine (s : ScannerState) (startPos : YamlPos) :
     (scanSecondaryTag s startPos).implicitValueLine = s.implicitValueLine := by
   unfold scanSecondaryTag
   simp [emitAt_preserves_implicitValueLine, collectTagSuffixLoop_preserves_implicitValueLine,
         advance_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanSecondaryTag_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanSecondaryTag_preserves_docStartLine (s : ScannerState) (startPos : YamlPos) :
+    (scanSecondaryTag s startPos).docStartLine = s.docStartLine := by
+  unfold scanSecondaryTag
+  simp [emitAt_preserves_docStartLine, collectTagSuffixLoop_preserves_docStartLine,
+        advance_preserves_docStartLine]
 
 lemma scanNamedTag_preserves_implicitValueLine (s : ScannerState) (startPos : YamlPos) (inputEnd : Nat) :
     (scanNamedTag s startPos inputEnd).implicitValueLine = s.implicitValueLine := by
@@ -4087,6 +4707,16 @@ lemma scanNamedTag_preserves_implicitValueLine (s : ScannerState) (startPos : Ya
   · simp [emitAt_preserves_implicitValueLine, collectTagSuffixLoop_preserves_implicitValueLine,
           collectTagHandleLoop_preserves_implicitValueLine]
   · simp [emitAt_preserves_implicitValueLine, collectTagHandleLoop_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanNamedTag_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanNamedTag_preserves_docStartLine (s : ScannerState) (startPos : YamlPos) (inputEnd : Nat) :
+    (scanNamedTag s startPos inputEnd).docStartLine = s.docStartLine := by
+  unfold scanNamedTag
+  simp only []
+  split
+  · simp [emitAt_preserves_docStartLine, collectTagSuffixLoop_preserves_docStartLine,
+          collectTagHandleLoop_preserves_docStartLine]
+  · simp [emitAt_preserves_docStartLine, collectTagHandleLoop_preserves_docStartLine]
 
 lemma scanTag_preserves_implicitValueLine (s : ScannerState)
     (s' : ScannerState) (hok : scanTag s = .ok s') :
@@ -4105,6 +4735,25 @@ lemma scanTag_preserves_implicitValueLine (s : ScannerState)
     simp [scanSecondaryTag_preserves_implicitValueLine, advance_preserves_implicitValueLine]
   · have h := Except.ok.inj hok; subst h; dsimp only []
     simp [scanNamedTag_preserves_implicitValueLine, advance_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanTag_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanTag_preserves_docStartLine (s : ScannerState)
+    (s' : ScannerState) (hok : scanTag s = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  unfold scanTag at hok; dsimp only [] at hok
+  split at hok
+  · simp only [bind, Except.bind] at hok
+    generalize hv : scanVerbatimTag s.advance s.currentPos = result at hok
+    cases result with
+    | error e => simp at hok
+    | ok s_verb =>
+      dsimp only [] at hok; have h := Except.ok.inj hok; subst h; dsimp only []
+      simp [scanVerbatimTag_preserves_docStartLine s.advance s.currentPos s_verb hv,
+            advance_preserves_docStartLine]
+  · have h := Except.ok.inj hok; subst h; dsimp only []
+    simp [scanSecondaryTag_preserves_docStartLine, advance_preserves_docStartLine]
+  · have h := Except.ok.inj hok; subst h; dsimp only []
+    simp [scanNamedTag_preserves_docStartLine, advance_preserves_docStartLine]
 
 
 /-! ### … and through the BLOCK SCALAR, which totalizes the walk (item 103)
@@ -4126,6 +4775,16 @@ lemma consumeExactSpaces_preserves_implicitValueLine (s : ScannerState) (count :
     · simp only []; rw [ih]; exact advance_preserves_implicitValueLine s
     · rfl
 
+/-- `docStartLine` twin of `consumeExactSpaces_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma consumeExactSpaces_preserves_docStartLine (s : ScannerState) (count : Nat) :
+    (consumeExactSpaces s count).snd.docStartLine = s.docStartLine := by
+  induction count generalizing s with
+  | zero => unfold consumeExactSpaces; rfl
+  | succ count' ih =>
+    unfold consumeExactSpaces; split
+    · simp only []; rw [ih]; exact advance_preserves_docStartLine s
+    · rfl
+
 lemma parseBlockHeaderLoop_preserves_implicitValueLine (s : ScannerState) (chomp : ChompStyle)
     (offset : Option Nat) (fuel : Nat) :
     (parseBlockHeaderLoop s chomp offset fuel).snd.snd.implicitValueLine = s.implicitValueLine := by
@@ -4140,6 +4799,21 @@ lemma parseBlockHeaderLoop_preserves_implicitValueLine (s : ScannerState) (chomp
       · rfl
     · rfl
 
+/-- `docStartLine` twin of `parseBlockHeaderLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma parseBlockHeaderLoop_preserves_docStartLine (s : ScannerState) (chomp : ChompStyle)
+    (offset : Option Nat) (fuel : Nat) :
+    (parseBlockHeaderLoop s chomp offset fuel).snd.snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s chomp offset with
+  | zero => unfold parseBlockHeaderLoop; rfl
+  | succ fuel' ih =>
+    unfold parseBlockHeaderLoop; split
+    · rw [ih]; exact advance_preserves_docStartLine s
+    · rw [ih]; exact advance_preserves_docStartLine s
+    · split
+      · rw [ih]; exact advance_preserves_docStartLine s
+      · rfl
+    · rfl
+
 lemma collectLineContentLoop_preserves_implicitValueLine (s : ScannerState) (content : String) (fuel : Nat) :
     (collectLineContentLoop s content fuel).snd.implicitValueLine = s.implicitValueLine := by
   induction fuel generalizing s content with
@@ -4150,6 +4824,19 @@ lemma collectLineContentLoop_preserves_implicitValueLine (s : ScannerState) (con
     · split
       · rfl
       · rw [ih]; exact advance_preserves_implicitValueLine s
+    · rfl
+
+/-- `docStartLine` twin of `collectLineContentLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectLineContentLoop_preserves_docStartLine (s : ScannerState) (content : String) (fuel : Nat) :
+    (collectLineContentLoop s content fuel).snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s content with
+  | zero => unfold collectLineContentLoop; rfl
+  | succ fuel' ih =>
+    unfold collectLineContentLoop
+    split
+    · split
+      · rfl
+      · rw [ih]; exact advance_preserves_docStartLine s
     · rfl
 
 lemma collectBlockScalarLoop_preserves_implicitValueLine (s : ScannerState) (rawContent : String)
@@ -4176,6 +4863,31 @@ lemma collectBlockScalarLoop_preserves_implicitValueLine (s : ScannerState) (raw
                 rw [collectLineContentLoop_preserves_implicitValueLine, consumeExactSpaces_preserves_implicitValueLine]
             · rw [collectLineContentLoop_preserves_implicitValueLine, consumeExactSpaces_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `collectBlockScalarLoop_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma collectBlockScalarLoop_preserves_docStartLine (s : ScannerState) (rawContent : String)
+    (fuel : Nat) (contentIndent : Nat) (inputEnd : Nat) :
+    (collectBlockScalarLoop s rawContent fuel contentIndent inputEnd).snd.docStartLine = s.docStartLine := by
+  induction fuel generalizing s rawContent with
+  | zero => unfold collectBlockScalarLoop; rfl
+  | succ fuel' ih =>
+    unfold collectBlockScalarLoop
+    split
+    · rfl
+    · simp only []
+      split
+      · exact consumeExactSpaces_preserves_docStartLine s contentIndent
+      · split
+        · rw [ih, consumeNewline_preserves_docStartLine, consumeExactSpaces_preserves_docStartLine]
+        · split
+          · rfl
+          · split
+            · split
+              · rw [ih, consumeNewline_preserves_docStartLine,
+                    collectLineContentLoop_preserves_docStartLine, consumeExactSpaces_preserves_docStartLine]
+              · dsimp only []
+                rw [collectLineContentLoop_preserves_docStartLine, consumeExactSpaces_preserves_docStartLine]
+            · rw [collectLineContentLoop_preserves_docStartLine, consumeExactSpaces_preserves_docStartLine]
+
 lemma scanBlockScalarSkipComment_preserves_implicitValueLine (s : ScannerState) :
     (scanBlockScalarSkipComment s).implicitValueLine = s.implicitValueLine := by
   unfold scanBlockScalarSkipComment
@@ -4192,12 +4904,41 @@ lemma scanBlockScalarSkipComment_preserves_implicitValueLine (s : ScannerState) 
       rfl
   · rfl
 
+/-- `docStartLine` twin of `scanBlockScalarSkipComment_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanBlockScalarSkipComment_preserves_docStartLine (s : ScannerState) :
+    (scanBlockScalarSkipComment s).docStartLine = s.docStartLine := by
+  unfold scanBlockScalarSkipComment
+  split
+  · -- some '#'
+    split
+    · -- peekBack? = some c
+      dsimp only []
+      split
+      · simp only []
+        rw [collectCommentTextLoop_preserves_docStartLine, advance_preserves_docStartLine]
+      · rfl
+    · -- peekBack? = none
+      rfl
+  · rfl
+
 lemma scanBlockScalarConsumeNewline_preserves_implicitValueLine (s s' : ScannerState)
     (h : scanBlockScalarConsumeNewline s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
   unfold scanBlockScalarConsumeNewline at h
   split at h
   · split at h
     · injection h with h_eq; subst h_eq; exact consumeNewline_preserves_implicitValueLine s
+    · split at h
+      · injection h with h_eq; subst h_eq; rfl
+      · contradiction
+  · injection h with h_eq; subst h_eq; rfl
+
+/-- `docStartLine` twin of `scanBlockScalarConsumeNewline_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanBlockScalarConsumeNewline_preserves_docStartLine (s s' : ScannerState)
+    (h : scanBlockScalarConsumeNewline s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanBlockScalarConsumeNewline at h
+  split at h
+  · split at h
+    · injection h with h_eq; subst h_eq; exact consumeNewline_preserves_docStartLine s
     · split at h
       · injection h with h_eq; subst h_eq; rfl
       · contradiction
@@ -4215,6 +4956,19 @@ lemma scanBlockScalarBody_preserves_implicitValueLine (s_orig s_nl : ScannerStat
   all_goals (simp only [Except.ok.injEq] at h; subst h; dsimp only [])
   all_goals rw [emitAt_preserves_implicitValueLine, collectBlockScalarLoop_preserves_implicitValueLine, h_fl]
 
+/-- `docStartLine` twin of `scanBlockScalarBody_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanBlockScalarBody_preserves_docStartLine (s_orig s_nl : ScannerState)
+    (chomp : ChompStyle) (expl : Option Nat) (isLit : Bool) (startPos : YamlPos) (s' : ScannerState)
+    (h_fl : s_nl.docStartLine = s_orig.docStartLine)
+    (h : scanBlockScalarBody s_orig s_nl chomp expl isLit startPos = .ok s') :
+    s'.docStartLine = s_orig.docStartLine := by
+  unfold scanBlockScalarBody at h
+  simp only [] at h
+  repeat (any_goals (split at h))
+  all_goals (try contradiction)
+  all_goals (simp only [Except.ok.injEq] at h; subst h; dsimp only [])
+  all_goals rw [emitAt_preserves_docStartLine, collectBlockScalarLoop_preserves_docStartLine, h_fl]
+
 lemma scanBlockScalar_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
     (h : scanBlockScalar s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
   unfold scanBlockScalar at h
@@ -4227,6 +4981,20 @@ lemma scanBlockScalar_preserves_implicitValueLine (s : ScannerState) (s' : Scann
               skipWhitespace_preserves_implicitValueLine,
               parseBlockHeaderLoop_preserves_implicitValueLine,
               advance_preserves_implicitValueLine]) h
+
+/-- `docStartLine` twin of `scanBlockScalar_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanBlockScalar_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : scanBlockScalar s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanBlockScalar at h
+  simp only [] at h
+  split at h
+  · contradiction
+  · exact scanBlockScalarBody_preserves_docStartLine s _ _ _ _ _ s'
+      (by rw [scanBlockScalarConsumeNewline_preserves_docStartLine _ _ (by assumption),
+              scanBlockScalarSkipComment_preserves_docStartLine,
+              skipWhitespace_preserves_docStartLine,
+              parseBlockHeaderLoop_preserves_docStartLine,
+              advance_preserves_docStartLine]) h
 
 lemma dispatchContent_preserves_implicitValueLine (s : ScannerState) (c : Char) (s' : ScannerState)
     (h : scanNextToken_dispatchContent s c = .ok s') :
@@ -4276,6 +5044,55 @@ lemma dispatchContent_preserves_implicitValueLine (s : ScannerState) (c : Char) 
           | exact scanPlainScalar_preserves_implicitValueLine _ _ (by assumption)
           | (simp_all; done)
 
+/-- `docStartLine` twin of `dispatchContent_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma dispatchContent_preserves_docStartLine (s : ScannerState) (c : Char) (s' : ScannerState)
+    (h : scanNextToken_dispatchContent s c = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  unfold scanNextToken_dispatchContent at h
+  simp only [bind, pure, Pure.pure, Except.pure] at h
+  simp only [Except.bind] at h
+  split at h
+  · -- '&': scanAnchorOrAlias bind
+    split at h   -- item 9e: the property-run guard
+    · simp at h
+    generalize h_fn : scanAnchorOrAlias s true = result at h
+    cases result with
+    | error e => simp at h
+    | ok s_a =>
+      simp only [Except.ok.injEq] at h; subst h; dsimp only []
+      exact scanAnchorOrAlias_preserves_docStartLine s true s_a h_fn
+  · split at h
+    · -- '*': alias
+      split at h   -- item 9e: the property-run guard
+      · simp at h
+      split at h
+      · simp at h
+      · -- item 9h: peel `validateAliasClose`; the alias facts are unchanged.
+        exact scanAnchorOrAlias_preserves_docStartLine s false _ (aliasArm_scan_ok h)
+    · split at h
+      · -- '!': tag
+        split at h   -- item 9e: the property-run guard
+        · simp at h
+        generalize h_fn : scanTag s = result at h
+        cases result with
+        | error e => simp at h
+        | ok s_t =>
+          simp only [Except.ok.injEq] at h; subst h
+          exact scanTag_preserves_docStartLine s s_t h_fn
+      · -- remaining: block scalar, quoted, plain
+        repeat (any_goals (split at h))
+        any_goals contradiction
+        all_goals (try simp only [Except.ok.injEq] at *)
+        all_goals (try contradiction)
+        all_goals (try subst_vars)
+        all_goals (try dsimp only [])
+        all_goals first
+          | exact scanBlockScalar_preserves_docStartLine _ _ (by assumption)
+          | exact scanDoubleQuoted_preserves_docStartLine _ _ (by assumption)
+          | exact scanSingleQuoted_preserves_docStartLine _ _ (by assumption)
+          | exact scanPlainScalar_preserves_docStartLine _ _ (by assumption)
+          | (simp_all; done)
+
 
 /-! ### … and through the FLOW indicators (item 103)
 
@@ -4290,25 +5107,56 @@ lemma pushMappingIndent_preserves_implicitValueLine (s : ScannerState) (col : In
   · simp [emit_preserves_implicitValueLine]
   · rfl
 
+/-- `docStartLine` twin of `pushMappingIndent_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma pushMappingIndent_preserves_docStartLine (s : ScannerState) (col : Int) :
+    (pushMappingIndent s col).docStartLine = s.docStartLine := by
+  unfold pushMappingIndent; split
+  · simp [emit_preserves_docStartLine]
+  · rfl
+
 lemma scanFlowSequenceStart_preserves_implicitValueLine (s : ScannerState) :
     (scanFlowSequenceStart s).implicitValueLine = s.implicitValueLine := by
   unfold scanFlowSequenceStart
   simp [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanFlowSequenceStart_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanFlowSequenceStart_preserves_docStartLine (s : ScannerState) :
+    (scanFlowSequenceStart s).docStartLine = s.docStartLine := by
+  unfold scanFlowSequenceStart
+  simp [advance_preserves_docStartLine, emit_preserves_docStartLine]
 
 lemma scanFlowMappingStart_preserves_implicitValueLine (s : ScannerState) :
     (scanFlowMappingStart s).implicitValueLine = s.implicitValueLine := by
   unfold scanFlowMappingStart
   simp [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `scanFlowMappingStart_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanFlowMappingStart_preserves_docStartLine (s : ScannerState) :
+    (scanFlowMappingStart s).docStartLine = s.docStartLine := by
+  unfold scanFlowMappingStart
+  simp [advance_preserves_docStartLine, emit_preserves_docStartLine]
+
 lemma scanFlowSequenceEnd_preserves_implicitValueLine (s : ScannerState) :
     (scanFlowSequenceEnd s).implicitValueLine = s.implicitValueLine := by
   unfold scanFlowSequenceEnd
   simp [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `scanFlowSequenceEnd_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanFlowSequenceEnd_preserves_docStartLine (s : ScannerState) :
+    (scanFlowSequenceEnd s).docStartLine = s.docStartLine := by
+  unfold scanFlowSequenceEnd
+  simp [advance_preserves_docStartLine, emit_preserves_docStartLine]
+
 lemma scanFlowMappingEnd_preserves_implicitValueLine (s : ScannerState) :
     (scanFlowMappingEnd s).implicitValueLine = s.implicitValueLine := by
   unfold scanFlowMappingEnd
   simp [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanFlowMappingEnd_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanFlowMappingEnd_preserves_docStartLine (s : ScannerState) :
+    (scanFlowMappingEnd s).docStartLine = s.docStartLine := by
+  unfold scanFlowMappingEnd
+  simp [advance_preserves_docStartLine, emit_preserves_docStartLine]
 
 lemma scanFlowEntry_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
     (h : scanFlowEntry s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
@@ -4319,6 +5167,16 @@ lemma scanFlowEntry_preserves_implicitValueLine (s : ScannerState) (s' : Scanner
   all_goals (simp only [Except.ok.injEq] at h; subst h)
   all_goals simp [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine]
 
+/-- `docStartLine` twin of `scanFlowEntry_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanFlowEntry_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : scanFlowEntry s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanFlowEntry at h
+  simp only [bind, Except.bind] at h
+  repeat (any_goals (split at h))
+  all_goals (try contradiction)
+  all_goals (simp only [Except.ok.injEq] at h; subst h)
+  all_goals simp [advance_preserves_docStartLine, emit_preserves_docStartLine]
+
 lemma scanKey_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
     (h : scanKey s = .ok s') : s'.implicitValueLine = s.implicitValueLine := by
   unfold scanKey at h
@@ -4328,6 +5186,17 @@ lemma scanKey_preserves_implicitValueLine (s : ScannerState) (s' : ScannerState)
   all_goals (simp only [Except.ok.injEq] at h; subst h)
   all_goals simp [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine,
                   pushMappingIndent_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanKey_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanKey_preserves_docStartLine (s : ScannerState) (s' : ScannerState)
+    (h : scanKey s = .ok s') : s'.docStartLine = s.docStartLine := by
+  unfold scanKey at h
+  simp only [bind, Except.bind] at h
+  repeat (any_goals (split at h))
+  all_goals (try contradiction)
+  all_goals (simp only [Except.ok.injEq] at h; subst h)
+  all_goals simp [advance_preserves_docStartLine, emit_preserves_docStartLine,
+                  pushMappingIndent_preserves_docStartLine]
 
 
 /-! ### … and the `:` that DECLINES to stamp (item 103)
@@ -4346,6 +5215,16 @@ lemma scanValueClearKey_preserves_implicitValueLine (s : ScannerState) :
     · split <;> rfl
   · rfl
 
+/-- `docStartLine` twin of `scanValueClearKey_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanValueClearKey_preserves_docStartLine (s : ScannerState) :
+    (scanValueClearKey s).docStartLine = s.docStartLine := by
+  unfold scanValueClearKey
+  split
+  · split
+    · rfl
+    · split <;> rfl
+  · rfl
+
 lemma scanValuePrepare_preserves_implicitValueLine (s : ScannerState) :
     (scanValuePrepare s).implicitValueLine = s.implicitValueLine := by
   unfold scanValuePrepare
@@ -4357,6 +5236,20 @@ lemma scanValuePrepare_preserves_implicitValueLine (s : ScannerState) :
     · rfl
     · split
       · exact pushMappingIndent_preserves_implicitValueLine s s.col
+      · rfl
+
+/-- `docStartLine` twin of `scanValuePrepare_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
+lemma scanValuePrepare_preserves_docStartLine (s : ScannerState) :
+    (scanValuePrepare s).docStartLine = s.docStartLine := by
+  unfold scanValuePrepare
+  split
+  · split
+    · split <;> rfl
+    · rfl
+  · split
+    · rfl
+    · split
+      · exact pushMappingIndent_preserves_docStartLine s s.col
       · rfl
 
 lemma scanValue_inFlow_implicitValueLine {s s' : ScannerState}
@@ -4379,6 +5272,27 @@ lemma scanValue_inFlow_implicitValueLine {s s' : ScannerState}
       rw [advance_preserves_implicitValueLine, emit_preserves_implicitValueLine,
           scanValuePrepare_preserves_implicitValueLine,
           scanValueClearKey_preserves_implicitValueLine]
+
+/-- `docStartLine` twin of `scanValue_inFlow_implicitValueLine` (item 299), with no
+    flow premise: `scanValue` writes `implicitValueLine` in block context and
+    `docStartLine` never, so the field rides through on both arms. -/
+lemma scanValue_preserves_docStartLine {s s' : ScannerState}
+    (hok : scanValue s = .ok s') :
+    s'.docStartLine = s.docStartLine := by
+  unfold scanValue at hok
+  simp only [bind, Except.bind] at hok
+  split at hok
+  · exact absurd hok (by simp)
+  · split at hok
+    · exact absurd hok (by simp)
+    split at hok
+    · exact absurd hok (by simp)
+    · have h := Except.ok.inj hok
+      subst h
+      show ((scanValuePrepare (scanValueClearKey s)).emit .value).advance.docStartLine = _
+      rw [advance_preserves_docStartLine, emit_preserves_docStartLine,
+          scanValuePrepare_preserves_docStartLine,
+          scanValueClearKey_preserves_docStartLine]
 
 lemma collectDirectiveNameLoop_preserves_simpleKey (s : ScannerState) (name : String) (fuel : Nat) :
     (collectDirectiveNameLoop s name fuel).snd.simpleKey = s.simpleKey := by

@@ -285,6 +285,29 @@ the recursive cases — the same pattern used throughout the verified project
 for `YamlValue`'s `Array`-based children).
 -/
 
+/-- Normalize a stored tag to the full-URI form `resolveScalar` matches on.
+    The composed parser keeps the two default core handles in shorthand form
+    (`!!int`, `!!str`, …) and verbatim tags as `!<uri>` (see
+    `Parser.State.resolveTag`).  `resolveScalar` only recognizes the expanded
+    `tag:yaml.org,2002:…` URIs, so `!!int 42` would otherwise fall through to a
+    string.  Expand both forms here; local tags (`!foo`) and already-resolved
+    URIs pass through unchanged (and `resolveScalar` maps unknown tags to str). -/
+def normalizeTag (t : String) : String :=
+  if t.startsWith "tag:" then t
+  else if t.startsWith "!<" && t.endsWith ">" then
+    String.ofList (t.toList.drop 2 |>.dropLast)
+  else if t.startsWith "!!" then
+    "tag:yaml.org,2002:" ++ String.ofList (t.toList.drop 2)
+  else t
+
+/-- Core-schema type of a scalar, respecting presentation style (§10.3.2):
+    an explicit tag always takes precedence; otherwise only a *plain* scalar is
+    implicitly resolved, and a quoted, literal or folded scalar is a string. -/
+def scalarType (s : Scalar) : YamlType :=
+  match s.tag with
+  | some t => resolveScalar s.content (some (normalizeTag t))
+  | none => if s.style == .plain then resolveImplicit s.content else .str s.content
+
 /-- Resolve complete `YamlValue` to `YamlType` using Core Schema.
 
     - Scalars: dispatched to `resolveScalar` (tag-aware implicit/explicit resolution)
@@ -293,7 +316,7 @@ for `YamlValue`'s `Array`-based children).
     - Aliases: resolved as null (aliases should be expanded before schema resolution) -/
 def resolve (v : YamlValue) : YamlType :=
   match v with
-  | .scalar s => resolveScalar s.content s.tag
+  | .scalar s => scalarType s
   | .sequence _ items _ _ => .seq (resolveList items.toList).toArray
   | .mapping _ pairs _ _ => .map (resolvePairs pairs.toList).toArray
   | .alias _ => .null  -- aliases should be resolved via compose before schema resolution

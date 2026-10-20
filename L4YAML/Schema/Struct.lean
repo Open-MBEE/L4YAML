@@ -96,7 +96,7 @@ def getFieldOpt {α : Type} [FromYaml α] (pairs : Array (YamlValue × YamlValue
   | some v =>
       match v with
       | .scalar s =>
-          if (s.content.isEmpty || s.content == "null" || s.content == "~") && s.tag.isNone then
+          if (scalarType s).isNull then
             .ok none
           else
             match fromYaml? v with

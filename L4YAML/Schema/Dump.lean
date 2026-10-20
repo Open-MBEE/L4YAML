@@ -70,7 +70,8 @@ This is the primary user-facing serialization entry point.
 
 ## Example
 ```lean
-dumpTyped true           -- produces: "\"true\""
+dumpTyped true           -- produces: "true"
+dumpTyped "true"         -- produces: "\"true\"" (a string that spells a bool is quoted)
 dumpTyped (42 : Nat)     -- produces: "42"
 dumpTyped ["a", "b"]     -- produces: "- a\n- b"
 ```

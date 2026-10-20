@@ -21,7 +21,7 @@ Ships ONE new strong predicate and ONE strong inductive theorem:
     `EmitPairListScansInFlowIx` (`EmitScans.lean §3`) that additionally
     exposes the **`n ≥ 3` lower bound** on the chain length. Direct
     consumer enabler for the legacy `emitPairList_body_filtered_
-    characterization` sorry at line 9638 (`n ≥ 3`).
+    characterization` sorry (`n ≥ 3`).
   * **§2 `emitPairList_scans_nonemptyIx_strong`** — proof by induction
     on the pair list, mirroring the singleton/multi-pair split of the
     weak `emitPairList_scans_nonemptyIx`. The `n ≥ 3` bound emerges
@@ -130,7 +130,7 @@ multi-pair case adds a comma step and a recursive call, both
 positive, so the bound is preserved.
 
 This predicate directly enables the legacy
-`emitPairList_body_filtered_characterization` sorry at line 9638
+`emitPairList_body_filtered_characterization` sorry
 (`n ≥ 3`) — the consumer derives the bound from the strong
 predicate's output. -/
 
@@ -1309,7 +1309,7 @@ lemma scanNextTokenIx_maintains_NoOverwriteAtIx {input : String}
 /-- Pointwise (≠m) form of `scanValuePrepareIx_preserves_prefix`
     (`IndexedScannerPlainScalarValid §12k`): preserves position `m`
     given the simpleKey hypothesis `m ≠ tokenIndex ∧ m ≠ tokenIndex + 1`.
-    Mirrors the prefix-form proof at line 5101 but uses the pointwise
+    Mirrors the prefix-form proof but uses the pointwise
     hypothesis directly (no need to derive `tokenIndex ≠ m` from
     `i < n ≤ tokenIndex`). -/
 lemma scanValuePrepareIx_preserves_position_specific {input : String}

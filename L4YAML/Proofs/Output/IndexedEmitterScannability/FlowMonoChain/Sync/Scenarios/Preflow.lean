@@ -14,8 +14,7 @@ public import L4YAML.Proofs.Scanner.IndexedIndent
 /-! # `FlowMonoChain.Sync.Scenarios.Preflow` — Phase 3 Step
 `6f.3b3.flowmono.sync.scenarios.preflow`
 
-**Sub-session 1 of `.flowmono.sync.scenarios`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 3561–3585 and 4572–4684).
+**Sub-session 1 of `.flowmono.sync.scenarios`**.
 
 Two deliverables:
 
@@ -37,7 +36,7 @@ Two deliverables:
     trailing flow delimiter). All conclusions about
     `ScannerSurfCorrIx`, `AllTokensOnLineIx`, `EndLineOnLineIx`, and
     simple-key-stack preservation match the legacy. Indexed twin of
-    `scanNextToken_flow_comma` (legacy 4575).
+    `scanNextToken_flow_comma`.
 
 ## Scope justification — why this is a separate sub-session
 
@@ -103,7 +102,7 @@ lemma skipToContentS_id_of_content (s : ScannerStateIx input)
   simp
 
 /-- The cornerstone preprocessing reduction in flow context.
-    Indexed twin of `scanNextToken_preprocess_flow` (legacy 3561). -/
+    Indexed twin of `scanNextToken_preprocess_flow`. -/
 lemma scanNextTokenIx_preprocess_flow (s : ScannerStateIx input) (c : Char)
     (rest : List Char) (col : Nat)
     (hcorr : ScannerSurfCorrIx s ⟨c :: rest, col⟩)
@@ -146,7 +145,7 @@ one space (advancing the cursor by one within the same line), reaching
 the same content cursor as `skipToContentS` on `s.advance` (which is
 the identity there). Used by `emitList_scans_nonemptyIx` to step over
 the space after a flow `,`. Indexed twin of legacy
-`scanNextToken_preprocess_flow_ws1` (legacy 3590).
+`scanNextToken_preprocess_flow_ws1`.
 
 The indexed skip machinery is simpler than legacy: there is no
 `needIndentCheck`/`skipToContentWs`/`skipSpaces` split — `skipToContent`
@@ -212,8 +211,7 @@ lemma skipToContentS_ws1 (s : ScannerStateIx input) {c : Char}
 
 /-- Preprocessing of `' ' :: c :: rest` in flow context equals
     preprocessing of the post-space state `s.advance`, with that state's
-    invariants exposed. Indexed twin of `scanNextToken_preprocess_flow_ws1`
-    (legacy 3590). -/
+    invariants exposed. Indexed twin of `scanNextToken_preprocess_flow_ws1`. -/
 lemma scanNextTokenIx_preprocess_flow_ws1 (s : ScannerStateIx input) (c : Char)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨' ' :: c :: rest, s.cursor.pos.col⟩)
@@ -291,7 +289,7 @@ preprocessing (via §1) → structural dispatch (none) → flow dispatch
 (`dispatchFlowIndicators_comma`). -/
 
 /-- Full `scanNextTokenIx` for `','` in flow context.
-    Indexed twin of `scanNextToken_flow_comma` (legacy 4575). -/
+    Indexed twin of `scanNextToken_flow_comma`. -/
 lemma scanNextTokenIx_flow_comma (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨',' :: rest, s.cursor.pos.col⟩)

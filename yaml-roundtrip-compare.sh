@@ -95,10 +95,9 @@ normalize_events() {
 # Returns: 0=pass, 1=parse-fail, 2=reparse-fail, 3=contentEq-fail, 4=usage
 run_internal() {
   local input="$1" output="$2"
-  if ! timeout "${TIMEOUT}" "${TRYROUNDTRIP}" "${input}" "${output}" 2>/dev/null; then
-    return $?
-  fi
-  return 0
+  local rc=0
+  timeout "${TIMEOUT}" "${TRYROUNDTRIP}" "${input}" "${output}" 2>/dev/null || rc=$?
+  return "${rc}"
 }
 
 # ──────────────── Layer 2: External event comparison ────────────────
@@ -191,7 +190,11 @@ run_single() {
     TIMEOUT) printf "${YELLOW}TMOUT${RESET} %s  (%s)\n" "${basename}" "${detail}" ;;
   esac
 
-  [[ "${result}" == "PASS" ]]
+  case "${result}" in
+    PASS)    return 0 ;;
+    TIMEOUT) return 124 ;;
+    *)       return 1 ;;
+  esac
 }
 
 # ──────────────── Suite mode ────────────────

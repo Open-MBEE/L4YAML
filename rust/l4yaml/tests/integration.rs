@@ -240,3 +240,22 @@ fn load_configured_basic() {
     let v = load_configured("key: value", config).unwrap();
     assert_eq!(v.kind(), Kind::Mapping);
 }
+
+#[test]
+fn load_configured_bad_config_is_config_error() {
+    // The input is fine under default limits; a bad config must not
+    // silently fall back to them.
+    match load_configured("key: value", "{unclosed") {
+        Err(Error::Config(msg)) => assert!(msg.starts_with("config error:"), "{msg}"),
+        other => panic!("expected Error::Config, got {other:?}"),
+    }
+}
+
+#[test]
+fn dump_configured_bad_config_is_config_error() {
+    let v = load("key: value", LimitsPreset::Default).unwrap();
+    match dump_configured(&v, "indent: banana") {
+        Err(Error::Config(msg)) => assert!(!msg.is_empty()),
+        other => panic!("expected Error::Config, got {other:?}"),
+    }
+}

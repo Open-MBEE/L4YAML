@@ -24,7 +24,7 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, NoReturn
 
 from l4yaml import _ffi
 from l4yaml.exceptions import ConfigError, L4YAMLError
@@ -165,6 +165,21 @@ def _read_dump_config(config: str | Path | None) -> str | None:
 # ── Parsing helpers (configured) ──────────────────────────────────────
 
 
+def _raise_configured_error(msg: str) -> NoReturn:
+    """Map an `l4yaml_parse_configured` error message onto an exception.
+
+    A limits config that does not parse comes back as ``config error: …``
+    (the parser does not fall back to default limits); the rest is a
+    limit violation or a syntax error in the data.
+    """
+    from l4yaml.exceptions import LimitError, ParseError
+    if msg.startswith("config error:"):
+        raise ConfigError(msg)
+    if "limit" in msg.lower() or "exceeded" in msg.lower():
+        raise LimitError(msg)
+    raise ParseError(msg)
+
+
 def _load_configured_single(input_str: str, config_yaml: str) -> YamlValue:
     """Parse a single YAML document with custom limits (YAML config)."""
     lib = _ffi.ensure_initialized()
@@ -178,10 +193,7 @@ def _load_configured_single(input_str: str, config_yaml: str) -> YamlValue:
         raw: bytes | None = lib.l4yaml_result_error_message(result)
         msg: str = raw.decode("utf-8") if raw else "unknown parse error"
         lib.l4yaml_free(result)
-        from l4yaml.exceptions import LimitError, ParseError
-        if "limit" in msg.lower() or "exceeded" in msg.lower():
-            raise LimitError(msg)
-        raise ParseError(msg)
+        _raise_configured_error(msg)
     # l4yaml_parse_configured returns a multi-doc result;
     # extract the first document's root value.
     docs_h: int = lib.l4yaml_result_docs(result)
@@ -213,10 +225,7 @@ def _load_configured_all(
         raw: bytes | None = lib.l4yaml_result_error_message(result)
         msg: str = raw.decode("utf-8") if raw else "unknown parse error"
         lib.l4yaml_free(result)
-        from l4yaml.exceptions import LimitError, ParseError
-        if "limit" in msg.lower() or "exceeded" in msg.lower():
-            raise LimitError(msg)
-        raise ParseError(msg)
+        _raise_configured_error(msg)
     docs_h: int = lib.l4yaml_result_docs(result)
     count: int = lib.l4yaml_docs_count(docs_h)
     docs: list[YamlDocument] = []
@@ -368,9 +377,9 @@ def safe_dump_all(
 
 
 # DumpConfig fields (L4YAML/Output/Dump.lean) and their value shapes,
-# used to validate user configs eagerly: the Lean config reader falls
-# back to ALL defaults when any field fails to parse, which would
-# silently drop the fidelity settings below over a cosmetic typo.
+# used to validate user configs eagerly with a field-level message: the
+# Lean config reader rejects the WHOLE config when any field fails to
+# parse, so a cosmetic typo would otherwise fail the dump outright.
 _DUMP_CONFIG_SPEC: dict[str, Any] = {
     "indent": int,
     "lineWidth": int,
@@ -417,8 +426,7 @@ def _fidelity_config(user_cfg: str | None) -> str:
             ok = val in spec
             expected = " | ".join(spec)
         elif spec is int:
-            # The Lean fields are Nat: bools and negatives would fail
-            # its reader and silently drop the whole config.
+            # The Lean fields are Nat: bools and negatives fail its reader.
             ok = isinstance(val, int) and not isinstance(val, bool) and val >= 0
             expected = "non-negative int"
         else:

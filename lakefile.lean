@@ -292,6 +292,15 @@ lean_lib «Tests.SchemaDump» where
 lean_exe schemadump where
   root := `Tests.SchemaDump.Runner
 
+-- A `module` consumer of the library that derives `FromYaml`/`ToYaml` on
+-- private-named types through a plain `public import L4YAML`.
+lean_lib «Tests.DerivingConsumer» where
+  roots := #[`Tests.DerivingConsumer]
+
+@[default_target]
+lean_exe derivingconsumer where
+  root := `Tests.DerivingConsumer.Runner
+
 
 lean_lib «Tests.ScannerTests» where
   roots := #[`Tests.ScannerTests]

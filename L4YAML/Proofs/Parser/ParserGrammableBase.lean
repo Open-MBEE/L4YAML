@@ -212,6 +212,106 @@ inductive AllAliasesResolve : YamlValue → Array (String × YamlValue) → Prop
       (hv : ∀ i : Fin pairs.size, AllAliasesResolve pairs[i].2 anchors) :
       AllAliasesResolve (.mapping style pairs tag anchor) anchors
 
+/-- `name` is BOUND in an anchor table: the leaf condition
+    `AllAliasesResolve` imposes, named so that both readings of the obligation
+    can be stated against it. -/
+def AnchorBound (anchors : Array (String × YamlValue)) (name : String) : Prop :=
+  (anchors.findSome? (fun (n, _) => if n == name then some () else none)).isSome
+
+/-- Being bound survives anchor growth: a table that embeds another answers
+    every lookup the smaller one answered. -/
+lemma AnchorBound.mono {a1 a2 : Array (String × YamlValue)} {name : String}
+    (h_emb : ∀ i : Fin a1.size, ∃ j : Fin a2.size, a2[j] = a1[i])
+    (h : AnchorBound a1 name) : AnchorBound a2 name := by
+  unfold AnchorBound at h ⊢
+  rw [Array.findSome?_isSome_iff] at h ⊢
+  obtain ⟨x, hx, hfx⟩ := h
+  rw [Array.mem_iff_getElem] at hx
+  obtain ⟨i, hi, rfl⟩ := hx
+  obtain ⟨j, hj⟩ := h_emb ⟨i, hi⟩
+  exact ⟨a2[j], Array.getElem_mem j.isLt, hj ▸ hfx⟩
+
+/-- The name an anchor table was just extended with is bound in it. -/
+lemma AnchorBound.push_self (anchors : Array (String × YamlValue)) (name : String)
+    (v : YamlValue) : AnchorBound (anchors.push (name, v)) name := by
+  unfold AnchorBound
+  rw [Array.findSome?_isSome_iff]
+  exact ⟨(name, v), Array.mem_push.mpr (Or.inr rfl), by simp⟩
+
+/-- **§7.1's reading of the same obligation**: every alias node in a value names
+    an anchor that has *previously occurred*.
+
+    The index is the DECLARATION set — the names a `&` node property has
+    introduced — rather than the resolution table, and the two differ exactly
+    where a node has itself as a descendant: a collection's anchor occurs at its
+    start event (§3.2.2.2) while its entry in the resolution table exists only
+    once its items are complete, because that entry stores a value.  `&x [*x]`
+    is that case, and §7.1's only error is an anchor that does not previously
+    OCCUR.
+
+    This is the predicate the parser's own guard decides, and it is the reading
+    that holds per NODE.  `AllAliasesResolve.of_declared` upgrades it to the
+    resolution reading wherever the declared names are known to be bound, which
+    is what a document boundary supplies. -/
+inductive AllAliasesDeclared : YamlValue → Array String → Prop where
+  | scalar (s : Scalar) (names : Array String) :
+      AllAliasesDeclared (.scalar s) names
+  | alias (name : String) (names : Array String) (h : name ∈ names) :
+      AllAliasesDeclared (.alias name) names
+  | sequence (style : CollectionStyle) (items : Array YamlValue)
+      (tag : Option String) (anchor : Option String) (names : Array String)
+      (h : ∀ i : Fin items.size, AllAliasesDeclared items[i] names) :
+      AllAliasesDeclared (.sequence style items tag anchor) names
+  | mapping (style : CollectionStyle) (pairs : Array (YamlValue × YamlValue))
+      (tag : Option String) (anchor : Option String) (names : Array String)
+      (hk : ∀ i : Fin pairs.size, AllAliasesDeclared pairs[i].1 names)
+      (hv : ∀ i : Fin pairs.size, AllAliasesDeclared pairs[i].2 names) :
+      AllAliasesDeclared (.mapping style pairs tag anchor) names
+
+/-- The declaration set only grows, and the §7.1 reading only weakens as it
+    does. -/
+lemma AllAliasesDeclared.mono {v : YamlValue} {d1 d2 : Array String}
+    (h_sub : ∀ nm, nm ∈ d1 → nm ∈ d2) (h : AllAliasesDeclared v d1) :
+    AllAliasesDeclared v d2 := by
+  induction h with
+  | scalar s _ => exact .scalar s _
+  | alias name _ h_mem => exact .alias name _ (h_sub name h_mem)
+  | sequence style items tag anchor _ _ ih =>
+    exact .sequence style items tag anchor _ (fun i => ih i h_sub)
+  | mapping style pairs tag anchor _ _ _ ihk ihv =>
+    exact .mapping style pairs tag anchor _ (fun i => ihk i h_sub) (fun i => ihv i h_sub)
+
+/-- **The bridge between the two readings of the alias obligation.**
+
+    The §7.1 reading is about occurrence and the resolution reading is about
+    binding, so one upgrades to the other exactly when every declared name is
+    bound.  That is false inside a node — a collection's own anchor is declared
+    and not yet bound while its items are parsed — and true at a document
+    boundary, where the parser has finalized every node it declared an anchor
+    for.  The capstones use it there. -/
+lemma AllAliasesResolve.of_declared {v : YamlValue} {names : Array String}
+    {anchors : Array (String × YamlValue)}
+    (h_bound : ∀ nm, nm ∈ names → AnchorBound anchors nm)
+    (h : AllAliasesDeclared v names) :
+    AllAliasesResolve v anchors := by
+  induction h with
+  | scalar s _ => exact .scalar s _
+  | alias name _ h_mem => exact .alias name _ (h_bound name h_mem)
+  | sequence style items tag anchor _ _ ih =>
+    exact .sequence style items tag anchor _ (fun i => ih i h_bound)
+  | mapping style pairs tag anchor _ _ _ ihk ihv =>
+    exact .mapping style pairs tag anchor _ (fun i => ihk i h_bound) (fun i => ihv i h_bound)
+
+/-- The parser's §7.1 guard is `Array.any` over the declaration set and
+    `AllAliasesDeclared` is membership in it; this is the one step between
+    them. -/
+lemma mem_of_any_beq {names : Array String} {name : String}
+    (h : names.any (fun n => n == name) = true) : name ∈ names := by
+  rw [Array.any_eq_true] at h
+  obtain ⟨i, hi, hp⟩ := h
+  have h_eq : names[i] = name := by simpa using hp
+  exact h_eq ▸ Array.getElem_mem hi
+
 /-- Anchor values are well-formed: after stripping, they are `Grammable`
     at every flow context. -/
 def WellFormedAnchors (anchors : Array (String × YamlValue)) : Prop :=

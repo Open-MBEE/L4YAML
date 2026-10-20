@@ -101,6 +101,7 @@ public import L4YAML.Proofs.Scanner.ScannerSimpleKey
 public import L4YAML.Proofs.Scanner.ScannerWhitespace
 public import L4YAML.Proofs.Scanner.ScanStrictCoupling
 public import L4YAML.Proofs.Schema.SchemaComposition
+public import L4YAML.Proofs.Schema.FlowIndicator
 public import L4YAML.Proofs.Schema.SchemaDump
 public import L4YAML.Proofs.Schema.SchemaResolution
 public import L4YAML.Proofs.Soundness

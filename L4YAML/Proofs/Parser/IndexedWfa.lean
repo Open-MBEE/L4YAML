@@ -11,6 +11,7 @@ public import L4YAML.Proofs.Parser.ParserGrammableBase
 public import L4YAML.Proofs.Parser.IndexedNodeProofs
 public import L4YAML.Proofs.Parser.IndexedWellBehaved
 public import L4YAML.Algebra.Value
+public import L4YAML.Proofs.Parser.IndexedWfaScannable
 
 -- `Std.Legacy.Range.forIn'` is sealed by its producer; `import all` of its
 -- declaring module unseals the body this file reduces through.
@@ -25,14 +26,17 @@ Phase 3 Step 6f cutover commit.
 ## Role
 
 Indexed twin of `L4YAML/Proofs/Parser/ParserWfaProofs.lean`: the
-`WellFormedAnchors` preservation proofs reparented onto
+`WellFormedAnchorsS` preservation proofs reparented onto
 `ParseStateIx input` and the indexed `parseNode` / `parseDocument`
 / `parseStreamIx` family in `L4YAML.TokenParser.Indexed`.
 
 Architecture mirrors the legacy file (strong induction on fuel),
 substituting state type and consuming the indexed WellBehaved
 substrate (`parseNode_wb_all_ix`, `parseNodeContent_wb_ix`,
-`parseNodeProperties_tokens_ix`) directly. Only `parseNodeProperties`
+`parseNodeProperties_tokens_ix`) directly.  The predicate is
+`ParserWfaScannable`'s `WellFormedAnchorsS` and the finalization leaf is
+`IndexedWfaScannable`'s, so this chain asks for no `AllAliasesResolve`
+premise either — see the legacy file's header and plan row 20. Only `parseNodeProperties`
 needs a new `_anchors_eq_ix` companion since the legacy proof was
 written for `ParseState`-shaped tokens; the body is a near-verbatim
 copy with `ParseStateIx.advance` substitutions.
@@ -48,6 +52,9 @@ At cutover, this file is renamed to `Proofs/Parser/ParserWfaProofs.lean`
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.WfaProofs
+
+open L4YAML.Proofs.Indexed.WfaScannable
+open L4YAML.Proofs.ParserGrammable
 
 open L4YAML
 open L4YAML.Grammar
@@ -71,111 +78,20 @@ def ParseNodeWFAIx (tokens : Indexed.TokenStream input) (n : Nat) : Prop :=
     m ≤ n →
     ps.tokens = tokens →
     parseNode ps m = .ok (val, ps') →
-    WellFormedAnchors ps.anchors →
-    WellFormedAnchors ps'.anchors
+    WellFormedAnchorsS ps.anchors →
+    WellFormedAnchorsS ps'.anchors
 
 -- Empty anchors are trivially well-formed.
-lemma WFA_empty : WellFormedAnchors (#[] : Array (String × YamlValue)) := by
+lemma WFA_empty : WellFormedAnchorsS (#[] : Array (String × YamlValue)) := by
   intro name val h_find _
   simp [Array.findSome?] at h_find
 
--- WellFormedAnchors is preserved when pushing a universally-grammable entry.
-lemma WFA_of_push (anchors : Array (String × YamlValue))
-    (entry : String × YamlValue)
-    (h_wfa : WellFormedAnchors anchors)
-    (h_new : ∀ inFlow, Grammable entry.2.stripAnchors inFlow) :
-    WellFormedAnchors (anchors.push entry) := by
-  intro name val h_find inFlow
-  rw [Array.findSome?_push] at h_find
-  -- h_find : (anchors.findSome? f).or (f entry) = some val
-  generalize hg : anchors.findSome? (fun x =>
-    match x with | (n, v) => if n == name then some v else none) = found at h_find
-  cases found with
-  | some v' =>
-    -- found in original array
-    dsimp only [Option.or] at h_find
-    injection h_find with h_eq; subst h_eq
-    exact h_wfa name v' hg inFlow
-  | none =>
-    -- must come from entry
-    dsimp only [Option.or] at h_find
-    split at h_find
-    · injection h_find with h_eq; subst h_eq; exact h_new inFlow
-    · simp at h_find
-
--- ============================================================
--- §2  applyNodeFinalization preserves WFA
--- ============================================================
-
--- addAnchor preserves WFA when the value has a Grammable composition.
-lemma addAnchor_wfa (ps : ParseStateIx input) (name : String) (val : YamlValue)
-    (h_wfa : WellFormedAnchors ps.anchors)
-    (h_gram : ∀ inFlow, Grammable ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext) inFlow) :
-    WellFormedAnchors (ps.addAnchor name val).anchors := by
-  unfold ParseStateIx.addAnchor
-  dsimp only []
-  apply WFA_of_push
-  · exact h_wfa
-  · intro inFlow
-    have h_eq : ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext).stripAnchors =
-        (val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext :=
-      stripAnchors_of_cleaned (val.resolveAliases ps.anchors)
-    rw [h_eq]
-    exact h_gram inFlow
-
--- Helper: compose + adaptForFlowContext gives universally-grammable values.
-lemma cleaned_grammable_forall
-    (val : YamlValue) (ps : ParseStateIx input)
-    (h_scannable : Scannable val false)
-    (h_aar : AllAliasesResolve val ps.anchors)
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    ∀ inFlow, Grammable ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext) inFlow := by
-  have h_g := compose_value_grammable val ps.anchors false h_scannable h_aar h_wfa
-  exact adaptForFlowContext_grammable_forall _ _ h_g
-
--- applyNodeFinalization preserves WFA when Scannable + AAR + WFA hold.
-lemma applyNodeFinalization_wfa
-    (val : YamlValue) (ps : ParseStateIx input) (props : NodeProperties) (nodeStartPos : YamlPos)
-    (h_wfa : WellFormedAnchors ps.anchors)
-    (h_scannable : Scannable val false)
-    (h_aar : AllAliasesResolve val ps.anchors) :
-    WellFormedAnchors (applyNodeFinalization val ps props nodeStartPos).2.anchors := by
-  rcases props with ⟨anchor, tag, dup⟩
-  cases anchor with
-  | none =>
-    simp only [applyNodeFinalization]
-    split <;> exact h_wfa
-  | some name =>
-    cases val with
-    | scalar s =>
-      simp only [applyNodeFinalization]
-      split <;> exact addAnchor_wfa ps name _ h_wfa
-        (cleaned_grammable_forall _ ps h_scannable h_aar h_wfa)
-    | alias a =>
-      simp only [applyNodeFinalization]
-      split <;> exact addAnchor_wfa ps name _ h_wfa
-        (cleaned_grammable_forall _ ps h_scannable h_aar h_wfa)
-    | sequence style items otag oanchor =>
-      cases otag <;> cases oanchor <;> simp only [applyNodeFinalization] <;> split
-      all_goals (first
-        | exact addAnchor_wfa ps name _ h_wfa
-            (cleaned_grammable_forall _ ps h_scannable h_aar h_wfa)
-        | (exact addAnchor_wfa ps name _ h_wfa
-            (cleaned_grammable_forall _ ps
-              (.sequence _ _ _ _ _
-                (by cases h_scannable with | sequence _ _ _ _ _ h => exact h))
-              (aar_retag_sequence ps.anchors tag (some name) h_aar) h_wfa)))
-    | mapping style pairs otag oanchor =>
-      cases otag <;> cases oanchor <;> simp only [applyNodeFinalization] <;> split
-      all_goals (first
-        | exact addAnchor_wfa ps name _ h_wfa
-            (cleaned_grammable_forall _ ps h_scannable h_aar h_wfa)
-        | (exact addAnchor_wfa ps name _ h_wfa
-            (cleaned_grammable_forall _ ps
-              (.mapping _ _ _ _ _
-                (by cases h_scannable with | mapping _ _ _ _ _ hk _ => exact hk)
-                (by cases h_scannable with | mapping _ _ _ _ _ _ hv => exact hv))
-              (aar_retag_mapping ps.anchors tag (some name) h_aar) h_wfa)))
+-- The leaf of this clique is `IndexedWfaScannable` (and, for everything stated
+-- on the TABLE rather than on a state, `ParserWfaScannable`): `WellFormedAnchorsSS`
+-- is this predicate with `Scannable` in place of `Grammable`.  The
+-- `Grammable`-valued leaf could not carry a node that has itself as a descendant
+-- via an alias, and it needed `AllAliasesResolve` only to reach a resolved value
+-- its alias case could speak about; the mirror splits on the lookup instead.
 
 -- ============================================================
 -- §3  parseNodeContent and sub-parser WFA
@@ -221,8 +137,8 @@ lemma parseExplicitKey_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseExplicitKey ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseExplicitKey at h_ok
   split at h_ok
   all_goals (first
@@ -237,8 +153,8 @@ lemma parseBlockSequenceLoop_wfa
     (h_fuel : fuel ≤ n + 1) (h_tok : ps.tokens = tokens)
     (result : Array YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseBlockSequenceLoop ps fuel items = .ok (result, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   induction fuel generalizing ps items with
   | zero =>
     unfold parseBlockSequenceLoop at h_ok
@@ -249,7 +165,7 @@ lemma parseBlockSequenceLoop_wfa
     simp only [bind, Except.bind] at h_ok
     split at h_ok
     · -- peek? = some .blockEntry
-      have h_wfa_adv : WellFormedAnchors ps.advance.anchors :=
+      have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors :=
         advance_anchors_ix ps ▸ h_wfa
       have h_tok_adv : ps.advance.tokens = tokens :=
         (advance_tokens_wfa_ix ps).trans h_tok
@@ -262,7 +178,7 @@ lemma parseBlockSequenceLoop_wfa
       -- non-empty: parseNode then recurse
       · generalize h_ps_a : ps.advance = ps_a at h_ok
         have h_tok_a : ps_a.tokens = tokens := by rw [← h_ps_a]; exact h_tok_adv
-        have h_wfa_a : WellFormedAnchors ps_a.anchors := by rw [← h_ps_a]; exact h_wfa_adv
+        have h_wfa_a : WellFormedAnchorsS ps_a.anchors := by rw [← h_ps_a]; exact h_wfa_adv
         generalize h_ps_wf : { ps_a with currentPath := _ } = ps_wf at h_ok
         split at h_ok
         · simp at h_ok
@@ -271,12 +187,12 @@ lemma parseBlockSequenceLoop_wfa
           dsimp only [] at h_ok
           have h_tok_wf : ps_wf.tokens = tokens := by
             rw [← h_ps_wf]; exact h_tok_a
-          have h_wfa_wf : WellFormedAnchors ps_wf.anchors := by
+          have h_wfa_wf : WellFormedAnchorsS ps_wf.anchors := by
             rw [← h_ps_wf]; exact h_wfa_a
           have h_wfa_n := h_ih ps_wf k _ _ (by omega) h_tok_wf heq_pn h_wfa_wf
           have h_tok_n := parseNode_tokens_of_wb_ix h_wb ps_wf k (by omega) h_tok_wf _ _ heq_pn
           generalize h_ps_r : { ps_n with currentPath := _ } = ps_r at h_ok
-          have h_wfa_r : WellFormedAnchors ps_r.anchors := by
+          have h_wfa_r : WellFormedAnchorsS ps_r.anchors := by
             rw [← h_ps_r]; exact h_wfa_n
           have h_tok_r : ps_r.tokens = tokens := by
             rw [← h_ps_r]; exact h_tok_n
@@ -293,8 +209,8 @@ lemma parseBlockSequence_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseBlockSequence ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseBlockSequence at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
@@ -322,8 +238,8 @@ lemma parseImplicitBlockSequenceLoop_wfa
     (h_fuel : fuel ≤ n + 1) (h_tok : ps.tokens = tokens)
     (result : Array YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseImplicitBlockSequenceLoop ps fuel items = .ok (result, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   induction fuel generalizing ps items with
   | zero =>
     unfold parseImplicitBlockSequenceLoop at h_ok
@@ -333,7 +249,7 @@ lemma parseImplicitBlockSequenceLoop_wfa
     unfold parseImplicitBlockSequenceLoop at h_ok
     simp only [bind, Except.bind] at h_ok
     split at h_ok
-    · have h_wfa_adv : WellFormedAnchors ps.advance.anchors :=
+    · have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors :=
         advance_anchors_ix ps ▸ h_wfa
       have h_tok_adv : ps.advance.tokens = tokens :=
         (advance_tokens_wfa_ix ps).trans h_tok
@@ -344,7 +260,7 @@ lemma parseImplicitBlockSequenceLoop_wfa
         | skip)
       · generalize h_ps_a : ps.advance = ps_a at h_ok
         have h_tok_a : ps_a.tokens = tokens := by rw [← h_ps_a]; exact h_tok_adv
-        have h_wfa_a : WellFormedAnchors ps_a.anchors := by rw [← h_ps_a]; exact h_wfa_adv
+        have h_wfa_a : WellFormedAnchorsS ps_a.anchors := by rw [← h_ps_a]; exact h_wfa_adv
         generalize h_ps_wf : { ps_a with currentPath := _ } = ps_wf at h_ok
         split at h_ok
         · simp at h_ok
@@ -353,12 +269,12 @@ lemma parseImplicitBlockSequenceLoop_wfa
           dsimp only [] at h_ok
           have h_tok_wf : ps_wf.tokens = tokens := by
             rw [← h_ps_wf]; exact h_tok_a
-          have h_wfa_wf : WellFormedAnchors ps_wf.anchors := by
+          have h_wfa_wf : WellFormedAnchorsS ps_wf.anchors := by
             rw [← h_ps_wf]; exact h_wfa_a
           have h_wfa_n := h_ih ps_wf k _ _ (by omega) h_tok_wf heq_pn h_wfa_wf
           have h_tok_n := parseNode_tokens_of_wb_ix h_wb ps_wf k (by omega) h_tok_wf _ _ heq_pn
           generalize h_ps_r : { ps_n with currentPath := _ } = ps_r at h_ok
-          have h_wfa_r : WellFormedAnchors ps_r.anchors := by
+          have h_wfa_r : WellFormedAnchorsS ps_r.anchors := by
             rw [← h_ps_r]; exact h_wfa_n
           have h_tok_r : ps_r.tokens = tokens := by
             rw [← h_ps_r]; exact h_tok_n
@@ -374,8 +290,8 @@ lemma parseImplicitBlockSequence_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseImplicitBlockSequence ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseImplicitBlockSequence at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
@@ -401,11 +317,11 @@ lemma parseBlockMappingEntryValue_wfa
     (keyHasContent : Bool) (keyLine keyCol : Nat)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseBlockMappingEntryValue ps fuel keyHasContent keyLine keyCol = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseBlockMappingEntryValue at h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
-  have h_tc_wfa : WellFormedAnchors (ps.tryConsume .value).2.anchors := by
+  have h_tc_wfa : WellFormedAnchorsS (ps.tryConsume .value).2.anchors := by
     rw [tc_anchors_ix]; exact h_wfa
   have h_tc_tok : (ps.tryConsume .value).2.tokens = tokens := by
     rw [tc_tokens_wfa_ix]; exact h_tok
@@ -429,7 +345,7 @@ lemma parseBlockMappingEntryValue_wfa
     all_goals exact h_ih _ fuel _ _ h_fuel h_tc_tok h_ok h_tc_wfa
   · -- consumed = false: retroactive-key skip (V9D5) or empty value.
     -- Anchors/tokens are preserved through the skipped `key` and consumed `:`.
-    have h_C_wfa : WellFormedAnchors
+    have h_C_wfa : WellFormedAnchorsS
         (((ps.tryConsume .value).2.tryConsume .key).2.tryConsume .value).2.anchors := by
       rw [tc_anchors_ix, tc_anchors_ix]; exact h_tc_wfa
     have h_C_tok : (((ps.tryConsume .value).2.tryConsume .key).2.tryConsume .value).2.tokens
@@ -449,11 +365,11 @@ lemma handleBlockMappingValueEntry_wfa
     (h_tok : ps.tokens = tokens)
     (pairIdx : Nat) (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : handleBlockMappingValueEntry ps fuel pairIdx = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold handleBlockMappingValueEntry at h_ok
   simp only [bind, Except.bind] at h_ok
-  have h_wfa_adv : WellFormedAnchors ps.advance.anchors :=
+  have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors :=
     advance_anchors_ix ps ▸ h_wfa
   have h_tok_adv : ps.advance.tokens = tokens :=
     (advance_tokens_wfa_ix ps).trans h_tok
@@ -587,8 +503,8 @@ lemma pn_wfa_pair
     (h_tok : ps.tokens = tokens)
     (result : YamlValue × ParseStateIx input)
     (h_ok : parseNode ps fuel = .ok result)
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors result.2.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS result.2.anchors := by
   obtain ⟨v, ps'⟩ := result
   exact h_ih ps fuel v ps' h_fuel h_tok h_ok h_wfa
 
@@ -600,8 +516,8 @@ lemma bev_wfa_pair
     (keyHasContent : Bool) (keyLine keyCol : Nat)
     (result : YamlValue × ParseStateIx input)
     (h_ok : parseBlockMappingEntryValue ps fuel keyHasContent keyLine keyCol = .ok result)
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors result.2.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS result.2.anchors := by
   obtain ⟨v, ps'⟩ := result
   exact parseBlockMappingEntryValue_wfa h_ih ps fuel h_fuel h_tok keyHasContent keyLine keyCol v ps' h_ok h_wfa
 
@@ -738,11 +654,11 @@ lemma handleBlockMappingKeyEntry_wfa
     (h_tok : ps.tokens = tokens)
     (pairIdx : Nat) (key val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : handleBlockMappingKeyEntry ps fuel pairIdx = .ok (key, val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold handleBlockMappingKeyEntry at h_ok
   simp only [bind, Except.bind] at h_ok
-  have h_wfa_adv : WellFormedAnchors ps.advance.anchors :=
+  have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors :=
     advance_anchors_ix ps ▸ h_wfa
   have h_tok_adv : ps.advance.tokens = tokens :=
     (advance_tokens_wfa_ix ps).trans h_tok
@@ -794,8 +710,8 @@ lemma parseBlockMappingLoop_wfa
     (h_fuel : fuel ≤ n + 1) (h_tok : ps.tokens = tokens)
     (result : Array (YamlValue × YamlValue)) (ps' : ParseStateIx input)
     (h_ok : parseBlockMappingLoop ps fuel pairs = .ok (result, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   induction fuel generalizing ps pairs with
   | zero =>
     unfold parseBlockMappingLoop at h_ok
@@ -839,8 +755,8 @@ lemma parseBlockMapping_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseBlockMapping ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseBlockMapping at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
@@ -868,13 +784,13 @@ lemma parseFlowMappingValue_wfa
     (savedPath : YamlPath) (keyContent : String)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseFlowMappingValue ps fuel savedPath keyContent = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseFlowMappingValue at h_ok
   simp only [bind, Except.bind] at h_ok
-  have h_wfa_wf : WellFormedAnchors ({ ps with currentPath := savedPath.push (.key keyContent) }.tryConsume .key).2.anchors := by
+  have h_wfa_wf : WellFormedAnchorsS ({ ps with currentPath := savedPath.push (.key keyContent) }.tryConsume .key).2.anchors := by
     rw [tc_anchors_ix]; exact h_wfa
-  have h_tc2_wfa : WellFormedAnchors
+  have h_tc2_wfa : WellFormedAnchorsS
       (({ ps with currentPath := savedPath.push (.key keyContent) }.tryConsume .key).2.tryConsume .value).2.anchors := by
     rw [tc_anchors_ix]; exact h_wfa_wf
   have h_tc2_tok : (({ ps with currentPath := savedPath.push (.key keyContent) }.tryConsume .key).2.tryConsume .value).2.tokens
@@ -904,14 +820,14 @@ lemma parseSinglePairMapping_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseSinglePairMapping ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseSinglePairMapping at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
   · simp at h_ok
   · rename_i k
-    have h_wfa_adv : WellFormedAnchors ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
+    have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
     have h_tok_adv : ps.advance.tokens = tokens := (advance_tokens_wfa_ix ps).trans h_tok
     split at h_ok <;> first | contradiction | skip
     -- 4.33: `emptyNode` stays folded through the splits — see the legacy twin.
@@ -962,8 +878,8 @@ lemma parseFlowSequenceLoop_wfa
     (h_fuel : fuel ≤ n + 1) (h_tok : ps.tokens = tokens)
     (result : Array YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseFlowSequenceLoop ps fuel items = .ok (result, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   induction fuel generalizing ps items with
   | zero =>
     unfold parseFlowSequenceLoop at h_ok
@@ -981,7 +897,7 @@ lemma parseFlowSequenceLoop_wfa
       · -- items.size > 0
         split at h_ok
         next => -- flowEntry → advance then dispatch
-          have h_wfa_adv : WellFormedAnchors ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
+          have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
           have h_tok_adv : ps.advance.tokens = tokens := (advance_tokens_wfa_ix ps).trans h_tok
           split at h_ok
           next => -- key → parseSinglePairMapping
@@ -1033,7 +949,7 @@ lemma parseFlowSequenceLoop_wfa
           next spm_res heq_spm =>
             obtain ⟨mv, ps3⟩ := spm_res; dsimp only [] at h_ok
             let ps_wf : ParseStateIx input := { ps with currentPath := ps.currentPath.push (.index items.size) }
-            have h_wfa3 : WellFormedAnchors ps3.anchors :=
+            have h_wfa3 : WellFormedAnchorsS ps3.anchors :=
               parseSinglePairMapping_wfa h_ih h_wb ps_wf k (by omega)
                 h_tok mv ps3 heq_spm h_wfa
             have h_tok3 : ps3.tokens = tokens :=
@@ -1051,7 +967,7 @@ lemma parseFlowSequenceLoop_wfa
           next pn_res heq_pn =>
             obtain ⟨v, ps3⟩ := pn_res; dsimp only [] at h_ok
             let ps_wf : ParseStateIx input := { ps with currentPath := ps.currentPath.push (.index items.size) }
-            have h_wfa3 : WellFormedAnchors ps3.anchors :=
+            have h_wfa3 : WellFormedAnchorsS ps3.anchors :=
               h_ih ps_wf k v ps3 (by omega) h_tok heq_pn h_wfa
             have h_tok3 : ps3.tokens = tokens :=
               parseNode_tokens_of_wb_ix h_wb ps_wf k (by omega) h_tok v ps3 heq_pn
@@ -1068,8 +984,8 @@ lemma parseFlowSequence_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseFlowSequence ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseFlowSequence at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
@@ -1097,8 +1013,8 @@ lemma parseFlowMappingLoop_wfa
     (h_fuel : fuel ≤ n + 1) (h_tok : ps.tokens = tokens)
     (result : Array (YamlValue × YamlValue)) (ps' : ParseStateIx input)
     (h_ok : parseFlowMappingLoop ps fuel pairs = .ok (result, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   induction fuel generalizing ps pairs with
   | zero =>
     unfold parseFlowMappingLoop at h_ok
@@ -1116,14 +1032,14 @@ lemma parseFlowMappingLoop_wfa
       · -- pairs.size > 0
         split at h_ok
         next => -- flowEntry → advance then dispatch
-          have h_wfa_adv : WellFormedAnchors ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
+          have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
           have h_tok_adv : ps.advance.tokens = tokens := (advance_tokens_wfa_ix ps).trans h_tok
           split at h_ok
           next => -- flowMappingEnd
             simp only [Except.ok.injEq] at h_ok
             obtain ⟨_, rfl⟩ := Prod.mk.inj h_ok; exact advance_anchors_ix ps ▸ h_wfa
           next => -- key → advance → parseExplicitKey → FMV → recurse
-            have h_wfa_adv2 : WellFormedAnchors ps.advance.advance.anchors := by
+            have h_wfa_adv2 : WellFormedAnchorsS ps.advance.advance.anchors := by
               rw [advance_anchors_ix]; exact h_wfa_adv
             have h_tok_adv2 : ps.advance.advance.tokens = tokens :=
               (advance_tokens_wfa_ix ps.advance).trans h_tok_adv
@@ -1170,7 +1086,7 @@ lemma parseFlowMappingLoop_wfa
           simp only [Except.ok.injEq] at h_ok
           obtain ⟨_, rfl⟩ := Prod.mk.inj h_ok; exact h_wfa
         next => -- key → advance → parseExplicitKey → FMV → recurse
-          have h_wfa_adv : WellFormedAnchors ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
+          have h_wfa_adv : WellFormedAnchorsS ps.advance.anchors := advance_anchors_ix ps ▸ h_wfa
           have h_tok_adv : ps.advance.tokens = tokens := (advance_tokens_wfa_ix ps).trans h_tok
           split at h_ok
           next => simp at h_ok
@@ -1214,8 +1130,8 @@ lemma parseFlowMapping_wfa
     (h_tok : ps.tokens = tokens)
     (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseFlowMapping ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseFlowMapping at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
@@ -1242,8 +1158,8 @@ lemma parseNodeContent_wfa
     (h_tok : ps.tokens = tokens)
     (props : NodeProperties) (isSeqEntry : Bool) (val : YamlValue) (ps' : ParseStateIx input)
     (h_ok : parseNodeContent ps fuel props isSeqEntry = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors := by
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors := by
   unfold parseNodeContent at h_ok
   split at h_ok
   · -- scalar: ps' = ps.advance
@@ -1405,7 +1321,7 @@ lemma parseNode_wfa_all
           have h_tok_props : ps_props.tokens = tokens :=
             (parseNodeProperties_tokens_ix ps props ps_props heq_props).trans h_tok
           have h_anch_props := parseNodeProperties_anchors_eq_ix ps props ps_props heq_props
-          have h_wfa_props : WellFormedAnchors ps_props.anchors := h_anch_props ▸ h_wfa
+          have h_wfa_props : WellFormedAnchorsS ps_props.anchors := h_anch_props ▸ h_wfa
           -- validateNodeProps (may throw, doesn't change state)
           split at h_ok <;> first | contradiction | skip
           -- parseNodeContent
@@ -1419,17 +1335,15 @@ lemma parseNode_wfa_all
             -- Scannable from WB
             have h_cwb := parseNodeContent_wb_ix tokens n k h_k_le h_fpsv h_pnwb h_matched
               ps_props props _ (val_c, ps_c) h_tok_props heq_content
-            -- AAR from content_aar
-            have h_aar_c := parseNodeContent_aar
-              (parseNode_aar_all n) (parseNode_ag_all n)
-              ps_props k (by omega) props _ val_c ps_c heq_content
+            -- No AAR: `applyNodeFinalization_wfaS` asks only that the value be
+            -- `Scannable`, which `parseNodeContent_wb_ix` already gives.
             -- h_ok: applyNodeFinalization val_c ps_c props nodeStartPos = (val, ps')
             -- (after Except.ok injection)
             simp only [Except.ok.injEq] at h_ok
             have h_ps' : ps' = (applyNodeFinalization val_c ps_c props _).2 :=
               (congrArg Prod.snd h_ok).symm
             rw [h_ps']
-            exact applyNodeFinalization_wfa val_c ps_c props _ h_wfa_c h_cwb.1 h_aar_c
+            exact applyNodeFinalization_wfaS val_c ps_c props _ h_wfa_c h_cwb.1
 
 -- Extraction: single-call version.
 lemma parseNode_wfa
@@ -1439,8 +1353,8 @@ lemma parseNode_wfa
     (ps : ParseStateIx input) (fuel : Nat) (val : YamlValue) (ps' : ParseStateIx input)
     (h_tok : ps.tokens = tokens)
     (h_ok : parseNode ps fuel = .ok (val, ps'))
-    (h_wfa : WellFormedAnchors ps.anchors) :
-    WellFormedAnchors ps'.anchors :=
+    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    WellFormedAnchorsS ps'.anchors :=
   parseNode_wfa_all tokens h_fpsv h_matched fuel ps fuel val ps'
     Nat.le.refl h_tok h_ok h_wfa
 
@@ -1448,9 +1362,14 @@ lemma parseNode_wfa
 -- §5  prepareDocumentState preserves anchors and tokens
 -- ============================================================
 
-/-- `parseDirectives` preserves the anchors array (only `pos` changes). -/
-lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
-    (parseDirectives ps).2.anchors = ps.anchors := by
+/-- `parseDirectives` only ever `advance`s the state, so every reading that is
+    invariant under `advance` survives it — both anchor registers among them.
+    Stated once over the reader; see the legacy twin
+    (`ParserWfaProofs.parseDirectives_reader`). -/
+lemma parseDirectives_reader_ix (ps : ParseStateIx input) {α : Type}
+    (f : ParseStateIx input → α)
+    (h_adv : ∀ p : ParseStateIx input, f p.advance = f p) :
+    f (parseDirectives ps).2 = f ps := by
   unfold parseDirectives
   simp only [Id.run]
   generalize ps.tokens.size - ps.pos = fuel
@@ -1458,8 +1377,8 @@ lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
              Nat.sub_zero, Nat.add_sub_cancel, Nat.div_one]
   generalize List.range' 0 fuel 1 = ls
   suffices h : ∀ (acc : ParseStateIx input × Array Directive),
-      acc.1.anchors = ps.anchors →
-      (do
+      f acc.1 = f ps →
+      f (do
           let __s ← @forIn Id (List Nat) Nat _ _ ls acc (fun _ __s =>
             match __s.fst.peek? with
             | some (.versionDirective major minor) =>
@@ -1467,7 +1386,7 @@ lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
             | some (.tagDirective handle tagPrefix) =>
               pure (ForInStep.yield (__s.fst.advance, __s.snd.push (.tag handle tagPrefix)))
             | _ => pure (ForInStep.done (__s.fst, __s.snd)))
-          pure (__s.snd, __s.fst)).snd.anchors = ps.anchors by
+          pure (__s.snd, __s.fst)).snd = f ps by
     exact h (ps, #[]) rfl
   intro acc h_inv
   induction ls generalizing acc with
@@ -1488,33 +1407,57 @@ lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
       apply ih; revert heq; split
       · intro heq
         have := ForInStep.yield.inj heq
-        subst this; simp [ParseStateIx.advance, h_inv]
+        subst this; simp only [h_adv]; exact h_inv
       · intro heq
         have := ForInStep.yield.inj heq
-        subst this; simp [ParseStateIx.advance, h_inv]
+        subst this; simp only [h_adv]; exact h_inv
       · intro heq; contradiction
 
-lemma prepareDocumentState_anchors_eq_ix
+/-- The resolution table survives the directive prefix. -/
+lemma parseDirectives_anchors_ix (ps : ParseStateIx input) :
+    (parseDirectives ps).2.anchors = ps.anchors :=
+  parseDirectives_reader_ix ps ParseStateIx.anchors (fun _ => rfl)
+
+/-- …and so does the declaration set (§7.1's register). -/
+lemma parseDirectives_decls_ix (ps : ParseStateIx input) :
+    (parseDirectives ps).2.declaredAnchors = ps.declaredAnchors :=
+  parseDirectives_reader_ix ps ParseStateIx.declaredAnchors (fun _ => rfl)
+
+/-- `prepareDocumentState` reads the directive prefix, sets `tagHandles` and
+    consumes an optional `---`; it writes neither anchor register. -/
+lemma prepareDocumentState_reader_ix
     (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
+    {α : Type} (f : ParseStateIx input → α)
+    (h_adv : ∀ p : ParseStateIx input, f p.advance = f p)
+    (h_tags : ∀ (p : ParseStateIx input) (t : Array (String × String)),
+        f { p with tagHandles := t } = f p)
     (h : prepareDocumentState ps = .ok (dirs, ps')) :
-    ps'.anchors = ps.anchors := by
+    f ps' = f ps := by
+  have h_tc : ∀ (p : ParseStateIx input) (tok : YamlToken),
+      f (p.tryConsume tok).2 = f p := by
+    intro p tok
+    unfold ParseStateIx.tryConsume
+    split
+    · split
+      · exact h_adv p
+      · rfl
+    · rfl
   have h_anch :
-      ({ (parseDirectives ps).2 with
+      f ({ (parseDirectives ps).2 with
           tagHandles := (parseDirectives ps).1.filterMap fun
             | Directive.tag handle tagPrefix => some (handle, tagPrefix)
-            | _ => none }.tryConsume .documentStart).2.anchors = ps.anchors := by
+            | _ => none }.tryConsume .documentStart).2 = f ps := by
     calc
-      ({ (parseDirectives ps).2 with
+      f ({ (parseDirectives ps).2 with
           tagHandles := (parseDirectives ps).1.filterMap fun
             | Directive.tag handle tagPrefix => some (handle, tagPrefix)
-            | _ => none }.tryConsume .documentStart).2.anchors
-          = ({ (parseDirectives ps).2 with
+            | _ => none }.tryConsume .documentStart).2
+          = f ({ (parseDirectives ps).2 with
                 tagHandles := (parseDirectives ps).1.filterMap fun
                   | Directive.tag handle tagPrefix => some (handle, tagPrefix)
-                  | _ => none }).anchors :=
-              tc_anchors_ix _ _
-      _ = (parseDirectives ps).2.anchors := rfl
-      _ = ps.anchors := parseDirectives_anchors_ix ps
+                  | _ => none }) := h_tc _ _
+      _ = f (parseDirectives ps).2 := h_tags _ _
+      _ = f ps := parseDirectives_reader_ix ps f h_adv
   unfold prepareDocumentState at h
   simp only [bind, Except.bind] at h
   all_goals (first | split at h | skip)
@@ -1526,6 +1469,22 @@ lemma prepareDocumentState_anchors_eq_ix
   all_goals (
     obtain ⟨_, rfl⟩ := h
     exact h_anch)
+
+/-- The resolution table survives the document prefix. -/
+lemma prepareDocumentState_anchors_eq_ix
+    (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
+    (h : prepareDocumentState ps = .ok (dirs, ps')) :
+    ps'.anchors = ps.anchors :=
+  prepareDocumentState_reader_ix ps dirs ps' ParseStateIx.anchors
+    (fun _ => rfl) (fun _ _ => rfl) h
+
+/-- …and so does the declaration set (§7.1's register). -/
+lemma prepareDocumentState_decls_eq_ix
+    (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
+    (h : prepareDocumentState ps = .ok (dirs, ps')) :
+    ps'.declaredAnchors = ps.declaredAnchors :=
+  prepareDocumentState_reader_ix ps dirs ps' ParseStateIx.declaredAnchors
+    (fun _ => rfl) (fun _ _ => rfl) h
 
 lemma prepareDocumentState_tokens_eq_ix
     (ps : ParseStateIx input) (dirs : Array Directive) (ps' : ParseStateIx input)
@@ -1543,9 +1502,9 @@ lemma parseDocument_wfa
     (h_matched : FlowBracketsMatchedIx tokens)
     (ps : ParseStateIx input) (doc : YamlDocument) (ps' : ParseStateIx input)
     (h_tok : ps.tokens = tokens)
-    (h_wfa : WellFormedAnchors ps.anchors)
+    (h_wfa : WellFormedAnchorsS ps.anchors)
     (h_ok : parseDocument ps = .ok (doc, ps')) :
-    WellFormedAnchors doc.anchors := by
+    WellFormedAnchorsS doc.anchors := by
   unfold parseDocument at h_ok
   simp only [bind, Except.bind] at h_ok
   split at h_ok
@@ -1557,7 +1516,7 @@ lemma parseDocument_wfa
       (prepareDocumentState_tokens_eq_ix ps dirs ps1 h_prep).trans h_tok
     have h_prep_anch : ps1.anchors = ps.anchors :=
       prepareDocumentState_anchors_eq_ix ps dirs ps1 h_prep
-    have h_wfa_ps1 : WellFormedAnchors ps1.anchors := h_prep_anch ▸ h_wfa
+    have h_wfa_ps1 : WellFormedAnchorsS ps1.anchors := h_prep_anch ▸ h_wfa
     -- split on match ps1.peek?: emptyNode arms vs parseNode arm
     split at h_ok
     all_goals (try (
@@ -1613,11 +1572,11 @@ lemma parseStreamLoop_wfa
     (ps : ParseStateIx input) (docs : Array YamlDocument)
     (streamState : StreamState) (fuel : Nat)
     (h_tok : ps.tokens = tokens)
-    (h_wfa_ps : WellFormedAnchors ps.anchors)
-    (h_acc : ∀ doc ∈ docs.toList, WellFormedAnchors doc.anchors)
+    (h_wfa_ps : WellFormedAnchorsS ps.anchors)
+    (h_acc : ∀ doc ∈ docs.toList, WellFormedAnchorsS doc.anchors)
     (result : Array YamlDocument)
     (h_ok : parseStreamLoop ps docs streamState fuel = .ok result) :
-    ∀ doc ∈ result.toList, WellFormedAnchors doc.anchors := by
+    ∀ doc ∈ result.toList, WellFormedAnchorsS doc.anchors := by
   induction fuel generalizing ps docs streamState with
   | zero =>
     simp only [parseStreamLoop] at h_ok
@@ -1644,10 +1603,10 @@ lemma parseStreamLoop_wfa
         | ok val =>
           obtain ⟨doc_new, ps_doc⟩ := val
           dsimp only [] at h_ok
-          have h_wfa_doc : WellFormedAnchors doc_new.anchors :=
+          have h_wfa_doc : WellFormedAnchorsS doc_new.anchors :=
             parseDocument_wfa tokens h_fpsv h_matched ps doc_new ps_doc
               h_tok h_wfa_ps h_pd
-          have h_acc' : ∀ doc ∈ (docs.push doc_new).toList, WellFormedAnchors doc.anchors := by
+          have h_acc' : ∀ doc ∈ (docs.push doc_new).toList, WellFormedAnchorsS doc.anchors := by
             intro d hd
             rw [Array.toList_push] at hd
             simp only [List.mem_append, List.mem_singleton] at hd
@@ -1664,11 +1623,11 @@ lemma parseStreamLoop_wfa
             apply ih
             · -- tokens preserved
               exact (tc_tokens_wfa_ix
-                { ps_doc with anchors := #[], nodePositions := #[], currentPath := #[] }
+                { ps_doc with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
                 .documentEnd).trans h_tok_doc
             · -- well-formed anchors after reset + tryConsume
               have h_eq := tc_anchors_ix
-                { ps_doc with anchors := #[], nodePositions := #[], currentPath := #[] }
+                { ps_doc with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
                 .documentEnd
               simp only [h_eq]; exact WFA_empty
             · exact h_acc'
@@ -1681,7 +1640,7 @@ lemma parseStreamIx_output_anchors_wellformed
     (h_fpsv : FlowAwarePSVIx tokens)
     (h_matched : FlowBracketsMatchedIx tokens)
     (h_parse : parseStreamIx tokens = .ok docs) :
-    ∀ doc ∈ docs.toList, WellFormedAnchors doc.anchors := by
+    ∀ doc ∈ docs.toList, WellFormedAnchorsS doc.anchors := by
   unfold parseStreamIx at h_parse
   simp only [bind, Except.bind] at h_parse
   split at h_parse
@@ -1689,7 +1648,7 @@ lemma parseStreamIx_output_anchors_wellformed
   · rename_i ps_init heq_expect
     have h_tok_init : ps_init.tokens = tokens :=
       expect_tokens_wfa_ix { tokens := tokens, trackPositions := false } .streamStart _ ps_init heq_expect
-    have h_wfa_init : WellFormedAnchors ps_init.anchors := by
+    have h_wfa_init : WellFormedAnchorsS ps_init.anchors := by
       have : ps_init.anchors = #[] := by
         unfold ParseStateIx.expect at heq_expect
         split at heq_expect

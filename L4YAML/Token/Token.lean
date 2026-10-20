@@ -330,17 +330,39 @@ the entry's, and `---⏎&p [b]` is the bare document's root node, since
 `[186] s-l+block-in-block` is the entry's.  After anything else a run at an
 open level's own column has no slot, which is §9.2's dangling-node violation.
 
-**The two starts are offers, and that is measured rather than argued** (item
-277).  A `[96]` run can stand at a depth-0 open's front behind a token that is
-not an offer only directly after the stream or document start — every other
-such shape is refused as bare document content, because it is a second root
-node in one document.  Extending the three block indicators with the two starts
-therefore changes no verdict: §8.1's floor also requires the open's column to
-stand on the indent stack, and nothing has opened a block level at that point,
-so the two conditions are mutually exclusive.  Censused over 1420 inputs of the
-family, the 402-case suite and the whole Lean battery: zero verdict moves, and
-only the `pred` reading of `PropsParkDangling`'s pins changes.  What it buys is
-`ParkSlot.slotRun`, which was false at the three arms without it.
+**The three BOUNDARIES are offers beside the three indicators, and the set is
+measured kind by kind rather than argued** (items 278 and 281).  A `[96]` run
+can stand at a depth-0 open's front behind a non-offer only directly after the
+stream start, a document start, or a document END; every other predecessor is a
+second root node in one document and is refused as bare document content.  That
+is a census over the token kinds and not an inference from one of them —
+`ScannerFlowOpenUnderRun` §17 reads all 23, naming for each either an accepted
+witness or the refusal.
+
+Extending the three indicators with the three boundaries moves no verdict, and
+the reason is the INDENT STACK rather than the enumeration: §8.1's floor also
+requires the open's column to stand on that stack, and at each of the three the
+stack holds the sentinel alone — nothing has opened a block level after a
+stream or document start, and `...` UNWINDS every level it finds, which is
+measured (`[-1, 0]` → `[-1]` across the suffix) and not assumed.  So the two
+conditions are mutually exclusive at all three.  §9.2's reading is unmoved for
+a second reason: its offer test short-circuits only for a run whose start is
+neither a node body nor a node property, and a `[96]` run's start is always a
+property.  Each extension was censused over the 402-case suite and the whole
+Lean battery and neither moved a verdict: item 278's two starts over 1420
+inputs of the family, where the `pred` reading of `PropsParkDangling`'s pins
+was the one thing that changed, and item 281's suffix, where not even those
+move — no pinned input in the tree carries a `...` in front of a run.  What
+both buy is `ParkSlot.slotRun`, which was false at the three arms without
+them.
+
+**The suffix is where the argument from the second root node does not reach**
+(item 281).  Item 278 enumerated the non-offers by that refusal and stopped at
+the two starts; a `...` does not continue a document, it ENDS one, so what
+follows is a fresh bare document and `[185]` offers it the same slot `---`
+does.  `a⏎...⏎&x⏎[1]` is accepted with the run standing behind `documentEnd`,
+and seven shapes read it — so the enumeration was a floor, exactly as a
+one-round census is.
 -/
 def YamlToken.offersNodeSlot : YamlToken → Bool
   | .value => true
@@ -348,6 +370,9 @@ def YamlToken.offersNodeSlot : YamlToken → Bool
   | .blockEntry => true
   | .documentStart => true
   | .streamStart => true
+  -- item 281: the suffix ends a document, so a run behind it heads the next
+  -- one's `[185] l-bare-document` exactly as a run behind `---` does.
+  | .documentEnd => true
   | _ => false
 
 /--

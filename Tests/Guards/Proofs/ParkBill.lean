@@ -145,11 +145,11 @@ capstonesInTp={b.capstonesInTrans.size}"
     library — the `Scannable`-valued compose chain, in its own module because
     two `maxHeartbeats 4000000` `YamlValue` inductions do not elaborate in
     one. -/
-def expectedClosure : Nat := 247
+def expectedClosure : Nat := 249
 
 /-- The park's populations beside the arm's, from one pass. -/
 def expectedBill : String :=
-  "Dp=9 Sp=0 Tp=31 T=26 shared=19 extra=12 capstonesInTp=2"
+  "Dp=9 Sp=0 Tp=33 T=26 shared=19 extra=14 capstonesInTp=2"
 
 /-- Names the park in a PROOF TERM — builders and case splits together, which
     no syntactic reading separates (item 240).  **Seven of the nine break and
@@ -178,17 +178,19 @@ def expectedStmt : List Name := []
 
 /-! ## §2 The bracket, and the three numbers it separates
 
-`Tp=31` against `T=26`: **twelve declarations β.5 reaches that the arm's
-closure never counted** — `PendingNode.arm_or_col` and the three park lemmas
-above, the four `accum_block_on_*` and the four `block_dispatch_deferred*`.
+~~`Tp=31`~~ `Tp=33` against `T=26`: ~~**twelve**~~ **fourteen declarations β.5
+reaches that the arm's closure never counted** — `PendingNode.arm_or_col` and
+the three park lemmas above, the four `accum_block_on_*`, the four
+`block_dispatch_deferred*`, and (DOCS item 287) `colon_fires_implicit_key` and
+`colon_fires_props_key`, which apply the inline wrapper themselves.
 Nineteen of item 238's twenty-six are shared.  So the bill stated as a closure
-is **thirty-eight**, not twenty-six, and it was never twenty-six because it was
-only ever half of β.5.
+is ~~**thirty-eight**~~ **forty**, not twenty-six, and it was never twenty-six
+because it was only ever half of β.5.
 
 **And thirty-eight is not what β.5 costs.**  The fixpoint elaborates the whole
 tree against the post-β.5 sources and reads
 
-    sorried=13  restated=0  deleted=3  pins=36
+    sorried=13  restated=0  deleted=3  pins=37
 
 — thirteen proofs, of which seven are the library's (all in `StreamAccum.lean`)
 and six are Tests-side; ONE statement, `dropClose`, which goes with the arm;
@@ -199,7 +201,7 @@ The three numbers are three different questions and only the last is the bill:
 
 | reading | what it counts | value |
 |---|---|---|
-| `Tp ∪ T` | what a REBUILD touches | **38** |
+| `Tp ∪ T` | what a REBUILD touches | ~~38~~ **40** |
 | `Dp` (+ item 238's `D`) | what NAMES a deletion | 9 + 4 |
 | the fixpoint | what stops ELABORATING | **13 proofs + 1 statement** |
 
@@ -233,19 +235,25 @@ def expectedFixpoint : String :=
 
     * `control` re-derives the seven in the same run, so `dead` is a delta of
       this run rather than of item 263's;
-    * `dead=5` — five of the seven were a case arm and nothing else, and one of
-      the five (`accum_content_pending`'s) carried an application of the escape
-      with it, so a class of `block_dispatch_deferred`'s domain empties with the
-      constructor;
-    * what is LEFT is two errors of one line each.  `accum_flow_open_depth0`
+    * ~~`dead=5`~~ `dead=6` — five of the seven are a case arm and nothing else,
+      and one of the five (`accum_content_pending`'s) carried an application of
+      the escape with it, so a class of `block_dispatch_deferred`'s domain
+      empties with the constructor.  The sixth is `accum_flow_open_depth0`, three
+      dead blocks since DOCS item 285: the arm, `have opaque_resume` (the arm is
+      its only consumer) and `have drop_ride` (`opaque_resume` is its only
+      spender, since the three live arms take `slot_ride`);
+    * what is LEFT is ~~two errors of one line each.  `accum_flow_open_depth0`
       keeps `have drop_ride`, where `dropClose` is spent and which three LIVE
-      arms take (`ScannerFlowOpenUnderRun` §4 prices it), and
+      arms take (`ScannerFlowOpenUnderRun` §4 prices it), and~~ ONE error:
       `block_dispatch_deferred` is the escape, whose body IS the constructor.
+      Its three wrappers' eight applications, in three live declarations, are
+      what the escape's deletion still has to route or refute (DOCS item 285,
+      step 12.3).
 
     Checked from the other side, like `expectedFixpoint`: the script reads this
     literal and prints `ARM-PIN agrees`. -/
 def expectedArms : String :=
-  "control=7 arms=2 dead=5 left=[accum_flow_open_depth0,block_dispatch_deferred]"
+  "control=7 arms=1 dead=6 left=[block_dispatch_deferred]"
 
 /-! ## §3 Every pin above, checked against one environment pass. -/
 
@@ -306,10 +314,10 @@ declaration that holds §9.2's success in order to read a park's FACE holds
 §8.1's beside it, and both faces reach the close as premises of
 `pendingContent`'s `h_closable` (item 275).
 
-**What the gap is.**  Six declarations hold §9.2's mid-stream check and not
+**What the gap is.**  Seven declarations hold §9.2's mid-stream check and not
 §8.1's, and two hold §9.2's end-of-input check and not §8.1's; one holds each
-of §8.1's and neither of §9.2's, which is what makes the columns 21/16 and 5/4
-rather than 21/15 and 5/3.  Those last two are the bridges that read a silence
+of §8.1's and neither of §9.2's, which is what makes the columns 22/16 and 5/4
+rather than 22/15 and 5/3.  Those last two are the bridges that read a silence
 off a success — `underIndented_none_of_check` and `underIndented_none_of_eof`,
 whose §9.2 twins `dangling_none_of_check` and `dangling_none_of_eof` account
 for one of the six and one of the two.  The rest is the REFUTATION family:
@@ -318,7 +326,9 @@ and `propsPark_dangling_of_prop` mid-stream with `danglingPark_refutes_landing`
 beside them, and `danglingPark_refutes_eof` at the end of input.  Each reads the
 dangling run in order to REFUTE a landing, and §8.1's floor has no twin for
 that use, so the gap is a difference in what the two verdicts are FOR rather
-than a rail left unbuilt.
+than a rail left unbuilt.  The seventh is item 284's `slotRun_of_dn`, which
+reads §9.2's silence to OPEN the props park's slot face at the depth-0 open —
+again a use §8.1's floor has no twin for.
 
 **And these counts are this theorem's, not the environment's**: the same four
 names are held in the emitter-scannability chain too, §8.1's two checks eleven
@@ -335,8 +345,11 @@ def gateChecks : List (String × Name) :=
 /-- The accumulation's own namespace: the chain `grammar_completeness` drives. -/
 def accumNs : Name := `L4YAML.Proofs.StreamAccum
 
+/-- 21 → 22 on 2026-10-18 (item 284) by ONE holder, `slotRun_of_dn`; with this
+    item's 49 new declarations excluded the census reads 21 again, so no other
+    holder moved. -/
 def expectedGateHolders : String :=
-  "dn/mid=21 dn/eof=5 fv/mid=16 fv/eof=4 | \
+  "dn/mid=22 dn/eof=5 fv/mid=16 fv/eof=4 | \
 elsewhere dn/mid=9 dn/eof=14 fv/mid=11 fv/eof=15"
 
 set_option maxHeartbeats 4000000 in

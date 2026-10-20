@@ -79,6 +79,15 @@ structure ParseStateIx (input : String) where
   pos : Nat := 0
   /-- Accumulated anchor definitions -/
   anchors : Array (String × YamlValue) := #[]
+  /-- Anchor names DECLARED by a `&` node property, whether or not the node the
+      property decorates has finished parsing.  §7.1's only error is an anchor
+      that does not *previously occur*, and §3.2.2.2 binds an alias to the most
+      recent event carrying the anchor — for a collection that is its START
+      event — so an alias may name the enclosing, still-open node (`&x [*x]`).
+      `anchors` cannot answer that question: it stores resolved VALUES and so
+      cannot exist before node finalization.  The scanner already keeps this
+      set under the name `definedAnchors`. -/
+  declaredAnchors : Array String := #[]
   /-- Tag handle → prefix mapping declared via `%TAG` for the current document.
       §6.8.2.2: tag handles are local to the document.
       Each entry is `(handle, tagPrefix)` so `!handle!suffix` resolves to
@@ -171,6 +180,53 @@ def ParseStateIx.tryConsume {input : String} (ps : ParseStateIx input)
   | some t => if BEq.beq t tok then (true, ps.advance) else (false, ps)
   | none => (false, ps)
 
+/-- Record that `&name` has occurred, before the node it decorates is complete.
+    Indexed twin of `L4YAML.ParseState.declareAnchor`. -/
+def ParseStateIx.declareAnchor {input : String} (ps : ParseStateIx input)
+    (name : String) : ParseStateIx input :=
+  { ps with declaredAnchors := ps.declaredAnchors.push name }
+
+/-- `declareAnchor` writes only `declaredAnchors`; every other field, and so
+    every reading a positional proof takes, is untouched.  `declareAnchorOpt`
+    is its only caller, so these fire only under the node-properties stage. -/
+@[simp] lemma ParseStateIx.declareAnchor_pos {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).pos = ps.pos := rfl
+
+@[simp] lemma ParseStateIx.declareAnchor_tokens {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).tokens = ps.tokens := rfl
+
+@[simp] lemma ParseStateIx.declareAnchor_anchors {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).anchors = ps.anchors := rfl
+
+@[simp] lemma ParseStateIx.declareAnchor_tagHandles {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).tagHandles = ps.tagHandles := rfl
+
+@[simp] lemma ParseStateIx.declareAnchor_trackPositions {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).trackPositions = ps.trackPositions := rfl
+
+@[simp] lemma ParseStateIx.declareAnchor_nodePositions {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).nodePositions = ps.nodePositions := rfl
+
+@[simp] lemma ParseStateIx.declareAnchor_currentPath {input : String} (ps : ParseStateIx input) (name : String) :
+    (ps.declareAnchor name).currentPath = ps.currentPath := rfl
+
+/-- Declare the anchor a node's properties carry, if they carry one.
+
+    One application rather than a `match` at `parseNodeProperties`' tail, so
+    that the shape of its result — `.ok (props, state)` — is the shape every
+    proof about that stage already reasons about. -/
+def ParseStateIx.declareAnchorOpt {input : String} (ps : ParseStateIx input) :
+    Option String → ParseStateIx input
+  | none => ps
+  | some name => ps.declareAnchor name
+
+@[simp] lemma ParseStateIx.declareAnchorOpt_none {input : String}
+    (ps : ParseStateIx input) : ps.declareAnchorOpt none = ps := rfl
+
+@[simp] lemma ParseStateIx.declareAnchorOpt_some {input : String}
+    (ps : ParseStateIx input) (name : String) :
+    ps.declareAnchorOpt (some name) = ps.declareAnchor name := rfl
+
 /-- Register an anchor definition `&name` with its resolved value for alias lookup.
 
     The value is resolved (aliases expanded from the current anchor map)
@@ -251,7 +307,14 @@ def parseNodeProperties {input : String} (ps : ParseStateIx input) :
       props := { props with tag := some fullTag }
       ps := ps.advance
     | _ => break
-  return (props, ps)
+  -- §3.2.2.2/§7.1: the anchor OCCURS at the node's start event, so it is
+  -- already visible to an alias INSIDE the node it decorates (`&x [*x]`).
+  -- The declaration is taken from the COMPUTED properties rather than from the
+  -- loop, because the start event carries only the last `&`: a superseded
+  -- `&a` in `&a &b` — which §6.9.2 tolerates on collection content — names no
+  -- node, and so must not become aliasable.  `addAnchor`'s value table answers
+  -- a different question and is written later, at `applyNodeFinalization`.
+  return (props, ps.declareAnchorOpt props.anchor)
 
 /-! ## Empty Node -/
 

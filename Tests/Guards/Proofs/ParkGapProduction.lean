@@ -246,12 +246,13 @@ partial def walk (prods : Std.HashSet Name) (decl : Name) (e : Expr) : W Unit :=
 
 /-- **The path, at every site.**  Six spend a step, and every one of the six
     crosses ONE production edge to get to the dispatch's input — whitespace,
-    from the park's own position.  The other six spend nothing: the width-2 site
-    needs two steps and the five item 244 read as unreached have no chain. -/
+    from the park's own position.  The other ~~six~~ seven spend nothing: the
+    ~~width-2 site needs~~ two width-2 sites need two steps and the five item
+    244 read as unreached have no chain.  (DOCS item 287 traded the two
+    `accum_block_on_*` inline sites for `accum_block_pending`'s and the two `:`
+    consumers'; `ParkGapWidth` reads the same trade.) -/
 def expectedPaths : List String :=
   ["L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock <- \
-L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline NOSPEND",
-   "L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack \
 step=scanNextToken_dispatchBlockIndicators len=1 ends=GStar(SSWhite)+SIndent",
    "L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock <- \
@@ -264,13 +265,13 @@ step=scanNextToken_dispatchBlockIndicators len=1 ends=GStar(SSWhite)+SIndent",
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol \
 step=scanNextToken_dispatchBlockIndicators len=1 ends=GStar(SSWhite)+SIndent",
    "L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlockContent <- \
-L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline NOSPEND",
-   "L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlockContent <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack \
 step=scanNextToken_dispatchBlockIndicators len=1 ends=GStar(SSWhite)+SIndent",
    "L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlockContent <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol \
 step=scanNextToken_dispatchBlockIndicators len=1 ends=GStar(SSWhite)+SIndent",
+   "L4YAML.Proofs.StreamAccum.accum_block_pending <- \
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline NOSPEND",
    "L4YAML.Proofs.StreamAccum.accum_content_pending <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred NOSPEND",
    "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline <- \
@@ -278,7 +279,11 @@ L4YAML.Proofs.StreamAccum.block_dispatch_deferred NOSPEND",
    "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred NOSPEND",
    "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol <- \
-L4YAML.Proofs.StreamAccum.block_dispatch_deferred NOSPEND"]
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred NOSPEND",
+   "L4YAML.Proofs.StreamAccum.colon_fires_implicit_key <- \
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline NOSPEND",
+   "L4YAML.Proofs.StreamAccum.colon_fires_props_key <- \
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline NOSPEND"]
 
 /-- **How far a `GLit` is below the stream's own alphabet.**  A stream's right
     endpoint moves by `SLDocumentPrefix`, `SLAnyDocument` or `SLDocumentSuffix`;
@@ -339,9 +344,11 @@ def expectedEndsLit : List String :=
     whose type ends in `Prop` with two trailing `SurfPos` arguments; the
     combinators are IN it by that definition, checked by deleting an explicit
     insert of `GStar`, `GOpt`, `GPlus`, `GLit`, `GChar` and `SIndent` and
-    watching `prods=129` not move. -/
+    watching `prods=129` not move.  DOCS item 287: `pop` 7 → 10, `sites`
+    12 → 13 and `nospend` 6 → 7, `ParkGapWidth`'s trade read here — the six
+    sites that spend a step are untouched. -/
 def expectedLine : String :=
-  "pop=7 sites=12 spend=6 nospend=6 len1=6 ends=GStar(SSWhite)+SIndent \
+  "pop=10 sites=13 spend=6 nospend=7 len1=6 ends=GStar(SSWhite)+SIndent \
 depth=4 prods=129 ctors=235 \
 endsLit=30 minus=0 question=2 colon=21 chainEnds=0 blockArms=1 seqArms=10 \
 mapArms=10 streamArms=4 streamHonest=3"

@@ -17,17 +17,22 @@ open L4YAML.Dump
 -- Plain scalars
 #guard resolveRoundTrips (.plainScalar "hello")
 #guard resolveRoundTrips (.plainScalar "world")
-#guard resolveRoundTrips (.plainScalar "")
+#guard resolveRoundTrips (.scalar ⟨"", .doubleQuoted, none, none, none⟩)
 #guard resolveRoundTrips (.plainScalar "foo bar")
 #guard resolveRoundTrips (.plainScalar "some-identifier")
 #guard resolveRoundTrips (.plainScalar "a/b/c")
 
--- Reserved words (auto-quoted, parser recovers intent)
-#guard resolveRoundTrips (.plainScalar "true")
-#guard resolveRoundTrips (.plainScalar "false")
-#guard resolveRoundTrips (.plainScalar "null")
+-- Reserved words: tagged (as `toYaml` emits them) or with `allowReservedPlain`
+-- the type survives; an untagged plain `true` is quoted on output and does not.
+#guard resolveRoundTrips (coreScalar "!!bool" "true")
+#guard resolveRoundTrips (coreScalar "!!bool" "false")
+#guard resolveRoundTrips (coreScalar "!!null" "null")
+#guard resolveRoundTrips (.plainScalar "true") { allowReservedPlain := true }
+#guard resolveRoundTrips (.plainScalar "null") { allowReservedPlain := true }
+#guard !resolveRoundTrips (.plainScalar "true")
 #guard resolveRoundTrips (.plainScalar "42")
-#guard resolveRoundTrips (.plainScalar "-7")
+#guard resolveRoundTrips (coreScalar "!!int" "-7")
+#guard resolveRoundTrips (.scalar ⟨"42", .doubleQuoted, none, none, none⟩)
 #guard resolveRoundTrips (.plainScalar "0")
 #guard resolveRoundTrips (.plainScalar "3.14")
 #guard resolveRoundTrips (.plainScalar ".inf")

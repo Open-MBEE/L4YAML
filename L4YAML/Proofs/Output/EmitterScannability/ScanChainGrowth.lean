@@ -3710,7 +3710,10 @@ lemma parseStreamLoop_single_doc
         dsimp only []  -- reduce the YamlToken match
         simp only [StreamState.validNextToken, Bool.not_true]
         rw [h_doc]; dsimp only []
-        have h_peek'_r : (ParseState.mk ps'.tokens ps'.pos #[]
+        -- POSITIONAL `mk`: a field added to `ParseState` is paid here, and no
+        -- grep for the field's name finds it.  `declaredAnchors` sits beside
+        -- `anchors`, which the document reset clears alongside it.
+        have h_peek'_r : (ParseState.mk ps'.tokens ps'.pos #[] #[]
             ps'.tagHandles ps'.trackPositions #[] #[]).peek?
             = some .streamEnd := h_peek'
         simp only [ParseState.tryConsume, h_peek'_r,

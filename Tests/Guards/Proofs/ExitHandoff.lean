@@ -323,12 +323,17 @@ def expectedLines : List String :=
    "absorb_stacksB input=sp_block slots=0 nil=0 carrier=0 forward=0 other=0 loose=1 at=[] stream=[] flow=[] parks=[]",
    "accum_block_on_closeThenBlock input=none slots=2 nil=2 carrier=0 forward=0 other=0 loose=0 at=[bound(sp_a):1,bound(sp_mid):1] stream=[bound:h_stream_a:1,bound:h_stream_new:=param:h_close_pending:1] flow=[nil:2] parks=[pendingBlock:2]",
    "accum_block_on_noPending input=sp_block slots=1 nil=1 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):1] stream=[param:h_stream_block:1] flow=[nil:1] parks=[pendingBlock:1]",
-   "accum_block_on_pendingBlock input=sp_block(+1) slots=3 nil=3 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):3] stream=[param:h_stream_block:3] flow=[nil:3] parks=[pendingBlock:3]",
+   -- Item 287: its second stream hypothesis, `h_stream_fallback`, retired, so
+   -- the input reads unmarked.
+   "accum_block_on_pendingBlock input=sp_block slots=3 nil=3 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):3] stream=[param:h_stream_block:3] flow=[nil:3] parks=[pendingBlock:3]",
    "accum_block_on_pendingBlockContent input=sp_block slots=1 nil=1 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):1] stream=[param:h_stream_block:1] flow=[nil:1] parks=[pendingBlock:1]",
    "accum_content_on_pendingBlock_indented input=sp_block slots=4 nil=4 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):4] stream=[param:h_stream_block:4] flow=[nil:4] parks=[pendingBlockContent:3,pendingProps:1]",
    "accum_content_on_pendingMapValue_indented input=sp_block slots=4 nil=4 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):3,param(sp_scan'):1] stream=[bound:h_stream':=param:h_close_old:1,param:h_stream_block:3] flow=[nil:4] parks=[pendingContent:3,pendingProps:1]",
    "accum_content_pending input=sp_block slots=10 nil=10 carrier=0 forward=0 other=0 loose=0 at=[input(sp_block):10] stream=[param:h_stream_block:10] flow=[nil:10] parks=[pendingBlockContent:3,pendingContent:5,pendingProps:2]",
-   "accum_flow_open_depth0 input=sp_block slots=7 nil=4 carrier=3 forward=0 other=0 loose=0 at=[bound(sp_mid):1,input(sp_block):3] stream=[bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB:3,bound:h_stream_mid:=bound:h_close:1,param:h_stream:3] flow=[bound:h_kpkg:=Exists.intro:7] parks=[noPending:7]",
+   -- Item 285: one more exit, `slot_ride`'s frame — `nil` at the input, over the
+   -- bound `h_stream_block`, parking `noPending` — which the three live arms
+   -- spend where they spent `drop_ride`'s.
+   "accum_flow_open_depth0 input=sp_block slots=8 nil=5 carrier=3 forward=0 other=0 loose=0 at=[bound(sp_mid):1,input(sp_block):4] stream=[bound:h_stream_block:=L4YAML.Proofs.StreamAccum.absorb_stacksB:4,bound:h_stream_mid:=bound:h_close:1,param:h_stream:3] flow=[bound:h_kpkg:=Exists.intro:8] parks=[noPending:8]",
    "accum_step_block input=sp_block slots=7 nil=0 carrier=6 forward=1 other=0 loose=0 at=[] stream=[bound:q1:1,param:h_stream:6] flow=[K:7] parks=[bound:q4:1,vacuous:6]",
    "accum_step_content input=sp_block slots=7 nil=0 carrier=6 forward=1 other=0 loose=0 at=[] stream=[bound:q1:1,param:h_stream:6] flow=[K:7] parks=[bound:q4:1,vacuous:6]",
    "accum_step_structural input=sp_block slots=1 nil=0 carrier=0 forward=1 other=0 loose=0 at=[] stream=[bound:q1:1] flow=[K:1] parks=[bound:q4:1]",
@@ -345,12 +350,14 @@ def expectedLines : List String :=
    "scan_content_gives_stream_v2 input=none slots=0 nil=0 carrier=0 forward=0 other=0 loose=1 at=[] stream=[] flow=[] parks=[]",
    "blockStack_refl input=b slots=0 nil=0 carrier=0 forward=0 other=0 loose=1 at=[] stream=[] flow=[] parks=[]"]
 
+-- 2026-10-18 (item 285): `slots`, `nil`, `atInput`, `nilStreamBound`, `flowOpen` and
+-- `posFree` each +1 and nothing else — the one exit `slot_ride` adds, read six ways.
 def expectedLine : String :=
   "producers=21 readers=3 builders=18 share=18 outsideShare=3 shareInT=3 \
-shareOutsideT=15 buildersOutsideT=14 nilOutsideT=26 walked=25 slots=61 nil=43 \
-carrier=15 forward=3 other=0 loose=4 atInput=37 atParam=1 atBound=5 atExpr=0 \
-nilStreamParam=33 nilStreamBound=10 handedNone=0 flowOpen=4 handedPromise=35 \
-handedDemand=1 handedBound=3 posFree=52 through=15"
+shareOutsideT=15 buildersOutsideT=14 nilOutsideT=26 walked=25 slots=62 nil=44 \
+carrier=15 forward=3 other=0 loose=4 atInput=38 atParam=1 atBound=5 atExpr=0 \
+nilStreamParam=33 nilStreamBound=11 handedNone=0 flowOpen=5 handedPromise=35 \
+handedDemand=1 handedBound=3 posFree=53 through=15"
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

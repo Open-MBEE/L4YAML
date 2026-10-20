@@ -262,6 +262,26 @@ def expectedTransports : List String :=
    "Covered.raise_floor: 0 in 0 []",
    "Covered.dedup_head: 2 in 2 [colon_open_map_implicit=1, colon_open_map_props=1]",
    "Covered.cons: 4 in 2 [entryKeyPack_of_dispatch=2, entryPropsKeyPack_of_dispatch=2]"]
+-- 2026-10-18 (item 284): `rows` 169 → 167 and `nodes` 96125 → 97863 are
+-- `CloseStackCover`'s, read through the same rows.  `floorNodes` 24488 → 24476
+-- is two moves that nearly cancel, separated by restoring the old `pendingFlow`
+-- arm alone on the item-284 tree (24522): the item's additions to the scanned
+-- theorems are +34, and the arm's builder call leaving `accum_content_pending`
+-- is −46.  `scanned` holds at 32.
+-- 2026-10-18 (item 285): `nodes` 97863 → 98193 is `CloseStackCover`'s; `floorNodes`
+-- 24476 → 24480 is the same edits inside `accum_flow_open_depth0`, a scanned
+-- theorem; `scanned` holds at 32 and every row holds.
+-- 2026-10-19 (item 287): `nodes` 98193 → 98962 is `CloseStackCover`'s again;
+-- `floorNodes` 24480 → 24473 is the floor walk over the same 32 scanned
+-- theorems, seven nodes smaller across the restructured lemmas, with every
+-- row holding.  This item did not isolate which edit the seven are.
+-- 2026-10-19 (item 288): `nodes` 98962 → 99100 is `CloseStackCover`'s.
+-- 2026-10-19 (item 289): `nodes` 99100 → 99114 is `CloseStackCover`'s.
+-- 2026-10-19 (item 293): `nodes` 99114 → 100079 is `CloseStackCover`'s;
+-- `floorNodes` 24473 → 24525 is the floor walk over the same 32 scanned
+-- theorems, named per declaration (`378-walks-perdecl-293.log`): the four park
+-- eliminators binding the four new fields (+7 each), and the threading and
+-- payments in the accumulation lemmas (+1 to +7 each).  Every row holds.
 /-- **The delta's own line.**  `nodes` is the proof-term size of the walked
     declarations; item 272 is the one move, and it moves nothing else, for the
     reason `CloseStackCover` records — the under-run disjunct the three
@@ -269,7 +289,7 @@ def expectedTransports : List String :=
     Lean v4.35.0 moves it again and alone: `nodes` 96158 → 96125, every other
     field byte-identical — 33 fewer term nodes for the same walk. -/
 def expectedLine : String :=
-  "rows=169 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=96125 floorNodes=24488"
+  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=100079 floorNodes=24525"
 
 /-! ## §4 The reading -/
 

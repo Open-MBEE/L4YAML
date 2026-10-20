@@ -2920,7 +2920,7 @@ lemma parseStreamLoop_docs_from_parseDocument_ix
             (parseDocument_tokens_preserved_ix ps doc_new ps'
               (h_eq ▸ h_fpsv) (h_eq ▸ h_matched) h_pd).trans h_eq
           let ps_reset : ParseStateIx input :=
-            { ps' with anchors := #[], nodePositions := #[], currentPath := #[] }
+            { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
           have h_next_tok : (ps_reset.tryConsume .documentEnd).2.tokens = tokens :=
             (tryConsume_tokens_ix _ _).trans h_pd_tok
           have h_acc' : ∀ doc ∈ (docs.push doc_new).toList,

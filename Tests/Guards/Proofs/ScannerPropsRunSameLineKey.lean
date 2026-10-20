@@ -142,14 +142,17 @@ example {s s' : ScannerState} {c : Char}
 
 open L4YAML.Scanner L4YAML.Proofs.StreamAccum in
 /-- The punt travels with the park it is about — the run's extension takes the
-    left line route, the run's content the saved key's. -/
+    left line route, the run's content the saved key's.  Item 289: and the saved
+    key's possibility travels too, the one premise the `tab` reason added. -/
 example {sc s' : ScannerState} (h_punt : KeyPackPunt sc)
     (h_skpos : s'.simpleKey.pos = sc.simpleKey.pos)
     (h_input : s'.input = sc.input)
     (h_line : s'.line = sc.line ∨ s'.simpleKey.pos.line = s'.line)
     (h_ivl : s'.implicitValueLine = sc.implicitValueLine)
-    (h_st : StalePark s') : KeyPackPunt s' :=
-  keyPackPunt_transport h_punt h_skpos h_input h_line h_ivl h_st
+    (h_st : StalePark s')
+    (h_poss : sc.simpleKey.possible = true → s'.simpleKey.possible = true) :
+    KeyPackPunt s' :=
+  keyPackPunt_transport h_punt h_skpos h_input h_line h_ivl h_st h_poss
 
 -- §5 The TAB reason, which item 102 also NAMES at the props producer, and
 -- which is paid at one of its two consumers.  The park is genuinely accepted,
@@ -161,10 +164,11 @@ example {sc s' : ScannerState} (h_punt : KeyPackPunt sc)
 -- family the transport buys beyond the stamp.
 #guard tabbed "k:\n \t&p a: 1\n" 1 2
 #guard tabbed "k:\n \t&p !t a: 1\n" 1 2
--- The run's OWN park still defers: `colon_fires_props_key` has the tab's
--- reading but not the saved key's line and possibility, which item 65's
--- refutation also wants and which `ImplicitKeyPack`'s consumer reads off its
--- own guard.  Measured refused, pinned, named.
+-- The run's OWN park ~~still defers~~ is refuted at item 289:
+-- `colon_fires_props_key` had the tab's reading but not the saved key's line
+-- and possibility, which item 65's refutation also wants and which
+-- `ImplicitKeyPack`'s consumer reads off its own guard.  The reason carries
+-- both (both producers hold them).  Measured refused, pinned, named.
 #guard tabbed "k:\n \t&p : 1\n" 1 2
 
 -- §6 The other named residue item 102 did not take: a FLOW collection opened

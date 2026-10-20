@@ -131,7 +131,7 @@ def parseNode {input : String} (ps : ParseStateIx input) (fuel : Nat) :
   let nodeStartPos := ps.peekPos?.getD { offset := 0, line := 0, col := 0 }
   match ps.peek? with
   | some (.alias name) =>
-    if !ps.anchors.any (fun (n, _) => n == name) then
+    if !ps.declaredAnchors.any (fun n => n == name) then
       throw (.undefinedAlias name nodeStartPos.line nodeStartPos.col)
     let ps := ps.advance
     let ps := if ps.trackPositions then
@@ -675,7 +675,7 @@ def parseStreamLoop {input : String} (ps : ParseStateIx input) (docs : Array Yam
         | .error e => .error e
         | .ok (doc, ps') =>
           let docs := docs.push doc
-          let ps := { ps' with anchors := #[], nodePositions := #[], currentPath := #[] }
+          let ps := { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
           let (consumed, ps) := ps.tryConsume .documentEnd
           let streamState := if consumed then .afterDocumentEnd else .afterDocument
           if ps.pos == savedPos then .ok docs

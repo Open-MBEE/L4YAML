@@ -47,10 +47,13 @@ example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos} {n : Nat}
     (h_ivl : sc.implicitValueLine = some sc.line)
     -- Item 138: and the park's directive face, which every park past the
     -- structural dispatch carries.
-    (h_nodir : sc.allowDirectives = false) :
+    (h_nodir : sc.allowDirectives = false)
+    -- Item 284: and the offer the indicator it stands on records.
+    (h_offer : OfferPred sc.tokens) :
     PendingNode sc false sp_start sp_block sp_scan :=
-  PendingNode.pendingMapValue sp_start sp_block sp_scan n h_close h_floor
-    h_nic h_real (Or.inl h_ivl) (Or.inr trivial) (Or.inr trivial)
+  PendingNode.pendingMapValue (h_offer := h_offer) sp_start sp_block sp_scan n h_close h_floor
+    -- Item 288: the slot's decline names the stamp this pin carries.
+    h_nic h_real (Or.inl h_ivl) (Or.inr trivial) (Or.inr h_ivl)
     h_sk h_col0 (Or.inr trivial) (Or.inr trivial)
     (Or.inr trivial) (Or.inr trivial)
     (Or.inr trivial) (Or.inr trivial) h_nodir

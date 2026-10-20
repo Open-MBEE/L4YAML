@@ -85,7 +85,7 @@ def parseStreamMarkedLoopIx {input : String} (ps : ParseStateIx input)
         match parseDocument ps with
         | .error e => .error e
         | .ok (doc, ps') =>
-          let ps := { ps' with anchors := #[], nodePositions := #[], currentPath := #[] }
+          let ps := { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
           let (consumed, ps) := ps.tryConsume .documentEnd
           let acc := acc.push { doc, explicitStart, explicitEnd := consumed }
           let streamState := if consumed then .afterDocumentEnd else .afterDocument

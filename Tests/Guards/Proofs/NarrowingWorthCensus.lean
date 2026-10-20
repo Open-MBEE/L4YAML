@@ -276,16 +276,21 @@ def isSurfFace (env : Environment) (lhs : Expr) : MetaM Bool := do
 /-- The census's own counts.  `faces` is what makes the row count readable: 163
     binders spell 62 distinct shapes, so the population is not 163 copies of
     one idiom and not 163 unrelated facts. -/
-def expectedFaceTally : String := "binders=163 faces=62 heads=18"
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a face, left the
+-- `_ ∨ True` population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`.
+def expectedFaceTally : String := "binders=161 faces=60 heads=18"
 
 /-- The conclusion head of every left disjunct.  `FVAR 2` is `frameChainUnion`,
     whose face is schematic in `P` — the two rows no census of any kind can
     evaluate, because there is nothing there to evaluate. -/
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` was one of the faces
+-- headed `SLYamlStream`; it left the population.  Item 288:
+-- `PendingNode.pendingMapValue.h_vslot`'s face, headed by its `≤`, left too.
 def expectedHeadCensus : List String :=
   ["BareLandingFacts 8", "CompletedTail 4", "Covered 3", "Eq 17", "FVAR 2",
    "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "MarkerNodeRoute 5",
-   "Mono 4", "PropsNodeRoute 4", "ResumeFrames 12", "SLYamlStream 32",
-   "SeqEntryTail 7", "SuffixRun 6", "le 11", "lt 23"]
+   "Mono 4", "PropsNodeRoute 4", "ResumeFrames 12", "SLYamlStream 31",
+   "SeqEntryTail 7", "SuffixRun 6", "le 10", "lt 23"]
 
 /-! ## §3  The rung-1 census: which faces are vacuous on their own
 
@@ -307,10 +312,12 @@ def expectedChainFaces : List String :=
    "PendingNode.pendingContent#8 (h_vpack)",
    "PendingNode.pendingMapValue#15 (h_kslot)",
    "PendingNode.pendingProps#21 (h_kslot)",
-   "accum_block_on_closeThenBlock#11 (h_vpack)",
-   "accum_block_on_pendingBlock#30 (h_kslotUp)",
-   "accum_block_on_pendingBlockContent#35 (h_kslotUp)",
-   "accum_block_on_pendingContent#15 (h_vpack)",
+   -- Item 287: these four read two binders earlier, past the retired
+   -- `sp_block_ctx` and `h_stream_fallback`.
+   "accum_block_on_closeThenBlock#9 (h_vpack)",
+   "accum_block_on_pendingBlock#28 (h_kslotUp)",
+   "accum_block_on_pendingBlockContent#33 (h_kslotUp)",
+   "accum_block_on_pendingContent#13 (h_vpack)",
    "accum_content_on_pendingBlock_indented#28 (h_kslotUp_old)",
    "accum_content_on_pendingMapValue_indented#17 (h_kslot)",
    "colon_open_map_implicit#11 (h_kslot)",
@@ -331,7 +338,8 @@ constant it names has a type over `SurfPos`, if it binds a `SurfPos`, or if it
 mentions one.  The four tests are run in that order and the first that fires
 decides, because the question is reachability of the face by an instrument, not
 which of four reasons applies. -/
-def expectedFidelity : String := "binders=163 surf=138 state=25"
+-- Item 287: the departed `h_vslot` named the surface grammar; item 288's did too.
+def expectedFidelity : String := "binders=161 surf=136 state=25"
 
 /-- The 25 faces a state census COULD evaluate, which is the population the
     mandate's instrument is actually defined over.  Two of them
@@ -339,7 +347,7 @@ def expectedFidelity : String := "binders=163 surf=138 state=25"
     number and never larger. -/
 def expectedStateFaces : List String :=
   ["PreprocessIndentStable.IndentFloor.transport#3",
-   "accum_block_on_closeThenBlock#27", "bareNodeRoute_or_refused#11",
+   "accum_block_on_closeThenBlock#25", "bareNodeRoute_or_refused#11",
    "bareNodeRoute_or_refused_content#12", "colon_open_map#23", "colon_open_map#24",
    "content_dispatch_after_close#22", "content_dispatch_routed#24",
    "dedent_cover_of_landing#8", "dedent_cover_of_landing#9",
@@ -445,8 +453,10 @@ def chainKeySet : Std.HashSet String :=
     Item 256 adds one split on an `inner` face — the content sibling's second
     split on `h_closeF_old` — so `splits` 99 → 100 and `innerSplits` 36 → 37;
     the pairs and the supply do not move. -/
+-- Item 287: the `h_vslot` row's own numbers — one pair, five splits, eleven
+-- supplies, one `inner` — left with it.
 def expectedWorthTally : String :=
-  "pairs=36 splits=100 sup=112 chainPairs=6 chainSplits=12 innerPairs=9 innerSplits=37"
+  "pairs=35 splits=95 sup=101 chainPairs=6 chainSplits=12 innerPairs=8 innerSplits=32"
 
 /-- The ledger, worth-first.  `chain` is §3's verdict — a narrowing here lands
     on another unconditional inhabitant; `inner` means the face carries a
@@ -455,51 +465,56 @@ def expectedWorthTally : String :=
 
     Item 256 moves one row: the content sibling's `h_closeF_old` is split
     twice (the `-` arm's relay of the park's frames is the second), so
-    `splits=1` reads `splits=2` and the row sorts one place up. -/
+    `splits=1` reads `splits=2` and the row sorts one place up.
+
+    Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` row leaves with its
+    binder (`RelaySupplyCensus.expectedTally`), and every row of the three
+    lemmas that lost `sp_block_ctx` and `h_stream_fallback` reads its binder two
+    places earlier, its label unmoved. -/
 def expectedWorthLedger : List String :=
   ["splits=11 sup=1 inner h_closeF_old :: accum_content_on_pendingBlock_indented#14",
    "splits=8 sup=1 - h_kslot_old :: accum_content_on_pendingBlock_indented#13",
    "splits=7 sup=1 inner h_closeF99 :: accum_content_on_pendingMapValue_indented#18",
-   "splits=5 sup=11 inner h_vslot :: accum_block_on_closeThenBlock#12",
    "splits=5 sup=1 - h_seqF168 :: accum_content_on_pendingMapValue_indented#35",
-   "splits=4 sup=1 - h_closeFV_old :: accum_block_on_pendingBlock#31",
+   "splits=4 sup=1 - h_closeFV_old :: accum_block_on_pendingBlock#29",
    "splits=4 sup=1 - h_closeFV_old :: accum_content_on_pendingBlock_indented#29",
    "splits=4 sup=1 inner h_closeFV108 :: accum_content_on_pendingMapValue_indented#20",
    "splits=3 sup=4 - h_cov :: indicator_open_map#27",
    "splits=3 sup=1 - h_expl :: accum_content_on_pendingMapValue_indented#15",
-   "splits=3 sup=1 - h_kslot :: accum_block_on_pendingBlock#15",
+   "splits=3 sup=1 - h_kslot :: accum_block_on_pendingBlock#13",
    "splits=3 sup=1 - h_resV_land :: colon_open_map#26",
    "splits=3 sup=1 - h_seqF_old :: accum_content_on_pendingBlock_indented#15",
    "splits=3 sup=1 - h_vslot :: accum_content_on_pendingMapValue_indented#16",
    "splits=3 sup=1 chain h_kslot :: accum_content_on_pendingMapValue_indented#17",
-   "splits=3 sup=1 chain h_kslotUp :: accum_block_on_pendingBlock#30",
+   "splits=3 sup=1 chain h_kslotUp :: accum_block_on_pendingBlock#28",
    "splits=3 sup=1 chain h_kslotUp_old :: accum_content_on_pendingBlock_indented#28",
-   "splits=2 sup=1 - h_closeFV_old :: accum_block_on_pendingBlockContent#37",
-   "splits=2 sup=1 inner h_closeF_old :: accum_block_on_pendingBlockContent#36",
+   "splits=2 sup=1 - h_closeFV_old :: accum_block_on_pendingBlockContent#35",
+   "splits=2 sup=1 inner h_closeF_old :: accum_block_on_pendingBlockContent#34",
    "splits=2 sup=1 inner h_routeF :: colon_open_map_implicit#12",
    "splits=2 sup=1 inner h_routeF :: colon_open_map_props#12",
    "splits=2 sup=1 inner h_routeFV :: colon_open_map_implicit#13",
    "splits=2 sup=1 inner h_routeFV :: colon_open_map_props#13",
-   "splits=1 sup=11 - h_mapF :: accum_block_on_closeThenBlock#30",
-   "splits=1 sup=11 - h_mapFV :: accum_block_on_closeThenBlock#32",
-   "splits=1 sup=11 - h_mk :: accum_block_on_closeThenBlock#21",
-   "splits=1 sup=11 - h_pr :: accum_block_on_closeThenBlock#31",
-   "splits=1 sup=11 - h_sfx :: accum_block_on_closeThenBlock#20",
-   "splits=1 sup=11 - h_valFV :: accum_block_on_closeThenBlock#33",
+   "splits=1 sup=11 - h_mapF :: accum_block_on_closeThenBlock#28",
+   "splits=1 sup=11 - h_mapFV :: accum_block_on_closeThenBlock#30",
+   "splits=1 sup=11 - h_mk :: accum_block_on_closeThenBlock#19",
+   "splits=1 sup=11 - h_pr :: accum_block_on_closeThenBlock#29",
+   "splits=1 sup=11 - h_sfx :: accum_block_on_closeThenBlock#18",
+   "splits=1 sup=11 - h_valFV :: accum_block_on_closeThenBlock#31",
    "splits=1 sup=4 - h_expl :: explFrameValueLine#3",
-   "splits=1 sup=1 - h_kslot :: accum_block_on_pendingBlockContent#16",
+   "splits=1 sup=1 - h_kslot :: accum_block_on_pendingBlockContent#14",
    "splits=1 sup=1 - h_resV_land :: question_open_map#27",
    "splits=1 sup=1 - h_routeS :: colon_open_map_implicit#27",
    "splits=1 sup=1 chain h_kslot :: colon_open_map_implicit#11",
    "splits=1 sup=1 chain h_kslot :: colon_open_map_props#11",
-   "splits=1 sup=1 chain h_kslotUp :: accum_block_on_pendingBlockContent#35"]
+   "splits=1 sup=1 chain h_kslotUp :: accum_block_on_pendingBlockContent#33"]
 
 /-- **What the mandate's instrument could have answered.**  Of the 36 pairs a
     narrowing would target, this many have a face a scanner-state census can
     evaluate, and this many of the 99 splits they cover.  Item 256: `splits`
     99 → 100, the content sibling's second split on `h_closeF_old`; the pairs,
     the state-reachable count and the state splits do not move. -/
-def expectedBranchReach : String := "branchPairs=36 stateReachable=1 splits=100 stateSplits=3"
+-- Item 287: the `h_vslot` row, again.
+def expectedBranchReach : String := "branchPairs=35 stateReachable=1 splits=95 stateSplits=3"
 
 open Meta in
 run_cmd do
@@ -562,7 +577,8 @@ file re-derives every one of them unmoved.  What was wrong is the sentence
 beside the number.  The gate below is the instrument that would have caught it
 at item 212, which is why it is written as a comparison of the two selectors
 rather than as a count. -/
-def expectedHiddenTally : String := "hiddenDefs=1 syntactic=163 hiddenOnly=2 population=165"
+-- Item 287: the same binder, read syntactically.  Item 288: and the field.
+def expectedHiddenTally : String := "hiddenDefs=1 syntactic=161 hiddenOnly=2 population=163"
 
 def expectedHiddenDefs : List String := ["ResumeKeyCtx"]
 
@@ -672,7 +688,41 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- the instrument measures declarations and their auxiliaries, and wrong here,
 -- where the population counts theorems -- it read 7676 instead of 5291, a 45%
 -- inflation, because every generated matcher auxiliary joined the population.
-def expectedNoopTally : String := "theorems=5301 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- 2026-10-18 (item 281): population 5344 → 5345 when `YamlToken.offersNodeSlot`
+-- took its sixth arm.  ONE of the two constants the verdict censuses read, and
+-- the difference is this pin's own rule: it does NOT canonicalize private names,
+-- so `offersNodeSlot.eq_7` counts and the match auxiliary `match_1.eq_7`, which
+-- the module system privatises, does not.  The four numbers this pin carries are
+-- unchanged.  Both are named in [[HypothesisReaderCensus]].
+-- 2026-10-18 (item 284): population 5345 → 5391, the 46 LEMMAS of item 284's 49
+-- new declarations (the other three — `SlotFace`, `OfferPred`, `SlotGateAt` —
+-- are definitions).  None concludes a no-op, so the four numbers this pin
+-- carries hold; the declarations are named in [[HypothesisReaderCensus]].
+-- Item 287: five more theorems — the four line-stop lemmas and
+-- `sslComments_refutes_inline_residue` — none a no-op.
+-- Item 293: eight more — the possibility lemmas named in
+-- [[HypothesisReaderCensus]] — none a no-op.
+def expectedNoopTally : String := "theorems=5404 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
+-- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
+-- grew and the predicate gained its tools.  What is new in kind: `AG` carries
+-- three facts instead of one, which is six accessors and two closure lemmas
+-- per twin plus `AG0`'s own; the properties/finalization pair that
+-- `parseNode` forms needs `propsStage_ag0`,
+-- `declsBound_of_props_finalization`, `applyNodeFinalization_binds`,
+-- `applyNodeFinalization_decls`, `addAnchor_decls`, `anchors_of_recordPos`
+-- and `tryConsume_snd_decls` per twin; the base gained the predicate's five
+-- tools (`AllAliasesDeclared.mono`, `AllAliasesResolve.of_declared`,
+-- `mem_of_any_beq`, `AnchorBound.mono`, `AnchorBound.push_self`); the two
+-- state-preservation proofs became reader-generic, each with two corollaries;
+-- and each twin gained a capstone pair plus `DeclarationsBound`'s two
+-- transport lemmas.  **The clique's own 22 lemmas per twin are a RENAME and
+-- move the count not at all** — `_aar` → `_aad` with a different index — and
+-- four declarations LEFT: the two `findSome?` bridges the old alias leaf went
+-- through, and `AllAliasesResolve.push`/`.mono`, which an index on the
+-- declaration set has no use for.  The census itself is unmoved — `byElab` and
+-- `byWhnf` hold at 17 and both residual lists are empty — so only the
+-- denominator changed.
 -- 5282 → 5292 on 2026-10-02, and the move is +11 − 1 rather than +10 of one
 -- kind.  The `+11` is authored: `ParserScannableBase.lean` carries the
 -- `Scannable`-valued compose chain (`stripAnchors_preserves_Scannable`,

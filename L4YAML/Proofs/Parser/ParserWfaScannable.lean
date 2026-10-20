@@ -127,15 +127,17 @@ lemma WFAS_of_push (anchors : Array (String × YamlValue))
     · simp at h_find
 
 /-- compose + `adaptForFlowContext` gives universally-`Scannable` values — the
-    shape `ParseState.addAnchor` stores. -/
+    shape `addAnchor` stores.  Stated on the TABLE rather than on a parser
+    state, so the legacy and indexed twins share it; their states differ and
+    their anchor tables do not. -/
 lemma cleaned_scannable_forall
-    (val : YamlValue) (ps : ParseState)
+    (val : YamlValue) (anchors : Array (String × YamlValue))
     (h_scannable : Scannable val false)
-    (h_wfa : WellFormedAnchorsS ps.anchors) :
+    (h_wfa : WellFormedAnchorsS anchors) :
     ∀ inFlow,
-      Scannable ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext) inFlow :=
+      Scannable ((val.resolveAliases anchors).stripAnchors.adaptForFlowContext) inFlow :=
   adaptForFlowContext_scannable_forall _ _
-    (compose_value_scannable val ps.anchors false h_scannable h_wfa)
+    (compose_value_scannable val anchors false h_scannable h_wfa)
 
 /-- `addAnchor` preserves `WellFormedAnchorsS`. -/
 lemma addAnchor_wfaS (ps : ParseState) (name : String) (val : YamlValue)
@@ -174,18 +176,18 @@ lemma applyNodeFinalization_wfaS
     | scalar s =>
       simp only [applyNodeFinalization]
       split <;> exact addAnchor_wfaS ps name _ h_wfa
-        (cleaned_scannable_forall _ ps h_scannable h_wfa)
+        (cleaned_scannable_forall _ ps.anchors h_scannable h_wfa)
     | alias a =>
       simp only [applyNodeFinalization]
       split <;> exact addAnchor_wfaS ps name _ h_wfa
-        (cleaned_scannable_forall _ ps h_scannable h_wfa)
+        (cleaned_scannable_forall _ ps.anchors h_scannable h_wfa)
     | sequence style items otag oanchor =>
       cases otag <;> cases oanchor <;> simp only [applyNodeFinalization] <;> split
       all_goals (first
         | exact addAnchor_wfaS ps name _ h_wfa
-            (cleaned_scannable_forall _ ps h_scannable h_wfa)
+            (cleaned_scannable_forall _ ps.anchors h_scannable h_wfa)
         | (exact addAnchor_wfaS ps name _ h_wfa
-            (cleaned_scannable_forall _ ps
+            (cleaned_scannable_forall _ ps.anchors
               (.sequence _ _ _ _ _
                 (by cases h_scannable with | sequence _ _ _ _ _ h => exact h))
               h_wfa)))
@@ -193,9 +195,9 @@ lemma applyNodeFinalization_wfaS
       cases otag <;> cases oanchor <;> simp only [applyNodeFinalization] <;> split
       all_goals (first
         | exact addAnchor_wfaS ps name _ h_wfa
-            (cleaned_scannable_forall _ ps h_scannable h_wfa)
+            (cleaned_scannable_forall _ ps.anchors h_scannable h_wfa)
         | (exact addAnchor_wfaS ps name _ h_wfa
-            (cleaned_scannable_forall _ ps
+            (cleaned_scannable_forall _ ps.anchors
               (.mapping _ _ _ _ _
                 (by cases h_scannable with | mapping _ _ _ _ _ hk _ => exact hk)
                 (by cases h_scannable with | mapping _ _ _ _ _ _ hv => exact hv))

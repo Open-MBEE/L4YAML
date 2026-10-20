@@ -45,7 +45,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ACC = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 PIN = ROOT / "Tests/Guards/Proofs/ScannerFlowOpenUnderRun.lean"
-SPEND = "exact drop_ride"
+SPEND = "exact slot_ride"
 
 #: The three arms of `accum_flow_open_depth0`'s `cases h_pending`, in source
 #: order.  Item 270 named the third `pendingContent`; `pendingContent` is a
@@ -88,7 +88,7 @@ def bridge_rows(arm):
         # splitter states it behind: the park column is the row above, and
         # `h_noflow_prep` is item 270's PAID row.
         ("floor", FLOOR_TY,
-         f"exact _h_landed ({COL_TERM[arm]}) h_noflow_prep"),
+         f"exact h_landed_ur ({COL_TERM[arm]}) h_noflow_prep"),
     ]
 
 
@@ -101,7 +101,7 @@ def spend_lines(text):
     out = []
     for i, l in enumerate(text.split("\n")):
         s = l.strip()
-        if s == SPEND or s == "· " + SPEND:
+        if s.startswith(SPEND) or s.startswith("· " + SPEND):
             out.append(i)
     return out
 
@@ -115,7 +115,7 @@ def with_probe(line, ty, tac, name="_probe271"):
     indent = line[:len(line) - len(line.lstrip())]
     have = f"have {name} : {ty} := by {tac}"
     if line.strip().startswith("· "):
-        return [f"{indent}· {have}", f"{indent}  {SPEND}"]
+        return [f"{indent}· {have}", f"{indent}  {line.strip()[2:]}"]
     return [f"{indent}{have}", line]
 
 
@@ -174,7 +174,7 @@ def run_ident(base, idxs, verbose=True):
 #: something when this disjunct changes shape.
 CONCL = "        ∃ sp_mid, SSLComments sp sp_mid ∧ sp_mid.col = 0 ∧"
 RETURN = "          Or.inr ⟨sp_mid, h_ssl_col.1, h_ssl_col.2.1, h_ur, h_ltsl,"
-ARM_PAT = "      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, _h_landed⟩"
+ARM_PAT = "      ⟨sp_mid2, _h_ssl2, h_col02, h_ur, h_ltsl2, h_landed_ur, h_ska_ur⟩"
 FLOOR_HEAD = "lemma preprocess_some_separate_at_floor (n : Nat) (sc : ScannerState)"
 
 DUMMY_CONCL = CONCL.replace("sp sp_mid ∧", "sp sp_mid ∧ 0 = 0 ∧")

@@ -51,8 +51,9 @@ left behind.
 the park keeps its new field, `close_with_ssl` still reads it, and the producer
 gains the premise and spends it.  It reports `producer=4` — the producer's own
 consumers, and item 240's `field=1` is the first wave of the same repair
-rather than its price.  §3 walks the rest: the producer's thread is 18 long,
-**none of the 18 holds the datum**, and it ends at `L4YAML.Surface.parse_strict`
+rather than its price.  §3 walks the rest: the producer's thread is ~~18~~ 20
+long (DOCS item 287: the two `:` consumers apply the inline wrapper themselves),
+**none of the ~~18~~ 20 holds the datum**, and it ends at `L4YAML.Surface.parse_strict`
 exactly as the supplier's does.
 
 **So `field=1` is not a cheap repair, it is a short first wave.**  Item 240's
@@ -214,9 +215,14 @@ def readDecl (n : Name) : MetaM Readings := do
     scanner state and concludes an inequality; `underRunEnd_landing_on_stack`
     hands that same correspondence on and concludes a membership on the
     landing's indent stack.  Neither concludes a stream, so both join the count
-    and none of the other six readings moves. -/
+    and none of the other six readings moves.
+
+    Item 293 moves it by one more, for the same kind of reason:
+    `live_of_dispatch` takes the content park's correspondence to read a block
+    scalar's line stop, and concludes a possibility — the one new declaration
+    holding a correspondence. -/
 def expectedCensus : String :=
-  "corrHyp=435 streamConcl=89 both=39 free=0 pairConcl=1 held=3 pairAny=8"
+  "corrHyp=436 streamConcl=89 both=39 free=0 pairConcl=1 held=3 pairAny=8"
 
 /-- The one conclusion that pairs them, and it is the stream's origin. -/
 def expectedSeedConcl : List Name :=
@@ -233,11 +239,13 @@ def expectedHeld : List Name :=
     datum and the places that need it are disjoint. -/
 def expectedHeldOnThreads : String := "onProdThread=0 onThread=0"
 
-/-- The producer's thread, and the discriminator over it: thirteen of the
-    eighteen carry a correspondence, and not one of them carries a stream to
-    the position it names. -/
+/-- The producer's thread, and the discriminator over it: ~~thirteen of the
+    eighteen~~ fifteen of the twenty carry a correspondence, and not one of
+    them carries a stream to the position it names.  (DOCS item 287 added the
+    two `:` consumers, which apply the inline wrapper and carry three
+    correspondences each.) -/
 def expectedProdThread : String :=
-  "prodThread=18 rings=8 withCorr=13 covered=0"
+  "prodThread=20 rings=8 withCorr=15 covered=0"
 
 /-- The first ring — the four definitions `--end producer` breaks, which is
     the same four this walk reads.
@@ -255,14 +263,16 @@ def expectedProdRing1 : List Name :=
 
 /-- **The producer's thread leaves β.5's bill and the supplier's does not.**
     Item 240 measured `thread \ T = []`; this is the other side. -/
-def expectedProdInT : String := "prodInT=11 prodOutsideT=7 union=26 unionOutsideT=7"
+def expectedProdInT : String := "prodInT=11 prodOutsideT=9 union=28 unionOutsideT=9"
 
-/-- **The seven, named.**  Three wrappers that partition the escape's own
-    applications and four `accum_block_on_*` arms.  Each of them builds the
-    park or stands above something that does, and none of them depends —
-    however far down — on a declaration that spends `SLYamlStream.scannerDrop`,
-    which is why item 238's walk never counted them and why the weak repair
-    never reaches them.  A repair that threads through the producer does. -/
+/-- **The ~~seven~~ nine, named.**  Three wrappers that partition the escape's
+    own applications, four `accum_block_on_*` arms, and (DOCS item 287) the two
+    `:` consumers, which apply the inline wrapper themselves.  Each of them
+    builds the park or stands above something that does, and none of them
+    depends — however far down — on a declaration that spends
+    `SLYamlStream.scannerDrop`, which is why item 238's walk never counted them
+    and why the weak repair never reaches them.  A repair that threads through
+    the producer does. -/
 def expectedProdOutsideT : List Name :=
   [`L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock,
    `L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlock,
@@ -270,7 +280,9 @@ def expectedProdOutsideT : List Name :=
    `L4YAML.Proofs.StreamAccum.accum_block_on_pendingContent,
    `L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline,
    `L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack,
-   `L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol]
+   `L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol,
+   `L4YAML.Proofs.StreamAccum.colon_fires_implicit_key,
+   `L4YAML.Proofs.StreamAccum.colon_fires_props_key]
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

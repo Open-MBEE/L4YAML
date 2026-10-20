@@ -36,7 +36,7 @@ wrapper's deletion rather than a total drifting:
 | `_stamp_offcol` | **3** in 3 definitions | the park HAS a value pack, at `nv`, and the landing is at `k ≠ nv` | a reason the two indices agree — `[187]`'s `s-indent(n)` is exact.  **Item 189 (§8) paid its first domain** and **item 190 (§9) the other two sites'**: where `nv ≠ k` because the park holds TWO frames and offered the inner one, the landing now reads the outer one — from `h_vpackUp` at the landed `?`, from `h_kslotUp` at the compact one.  ~~What is left is a landing TWO frames up~~ — **item 191 (§10) paid that too**, by carrying the ancestors as a LIST instead of naming one; **item 192 (§11)** carried the list across a flow CONSTRUCT, and **item 193 (§12)** across an awaited SEQUENCE ENTRY at the landed `?` |
 | `_stamp_nopack` | **3** in 3 definitions | the park carries no value pack at all, and its register is LIVE | a CARRIER: the `?` frame's value slot at the landing's column, U2's residue proper — priced at item 186 (§5), RE-priced at item 187 (§6), and its first DOMAIN paid at item 188 (§7) |
 | `_stamp_compact` | **2** in 2 definitions | the fill is COMPACT, and `[189]`'s value is `s-l+block-node`, so the face cannot stand in for the stamp | the stamp, or a refutation |
-| `_inline` | **2** in 2 definitions | the mid-line indicator (`inline_residue_of_landing`) | `KeyPackPunt`'s two surviving reasons (item 102) |
+| `_inline` | ~~**2** in 2 definitions~~ ~~**8**~~ **7** in 3 (items 287–288) | the mid-line indicator (`inline_residue_of_landing`) | ~~`KeyPackPunt`'s two surviving reasons (item 102)~~ — **item 286 (§3.1): five callers and seven arms** — four empty at the runtime, two a relay (item 211), the seventh accepted input its park's slot serves; since item 287 each arm applies the wrapper itself, and none is refuted in the proof yet |
 | bare | **1** | `pendingFlow`'s own arm, which this escape PRODUCES | the constructor (item 35's structural note) |
 
 **The classes OVERLAP; only the sites are partitioned.**  `_stamp_compact`'s
@@ -133,7 +133,11 @@ census, agreeing row for row.
 `noKeyContext` has no NAMED input (item 102 left it "a frame class rather than
 a construct"), which by Reflection 646 is the signature of a branch that may be
 a phantom; `dedent`'s is `k:⏎  :⏎b: 2`, §3's first row.  Both are pinned below
-as the boundary, not as a claim about which of the two the escape needs. -/
+as the boundary, not as a claim about which of the two the escape needs.
+
+**Item 286: the class is wider than the pack's punt** — five callers hand its
+two sites a stream, and the implicit-key pack's punt is two of them.  §3.1 names
+the five and what the runtime says each reason stands for. -/
 
 namespace L4YAML.Tests.Guards.BlockDeferralClasses
 
@@ -190,7 +194,9 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' s_dis : ScannerState)
     (h_src : StampBranch s_dis)
     (h_indent : (s_dis.col : Int) = s_dis.currentIndent)
     (h_ne : k ∉ ns)
-    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true) :
+    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true)
+    -- Item 293: the escape's park reads `flag ∨ live`.
+    (h_live0 : s'.simpleKeyAllowed = true ∨ s'.simpleKey.possible = true) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -198,7 +204,7 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' s_dis : ScannerState)
       PendingNode s' false sp_start sp_flow' sp_scan'' ∧
       ScannerSurfCorr s' sp_scan'' :=
   block_dispatch_deferred_stamp_offcol sp_start sp_X sp_scan' s' h_stream h_arm
-    hcorr h_nodir h_src h_indent h_ne h_nic0
+    hcorr h_nodir h_src h_indent h_ne h_nic0 h_live0
 
 /-- `nopack`: nothing about the pack — and, since item 187, the PARK's own
     register, read LIVE.  That is the class's proposition: it is what says the
@@ -212,7 +218,9 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' sc s_dis : ScannerState)
     (h_src : StampBranch s_dis)
     (h_indent : (s_dis.col : Int) = s_dis.currentIndent)
     (h_park : sc.explicitKeyLine ≠ none)
-    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true) :
+    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true)
+    -- Item 293: the escape's park reads `flag ∨ live`.
+    (h_live0 : s'.simpleKeyAllowed = true ∨ s'.simpleKey.possible = true) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -220,7 +228,7 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' sc s_dis : ScannerState)
       PendingNode s' false sp_start sp_flow' sp_scan'' ∧
       ScannerSurfCorr s' sp_scan'' :=
   block_dispatch_deferred_stamp_nopack sp_start sp_X sp_scan' s' h_stream h_arm
-    hcorr h_nodir h_src h_indent h_park h_nic0
+    hcorr h_nodir h_src h_indent h_park h_nic0 h_live0
 
 /-- …and the transport that produces it at each of the three sites: the branch
     reads the register on the DISPATCH state, and the park is where a carrier
@@ -243,22 +251,25 @@ example {sc s_prep : ScannerState} {c : Char}
 
 /-- The inline class's premise is `inline_residue_of_landing`'s conclusion: the
     park is off column 0 and only `s-white` stands between it and the
-    indicator. -/
-example (sp_start sp_X sp_scan' sp_park : SurfPos) (s' : ScannerState) (c : Char)
+    indicator.  Item 287: the escape's three premises about its park are read
+    off the dispatch, which every arm that applies the wrapper holds. -/
+example (sp_start sp_X sp_scan' sp_park : SurfPos) {sc s_prep s' : ScannerState} (c : Char)
     (h_stream : SLYamlStream sp_start sp_X)
-    (h_arm : (s'.simpleKeyAllowed = true ∧ s'.simpleKey.possible = false) ∨ 0 < sp_scan'.col)
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h_dispatch : scanNextToken_dispatchBlockIndicators
+        (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep) c = .ok (some s'))
     (hcorr : ScannerSurfCorr s' sp_scan')
-    (h_nodir : s'.allowDirectives = false)
-    (h_res : InlineResidue sp_park c)
-    (h_nic0 : sp_scan'.col = 0 → s'.needIndentCheck = true) :
+    (h_res : InlineResidue sp_park c) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan'',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
       FlowStackB sp_start 0 0 none 0 #[] #[] .sep sp_block' sp_flow' ∧
       PendingNode s' false sp_start sp_flow' sp_scan'' ∧
       ScannerSurfCorr s' sp_scan'' :=
-  block_dispatch_deferred_inline sp_start sp_X sp_scan' s' h_stream h_arm hcorr
-    h_nodir h_res h_nic0
+  block_dispatch_deferred_inline sp_start sp_X sp_scan' h_stream h_preprocess h_dispatch
+    hcorr h_res
 
 /-- `InlineResidue`'s own shape, pinned: the class is about a park OFF a line
     start, which is what makes it the mid-line `:` rather than a landing. -/
@@ -361,6 +372,104 @@ gap, recorded at item 173, not a datum about this reading. -/
 -- …and the mid-line `:` the RUNTIME refuses, so no arm owes it a reading
 -- (item 48's `nestedMappingOnLine`).
 #guard pins "k: a: 1\n" == ("scan-refused L4YAML.ScanError.nestedMappingOnLine 0 4", "ERR L4YAML.ScanError.nestedMappingOnLine 0 4")
+
+/-! ## §3.1  The class's domain, re-derived (item 286)
+
+Neither of `block_dispatch_deferred_inline`'s two sites decides anything: each
+spends a STREAM its caller handed down (`h_stream_fallback`), so the class is
+the set of callers that hand a stream rather than a refutation.
+`scripts/inline_class_price.py feeders` narrows that stream to `False` in the
+three lemmas that take it and builds: a caller that refutes still elaborates,
+and a caller that hands a stream breaks once, at the stream it hands.
+
+| caller | park | what reaches the site through it |
+|---|---|---|
+| `accum_block_pending` | `pendingContent` | `colon_fires_implicit_key`'s `dedent`, `noKeyContext` and ~~`¬ possible`~~ arms — and its two crossed-break arms, vacuously; `¬ possible` **refuted at item 293**, an inline `:` finding a live key at every content park |
+| `accum_block_pending` | `pendingBlockContent` | the same, through `h_generic` |
+| `accum_block_pending` | `pendingProps` | `colon_fires_props_key`'s ~~`tab`,~~ `dedent` and `noKeyContext` arms — and its two crossed-break arms, vacuously; `tab` **refuted at item 289**, the reason carrying the saved key's possibility and line |
+| `accum_block_pending` | `pendingMapValue` | the explicit value park whose `h_vslot` declines — the seventh arm, **refuted at item 288**: the decline is the stamp |
+| `accum_block_on_pendingBlock` | — | the dedent `-`, a LANDED branch: vacuous |
+| `accum_block_pending` | `pendingFlow` | the dead arm, which goes with the constructor |
+
+Item 184 read the class as the implicit-key pack's punt, which is the first two
+rows; item 211 had already found the props `:`'s three.
+
+The runtime decides what the reasons stand for.  `census` reads every
+yaml-test-suite case and the hand-written rows here at the scanner state the
+consumers read: a content or property park off column 0, then a same-line `:`
+dispatched as a block VALUE indicator.  Every accepted one holds a live key on
+its line, and every one whose own landing popped landed on an open MAPPING
+level.  So the `¬ possible` arm is empty over the corpus — item 293 refutes it —
+and `dedent`'s
+`w ∉ ks` is false wherever the frames cover the stack
+(`preprocess_landing_mem_or_seq`); the sequence case is the `:`'s own
+`trailingContent` (§8.2.1), refused in the rows below.  The props park's `tab`
+input is refused too, and item 289 refutes its arm.  `noKeyContext` is still the relay item 211 measured:
+its one deciding production is reached only by refused input, and the rest
+relay their callers' contexts.
+
+The seventh arm is not empty at the runtime: `? a⏎: - b` is accepted, and the
+explicit value's `[185]` slot is what serves it.  The arm is the park that
+declines the slot, and `h_vslot` declines it with `True`.  Narrowing that
+`True` to the stamp — `sc.implicitValueLine = some sc.line`, the reason
+`h_ivl` already names — breaks 8 errors in 6 declarations: the four producers
+that decline (`colon_open_map`, `colon_open_map_implicit`, `colon_open_map_props`,
+and `compact_open_map`'s `:` branch) and two consumers that re-read the slot
+with `.imp _ id`.  Each producer pays `h_ivl` with the stamp in the same
+argument list, so the arm's carrier is named and its first ring measured. -/
+
+/-- `scripts/inline_class_price.py feeders`, checked from the script's side —
+    the tree as it stood at item 286.  Item 287 retired the fallback the mode
+    narrows, so on a later tree it says so and stops. -/
+def expectedInlineFeeders : String :=
+  "errors=6 decls=2 feeders=accum_block_on_pendingBlock/-,accum_block_pending/pendingBlockContent,accum_block_pending/pendingContent,accum_block_pending/pendingFlow,accum_block_pending/pendingMapValue,accum_block_pending/pendingProps"
+
+/-- **Item 287: the class's sites are its arms.**  `accum_block_on_closeThenBlock`'s
+    fallback merged into `h_vslot` as the caller's own reading of an inline
+    residue, and the two `:` consumers take their punt as a builder, so every
+    arm says what the residue at its park is: the five crossed-break arms
+    refute it (`sslComments_refutes_inline_residue`) and the seven above apply
+    the escape where their reason stands.  `scripts/inline_class_price.py arms`
+    deletes the wrapper and locates every application the tree then lacks:
+    eight, at the seven arms and the dead `pendingFlow` one.
+
+    **Item 288 refutes the seventh arm**: `pendingMapValue.h_vslot` declines its
+    slot with the stamp, so the value park's frameless arm is the stamped
+    branch's refusal (`dispatch_refutes_sameLine`).  Seven applications are
+    left, at the six arms and the dead one.
+
+    **Item 289 refutes the props consumer's `tab`**: the reason carries the
+    saved key's possibility and line, which `scanValue_tab_keyrun_ne` reads and
+    both producers hold.  Six applications are left, at the five arms and the
+    dead one.
+
+    **Item 293 refutes the implicit consumer's `¬ possible`**: every content
+    park carries `h_live` — an inline `:` finds a live key — so five
+    applications are left, at the four arms (`dedent` and `noKeyContext` at
+    both consumers) and the dead one. -/
+def expectedInlineArms : String :=
+  "apps=5 decls=3 arms=accum_block_pending/pendingFlow,colon_fires_implicit_key/dedent,colon_fires_implicit_key/noKeyContext,colon_fires_props_key/dedent,colon_fires_props_key/noKeyContext"
+
+/-- `scripts/inline_class_price.py census`, checked from the script's side. -/
+def expectedInlineCensus : String :=
+  "rows=432 accepted=371 nokey=0 popped=37 onto-map=37 onto-seq=0 off-level=0"
+
+-- The dedent family: content after a landing that popped, then a same-line
+-- `:`.  Accepted where the landing is an open mapping level…
+#guard pins "- a:\n    b:\n  c: 1\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a +MAP =VAL :b =VAL : -MAP =VAL :c =VAL :1 -MAP -SEQ -DOC -STR")
+#guard pins "- a:\n    :\n  c: 1\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a +MAP =VAL : =VAL : -MAP =VAL :c =VAL :1 -MAP -SEQ -DOC -STR")
+#guard pins "a:\n  b:\n    c:\nd: 1\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :a +MAP =VAL :b +MAP =VAL :c =VAL : -MAP -MAP =VAL :d =VAL :1 -MAP -DOC -STR")
+#guard pins "a:\n  b:\n    c:\n  d: 1\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :a +MAP =VAL :b +MAP =VAL :c =VAL : -MAP =VAL :d =VAL :1 -MAP -MAP -DOC -STR")
+-- …refused where it is no level at all (preprocessing's own pop check)…
+#guard pins "k:\n    a:\n  b: 2\n" == ("scan-refused L4YAML.ScanError.trailingContent 2 2", "ERR L4YAML.ScanError.trailingContent 2 2")
+#guard pins "a:\n  b:\n    c:\n e: 1\n" == ("scan-refused L4YAML.ScanError.trailingContent 3 1", "ERR L4YAML.ScanError.trailingContent 3 1")
+-- …and refused at the `:` where it is a SEQUENCE level (§8.2.1).
+#guard pins "- a:\n    :\nb: 1\n" == ("scan-refused L4YAML.ScanError.trailingContent 2 0", "ERR L4YAML.ScanError.trailingContent 2 0")
+
+-- The props park: its `tab` arm's input is refused…
+#guard pins "k:\n \t&p : 1\n" == ("scan-refused L4YAML.ScanError.tabInIndentation 1 2", "ERR L4YAML.ScanError.tabInIndentation 1 2")
+-- …and its dedent twin is accepted, on an open mapping level.
+#guard pins "k:\n  :\n&p : 2\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :k +MAP =VAL : =VAL : -MAP =VAL &p : =VAL :2 -MAP -DOC -STR")
 
 /-! ## §4  The COMPACT route, and why its family is a refutation target
 
@@ -3300,9 +3409,11 @@ example {sc : ScannerState} {sp_start sp_X sp_scan' : SurfPos}
     (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan'.col)
     (h_nodir : sc.allowDirectives = false)
     -- Item 206: and this, which the section above said would be unpayable.
-    (h_nic0 : sp_scan'.col = 0 → sc.needIndentCheck = true) :
+    (h_nic0 : sp_scan'.col = 0 → sc.needIndentCheck = true)
+    -- Item 293: and the park's `flag ∨ live`.
+    (h_live0 : sc.simpleKeyAllowed = true ∨ sc.simpleKey.possible = true) :
     PendingNode sc false sp_start sp_X sp_scan' :=
-  PendingNode.pendingFlow sp_start sp_X sp_scan' h_stream h_arm h_nodir h_nic0
+  PendingNode.pendingFlow sp_start sp_X sp_scan' h_stream h_arm h_nodir h_nic0 h_live0
 
 end Item205
 
@@ -3548,9 +3659,12 @@ example {sc : ScannerState} {sp sp' : SurfPos} (h_close_lit : GLit ']' sp sp') :
 example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos}
     (h_line : sp_scan.col = 0 ∨ LineTailSuffix sp_scan.chars)
     (h_marker : SCDocumentEnd sp_block sp_scan)
-    (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col) :
+    (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col)
+    -- Item 284: and the offer the `...` records — the token the marker pushed,
+    -- which `structural_dispatch_to_pending` reads off `scanDocumentEnd`.
+    (h_offer : OfferPred sc.tokens) :
     PendingNode sc false sp_start sp_block sp_scan :=
-  PendingNode.pendingDocEnd sp_start sp_block sp_scan h_line h_marker h_arm
+  PendingNode.pendingDocEnd (h_offer := h_offer) sp_start sp_block sp_scan h_line h_marker h_arm
     (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega))
 
 /-- …and the `---` park, whose marker its producers hold but the constructor

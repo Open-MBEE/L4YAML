@@ -57,7 +57,12 @@ pack stands off the landing's column (**3**), the park carries no pack at all
 (**4**), or the fill is COMPACT and the stamp is the only thing that funds it
 (**2**).  So the DEFERRAL lane counts five names rather than one and a class
 emptying shows as a wrapper leaving the list.  The PACK PUNT lane beside it
-counts what empties the inline class: `KeyPackPunt`'s two surviving reasons.
+counts ~~what empties the inline class: `KeyPackPunt`'s two surviving reasons~~
+the punt's reasons, which are five of the inline class's seven arms (DOCS item
+286; the other two are the no-key arm and the value park whose slot declines).
+Items 288 and 289 refuted the value park's arm and the props consumer's `tab`,
+so the reasons are four of the five arms left — and item 293 refuted the no-key
+arm, so they are all four.
 Both partitions and the input families they serve are documented at
 [`BlockDeferralClasses`](BlockDeferralClasses.lean).
 
@@ -149,6 +154,10 @@ def deferral : List Name :=
     inline class has at least THREE surviving reasons there and two at its
     sibling.  The lane
     counts all four now, which is what it would have had to do to see either.
+    **Item 289: `tab` is refuted at both consumers**, the reason carrying the
+    saved key's possibility and line, so two reasons ride at each — `dedent`
+    and `noKeyContext`.  (No break branch rides it either, since item 287:
+    each refutes the residue, `sslComments_refutes_inline_residue`.)
 
     `keyPackPunt_transport` is skipped for the same reason the wrappers are: it
     re-WRITES a reason it was handed rather than spending one. -/
@@ -233,8 +242,18 @@ Each `rootMapRoute_or_refused` row is paired with its entries-level twin
 
 /-! ## §3  The deferral beside it
 
-FOUR definitions, ~~ELEVEN~~ **NINE** applications (item 186 — five and twelve
-before it; item 209 — the compact wrapper's two, refuted and gone).
+~~FOUR~~ **SEVEN** definitions, ~~ELEVEN~~ ~~NINE~~ ~~FIFTEEN~~ ~~FOURTEEN~~ ~~THIRTEEN~~ **TWELVE** applications
+(item 186 — five and twelve before it; item 209 — the compact wrapper's two,
+refuted and gone; **item 287** — the inline wrapper's two became eight, one at
+each arm of DOCS item 286's measurement: `dedent`, `noKeyContext` and the
+no-key arm at `colon_fires_implicit_key`, `tab`, `dedent` and `noKeyContext` at
+`colon_fires_props_key`, and `accum_block_pending`'s frameless value park and
+dead `pendingFlow` arm).  The count rose and the domain did not: the five
+crossed-break arms that reached the old two sites are refuted now.  **Item
+288** refutes the frameless value park's, which holds the stamp, and **item
+289** the props consumer's `tab`, whose reason carries the saved key's
+possibility and line, and **item 293** the implicit consumer's `¬ possible`,
+on the content parks' `h_live`.
 `pendingFlow` is not a `[210]`
 construction site and never appears in the flip's five errors — it is the park
 whose arms have nothing to pay the landing faces WITH, so it keeps the guards'
@@ -425,10 +444,18 @@ All three lanes, in one walk of the module. -/
        "flowKeyRoute_of_root: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1",
        "question_open_map: rootMapRoute_or_refused=1 rootMapRouteF_or_refused=1"]⟩,
     ⟨⟨"DEFERRAL", deferral, deferral.map (ns ++ ·)⟩,
-      ["accum_block_on_closeThenBlock: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1 block_dispatch_deferred_inline=1",
+      ["accum_block_on_closeThenBlock: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1",
        "accum_block_on_pendingBlock: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1",
-       "accum_block_on_pendingBlockContent: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1 block_dispatch_deferred_inline=1",
-       "accum_content_pending: block_dispatch_deferred=1"]⟩,
+       "accum_block_on_pendingBlockContent: block_dispatch_deferred_stamp_offcol=1 block_dispatch_deferred_stamp_nopack=1",
+       -- Item 288: the value park's frameless arm is refuted; the dead
+       -- `pendingFlow` arm's application is the one left here.
+       "accum_block_pending: block_dispatch_deferred_inline=1",
+       "accum_content_pending: block_dispatch_deferred=1",
+       -- Item 293: the `¬ possible` arm refutes, on the park's `h_live`.
+       "colon_fires_implicit_key: block_dispatch_deferred_inline=2",
+       -- Item 289: the `tab` arm refutes, on the saved key's possibility and
+       -- line the reason carries.
+       "colon_fires_props_key: block_dispatch_deferred_inline=2"]⟩,
     ⟨⟨"PACK PUNT", packPunt,
        [ns ++ `keyPackPunt_transport,
         -- the type's own generated eliminators, which mention every

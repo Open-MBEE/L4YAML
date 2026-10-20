@@ -431,21 +431,25 @@ via={String.intercalate "," (s.via.map (·.getString!)).toList}"
 
 /-- **The population, re-derived rather than typed.**  Every authored
     declaration whose proof term references the producer or one of its three
-    wrappers, and every application site inside those terms. -/
-def expectedPop : String := "pop=7 sites=12"
+    wrappers, and every application site inside those terms.  DOCS item 287
+    moves the inline wrapper's applications to the arms they stand for, so
+    `colon_fires_implicit_key`, `colon_fires_props_key` and
+    `accum_block_pending` join the population (7 → 10) and the sites move by
+    their one each, less the two `accum_block_on_*` lost (12 → 13). -/
+def expectedPop : String := "pop=10 sites=13"
 
-/-- **The answer, in one line.**  Six sites one step wide, one two, five with
-    no scanner chain reaching the scan position at all — and `corrBlock=0`
-    everywhere, which is item 243's reading taken one level down. -/
+/-- **The answer, in one line.**  Six sites one step wide, ~~one~~ two two,
+    five with no scanner chain reaching the scan position at all — and
+    `corrBlock=0` everywhere, which is item 243's reading taken one level down.
+    DOCS item 287 traded the two `accum_block_on_*` inline sites, both
+    unreached, for three: `accum_block_pending`'s, two steps wide, and the two
+    `:` consumers', unreached. -/
 def expectedWidth : String :=
-  "w0=0 w1=6 w2=1 unreached=5 corrBlock=0 corrScan=12"
+  "w0=0 w1=6 w2=2 unreached=5 corrBlock=0 corrScan=13"
 
 /-- Every site, with the step functions its width is spent on. -/
 def expectedSites : List String :=
   ["L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock <- \
-L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline width=UNREACHED \
-corrBlock=0 corrScan=1 via=",
-   "L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack width=1 \
 corrBlock=0 corrScan=1 via=scanNextToken_dispatchBlockIndicators",
    "L4YAML.Proofs.StreamAccum.accum_block_on_closeThenBlock <- \
@@ -458,14 +462,14 @@ corrBlock=0 corrScan=1 via=scanNextToken_dispatchBlockIndicators",
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol width=1 \
 corrBlock=0 corrScan=1 via=scanNextToken_dispatchBlockIndicators",
    "L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlockContent <- \
-L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline width=UNREACHED \
-corrBlock=0 corrScan=1 via=",
-   "L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlockContent <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack width=1 \
 corrBlock=0 corrScan=1 via=scanNextToken_dispatchBlockIndicators",
    "L4YAML.Proofs.StreamAccum.accum_block_on_pendingBlockContent <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol width=1 \
 corrBlock=0 corrScan=1 via=scanNextToken_dispatchBlockIndicators",
+   "L4YAML.Proofs.StreamAccum.accum_block_pending <- \
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline width=2 \
+corrBlock=0 corrScan=1 via=scanNextToken_dispatchBlockIndicators,scanNextToken_preprocess",
    "L4YAML.Proofs.StreamAccum.accum_content_pending <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred width=2 \
 corrBlock=0 corrScan=1 via=scanNextToken_dispatchContent,scanNextToken_preprocess",
@@ -477,6 +481,12 @@ L4YAML.Proofs.StreamAccum.block_dispatch_deferred width=UNREACHED \
 corrBlock=0 corrScan=1 via=",
    "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol <- \
 L4YAML.Proofs.StreamAccum.block_dispatch_deferred width=UNREACHED \
+corrBlock=0 corrScan=1 via=",
+   "L4YAML.Proofs.StreamAccum.colon_fires_implicit_key <- \
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline width=UNREACHED \
+corrBlock=0 corrScan=1 via=",
+   "L4YAML.Proofs.StreamAccum.colon_fires_props_key <- \
+L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline width=UNREACHED \
 corrBlock=0 corrScan=1 via="]
 
 /-- **The ladder, for the three functions these sites cross**, re-derived in
@@ -491,11 +501,21 @@ corrBlock=0 corrScan=1 via="]
     272 adds a fourth holder, the composition that applies the source at an arm
     holding the `[63]` failure located; it hands the equation on rather than
     reading a position off it, so the row reads 190 and both crossings are
-    still where item 242 left them. -/
+    still where item 242 left them.  Item 284 adds sixteen holders and no
+    crossing: the four `dispatchBlock_*_offerPred` read the `-`/`?`/`:`
+    dispatch's last token, `slotGateAt_spend` the content dispatch's, and the
+    slot face's eleven transport and gate lemmas hand preprocessing's equation
+    on — so the rows read 101, 130 and 201 with every `edge` and `chain` where
+    they were.  DOCS item 287 adds one holder of two of them and no crossing:
+    the inline wrapper reads its premises off the dispatch and its
+    preprocessing, so the rows read 102, 130 and 202.  DOCS item 293 adds
+    three content-dispatch holders and four preprocessing ones and no crossing
+    — the possibility lemmas `DispatchPrice` names — so the rows read 102, 133
+    and 206. -/
 def expectedLadder : List String :=
-  ["scanNextToken_dispatchBlockIndicators holders=97 edge=0 chain=0",
-   "scanNextToken_dispatchContent holders=129 edge=2 chain=1",
-   "scanNextToken_preprocess holders=190 edge=17 chain=6"]
+  ["scanNextToken_dispatchBlockIndicators holders=102 edge=0 chain=0",
+   "scanNextToken_dispatchContent holders=133 edge=2 chain=1",
+   "scanNextToken_preprocess holders=206 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

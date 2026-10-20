@@ -295,35 +295,36 @@ alias token it receives.  This second bridge shows that both executable stages
 factor through the same independent semantic distinction.
 -/
 
+/-- Projection of the parser's RESOLUTION table — the names it can resolve an
+alias *to*.  `addAnchor` writes it at node finalization. -/
 def ofParserAliases (ps : L4YAML.TokenParser.ParseState) : Env :=
   { anchors := ps.anchors.toList.map Prod.fst }
 
+/-- Projection of the parser's DECLARATION set — the names that have *occurred*.
+`declareAnchor` writes it at the `&` property, which is where §7.1's existence
+test has to read it, and the scanner has kept the same set under the name
+`definedAnchors` all along (`ofScannerAliases`).  The two projections answer
+different questions, and `&x [*x]` is where they differ: the anchor has occurred
+and its value does not exist yet, because a collection's value is complete only
+after its items are. -/
+def ofParserDeclaredAnchors (ps : L4YAML.TokenParser.ParseState) : Env :=
+  { anchors := ps.declaredAnchors.toList }
+
+/-- Boolean form of the guard `parseNode` implements, over the set §7.1 names. -/
 def parserAliasGuard (ps : L4YAML.TokenParser.ParseState) (name : String) : Bool :=
-  ps.anchors.any (fun p => p.1 == name)
+  ps.declaredAnchors.any (fun n => n == name)
 
 lemma parser_declared_anchor_exact
     (ps : L4YAML.TokenParser.ParseState) (name : String) :
-    ps.anchors.any (fun p => p.1 == name) = true ↔
-      name ∈ ps.anchors.toList.map Prod.fst := by
-  constructor
-  · rw [Array.any_eq_true]
-    rintro ⟨i, hi, hname⟩
-    apply List.mem_map.mpr
-    exact ⟨ps.anchors[i], by simpa using Array.getElem_mem hi,
-      by simpa only [beq_iff_eq] using hname⟩
-  · intro h
-    rw [Array.any_eq_true]
-    obtain ⟨entry, hmem, hname⟩ := List.mem_map.mp h
-    have hmem' : entry ∈ ps.anchors := by simpa using hmem
-    rw [Array.mem_iff_getElem] at hmem'
-    obtain ⟨i, hi, heq⟩ := hmem'
-    exact ⟨i, hi, by simpa [heq, beq_iff_eq] using hname⟩
+    ps.declaredAnchors.any (fun n => n == name) = true ↔
+      name ∈ ps.declaredAnchors.toList := by
+  simp [Array.any_eq_true, List.mem_iff_getElem]
 
 lemma parser_alias_guard_exact
     (ps : L4YAML.TokenParser.ParseState) (name : String) :
     parserAliasGuard ps name = true ↔
-      AliasAllowed (ofParserAliases ps) name := by
-  simp only [parserAliasGuard, AliasAllowed, ofParserAliases]
+      AliasAllowed (ofParserDeclaredAnchors ps) name := by
+  simp only [parserAliasGuard, AliasAllowed, ofParserDeclaredAnchors]
   exact parser_declared_anchor_exact ps name
 
 /-! ## Runtime bridge: parser tag-handle guard -/
@@ -485,7 +486,7 @@ lemma parser_alias_guard_runtime (ps : ParseState) (name : String) (pos : YamlPo
     (parseNode { ps with tokens := #[{ val := .alias name, pos := pos }], pos := 0 } 1).isOk =
       parserAliasGuard ps name := by
   unfold parseNode
-  cases hd : ps.anchors.any (fun p => p.1 == name) <;>
+  cases hd : ps.declaredAnchors.any (fun n => n == name) <;>
     simp [ParseState.peek?, ParseState.peekPos?, ParseState.advance,
       parserAliasGuard, hd, Except.isOk, Except.toBool,
       bind, Except.bind, pure, Except.pure, throw, throwThe, MonadExceptOf.throw]
@@ -509,6 +510,7 @@ end L4YAML.Proofs.Serialization.SerializationWellFormed
 #print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.wellFormedFrom_envEquivalent
 
 #print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.parser_alias_guard_exact
+#print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.parser_declared_anchor_exact
 
 #print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.parser_tag_guard_runtime
 #print axioms L4YAML.Proofs.Serialization.SerializationWellFormed.parser_alias_guard_runtime

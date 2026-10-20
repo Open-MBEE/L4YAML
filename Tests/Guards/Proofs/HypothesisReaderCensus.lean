@@ -434,11 +434,74 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- (`<decl>.match_N.eq_M`, anonymous binders) that `@[expose]` now forces into the
 -- environment.  The +106 constants are their declarations plus the ones carrying
 -- no Prop binder.  So the denominator grew; no verdict moved.
+-- 2026-10-18 (item 281): `constants` 1284 -> 1286 and `RELAY` 2171 -> 2173 when
+-- `YamlToken.offersNodeSlot` took its sixth arm, and the roster NAMES both --
+-- `scratchpad/l4yaml-r3-carrier/verdict-roster-281.out` (3818 rows) against
+-- `scratchpad/l4yaml-modules/verdict-roster-modules.out` (3778).  A match with a
+-- catch-all generates one equation per arm plus the catch-all's, so a sixth arm
+-- adds `offersNodeSlot.eq_6` and `offersNodeSlot.match_1.eq_6` as ARM equations
+-- and renumbers the two catch-alls to `eq_7`; the catch-all carries one
+-- excluded-pattern hypothesis per arm, so each gains a `RELAY` binder (5 -> 6)
+-- while the two new arm equations carry none.  +2 constants, +2 RELAY, and every
+-- other lane and the `UNUSED` roster held exactly.  The equations are named
+-- `L4YAML.YamlToken.*` and counted HERE because they are generated on demand,
+-- when this module's own `simp` first unfolds the predicate -- which is why an
+-- edit to `Token.lean` moves a census scoped to `StreamAccum`.
+-- 2026-10-18 (item 284): `constants` 1286 -> 1343, `decls` 1010 -> 1062, and
+-- every lane but `UNUSED` moves, with ZERO rows lost.  The roster NAMES it --
+-- `scratchpad/l4yaml-row12-steps/verdict-roster-284.out` (3952 rows) against
+-- item 281's (3818), compared per declaration with matcher numbering and the
+-- private prefix normalized.  The 49 new declarations (the slot face, its gate
+-- and their transports) and their auxiliaries bring 124 rows: RELAY 90, READ
+-- 28, RETURN 3, FIELD 3.  Existing declarations gain exactly ten: four ETA,
+-- the four new park FIELDS (`pendingProps.h_slot` and the three
+-- `h_offer`s -- a constructor has no body to read them in), and six RELAY,
+-- the gate parameter `h_src` on the six lemmas that hand it on
+-- (`content_dispatch_routed`, `content_dispatch_after_close`,
+-- `accum_content_on_noPending`, the two `accum_content_on_*_indented`, and
+-- `indentedValue_reads_at_any_indent`).  `UNUSED` holds at 9: no hypothesis
+-- this item added goes unread.
+-- 2026-10-18 (item 285): `constants` 1343 -> 1344, `decls` 1062 -> 1063, `READ`
+-- 1086 -> 1088: ONE new constant, the matcher `slot_ride`'s `match h_optok`
+-- generates inside `accum_flow_open_depth0`, whose two binders are both read.
+-- Roster `scratchpad/l4yaml-row12-steps/verdict-roster-285.out` (3954 rows)
+-- against item 284's: those two rows gained, none lost.
+-- 2026-10-19 (item 287): `constants` 1344 -> 1356, `decls` 1063 -> 1074, `READ`
+-- 1088 -> 1112, `RELAY` 2269 -> 2276, `RETURN` 51 -> 48.  Roster
+-- `scratchpad/l4yaml-row12-steps/232-roster-287.out` (3982 rows) against item
+-- 285's: 37 rows gained, 9 lost, and every row named.  The line-stop lemmas
+-- and `sslComments_refutes_inline_residue`, with their matchers, bring 11
+-- declarations (12 constants with `CommentStop`) and 33 rows.  The wrapper
+-- reads its premises off the dispatch, so `h_arm`, `h_nodir` and `h_nic0` go
+-- and `h_preprocess`, `h_dispatch` come (RELAY either way).  The four
+-- `h_stream_fallback`s retire (2 READ, 1 RELAY, 1 RETURN).  And the two
+-- `h_punt`s are builders now, so their verdict moves RETURN -> READ -- the
+-- only verdict of a surviving binder that moved.
+-- 2026-10-19 (item 289): `eta` 380 -> 382, `READ` 1112 -> 1113.  Roster
+-- `scratchpad/l4yaml-row12-steps/311-roster-289.out` (3985 rows) against item
+-- 287's (item 288 moved no lane): three rows gained, none lost.
+-- `KeyPackPunt.tab`'s two new fields, `h_poss` and `h_kline`, are ETA (a
+-- constructor has no body to read them in), and `keyPackPunt_transport`'s new
+-- premise `h_poss` is READ, in its `tab` case.
+-- 2026-10-19 (item 293): `constants` 1356 -> 1364, `decls` 1074 -> 1082, `eta`
+-- +5, `FIELD` +1, `READ` +6, `RELAY` +30.  Roster
+-- `scratchpad/l4yaml-row12-steps/365-roster-293.out` (4027 rows) against item
+-- 289's: 42 rows gained, none lost.  The eight new lemmas are the eight
+-- constants and 28 of the rows; the four new park fields (`pendingContent` and
+-- `pendingBlockContent`'s `h_live`, `pendingFlow.h_live0`,
+-- `pendingProps.h_poss`) are four ETA; and ten are new parameters on existing
+-- declarations — `colon_fires_implicit_key.h_live` and `KmSound.push.h_poss_new`
+-- READ, `block_dispatch_deferred.h_live0` FIELD (it fills the park's), and the
+-- relays (`h_live` at the two block consumers, `h_possD` at the two routed
+-- lemmas, `h_live0` at the two stamp wrappers, `km_push_at_open.h_poss_new`).
+-- The two narrowed binders change type and keep their verdicts.
 def expectedModuleTally : String :=
-  "constants=1284 decls=1010 eta=376 FIELD=154 READ=1058 RELAY=2171 RETURN=48 UNUSED=9"
+  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1119 RELAY=2306 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
-  [ "block_dispatch_deferred_inline#10 (_h_res)",
+  -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
+  -- its thirteenth binder.
+  [ "block_dispatch_deferred_inline#12 (_h_res)",
     "block_dispatch_deferred_stamp_nopack#10 (_h_src)",
     "block_dispatch_deferred_stamp_nopack#11 (_h_indent)",
     "block_dispatch_deferred_stamp_nopack#12 (_h_park)",
@@ -504,7 +567,10 @@ declines, what relays.  Nothing there asked who READS one when it is paid, and
 this is that census over the same population, with the matcher auxiliaries that
 inherit their parents' binders filtered out so the denominator is declarations. -/
 
-def expectedOptTally : String := "total=163 ETA=34 READ=85 RELAY=44"
+-- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` is no longer a
+-- `_ ∨ True` (a READ one), so it leaves the population.  Item 288: nor is
+-- `PendingNode.pendingMapValue.h_vslot` (a constructor field, read ETA).
+def expectedOptTally : String := "total=161 ETA=33 READ=84 RELAY=44"
 
 /-- The six item 212 enumerated, by verdict.  Five are read in
     `content_dispatch_routed`'s own term; `h_ref` alone relays, and §5 says
@@ -572,9 +638,11 @@ third terminal, `SPLIT@Eq.ndrec#9`, is the pipe: item 226 peels it and two
 remain.) -/
 
 def expectedCoreTerminal : List String :=
-  [ "accum_block_on_pendingBlock#29 (h_seqF_old)",
-    "accum_block_on_pendingBlockContent#34 (h_seqF_old)",
-    "accum_block_on_pendingContent#32 (h_seqF168)",
+  -- Item 287: the three `accum_block_on_*` rows read two binders earlier, past
+  -- the retired `sp_block_ctx` and `h_stream_fallback`.
+  [ "accum_block_on_pendingBlock#27 (h_seqF_old)",
+    "accum_block_on_pendingBlockContent#32 (h_seqF_old)",
+    "accum_block_on_pendingContent#30 (h_seqF168)",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old)",
     "colon_open_map#24 (h_cov_in)",
     "flowKeyRoute_of_root#20 (h_tail143)",
@@ -628,7 +696,9 @@ about proofs.** -/
 
 /-- The two unpayable reasons are argument-free; the two payable ones are not. -/
 def expectedPuntFields : String :=
-  "tab=2 dedent=0 implicitValue=3 noKeyContext=0"
+  -- Item 289: `tab` carries the saved key's possibility and line beside the
+  -- scan's reading and the park's flags.
+  "tab=4 dedent=0 implicitValue=3 noKeyContext=0"
 
 run_cmd do
   let env ← getEnv

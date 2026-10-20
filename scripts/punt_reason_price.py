@@ -287,10 +287,14 @@ def phantom_census(which):
 # consumer and is emptied by a proof about the input; a CONSUMER ARM is the
 # `cases` label where the reason is spent, and it goes when the last production
 # does.  `dedent` is 4 productions and 3 consumer arms; `noKeyContext` is 3 and
-# 3.  The arm's verdict is read off its body: `exact h_punt` RIDES the caller's
-# deferral, `Or.inr trivial` WEAKENS the consumer's own optional premise, and
-# anything else SPENDS the reason on a refutation.
+# 3.  The arm's verdict is read off its body: an arm that applies the escape's
+# inline wrapper DEFERS at its own arm (DOCS item 287 moved the escape there),
+# `exact h_punt` RIDES the caller's deferral, `Or.inr trivial` WEAKENS the
+# consumer's own optional premise, and anything else SPENDS the reason on a
+# refutation.  The order matters: since item 287 a deferring arm also reads
+# `exact h_punt (fun … block_dispatch_deferred_inline …)`.
 ARM_VERDICTS = [
+    ("DEFERS to the escape at its own arm", "block_dispatch_deferred_inline"),
     ("RIDES the caller's deferral", "exact h_punt"),
     ("WEAKENS the consumer's own premise", "Or.inr trivial"),
 ]

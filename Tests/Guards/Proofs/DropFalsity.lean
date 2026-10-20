@@ -339,7 +339,7 @@ example : ∀ a b : SurfPos, StreamND a b → ∃ pre, Span a b pre := nd_spanLa
     that on the proof term rather than taking it on trust. -/
 lemma flowPark : PendingNode sc0 false ⟨['a'], 0⟩ ⟨['a'], 0⟩ ⟨['b','b','b'], 0⟩ :=
   PendingNode.pendingFlow ⟨['a'], 0⟩ ⟨['a'], 0⟩ ⟨['b','b','b'], 0⟩
-    (stream_refl _) (Or.inl ⟨rfl, rfl⟩) rfl (fun _ => rfl)
+    (stream_refl _) (Or.inl ⟨rfl, rfl⟩) rfl (fun _ => rfl) (Or.inl rfl)
 
 /-- What `close_with_ssl` delivers at that park TODAY, in the ambient
     environment: a stream to a target the source never reached.  This one DOES

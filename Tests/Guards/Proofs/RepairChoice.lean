@@ -46,8 +46,10 @@ That question is about `close_with_ssl`'s consumers, so the zero is exact and
 narrow.  **It is not a claim that the other two repairs change no statements.**
 The `field` end moves the connection to the park's PRODUCER, which cannot
 derive it from the correspondence it holds, so a premise is threaded there
-instead and the producer's own closure is eighteen declarations — seven of
-them outside item 238's set, which the weak repair never leaves:
+instead and the producer's own closure is ~~eighteen~~ **twenty** declarations
+(DOCS item 287: the two `:` consumers apply the escape's inline wrapper
+themselves) — ~~seven~~ **nine** of them outside item 238's set, which the weak
+repair never leaves:
 `Tests/Guards/Proofs/ProducerDerivation.lean` (DOCS item 241).
 
 ## Why the thread does not stop before the top
@@ -225,7 +227,7 @@ def holdsScanStream (n : Name) : MetaM (Nat × Nat × Bool) := do
 /-- The thread, and the producer's own.  `shared` is the eleven declarations
     both repairs reach however the repair is spelled. -/
 def expectedThread : String :=
-  "thread=19 prodThread=18 shared=11 capstones=2 rings=8"
+  "thread=19 prodThread=20 shared=11 capstones=2 rings=8"
 
 /-- The first ring: the five library consumers item 238 named, and item 239's
     own exhibit, which rides the arm on purpose and goes with it. -/
@@ -271,14 +273,15 @@ def expectedEmptyClass : String := "empty=10 onThread=9"
 
 /-- **Three readings of the same ten.**  `users` inlines generated
     auxiliaries, `rawRefs` is one step without them, and `fullApps` counts the
-    declarations whose proof term applies the park to all eight of its
-    arguments.  Only two of the ten BUILD a park; no reading here can say
+    declarations whose proof term applies the park to all ~~eight~~ nine of its
+    arguments (item 293's `h_live0` is the ninth).  Only two of the ten BUILD a park; no reading here can say
     which two, and the pin exists so that a refinement which can disagrees
     with this file rather than replacing it silently. -/
 def expectedParkReadings : String := "users=10 rawRefs=10 fullApps=10"
 
-/-- The park's arity, pinned: a change to it re-aims `fullApps`. -/
-def parkArity : Nat := 8
+/-- The park's arity, pinned: a change to it re-aims `fullApps`.  Item 293
+    re-aims it: the park reads `flag ∨ live` (`pendingFlow.h_live0`). -/
+def parkArity : Nat := 9
 
 /-- The largest application of `park` anywhere inside an expression.  A `cases`
     arm builds the constructor it eliminates, so this does NOT separate a

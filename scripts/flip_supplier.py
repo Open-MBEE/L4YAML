@@ -110,8 +110,9 @@ ARM = ("  | pendingFlow =>\n"
        "    exact SLYamlStream.scannerDrop sp_start sp_block sp_scan sp_mid"
        " h_stream h_ssl\n")
 
-#: The park's last field and the conclusion beneath it.
-FIELD = ("      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true) :\n"
+#: The park's last field and the conclusion beneath it (item 293: its
+#: `flag ∨ live` reading).
+FIELD = ("      (h_live0 : sc.simpleKeyAllowed = true ∨ sc.simpleKey.possible = true) :\n"
          "      PendingNode sc false sp_start sp_block sp_scan\n"
          "  /-- Content token scanned INSIDE a block entry")
 
@@ -122,11 +123,12 @@ PROD_HEAD = ("lemma block_dispatch_deferred\n"
 
 #: the one place the producer builds the park.
 PROD_BODY = ("   PendingNode.pendingFlow sp_start sp_X sp_scan' h_stream h_arm"
-             " h_nodir h_nic0,\n")
+             " h_nodir h_nic0 h_live0,\n")
 
 #: The park itself, docstring and constructor together.
 CTOR_HEAD = "  /-- Flow indicator scanned (`]`, `}`, `,`), or deferred block dispatch."
-CTOR_TAIL = ("      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true) :\n"
+#: Item 293: the park's last field is its `flag ∨ live` reading.
+CTOR_TAIL = ("      (h_live0 : sc.simpleKeyAllowed = true ∨ sc.simpleKey.possible = true) :\n"
              "      PendingNode sc false sp_start sp_block sp_scan\n")
 
 
@@ -146,7 +148,7 @@ def _edit_weak(src: str) -> str:
 
 def _edit_field(src: str) -> str:
     src = _sub1(src, FIELD,
-                "      (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true)\n"
+                "      (h_live0 : sc.simpleKeyAllowed = true ∨ sc.simpleKey.possible = true)\n"
                 "      (h_scan : SLYamlStream sp_start sp_scan) :\n"
                 "      PendingNode sc false sp_start sp_block sp_scan\n"
                 "  /-- Content token scanned INSIDE a block entry")
@@ -181,7 +183,7 @@ def _edit_producer(src: str) -> str:
                 "    (h_scan : SLYamlStream sp_start sp_scan')\n")
     return _sub1(src, PROD_BODY,
                  "   PendingNode.pendingFlow sp_start sp_X sp_scan' h_stream h_arm"
-                 " h_nodir h_nic0 h_scan,\n")
+                 " h_nodir h_nic0 h_live0 h_scan,\n")
 
 
 def _sub1(src: str, old: str, new: str) -> str:

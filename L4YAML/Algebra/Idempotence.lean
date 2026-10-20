@@ -9,6 +9,7 @@ public import L4YAML.Algebra.Value
 public import L4YAML.Algebra.Schema
 public import L4YAML.Algebra.Equivalence
 public import L4YAML.Algebra.AnchorMap
+public import L4YAML.Proofs.Schema.FlowIndicator
 
 @[expose] public section Blanket
 
@@ -266,19 +267,17 @@ decreasing_by yaml_decreasing
 /-- `resolve` is invariant under `adaptForFlowContext`.  Resolution reads the
     style of an untagged scalar (a quoted scalar is a string, §10.3.2), and
     `adaptForFlowContext` quotes exactly the plain scalars whose content holds a
-    flow indicator — so invariance rests on the fact that no Core Schema
-    spelling of null, bool, int or float contains `,[]{}`.  That fact is taken as
-    the hypothesis `hstr`; it is true of `resolveImplicit` but not yet proved
-    against its parsers, so it is stated rather than assumed silently. -/
-lemma resolve_adaptForFlowContext (v : YamlValue)
-    (hstr : ∀ c : String, hasFlowIndicator c.toList = true → resolveImplicit c = .str c) :
+    flow indicator — so invariance rests on no Core Schema spelling of null,
+    bool, int or float containing `,[]{}`, which is
+    `resolveImplicit_of_hasFlowIndicator`. -/
+lemma resolve_adaptForFlowContext (v : YamlValue) :
     resolve v.adaptForFlowContext = resolve v := by
   match v with
   | .scalar s =>
     -- adaptForFlowContext either returns `.scalar { s with style := .doubleQuoted }`
     -- (plain content with a flow indicator) or `.scalar s`.  Tagged scalars
     -- resolve through the tag either way; an untagged one resolves to a string
-    -- either way, by `hstr`.
+    -- either way, by `resolveImplicit_of_hasFlowIndicator`.
     simp only [adaptForFlowContext_scalar']
     split
     · rename_i h
@@ -287,7 +286,7 @@ lemma resolve_adaptForFlowContext (v : YamlValue)
       show scalarType _ = scalarType s
       unfold scalarType
       cases ht : s.tag
-      · simp [h.1, hdq, hstr s.content h.2]
+      · simp [h.1, hdq, resolveImplicit_of_hasFlowIndicator s.content h.2]
       · simp
     · rfl
   | .alias _ => rfl
@@ -303,7 +302,7 @@ lemma resolve_adaptForFlowContext (v : YamlValue)
         resolveList_eq_map, List.map_map]
     exact List.map_congr_left fun x hx =>
       have := sizeOf_lt_of_mem_toList hx
-      resolve_adaptForFlowContext x hstr
+      resolve_adaptForFlowContext x
   | .mapping style pairs tag anchor =>
     show
       YamlType.map
@@ -318,18 +317,17 @@ lemma resolve_adaptForFlowContext (v : YamlValue)
     intro ⟨k, w⟩ hkw
     have ⟨hk, hw⟩ := sizeOf_pair_lt_of_mem_toList hkw
     simp only [Function.comp]
-    exact Prod.ext (resolve_adaptForFlowContext k hstr) (resolve_adaptForFlowContext w hstr)
+    exact Prod.ext (resolve_adaptForFlowContext k) (resolve_adaptForFlowContext w)
 termination_by sizeOf v
 decreasing_by yaml_decreasing
 
 /-- **Item 16 ⊗ Item 4** — schema resolution is invariant under
     L1 canonicalisation. The round-trip preserves the resolved
     semantic value. -/
-lemma resolve_canonicalize (v : YamlValue)
-    (hstr : ∀ c : String, hasFlowIndicator c.toList = true → resolveImplicit c = .str c) :
+lemma resolve_canonicalize (v : YamlValue) :
     resolve (canonicalize v) = resolve v := by
   unfold canonicalize
-  rw [resolve_adaptForFlowContext _ hstr, resolve_stripAnchors]
+  rw [resolve_adaptForFlowContext, resolve_stripAnchors]
 
 /-! ## §5 Anchor reachability under canonicalisation
     (Item 6 / Item 12 × Item 4)

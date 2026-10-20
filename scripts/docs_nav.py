@@ -10,7 +10,7 @@ DOCS.md is a 45k-line consolidated history; the Row 12 closure log alone holds
     docs_nav.py item N [--lines]      the full entry for item N (N may carry a suffix: 67a)
     docs_nav.py next [N]              the NEXT (mandate) paragraph of item N
                                       (default: the latest item)
-    docs_nav.py remaining             the "REMAINING, in order" open-work section
+    docs_nav.py remaining             the "REMAINING, in order" dependency section (dated; see `steps`)
     docs_nav.py steps                 the Row 12 six-step table and next-actions table
     docs_nav.py grep REGEX [-i]       items whose body matches, with hit counts
     docs_nav.py section PREFIX        a `## ` section by heading prefix
@@ -32,6 +32,7 @@ DOCS = Path(__file__).resolve().parent.parent / "DOCS.md"
 ITEM_RE = re.compile(r"^### Item (\d+)([a-z]?) \((\d{4}-\d{2}-\d{2})\)\s*$")
 H2_RE = re.compile(r"^## (?!§)(.+?)\s*$")
 NEXT_RE = re.compile(r"^\*\*NEXT\b")
+MANDATE_RE = re.compile(r"^\*\*The mandate\b")
 REMAINING_HEADING = "### REMAINING, in order"
 NEXT_ACTIONS_HEADING = "### Next actions, in order"
 SIX_STEPS_HEADING = "#### Row 12 — the six steps that finish it"
@@ -65,11 +66,10 @@ def find_items(lines: list[str]) -> list[Item]:
             items.append(Item(int(m.group(1)), m.group(2), m.group(3), i, len(lines) + 1))
     for cur, nxt in zip(items, items[1:]):
         cur.end = nxt.start
-    if items:
-        last = items[-1]
-        for i in range(last.start, len(lines)):
-            if H2_RE.match(lines[i]):
-                last.end = i + 1
+    for it in items:
+        for i in range(it.start, it.end - 1):
+            if lines[i] == REMAINING_HEADING or H2_RE.match(lines[i]):
+                it.end = i + 1
                 break
     return items
 
@@ -170,19 +170,45 @@ def cmd_item(lines: list[str], args) -> None:
     emit(lines, it.start, it.end, args.lines)
 
 
+def mandate_paragraph(lines: list[str], item: Item) -> list[str] | None:
+    for para in paragraphs(item.body(lines)):
+        if MANDATE_RE.match(para[0]):
+            return para
+    return None
+
+
 def cmd_next(lines: list[str], args) -> None:
     items = find_items(lines)
     it = items[-1] if args.n is None else lookup(items, args.n)
-    para = next_paragraph(lines, it)
     print(f"# item {it.label} ({it.date}), DOCS.md:{it.start}")
-    if para is None:
-        print("(no **NEXT** paragraph; the mandate is the item's closing paragraph:)")
-        para = paragraphs(it.body(lines))[-1]
-    print("\n".join(para))
+    para = next_paragraph(lines, it)
+    if para is not None:
+        print("\n".join(para))
+        return
+    print(f"(item {it.label} records no **NEXT —** paragraph; older items state what came next in prose)")
+    idx = items.index(it)
+    if idx + 1 < len(items):
+        follower = items[idx + 1]
+        mandate = mandate_paragraph(lines, follower)
+        if mandate is not None:
+            print(f"# what item {follower.label} ({follower.date}, DOCS.md:{follower.start}) took as its mandate:")
+            print("\n".join(mandate))
+            return
+        print(f"# read `item {it.label}` and the opening of `item {follower.label}` (DOCS.md:{follower.start})")
+    else:
+        print(f"# read `item {it.label}`")
 
 
 def cmd_remaining(lines: list[str], args) -> None:
     start, end = heading_block(lines, REMAINING_HEADING, lambda l: ITEM_RE.match(l) or H2_RE.match(l))
+    items = find_items(lines)
+    before = [it for it in items if it.start < start]
+    after = [it for it in items if it.start > start]
+    where = f"DOCS.md:{start}"
+    if before and after:
+        where += f", written between items {before[-1].label} and {after[0].label} ({after[0].date})"
+    print(f"# {where}.  Items after it may have moved its rows; the per-step state is `steps`,")
+    print(f"# the latest mandate is `next` (item {items[-1].label}).")
     emit(lines, start, end, args.lines)
 
 

@@ -42,6 +42,7 @@ run_suite "dumproundtrip"       "dumproundtrip"
 run_suite "rawparsetests"       "rawparsetests"
 run_suite "specexamples"        "specexamples"
 run_suite "schemadump"          "schemadump"
+run_suite "derivingconsumer"    "derivingconsumer"
 run_suite "scannertests"        "scannertests"
 run_suite "scannerspecexamples" "scannerspecexamples"
 run_suite "adversarialtests"    "adversarialtests"
@@ -76,6 +77,7 @@ cat \
   "$OUT/rawparsetests.txt" \
   "$OUT/specexamples.txt" \
   "$OUT/schemadump.txt" \
+  "$OUT/derivingconsumer.txt" \
   "$OUT/scannertests.txt" \
   "$OUT/scannerspecexamples.txt" \
   "$OUT/adversarialtests.txt" \

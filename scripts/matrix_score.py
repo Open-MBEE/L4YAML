@@ -10,6 +10,9 @@ every test and scores it exactly the way http://matrix.yaml.info does:
 
 All processors — L4YAML's native binary and every docker tester — go through the
 identical code path, so the numbers are apples-to-apples.
+
+A tester the harness cannot start (wrong path, no `docker`) scores
+`harness-error`, never `err-ok`/`reject`, and the run exits nonzero.
 """
 import os, sys, glob, json, argparse, subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +43,12 @@ def parse_json_stream(text):
         i = end
     return vals
 
+# Sentinel exit codes the harness itself produces; no tester returns them.
+TIMEOUT_RC = 124
+HARNESS_RC = 125   # the tester could not be started (bad path, no docker, ...)
+
+_harness_errors_reported = set()
+
 def run(cmd, stdin_bytes, timeout):
     try:
         p = subprocess.run(cmd, input=stdin_bytes,
@@ -47,9 +56,25 @@ def run(cmd, stdin_bytes, timeout):
                            timeout=timeout)
         return p.returncode, p.stdout
     except subprocess.TimeoutExpired:
-        return 124, b''
-    except Exception:
-        return 125, b''
+        return TIMEOUT_RC, b''
+    except OSError as e:
+        msg = f"# harness error running {cmd[0]}: {e}"
+        if msg not in _harness_errors_reported:
+            _harness_errors_reported.add(msg)
+            print(msg, file=sys.stderr)
+        return HARNESS_RC, b''
+
+def rc_category(rc, is_err):
+    """Category decided by the exit code alone; None when the output must be compared."""
+    if rc == HARNESS_RC:
+        return 'harness-error'   # checked first so a broken harness never scores err-ok
+    if is_err:
+        return 'err-ok' if rc != 0 else 'err-miss'
+    if rc == TIMEOUT_RC:
+        return 'timeout'
+    if rc != 0:
+        return 'reject'
+    return None
 
 def score_one(cmd, d, axis, timeout):
     """Return (category, testid). category in the axis vocabulary."""
@@ -59,12 +84,9 @@ def score_one(cmd, d, axis, timeout):
     is_err = os.path.exists(d + '/error')
     if axis == 'event':
         rc, out = run(cmd, inp, timeout)
-        if is_err:
-            return ('err-ok' if rc != 0 else 'err-miss', tid)
-        if rc == 124:
-            return ('timeout', tid)
-        if rc != 0:
-            return ('reject', tid)
+        cat = rc_category(rc, is_err)
+        if cat:
+            return (cat, tid)
         exp = open(d + '/test.event', encoding='utf-8').read()
         got = out.decode('utf-8', 'replace')
         return ('pass' if norm_events(got) == norm_events(exp) else 'diff', tid)
@@ -72,19 +94,18 @@ def score_one(cmd, d, axis, timeout):
         if not os.path.exists(d + '/in.json'):
             return ('skip', tid)   # no json oracle for this test
         rc, out = run(cmd, inp, timeout)
-        if is_err:
-            # a few error tests carry a stale in.json (9MQT/01, DK95/01,
-            # DK95/06); correct behavior is still to reject the input
-            return ('err-ok' if rc != 0 else 'err-miss', tid)
-        if rc == 124:
-            return ('timeout', tid)
-        if rc != 0:
-            return ('reject', tid)
+        # a few error tests carry a stale in.json (9MQT/01, DK95/01,
+        # DK95/06); correct behavior is still to reject the input
+        cat = rc_category(rc, is_err)
+        if cat:
+            return (cat, tid)
+        # the oracle is the harness's responsibility: an unreadable in.json
+        # is a harness error, not a processor diff
+        exp = parse_json_stream(open(d + '/in.json', encoding='utf-8').read())
         try:
-            exp = parse_json_stream(open(d + '/in.json', encoding='utf-8').read())
             got = parse_json_stream(out.decode('utf-8', 'replace'))
-        except Exception:
-            return ('diff', tid)
+        except json.JSONDecodeError:
+            return ('diff', tid)   # the processor emitted malformed JSON
         return ('pass' if got == exp else 'diff', tid)
 
 def score(cmd, dirs, axis, timeout, workers):
@@ -95,7 +116,7 @@ def score(cmd, dirs, axis, timeout, workers):
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for cat, tid in ex.map(work, dirs):
             cats[cat] = cats.get(cat, 0) + 1
-            if cat in ('diff', 'reject', 'err-miss', 'timeout'):
+            if cat in ('diff', 'reject', 'err-miss', 'timeout', 'harness-error'):
                 fails.append((cat, tid))
     return cats, fails
 
@@ -154,6 +175,7 @@ def main():
     axes = ['event', 'json'] if args.axis == 'both' else [args.axis]
 
     results = {}
+    harness_errors = 0
     for pid in sorted(procs):
         if only and pid not in only:
             continue
@@ -163,6 +185,7 @@ def main():
                 continue
             cats, fails = score(procs[pid][axis], dirs, axis, args.timeout, args.workers)
             results[pid][axis] = {'cats': cats, 'fails': fails}
+            harness_errors += cats.get('harness-error', 0)
             correct = cats.get('pass', 0) + cats.get('err-ok', 0)
             total = sum(v for k, v in cats.items() if k != 'skip')
             print(f"{pid:20s} {axis:5s}  correct={correct:3d}/{total:3d}  "
@@ -171,6 +194,10 @@ def main():
     if args.out:
         json.dump(results, open(args.out, 'w'), indent=1)
         print(f"# wrote {args.out}", file=sys.stderr)
+    if harness_errors:
+        print(f"# {harness_errors} harness-error result(s): the harness, not a "
+              f"processor, failed — these scores are not publishable", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

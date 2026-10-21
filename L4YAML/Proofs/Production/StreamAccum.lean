@@ -21688,7 +21688,7 @@ lemma question_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) 
       (match h_resV_land with
        | Or.inl ⟨nv, _, _, contV⟩ =>
            Or.inl ⟨[nv], frameChainOne (a := nv) (resumeFrameRouteK h_ind contV)⟩
-       | Or.inr _ => Or.inr trivial)
+       | Or.inr h_alt => Or.inr h_alt)
   exact ⟨sp_land, sp_land, sp_land, sp_scan', h_stream_land,
          BlockStack.nil sp_land, FlowStackB.nil sp_land .sep,
          PendingNode.pendingMapValue (h_offer := dispatchBlock_question_offerPred h_dispatch) sp_start sp_land sp_scan' k
@@ -22819,7 +22819,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                       (SBlockNode_blockIn_to_blockOut h_node))
                     sp_m (SCompactMapTail.nil k sp_m)
                     sp_i sp_c h_iv h_lit_v sp_v h_sbi⟩
-            | Or.inr _ => Or.inr trivial)
+            | Or.inr h_alt => Or.inr (PackAlt.step_value h_preprocess h_dispatch h_noflow h_alt))
              -- Item 111: the pack CARRIES frames now, so the anchored null
              -- key pays the four faces exactly as `colon_open_map_implicit`
              -- does — the completed entry re-opens level `k` for the
@@ -22866,7 +22866,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                           (SBlockMapEntry.implicitKeyNode k sp_p sp_prep sp_scan' sp_mid
                             h_ik h_lit (SBlockNode_blockIn_to_blockOut h_node))
                           sp_end h_tail)⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h_alt => Or.inr (PackAlt.step_value h_preprocess h_dispatch h_noflow h_alt))
              (match h_routeFV with
               | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, k :: ks,
                   -- Item 150: the value-line chain's own hop — the widths grow by
@@ -22881,7 +22881,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                           (SBlockMapEntry.implicitKeyEmpty k sp_p sp_prep sp_scan' sp_mid
                             h_ik h_lit h_ssl)
                           sp_end h_tail)⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h_alt => Or.inr (PackAlt.step_value h_preprocess h_dispatch h_noflow h_alt))
            (nodir_of_block_dispatch h_dispatch) (Or.inr trivial)
            -- Item 190: the props-headed implicit key opens no `?` entry either.
            (Or.inr trivial),
@@ -23726,7 +23726,7 @@ lemma accum_block_on_noPending
              (park_col_of_indicator hcol_mid h_ind h_dash)
              -- Item 92: a landed `-` with nothing pending opens `[183]` under
              -- no `[187]` frame — there is no value line to pack.
-             (Or.inr trivial)
+             (Or.inr (PackAlt.step_blockEntry h_preprocess h_dispatch (PackAlt.ofRefused (h_noek (noflow_park_of_noflow h_preprocess h_noflow)))))
              -- **Item 256: the root's resume frames, PAID, at floor 0.**  The
              -- seed's stack is EMPTY (`h_ntop`), so on a monotone stack no mapping
              -- level stands at or right of column 0 (`covered_nil_of_ntop`); the
@@ -23747,10 +23747,10 @@ lemma accum_block_on_noPending
                  ResumeFrames.bottom sp_e (h_rootTail sp_m h_indented sp_e h_tail)⟩)
              (nodir_of_block_dispatch h_dispatch) (Or.inr trivial)
              -- Item 190: nor a second one above it.
-             (Or.inr trivial)
+             (Or.inr (PackAlt.step_blockEntry h_preprocess h_dispatch (PackAlt.ofRefused (h_noek (noflow_park_of_noflow h_preprocess h_noflow)))))
              -- Item 198: the root `-` stands under no frame, so there is no value
              -- line to bottom a stack on.
-             (Or.inr trivial)
+             (Or.inr (PackAlt.step_blockEntry h_preprocess h_dispatch (PackAlt.ofRefused (h_noek (noflow_park_of_noflow h_preprocess h_noflow)))))
              -- Item 208: the entry's TOP, from the seed's EMPTY stack — the one of
              -- ring 1's seven producers whose floor is a FIELD rather than a reading,
              -- because this park is AT column 0 and the walk that lands the dispatch
@@ -23822,11 +23822,11 @@ lemma accum_block_on_noPending
           -- empty list would move this declaration off the flip's list while
           -- changing nothing a landing can read.  Which is why the reading is
           -- recorded here instead. ═══
-          (Or.inr trivial)
+          (Or.inr (PackAlt.ofRefused (h_noek (noflow_park_of_noflow h_preprocess h_noflow))))
           -- Item 197: and no still-open mapping level under a frame, for the
           -- same reading — `h_nodoc` says nothing behind this park is open at
           -- all, so both resume arms are empty rather than unknown.
-          (Or.inr trivial)
+          (Or.inr (PackAlt.ofRefused (h_noek (noflow_park_of_noflow h_preprocess h_noflow))))
           -- Item 209: the dispatch's floor, off the seed's EMPTY stack — the
           -- same reading item 208's `h_ntop` pays the `-` arm with, one
           -- indicator over.

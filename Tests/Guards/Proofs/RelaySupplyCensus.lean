@@ -1128,9 +1128,12 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- `Or.inr h_alt`) where they closed with `trivial`; splits, roots and the agreement stand.
 -- 2026-10-21 (item 320): `leaves` 363 → 364, `DECLINE-free` 87 → 88 — the split catch-all's new inner-alternative arm hands
 -- its hypothesis back (`Or.inr h_alt`), one more free leaf on that split; roots and the agreement stand.
+-- 2026-10-21 (item 321): `DECLINE-closed` 98 → 94, `DECLINE-free` 88 → 92 — `colon_open_map_props`'s three leaves hand back
+-- their hypothesis through `PackAlt.step_value` and `question_open_map`'s have-block leaf through the identity, where they
+-- closed with `trivial`; leaves, roots and the agreement stand.
 def expectedSplitBranch : String :=
   "splits=166 leaves=364 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=98, DECLINE-free=88, PAY-free=177, VIA \
+agree=110/110 disagree=0 [DECLINE-closed=94, DECLINE-free=92, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

@@ -4485,8 +4485,11 @@ script, as `expectedInlineArms` is. -/
 -- `accum_content_pending` pay through `PackAlt.ofRefused h_noek…` (the marker parks' dead-register field, lane (e)); the
 -- eighteen other `(Or.inr trivial)` of those arms are `∨ True` optionals, which this mode reads as relays when paid and
 -- which are therefore not paid; the surfaced `h_seqFramesV` relay was never a site of this mode.
+-- 2026-10-21 (item 321): `sites` 155 → 146 — `accum_block_on_noPending`'s five roots pay from its own
+-- `h_noek` (three through `PackAlt.step_blockEntry`, two directly, item 186's fact), `colon_open_map_props`'s three leaves through
+-- `PackAlt.step_value` and `question_open_map`'s have-block identity: the roots fall by five, the leaves by four.
 def expectedPackFlip : String :=
-  "sites=155 decls=24 rounds=2 decline=155 relay=0 leaf=60 uncond=95 stubs=7"
+  "sites=146 decls=23 rounds=2 decline=146 relay=0 leaf=56 uncond=90 stubs=7"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4518,8 +4521,10 @@ def expectedPackFlip : String :=
 -- 2026-10-21 (item 320): `decline` 144 → 136, `relayState` 2 → 1 — the eight marker-arm premises paid from the new field,
 -- `accum_block_on_closeThenBlock`'s `h_seqFramesV` relayed through `PackAlt.step_blockEntry`, and two catch-alls split into
 -- their inner-alternative arm; what declines in the block lane now is item 319's list less these (item 320's entry).
+-- 2026-10-21 (item 321): `decline` 136 → 127 — the same nine sites; `relayState` stands at 1 (`compact_open_map`'s
+-- `h_expl105`, whose `?` half has no step).
 def expectedPackResidue : String :=
-  "sites=137 decls=22 rounds=2 decline=136 relayTrue=0 relayState=1 leaf=50 uncond=86 stubs=1 promised=5"
+  "sites=128 decls=21 rounds=2 decline=127 relayTrue=0 relayState=1 leaf=46 uncond=81 stubs=1 promised=5"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

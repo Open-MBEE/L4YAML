@@ -43457,6 +43457,45 @@ none`, lane (d); (4) the per-level pending `?` field, which retires the chains a
 and repairs the over-refusal above; then `PackAlt sc := ExplicitValueRefused sc`, 12.3.4.3, 12.4–12.6.  Each step
 re-pins `GhostIndexCensus` downward.
 
+### Item 332 (2026-10-21)
+
+**Row 12, step 1 of item 331's order: the frame lists carry each level's KIND.  `List Nat` → `List FrameLevel`
+(`{width : Nat, isSeq : Bool}`, the scanner's `IndentEntry` with its column a `Nat`) on `ResumeFrames`, `KeyFrames`,
+`ResumeWidths`, `Covered`, `Floor` and every field that holds a frame list; `KeyFrames` has ONE level constructor whose
+tail its kind selects, so `KeyFrames.resumeAt` returns the tail the LEVEL owes and the "mapping tail OR sequence tail"
+disjunct item 302 left to the consumer is gone.  No scanner change; no new axiom.**
+
+**What changed.**  `IndentStackCover.FrameLevel` with `FrameLevel.ofEntry`, `.map k := ⟨k, false⟩`, `.seq k := ⟨k, true⟩`;
+`Covered lo ks s := ∀ e ∈ s.indents, e.isSequence = false → lo ≤ e.column → FrameLevel.map e.column.toNat ∈ ks` (the
+sequence exemption stays — the stream lane does not track sequence levels, item 167 — so the cover says exactly what it
+said, on the kinded list); `Floor lo n ks := lo ≤ n ∧ ∀ fr ∈ ks, lo ≤ fr.width`; `ResumeFrames.level k` conses
+`FrameLevel.map k`; `KeyFrames.level (e : FrameLevel)` with `e.tail` (`SCompactSeqTail` if `e.isSeq`, else
+`SCompactMapTail`), `KeyFrames.mapLevel`/`seqLevel` kept as smart constructors so the producers' shape is unchanged;
+`ResumeWidths ks ks' j := ∀ fr, fr ∈ ks' ↔ (fr ∈ ks ∧ fr.width < j)`; `ResumeFrames.resumeAt` takes `FrameLevel.map j ∈ ks`,
+`KeyFrames.resumeAt` takes `e ∈ ks` and returns `e.tail`'s continuation, with `resumeAtMap`/`resumeAtSeq` for a landing
+known to be a mapping/sequence level.  ~350 sites in `StreamAccum` and `IndentStackCover`; 44 guards touched (retyped where they name a frame list,
+re-pinned where they count one — 19 census pins moved).
+
+**The (B2) payoff, in the guards' numbers.**  Eleven consumer sites that case-split the old `∨` and refuted the arm they
+could not take (`rcases cont with contM | _ … · exact Or.inr trivial`; `| ⟨_, _, Or.inr _⟩ => Or.inr trivial`) now take
+`resumeAtMap`'s single continuation; the sequence face of `accum_block_on_closeThenBlock` tests `FrameLevel.seq k ∈ ks`
+and takes `resumeAtSeq` — the arm that declined a mapping level at a `-` is not written, because membership of the
+kinded level says there is none.  `RelaySupplyCensus`: `leaves` 364 → 359, `DECLINE` 186 → 181 (`DECLINE-closed` 86 → 81);
+`ConclusionCensus`: `flowKeyRoute_of_root` `un=3,6` → `un=3,5`; `GhostIndexCensus`: 73 → 72 ghost binders, 82 → 81 rows
+(`KeyFrames`' two `List Nat` constructor rows are one `List FrameLevel` row) — and `List FrameLevel` is classified
+GHOST, as §7 of the strategy said it must be: the list is a mirror of `sc.indents` until `Covered` is an equality, so
+step 1 converts the kind problem, not the rows.  `prods` 129 → 130 (`FrameLevel.tail`) in `DispatchPrice`,
+`ParkGapProduction`, `CarrierArmPrice`; `ValueLinePacks` `held` 11 → 8, `ValueLineOrigins` `heldOrigins` 40 → 23
+(the held `∨` arms were the kind refutations); the module censuses move by the new declarations.
+
+**What it does not do.**  The `ns` value-line chains stay `List Nat` (step 4, `IndentEntry.pendingKey`, deletes them);
+`g`, `km`, `tl` stay (after 12.6); `PackAlt` is untouched.  `BlockDeferralClasses`' pinned strings still print the old
+`List Nat` shapes where they quote item-era statements — they are prose pins, not census output.
+
+NEXT (item 332): step 2 of item 331's order — the scanner clears the stale explicit-key register when the `?` entry
+closes (`? a⏎[1]: b`, item 317's move), then step 3 (the flow frame reads the pushed register pair) and step 4
+(`IndentEntry.pendingKey`, the conformance fix for `?⏎  ? y⏎  : z⏎: w: x`), then the flip.
+
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 
 The [Next actions](#next-actions-in-order) row for β.5 carried the campaign's

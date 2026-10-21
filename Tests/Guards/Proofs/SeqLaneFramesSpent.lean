@@ -20,7 +20,7 @@ conjunct to the three of them is what this item was recorded as.
 
 **Measuring first showed that would have bought nothing.**  A cover is spent by
 popping the frames to the landing's width, and `ResumeFrames.resumeAt` gates on
-`j ∈ ks`: a landing can only resume at a width the frames NAME.  Flipping
+`FrameLevel.map j ∈ ks`: a landing can only resume at a width the frames NAME.  Flipping
 `pendingBlock.h_closeF`'s escape from `True` to `False` reports six punts of
 seven producers, and the seventh pays `ks = []`.  So the lane's frames were
 empty wherever they existed at all, and a cover over an empty list is spendable
@@ -32,7 +32,7 @@ node, and the mapping level the park stands in is still open underneath it —
 which is exactly what that park's `h_closeF` has said since item 108, cover
 included.  `accum_block_on_closeThenBlock` closes the park before the `-` arm
 runs, so this item carries that reading past the close as a parameter, and the
-sequence park's frames become `nv :: ks` instead of `[]`.
+sequence park's frames become `FrameLevel.map nv :: ks` instead of `[]`.
 
 §1 is the gate that made the recorded item vacuous.  §2 is the census, by the
 compiler.  §3 is the payment and its side condition.  §4 is the cover, and the
@@ -50,16 +50,16 @@ open L4YAML.Proofs.CouplingBridge
 
 The landing's hop is `ResumeFrames.resumeAt`, and its premise is membership. -/
 
-example {P : SurfPos → Prop} {sp : SurfPos} {ks : List Nat} {j : Nat}
-    (h : ResumeFrames P ks sp) (hmem : j ∈ ks) :
+example {P : SurfPos → Prop} {sp : SurfPos} {ks : List FrameLevel} {j : Nat}
+    (h : ResumeFrames P ks sp) (hmem : FrameLevel.map j ∈ ks) :
     ∃ ks', ResumeWidths ks ks' j ∧
       (∀ sp_end, SCompactMapTail j sp sp_end → ResumeFrames P ks' sp_end) :=
   h.resumeAt hmem
 
 -- …and `[]` has no members, so the one payment the lane carried before this
 -- item could fund no landing at all.  `resumectx_of_landing` takes the same
--- gate (`by_cases hmem : k ∈ ks`) and returns the punt on its negative side.
-example {j : Nat} : j ∉ ([] : List Nat) := List.not_mem_nil
+-- gate (`by_cases hmem : FrameLevel.map k ∈ ks`) and returns the punt on its negative side.
+example {j : Nat} : FrameLevel.map j ∉ ([] : List FrameLevel) := List.not_mem_nil
 
 /-! ## §2  The census, by the compiler
 
@@ -84,23 +84,23 @@ and leaves every payer compiling — the same instrument as the `[210]` flip.
 entries, so the collection the `-` opens IS the awaited node — `nestedBlockSeq`
 at the park's own index, with the landing's own `SSLComments` inside it. -/
 
-example {sp_start sp_scan sp_mid : SurfPos} {nv k : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_mid : SurfPos} {nv k : Nat} {ks : List FrameLevel}
     (hnv : nv < k)
     (h_ssl : SSLComments sp_scan sp_mid)
     (closeF : ∀ sp_m : SurfPos, SBlockNode nv .blockIn sp_scan sp_m →
-      ResumeFrames (SLYamlStream sp_start) (nv :: ks) sp_m) :
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map nv :: ks) sp_m) :
     ∀ sp_end : SurfPos, SBlockSeqEntries k sp_mid sp_end →
-      ResumeFrames (SLYamlStream sp_start) (nv :: ks) sp_end :=
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map nv :: ks) sp_end :=
   fun sp_end h_entries => closeF sp_end (nestedBlockSeq (Nat.le_of_lt hnv) h_ssl h_entries)
 
 /-- The side condition is `[183]`'s `m` read as a bound: the frames are
     strictly decreasing, so the level the collection FILLS has to sit strictly
     left of the collection's own index. -/
-example {nv k : Nat} {ks : List Nat} (hnv : nv < k) (h_lt : ∀ k' ∈ ks, k' < nv) :
-    ∀ k' ∈ nv :: ks, k' < k := fun k' hk' => by
-  rcases List.mem_cons.mp hk' with rfl | h'
+example {nv k : Nat} {ks : List FrameLevel} (hnv : nv < k) (h_lt : ∀ fr ∈ ks, fr.width < nv) :
+    ∀ fr ∈ FrameLevel.map nv :: ks, fr.width < k := fun fr hfr => by
+  rcases List.mem_cons.mp hfr with rfl | h'
   · exact hnv
-  · exact Nat.lt_trans (h_lt k' h') hnv
+  · exact Nat.lt_trans (h_lt fr h') hnv
 
 /-! ## §4  The cover, bounded at the field's own index
 
@@ -109,16 +109,16 @@ lists at levels the consumer could not name and `Floor.pop_to` spends the widths
 half alone.  This lane's payer knows its index — `nv < k` gives it — so the
 field states the floor AT the index, and that is what lets the hop below run. -/
 
-example {lo nv k : Nat} {ks : List Nat} (hnv : nv < k) (h : Floor lo nv (nv :: ks)) :
-    Floor lo k (nv :: ks) := h.mono_index (Nat.le_of_lt hnv)
+example {lo nv k : Nat} {ks : List FrameLevel} (hnv : nv < k) (h : Floor lo nv (FrameLevel.map nv :: ks)) :
+    Floor lo k (FrameLevel.map nv :: ks) := h.mono_index (Nat.le_of_lt hnv)
 
 /-- The hop the index bought: the pack's NESTED branch conses the park's own
     level onto the carried frames, and an existential index could not have said
     the floor was at or below it.  Six punts in the entry-key-pack relays (items
     148 and 149, three sites, two faces each) close on this one line. -/
-example {sc : ScannerState} {lo n : Nat} {ks : List Nat}
+example {sc : ScannerState} {lo n : Nat} {ks : List FrameLevel}
     (h_fl : Floor lo n ks) (h_cv : Covered lo ks sc) :
-    Floor lo n (n :: ks) ∧ Covered lo (n :: ks) sc :=
+    Floor lo n (FrameLevel.map n :: ks) ∧ Covered lo (FrameLevel.map n :: ks) sc :=
   ⟨h_fl.cons h_fl.1, h_cv.cons n⟩
 
 /-! ## §5  The corpus — and which corpus

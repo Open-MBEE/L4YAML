@@ -40,6 +40,7 @@ the two-level family end to end, §4 says what is paid and what is not. -/
 namespace L4YAML.Tests.Guards.SeqTailResumeFrames
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open L4YAML.Proofs.NodeProduction
 
 private def stepN (s : ScannerState) : Nat → Option ScannerState
@@ -150,20 +151,20 @@ example {sp_start sp_scan : SurfPos} {n : Nat}
 -- `accum_content_on_pendingMapValue_indented`'s dispatch sites: the awaited
 -- node is this entry's value, behind it the entry's `[187]` level at `n` stays
 -- tail-open, and below that stands whatever the park already carries.
-example {sp_start sp_scan : SurfPos} {n ke : Nat} {ks : List Nat}
-    (h_lt : ∀ k' ∈ ks, k' < n)
+example {sp_start sp_scan : SurfPos} {n ke : Nat} {ks : List FrameLevel}
+    (h_lt : ∀ fr ∈ ks, fr.width < n)
     (seqF : ∀ sp_mid, SBlockNode n .blockIn sp_scan sp_mid →
       ∀ sp_e, SCompactMapTail n sp_mid sp_e →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) :
     ∀ sp_m, SBlockNode n .blockIn sp_scan sp_m →
-      ResumeFrames (SeqEntryTail sp_start ke) (n :: ks) sp_m :=
+      ResumeFrames (SeqEntryTail sp_start ke) (FrameLevel.map n :: ks) sp_m :=
   fun sp_m h_bn =>
     ResumeFrames.level n ks sp_m h_lt (fun sp_end h_tail => seqF sp_m h_bn sp_end h_tail)
 
 -- Ⓒ **The landed key closes the awaited node under the frames** —
 -- `entryKeyPack_of_dispatch`'s landed-branch spend of `h_nodeSF`, the same
 -- `nestedBlockMap` composition as item 99's `h_nodeF`, at the framed codomain.
-example {sp_start sp_scan sp_land sp_key : SurfPos} {n w ke : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_land sp_key : SurfPos} {n w ke : Nat} {ks : List FrameLevel}
     (hnw : n ≤ w)
     (h_ssl : SSLComments sp_scan sp_land)
     (h_ind' : SIndent w sp_land sp_key)
@@ -180,7 +181,7 @@ example {sp_start sp_scan sp_land sp_key : SurfPos} {n w ke : Nat} {ks : List Na
 -- `SeqEntryTail` bottom, the THIRD instantiation of item 108's parameter.
 -- This is where item 168's `seqEntryTail_mapCons` went: the lane stopped
 -- needing a lemma of its own.
-example {sp_start sp_land sp_key : SurfPos} {k ke : Nat} {ks : List Nat}
+example {sp_start sp_land sp_key : SurfPos} {k ke : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_seq : ∀ sp_end, SCompactMapTail k sp_land sp_end →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_end) :
@@ -194,7 +195,7 @@ example {sp_start sp_land sp_key : SurfPos} {k ke : Nat} {ks : List Nat}
 -- ends each listed level the same way, and what is left is item 167's
 -- `seqEntryTail_cons`.  No membership test anywhere: this consumer closes the
 -- list whole, which is why the lane carries no cover.
-example {sp_start sp_scan sp_mid sp_sc sp_scan' : SurfPos} {ke kk : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_mid sp_sc sp_scan' : SurfPos} {ke kk : Nat} {ks : List FrameLevel}
     (seqF : ∀ sp_m, SSLComments sp_scan sp_m →
       ∀ sp_e, SCompactMapTail kk sp_m sp_e →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_e)
@@ -254,28 +255,28 @@ example {sp_start sp_scan sp_key sp_ws sp_val sp_land sp_key2 sp_ws2 sp_val2
         (SBlockNode_blockIn_to_blockOut h_nd)) sp_e h_tail
   -- ④ hop Ⓑ: the park conses its own level onto the frames
   have f4 : ∀ sp_m, SBlockNode (n+1+w+1) .blockIn sp_val sp_m →
-      ResumeFrames (SeqEntryTail sp_start n) [n+1+w] sp_m :=
+      ResumeFrames (SeqEntryTail sp_start n) [FrameLevel.map (n+1+w)] sp_m :=
     fun sp_m h_bn =>
       ResumeFrames.level (n+1+w) [] sp_m (by simp)
         (fun sp_end h_tail => f3 sp_m h_bn sp_end h_tail)
   -- ⑤ hop Ⓒ: `b` lands one level deeper and closes the awaited node
   have f5 : ∀ sp_v, SBlockMapEntry w2 sp_key2 sp_v →
       ∀ sp_e, SCompactMapTail w2 sp_v sp_e →
-      ResumeFrames (SeqEntryTail sp_start n) [n+1+w] sp_e :=
+      ResumeFrames (SeqEntryTail sp_start n) [FrameLevel.map (n+1+w)] sp_e :=
     fun sp_v h_entry sp_e h_tail =>
       f4 sp_e (nestedBlockMap hn1w2 h_ssl
         (SBlockMapEntries_of_compactTail h_ind2 h_entry h_tail))
   -- ⑥ `b:` parks ITS value in turn — the inner `pendingMapValue`'s `h_seqF`
   have f6 : ∀ sp_m, SBlockNode (w2 + 1) .blockIn sp_val2 sp_m →
       ∀ sp_e, SCompactMapTail w2 sp_m sp_e →
-      ResumeFrames (SeqEntryTail sp_start n) [n+1+w] sp_e :=
+      ResumeFrames (SeqEntryTail sp_start n) [FrameLevel.map (n+1+w)] sp_e :=
     fun sp_m h_nd sp_e h_tail =>
       f5 sp_m (SBlockMapEntry.implicitKeyNode w2 sp_key2 sp_ws2 sp_val2 sp_m h_ik2 h_lit2
         (SBlockNode_blockIn_to_blockOut h_nd)) sp_e h_tail
   -- ⑦ `1` completes the value — `pendingContent.h_seqF`'s reading
   have f7 : ∀ sp_m, SSLComments sp_park2 sp_m →
       ∀ sp_e, SCompactMapTail w2 sp_m sp_e →
-      ResumeFrames (SeqEntryTail sp_start n) [n+1+w] sp_e :=
+      ResumeFrames (SeqEntryTail sp_start n) [FrameLevel.map (n+1+w)] sp_e :=
     fun sp_m h_c sp_e h_tail => f6 sp_m (h_node2 sp_m h_c) sp_e h_tail
   -- ⑧ hop Ⓔ: the `-` closes the inner level, the listed one, and conses
   exact seqEntryTail_cons

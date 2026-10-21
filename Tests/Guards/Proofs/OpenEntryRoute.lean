@@ -51,6 +51,7 @@ open L4YAML.Scanner
 open L4YAML.Proofs.StreamAccum
 open L4YAML.Proofs.NodeProduction (SBlockMapEntries_of_compactTail)
 open Tests.Guards.DropDependents (sorted)
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open Tests.Guards.ExitHandoff (five)
 open Tests.Guards.RouteShapes
 open Tests.Guards.StreamCompositions
@@ -82,7 +83,7 @@ lemma slotMapRoute {sp_start sp_x sp_land sp_key : SurfPos} {n k : Nat}
     the entry and its whole width-`k` tail fill the slot, and what stands
     below is whatever the open entry's own frames say. -/
 lemma slotMapRouteF {P : SurfPos → Prop} {sp_x sp_land sp_key : SurfPos} {n k : Nat}
-    {ks : List Nat}
+    {ks : List FrameLevel}
     (hnk : n + 1 ≤ k)
     (h_close : ∀ sp_e, SBlockIndented n .blockOut sp_x sp_e → ResumeFrames P ks sp_e)
     (h_ssl : SSLComments sp_x sp_land)
@@ -95,7 +96,7 @@ lemma slotMapRouteF {P : SurfPos → Prop} {sp_x sp_land sp_key : SurfPos} {n k 
 
 /-- `rootMapRouteF`'s literal twin — the stream closure, the frames bottomed
     at `[]`.  It FORGETS the open entry's own level: the honest `ks` under an
-    open entry is the outer park's `n :: ks'`, which `slotMapRouteF` carries
+    open entry is the outer park's `FrameLevel.map n :: ks'`, which `slotMapRouteF` carries
     and this instance does not. -/
 lemma slotMapRouteF_stream {sp_start sp_x sp_land sp_key : SurfPos} {n k : Nat}
     (hnk : n + 1 ≤ k)
@@ -438,19 +439,19 @@ def expectedAPlain : List String :=
    "question_open_map:pendingMapValue.h_ivl [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "question_open_map:pendingMapValue.h_expl [SBlockMapEntry(_) ⇒ Stream] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "question_open_map:pendingMapValue.h_vslot [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] T1 hops=rootMapRoute,rootMapRoute_or_refused",
-   "question_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
+   "question_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(map(_)::_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
    "question_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
    "question_open_map:pendingMapValue.h_closeFV [SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_)] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "question_open_map:pendingMapValue.h_framesV [SSLComments ⇒ Key(_)▹ExplValueLine(_)] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "colon_open_map:pendingMapValue.h_close [SBlockNode(_+1,blockIn) ⇒ Stream] T1 hops=rootMapRoute,rootMapRoute_or_refused",
-   "colon_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
+   "colon_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(map(_)::_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
    "colon_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
    "content_dispatch_after_close→content_dispatch_routed.h_route [SBlockNode(0,blockIn) ⇒ Stream] N hops=bareNodeRoute"]
 def expectedAPairs : List String :=
   ["SBlockMapEntry(_) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ T1",
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ N",
    "SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S] ⟵ T1",
-   "SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S] ⟵ T2",
+   "SBlockNode(_+1,blockIn) ⇒ Resume(map(_)::_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S] ⟵ T2",
    "SBlockNode(_+1,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ T1",
    "SSLComments ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S] ⟵ T1",
    "SSLComments ⇒ Resume(_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S] ⟵ T2",

@@ -36,6 +36,7 @@ the scanner itself.  §5 is the measured price and what it leaves for U3. -/
 namespace L4YAML.Tests.Guards.LandingFloorCarried
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open L4YAML.Proofs.IndentStackCover
 open L4YAML.Proofs.CouplingBridge (ScannerSurfCorr)
 
@@ -121,7 +122,7 @@ its route closes. -/
 example {s : ScannerState} {c : Nat}
     (h_mono : L4YAML.Proofs.IndentStackMono.Mono s)
     (h_top : s.currentIndent ≤ (c : Int)) :
-    Covered c [c] s :=
+    Covered c [FrameLevel.map c] s :=
   covered_singleton_of_top_le h_mono h_top
 
 /-- The bridge this item adds: the three readings, assembled at the indicator
@@ -144,7 +145,7 @@ example {sc s_prep s' : ScannerState} {sp_prep : SurfPos} {k : Nat} {c : Char}
     (h_dispatch : scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep) c = .ok (some s')) :
-    Covered k [k] s' ∧ Covered (k + 1) [] s' :=
+    Covered k [FrameLevel.map k] s' ∧ Covered (k + 1) [] s' :=
   indicator_cover_at_col hc hcol_prep hcorr_prep h_noflow h_save h_mono h_base h_fl
     h_preprocess h_dispatch
 
@@ -155,15 +156,15 @@ example {sc s_prep s' : ScannerState} {sp_prep : SurfPos} {k : Nat} {c : Char}
     index — which is where the chain bottoms — so the statement is not vacuous
     the way an unbounded `∃ lo` would be, and it is optional so that a producer
     whose stack it cannot measure keeps the route it already pays. -/
-example {sc : ScannerState} {k : Nat} (h : Covered k [k] sc) :
-    (∃ lo : Nat, lo ≤ k ∧ Covered lo [k] sc) ∨ True :=
+example {sc : ScannerState} {k : Nat} (h : Covered k [FrameLevel.map k] sc) :
+    (∃ lo : Nat, lo ≤ k ∧ Covered lo [FrameLevel.map k] sc) ∨ True :=
   Or.inl ⟨k, Nat.le_refl k, h⟩
 
 /-- **Why the floor is BOUNDED.**  Raising a cover's floor weakens it
     (`Covered.raise_floor`), and past the stack's own top it weakens to nothing:
     an unbounded `∃ lo, Covered lo ks sc` would be provable for every `ks`, so
     the field's conjunct says `lo ≤ n` and means something. -/
-example (s : ScannerState) (ks : List Nat) (hs : ∀ e ∈ s.indents, e.column < 99) :
+example (s : ScannerState) (ks : List FrameLevel) (hs : ∀ e ∈ s.indents, e.column < 99) :
     Covered 99 ks s := fun e he _ hlo => absurd (hs e he) (by omega)
 
 /-- The stack's SHAPE rides the accumulation for the same reason its base does
@@ -261,7 +262,7 @@ premises and states a field — it removes no construction site.
 What it leaves, in the order the dedent punt needs it:
 
 * **The pack's own cover.**  `colon_open_map_implicit` and `colon_open_map_props`
-  chain `k :: ks` from `ImplicitKeyPack`'s resume twin, and the cover they would
+  chain `FrameLevel.map k :: ks` from `ImplicitKeyPack`'s resume twin, and the cover they would
   inherit rides that pack, which carries none.  Both pay `Or.inr trivial` here.
   Until they pay, every cover on the field is a root producer's `[k]` at floor
   `k`, which a dedent landing at `w < k` cannot use — so the pack's field is

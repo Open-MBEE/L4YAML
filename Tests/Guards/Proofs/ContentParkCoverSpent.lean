@@ -56,23 +56,23 @@ The two faces are bounded at different levels and both land in the same field,
 because what the field states about the index is only that there IS one. -/
 
 -- The stream face's cover is bounded at the park's own level …
-example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n lo : Nat} {ks : List Nat}
-    (h_fl : Floor lo n (n :: ks)) (h_cv : Covered lo (n :: ks) sc)
+example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n lo : Nat} {ks : List FrameLevel}
+    (h_fl : Floor lo n (FrameLevel.map n :: ks)) (h_cv : Covered lo (FrameLevel.map n :: ks) sc)
     (fS : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
-      ResumeFrames (SLYamlStream sp_start) (n :: ks) sp_mid) :
-    (∃ ks : List Nat,
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map n :: ks) sp_mid) :
+    (∃ ks : List FrameLevel,
       ((∃ lo n : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (SLYamlStream sp_start) ks sp_mid) ∨ True :=
-  Or.inl ⟨n :: ks, Or.inl ⟨lo, n, h_fl, h_cv⟩, fS⟩
+  Or.inl ⟨FrameLevel.map n :: ks, Or.inl ⟨lo, n, h_fl, h_cv⟩, fS⟩
 
 -- … and the value face's stands one column ABOVE the `?`, over the list the
--- stream face writes as `n :: ks`.  Same slot, and no second argument.
-example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n nv lo : Nat} {ks : List Nat}
+-- stream face writes as `FrameLevel.map n :: ks`.  Same slot, and no second argument.
+example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n nv lo : Nat} {ks : List FrameLevel}
     (h_fl : Floor lo (n + 1) ks) (h_cv : Covered lo ks sc)
     (fV : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) :
-    (∃ (nv : Nat) (ks : List Nat),
+    (∃ (nv : Nat) (ks : List FrameLevel),
       ((∃ lo n : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ True :=
@@ -80,10 +80,10 @@ example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n nv lo : Nat} {ks : L
 
 -- The punt is still a value of the same type, which is what lets the producers
 -- that hold nothing keep compiling.
-example {sc : ScannerState} {sp_start sp_scan : SurfPos} {ks : List Nat}
+example {sc : ScannerState} {sp_start sp_scan : SurfPos} {ks : List FrameLevel}
     (fS : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (SLYamlStream sp_start) ks sp_mid) :
-    (∃ ks : List Nat,
+    (∃ ks : List FrameLevel,
       ((∃ lo n : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (SLYamlStream sp_start) ks sp_mid) ∨ True :=
@@ -97,7 +97,7 @@ dispatch writes no level, so the two are the same cover and nothing is
 re-derived — the whole reason paying these two fields costs the producers one
 `Or.imp` each. -/
 
-example {sc s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List Nat}
+example {sc s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List FrameLevel}
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_dispatch : scanNextToken_dispatchContent
       (if s_prep.allowDirectives then
@@ -119,7 +119,7 @@ Note what the payment does NOT read: the index `m` the incoming cover is bounded
 at appears nowhere in the result.  That is the fact §1's two shapes rest on. -/
 
 example {sc s_prep : ScannerState} {c : Char} {sp_scan : SurfPos}
-    {w lo m : Nat} {ksw ksw' : List Nat}
+    {w lo m : Nat} {ksw ksw' : List FrameLevel}
     (h_noflow : s_prep.inFlow = false)
     (h_larm : sp_scan.col ≠ 0 → s_prep.inFlow = false →
       s_prep.simpleKey.possible = true ∧ s_prep.simpleKey.pos.col = s_prep.col ∧
@@ -129,8 +129,8 @@ example {sc s_prep : ScannerState} {c : Char} {sp_scan : SurfPos}
     (h_base : SentinelBase sc) (h_mono : Mono sc)
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_fl : Floor lo m ksw) (h_cv : Covered lo ksw sc)
-    (hmem : w ∈ ksw) (h_ww : ResumeWidths ksw ksw' w) (h_scol : s_prep.col = w) :
-    ∃ lo : Nat, Floor lo w (w :: ksw') ∧ Covered lo (w :: ksw') s_prep :=
+    (hmem : FrameLevel.map w ∈ ksw) (h_ww : ResumeWidths ksw ksw' w) (h_scol : s_prep.col = w) :
+    ∃ lo : Nat, Floor lo w (FrameLevel.map w :: ksw') ∧ Covered lo (FrameLevel.map w :: ksw') s_prep :=
   dedent_cover_of_floor (preprocess_mono h_preprocess h_mono)
     (by rw [← h_scol]; exact landing_floor_of_arm h_noflow h_larm hcol h_base h_preprocess)
     h_fl (preprocess_cover h_preprocess h_cv) hmem h_ww
@@ -138,7 +138,7 @@ example {sc s_prep : ScannerState} {c : Char} {sp_scan : SurfPos}
 -- And the same payment composed into the context's slot, which is what the two
 -- landing routes in the break-crossed arm actually pass.
 example {sc s_prep : ScannerState} {c : Char}
-    {sp_start sp_scan sp_mid sp_prep : SurfPos} {n lo : Nat} {ks : List Nat}
+    {sp_start sp_scan sp_mid sp_prep : SurfPos} {n lo : Nat} {ks : List FrameLevel}
     (hcol_mid : sp_mid.col = 0)
     (h_ws : GStar SSWhite sp_mid sp_prep)
     (h_ssl : SSLComments sp_scan sp_mid)
@@ -147,11 +147,11 @@ example {sc s_prep : ScannerState} {c : Char}
     (h_fl : Floor lo n ks) (h_cv : Covered lo ks sc)
     (fS : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m)
-    (h_pay : ∀ (w : Nat) (ksw ksw' : List Nat),
+    (h_pay : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
         ((∃ lo m : Nat, Floor lo m ksw ∧ Covered lo ksw sc) ∨ True) →
-        w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-        ((∃ lo : Nat, Floor lo w (w :: ksw') ∧
-          Covered lo (w :: ksw') s_prep) ∨ True)) :
+        FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+        ((∃ lo : Nat, Floor lo w (FrameLevel.map w :: ksw') ∧
+          Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True)) :
     ResumeKeyCtx s_prep sp_start sp_prep :=
   resumectx_of_landing hcol_mid h_ws h_ssl h_preprocess hcorr_prep
     (Or.inl ⟨ks, Or.inl ⟨lo, n, h_fl, h_cv⟩, fS⟩) (Or.inr trivial) h_pay
@@ -242,10 +242,10 @@ private def censusC (inputs : List String) : Nat × Nat × Nat × Nat :=
   diagnosis was incomplete: those fields carried no FRAMES either, so a cover
   on them would have had no width to be spent at.) -/
 
-example {sc : ScannerState} {sp_start sp_scan : SurfPos} {nv : Nat} {ks : List Nat}
+example {sc : ScannerState} {sp_start sp_scan : SurfPos} {nv : Nat} {ks : List FrameLevel}
     (fV : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) :
-    (∃ (nv : Nat) (ks : List Nat),
+    (∃ (nv : Nat) (ks : List FrameLevel),
       ((∃ lo n : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ True :=

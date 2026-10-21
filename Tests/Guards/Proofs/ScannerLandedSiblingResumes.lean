@@ -112,7 +112,7 @@ private def refuses (input : String) : Bool :=
 entry is that tail's FIRST element and everything below the level closes with
 `ResumeFrames.close`.  No document is started. -/
 
-example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
+example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
@@ -121,7 +121,7 @@ example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
 
 -- The ENTRIES-level twin is one lemma over item 108's parameterized bottom, so
 -- the same construction serves the stream face …
-example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
+example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
@@ -132,7 +132,7 @@ example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
 
 -- … and the `?` frame's value-line face, which is the one that keeps the
 -- explicit entry open across the sibling.
-example {sp_start sp_land sp_key : SurfPos} {k nv : Nat} {ks : List Nat}
+example {sp_start sp_land sp_key : SurfPos} {k nv : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) :
@@ -147,13 +147,13 @@ This is why `pendingContent`'s `h_closable` and `h_vpack` do not move: each is
 its face's `ks`-closed reading.  A park that pays a frames face therefore owes
 nothing new, and a park that punts loses nothing. -/
 
-example {sp_start sp_scan : SurfPos} {ks : List Nat}
+example {sp_start sp_scan : SurfPos} {ks : List FrameLevel}
     (h : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (SLYamlStream sp_start) ks sp_mid) :
     ∀ sp_mid, SSLComments sp_scan sp_mid → SLYamlStream sp_start sp_mid :=
   fun sp_mid h_ssl => (h sp_mid h_ssl).close
 
-example {sp_start sp_scan : SurfPos} {nv : Nat} {ks : List Nat}
+example {sp_start sp_scan : SurfPos} {nv : Nat} {ks : List FrameLevel}
     (h : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       KeyFrames (ExplValueLine sp_start nv) ks sp_mid) :
     ∀ sp_mid sp_i sp_c : SurfPos, SSLComments sp_scan sp_mid →
@@ -173,11 +173,11 @@ value-completion sites and `Or.inr trivial` everywhere else. -/
 -- Item 152 appended the cover conjunct to both faces, so the payment carries a
 -- third component; the node the closure wraps is unchanged, which is why that
 -- item costs these producers one `Or.imp` and nothing else.
-example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n nv : Nat} {ks : List Nat}
+example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n nv : Nat} {ks : List FrameLevel}
     (build : ∀ sp_mid, SSLComments sp_scan sp_mid → SBlockNode n .blockIn sp_scan sp_mid)
     (closeFV : ∀ sp_mid, SBlockNode n .blockIn sp_scan sp_mid →
       KeyFrames (ExplValueLine sp_start nv) ks sp_mid) :
-    (∃ (nv : Nat) (ks : List Nat),
+    (∃ (nv : Nat) (ks : List FrameLevel),
       ((∃ lo n : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       KeyFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ True :=
@@ -196,22 +196,22 @@ example {sc s_prep : ScannerState} {c : Char}
     (h_ssl : SSLComments sp_scan sp_mid)
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (hcorr_prep : ScannerSurfCorr s_prep sp_prep)
-    (h_fS : (∃ ks : List Nat,
+    (h_fS : (∃ ks : List FrameLevel,
         ((∃ lo n : Nat, Floor lo n ks ∧
           Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
-    (h_fV : (∃ (nv : Nat) (ks : List Nat),
+    (h_fV : (∃ (nv : Nat) (ks : List FrameLevel),
         ((∃ lo n : Nat, Floor lo n ks ∧
           Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ True)
-    (h_pay : ∀ (w : Nat) (ks ks' : List Nat),
+    (h_pay : ∀ (w : Nat) (ks ks' : List FrameLevel),
         ((∃ lo n : Nat, Floor lo n ks ∧
           Covered lo ks sc) ∨ True) →
-        w ∈ ks → ResumeWidths ks ks' w → s_prep.col = w →
-        ((∃ lo : Nat, Floor lo w (w :: ks') ∧
-          Covered lo (w :: ks') s_prep) ∨ True)) :
+        FrameLevel.map w ∈ ks → ResumeWidths ks ks' w → s_prep.col = w →
+        ((∃ lo : Nat, Floor lo w (FrameLevel.map w :: ks') ∧
+          Covered lo (FrameLevel.map w :: ks') s_prep) ∨ True)) :
     ResumeKeyCtx s_prep sp_start sp_prep :=
   resumectx_of_landing hcol_mid h_ws h_ssl h_preprocess hcorr_prep h_fS h_fV h_pay
     -- Item 168: this guard is about the two FRAMED lanes; the sequence face punts.
@@ -223,10 +223,10 @@ example {sc s_prep : ScannerState} {c : Char}
 -- landing's line start, `[63]`'s spaces, a fresh at-position save, and a stack
 -- whose widths include the landing's.  `resumectx_of_landing` assembles this
 -- and nothing else.
-example {sp_start sp_land sp_prep : SurfPos} {k : Nat} {ks : List Nat}
+example {sp_start sp_land sp_prep : SurfPos} {k : Nat} {ks : List FrameLevel}
     {s_prep : ScannerState}
     (hcol0 : sp_land.col = 0) (h_ind : SIndent k sp_land sp_prep)
-    (h_fr : ResumeFrames (SLYamlStream sp_start) ks sp_land) (hmem : k ∈ ks)
+    (h_fr : ResumeFrames (SLYamlStream sp_start) ks sp_land) (hmem : FrameLevel.map k ∈ ks)
     (h_poss : s_prep.simpleKey.possible = true)
     (h_pos : s_prep.simpleKey.pos = s_prep.currentPos) :
     ResumeKeyCtx s_prep sp_start sp_prep :=
@@ -247,7 +247,7 @@ without one; this one says it the other way round, by deriving `rootMapRoute`'s
 own conclusion from frames alone in a context where no closed stream is
 available at the landing at all. -/
 
-example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
+example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     -- The ONLY thing known about `sp_land`: the levels open there.  No
     -- `sp_land.col = 0`, no `SLYamlStream sp_start sp_land`.

@@ -44,6 +44,7 @@ namespace L4YAML.Tests.Guards.ScannerBlockScalarSiblingResumes
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
   L4YAML.Proofs.NodeProduction
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -136,16 +137,16 @@ example {sp_scan sp_prep sp_scan' : SurfPos}
 per landing, so the park's `h_framesS` is one application — same for the
 value-line bottom (`h_closeFV` → `h_framesV`). -/
 
-example {sp_start sp_scan sp_scan' : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_scan' : SurfPos} {n : Nat} {ks : List FrameLevel}
     (h_nodeAt : ∀ sp_m : SurfPos, SSLComments sp_scan' sp_m →
       SBlockNode n .blockIn sp_scan sp_m)
     (closeF : ∀ sp_mid : SurfPos, SBlockNode n .blockIn sp_scan sp_mid →
-      ResumeFrames (SLYamlStream sp_start) (n :: ks) sp_mid) :
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map n :: ks) sp_mid) :
     ∀ sp_mid : SurfPos, SSLComments sp_scan' sp_mid →
-      ResumeFrames (SLYamlStream sp_start) (n :: ks) sp_mid :=
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map n :: ks) sp_mid :=
   fun sp_mid h_ssl => closeF sp_mid (h_nodeAt sp_mid h_ssl)
 
-example {sp_start sp_scan sp_scan' : SurfPos} {n nv : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_scan' : SurfPos} {n nv : Nat} {ks : List FrameLevel}
     (h_nodeAt : ∀ sp_m : SurfPos, SSLComments sp_scan' sp_m →
       SBlockNode n .blockIn sp_scan sp_m)
     (closeFV : ∀ sp_mid : SurfPos, SBlockNode n .blockIn sp_scan sp_mid →

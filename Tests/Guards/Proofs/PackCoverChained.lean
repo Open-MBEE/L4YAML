@@ -35,7 +35,7 @@ the level's own index, and at or below every width the frames name.  Dropping
 the first half is vacuity where the frames are empty; dropping the second is
 unspendability at every dedent.
 
-**The list.**  The cover a pack carries is over `k :: ks` — the key's own level
+**The list.**  The cover a pack carries is over `FrameLevel.map k :: ks` — the key's own level
 included — not over `ks`.  The two branches that pay reach it from opposite
 sides: a key NESTED below the park opens its level at the `:` still to come, so
 its width is free (`Covered.cons`); a key that LANDED on an open level finds
@@ -55,52 +55,52 @@ open L4YAML.Proofs.IndentStackCover
 `Floor lo n ks` is two claims, and each answers a way the other fails. -/
 
 /-- The bound, at its definition. -/
-example (lo n : Nat) (ks : List Nat) :
-    Floor lo n ks ↔ (lo ≤ n ∧ ∀ k' ∈ ks, lo ≤ k') := Iff.rfl
+example (lo n : Nat) (ks : List FrameLevel) :
+    Floor lo n ks ↔ (lo ≤ n ∧ ∀ fr ∈ ks, lo ≤ fr.width) := Iff.rfl
 
 /-- **What the second half buys**: it drags the floor down to the OUTERMOST
     width the frames name.  `preprocess_landing_mem_or_seq` asks its caller for
     `lo ≤ s_prep.col` BEFORE the landing's membership is known — that is what
     the lemma derives — so the bound has to reach below the landing without
     naming it, and a bound that runs over the widths does. -/
-example {lo n j : Nat} {ks : List Nat} (h : Floor lo n ks) (hj : j ∈ ks) :
+example {lo n j : Nat} {ks : List FrameLevel} (h : Floor lo n ks) (hj : FrameLevel.map j ∈ ks) :
     lo ≤ j := h.le_of_mem hj
 
 /-- …and in a chain rooted at column 0 that pins the floor AT 0, where the spend
     premise is free for every landing column whatever — which is the case the
     lemma's own docstring names ("at `lo = 0` the hypothesis is free"). -/
-example {lo n : Nat} {ks : List Nat} (h : Floor lo n ks) (h0 : 0 ∈ ks)
+example {lo n : Nat} {ks : List FrameLevel} (h : Floor lo n ks) (h0 : FrameLevel.map 0 ∈ ks)
     (w : Nat) : lo ≤ w := Nat.le_trans (h.le_of_mem h0) (Nat.zero_le w)
 
 /-- The second half is NOT derivable from the first: a floor at the park's own
     index clears every width at or right of it and no width below, which is
     precisely where a dedent lands. -/
-example : ¬ (∀ (lo n : Nat) (ks : List Nat), lo ≤ n → ∀ j ∈ ks, lo ≤ j) := by
+example : ¬ (∀ (lo n : Nat) (ks : List FrameLevel), lo ≤ n → ∀ j, FrameLevel.map j ∈ ks → lo ≤ j) := by
   intro h
-  exact absurd (h 2 2 [1] (Nat.le_refl 2) 1 List.mem_cons_self) (by omega)
+  exact absurd (h 2 2 [FrameLevel.map 1] (Nat.le_refl 2) 1 List.mem_cons_self) (by omega)
 
 /-- **What the first half buys**: with no widths to bound it, a floor is free to
     climb, and past the stack's own top the cover weakens to nothing
     (`Covered.raise_floor`) — so the second half alone admits a vacuous witness.
     This is the same reading item 147's guard makes of an unbounded `∃ lo`. -/
-example (s : ScannerState) (ks : List Nat) (hs : ∀ e ∈ s.indents, e.column < 99) :
-    (∀ k' ∈ ([] : List Nat), 99 ≤ k') ∧ Covered 99 ks s :=
+example (s : ScannerState) (ks : List FrameLevel) (hs : ∀ e ∈ s.indents, e.column < 99) :
+    (∀ fr ∈ ([] : List FrameLevel), 99 ≤ fr.width) ∧ Covered 99 ks s :=
   ⟨fun _ h => absurd h List.not_mem_nil,
    fun e he _ hlo => absurd (hs e he) (by omega)⟩
 
 /-- The chain's own step on the bound: a level opened strictly deeper than an
     existing one inherits that level's floor, which is what the key dispatch's
     nested branch pays with. -/
-example {lo n c : Nat} {ks : List Nat} (h : Floor lo n ks) (hn : n < c) :
-    Floor lo c (c :: ks) :=
+example {lo n c : Nat} {ks : List FrameLevel} (h : Floor lo n ks) (hn : n < c) :
+    Floor lo c (FrameLevel.map c :: ks) :=
   (h.mono_index (Nat.le_of_lt hn)).cons (Nat.le_of_lt (Nat.lt_of_le_of_lt h.1 hn))
 
 /-! ## §2  The transport across the `:`
 
 `scanValuePrepare_cover` reports the level a step opens with an existential,
 which is all a step-generic caller can say.  A caller holding the live key holds
-its column, and that is the difference between `c :: ks` for an unknown `c` and
-the `k :: ks` the frames already name. -/
+its column, and that is the difference between `FrameLevel.map c :: ks` for an unknown `c` and
+the `FrameLevel.map k :: ks` the frames already name. -/
 
 /-- The key clear leaves the prepare one of two readable states: the key at its
     own column, or no key and the `?` line that took it. -/
@@ -113,27 +113,27 @@ example {s : ScannerState} (h : s.simpleKey.possible = true) :
 
 /-- The prepare, named: with a live key the push is at the KEY's column, and the
     two branches that do not push cost the cover nothing. -/
-example {lo k : Nat} {ks : List Nat} {s : ScannerState}
+example {lo k : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h_arm : s.simpleKey.possible = true ∨ s.explicitKeyLine.isSome = true)
     (h_col : s.simpleKey.possible = true → s.simpleKey.pos.col = k)
     (h : Covered lo ks s) :
-    Covered lo (k :: ks) (scanValuePrepare s) :=
+    Covered lo (FrameLevel.map k :: ks) (scanValuePrepare s) :=
   scanValuePrepare_cover_key h_arm h_col h
 
 /-- The `:`'s whole step. -/
-example {lo k : Nat} {ks : List Nat} {s s' : ScannerState}
+example {lo k : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (hok : scanValue s = .ok s') (h_poss : s.simpleKey.possible = true)
     (h_col : s.simpleKey.pos.col = k) (h : Covered lo ks s) :
-    Covered lo (k :: ks) s' :=
+    Covered lo (FrameLevel.map k :: ks) s' :=
   scanValue_cover_key hok h_poss h_col h
 
 /-- …and the shape the producers actually meet: the level the `:` opens is
     ALREADY one of the frames, because the pack's list carries it.  The step
     names it twice and `dedup_head` folds it back. -/
-example {lo k : Nat} {ks : List Nat} {s s' : ScannerState}
+example {lo k : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (hok : scanValue s = .ok s') (h_poss : s.simpleKey.possible = true)
-    (h_col : s.simpleKey.pos.col = k) (h : Covered lo (k :: ks) s) :
-    Covered lo (k :: ks) s' :=
+    (h_col : s.simpleKey.pos.col = k) (h : Covered lo (FrameLevel.map k :: ks) s) :
+    Covered lo (FrameLevel.map k :: ks) s' :=
   (scanValue_cover_key hok h_poss h_col h).dedup_head
 
 /-! ## §3  The hop, composed
@@ -145,7 +145,7 @@ whole of the carriage is the `:`. -/
 
 /-- **The chain, end to end.**  A park's cover reaches the park its own key
     opens, over the widths that park's frames name. -/
-example {lo k : Nat} {ks : List Nat}
+example {lo k : Nat} {ks : List FrameLevel}
     {sc s_prep s_key s_prep2 s_val : ScannerState} {c : Char}
     (h_pre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_key : scanNextToken_dispatchContent s_prep c = .ok s_key)
@@ -154,7 +154,7 @@ example {lo k : Nat} {ks : List Nat}
     (h_poss : s_prep2.simpleKey.possible = true)
     (h_col : s_prep2.simpleKey.pos.col = k)
     (h : Covered lo ks sc) :
-    Covered lo (k :: ks) s_val :=
+    Covered lo (FrameLevel.map k :: ks) s_val :=
   scanValue_cover_key h_val h_poss h_col
     (preprocess_cover h_pre2 (dispatchContent_cover h_key (preprocess_cover h_pre h)))
 
@@ -162,8 +162,8 @@ example {lo k : Nat} {ks : List Nat}
 example {sc : ScannerState} {sp_start sp_scan : SurfPos}
     (h : ImplicitKeyPack sc sp_start sp_scan) :
     ∃ (k : Nat) (sp_key : SurfPos),
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, Floor lo k (k :: ks) ∧ Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, Floor lo k (FrameLevel.map k :: ks) ∧ Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) := by
@@ -175,8 +175,8 @@ example {sc : ScannerState} {sp_start sp_scan : SurfPos}
 example {sc : ScannerState} {sp_start sp_p sp_scan : SurfPos}
     (h : PropsKeyPack sc sp_start sp_p sp_scan) :
     ∃ k : Nat,
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, Floor lo k (k :: ks) ∧ Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, Floor lo k (FrameLevel.map k :: ks) ∧ Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) := by
@@ -261,7 +261,7 @@ What pays and what does not, named rather than counted:
   of implicit keys deep, which is what the field was for.
 * **The DEDENT branch** does not pay, and the reason is a real one rather than
   an unthreaded premise.  The level the landing popped TO is still on the
-  scanner's stack, so the pack's cover there is over `w :: ks'` while the
+  scanner's stack, so the pack's cover there is over `FrameLevel.map w :: ks'` while the
   caller's is over the whole of `ks` — and `resumeAt` drops every width above
   `w`.  Reading the one as the other wants the stack's SHAPE (`Mono`, which the
   content lane does not carry), the landing's own floor, and `resumeAt`'s widths

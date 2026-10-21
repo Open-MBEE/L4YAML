@@ -42,6 +42,7 @@ namespace L4YAML.Tests.Guards.ScannerBlockScalarEntrySiblingResumes
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
   L4YAML.Proofs.NodeProduction
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -214,7 +215,7 @@ at the re-read node IS the stream close, with no `[211]` comment-suffix
 reading left over — the landing's comments live in the scalar's own
 production, where the parser puts them. -/
 
-example {sp_start sp_scan sp_scan' : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_scan' : SurfPos} {n : Nat} {ks : List FrameLevel}
     (closeF : ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end)

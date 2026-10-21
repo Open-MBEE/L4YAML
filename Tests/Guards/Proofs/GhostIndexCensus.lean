@@ -26,7 +26,7 @@ constructor field, or a quantifier inside a field's statement — is one of:
 | `prop` | a `Prop` binder — a continuation, a route, a fact about the state | no — obligations are the induction hypothesis |
 | `scalar` | a `Nat`, `Int`, `Bool`, `Char`, context, token array … | not counted as ghost here: most are grammar parameters (`n`, `c`) or pinned to the state by an inequality |
 | `snapshot` | an `Option ScannerState` — a whole scanner state carried as an index | **yes** |
-| `ghost` | a `List Nat` (the frame lists and value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
+| `ghost` | a `List FrameLevel` (the frame lists — a mirror of `sc.indents` until `Covered` is an equality, item 332), a `List Nat` (the value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
 
 The last two columns are the rule's subject.  A snapshot or a ghost datum
 either (a) is proved equal to a projection `f sc` of the live state — the kinds
@@ -91,7 +91,9 @@ def classify (t : Expr) : MetaM Class := do
       if t.getAppNumArgs == 1 && t.appArg!.isConstOf ``ScannerState then return .snapshot
       else return .scalar
   | some ``List =>
-      if t.getAppNumArgs == 1 && t.appArg!.isConstOf ``Nat then return .ghost else return .scalar
+      if t.getAppNumArgs == 1 && (t.appArg!.isConstOf ``Nat ||
+          t.appArg!.isConstOf ``L4YAML.Proofs.IndentStackCover.FrameLevel) then return .ghost
+      else return .scalar
   | some ``Array =>
       if t.getAppNumArgs == 1 && t.appArg!.isConstOf ``Bool then return .ghost else return .scalar
   | some ``FrameTail => return .ghost
@@ -224,7 +226,7 @@ it may only shrink. -/
 /-- 52 carriers, 9 snapshot indices and 73 ghost data binders on
     2026-10-21 (item 331), the day the census was taken — Rule 8's baseline; the
     carriers are every `Prop`-valued declaration of `StreamAccum` (see `carriersOf`). -/
-def expectedSummary : String := "carriers=52 snapshot=9 ghost=73"
+def expectedSummary : String := "carriers=52 snapshot=9 ghost=72"
 
 def expectedTally : List String :=
   [ "BareLandingFacts: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0",
@@ -248,7 +250,7 @@ def expectedTally : List String :=
     "InlineResidue: surface=2 state=0 prop=0 scalar=1 snapshot=0 ghost=0",
     "InteriorGap: surface=3 state=1 prop=14 scalar=7 snapshot=0 ghost=1",
     "KeyFloor: surface=0 state=0 prop=1 scalar=7 snapshot=0 ghost=0",
-    "KeyFrames: surface=6 state=0 prop=9 scalar=5 snapshot=0 ghost=3",
+    "KeyFrames: surface=4 state=0 prop=5 scalar=3 snapshot=0 ghost=2",
     "KeyPackPunt: surface=0 state=1 prop=9 scalar=0 snapshot=0 ghost=0",
     "KmSound: surface=0 state=1 prop=9 scalar=21 snapshot=0 ghost=3",
     "MapFrame: surface=40 state=0 prop=30 scalar=2 snapshot=0 ghost=1",
@@ -290,8 +292,8 @@ def expectedGhost : List String :=
     "FlowBaseAnchor.body x : Option ScannerState",
     "FlowBaseRoutes.type g : Option ScannerState",
     "FlowBaseRoutes.mk ns : List Nat",
-    "FlowBaseRoutes.mk ks : List Nat",
-    "FlowBaseRoutes.mk ks : List Nat",
+    "FlowBaseRoutes.mk ks : List IndentStackCover.FrameLevel",
+    "FlowBaseRoutes.mk ks : List IndentStackCover.FrameLevel",
     "FlowBaseRoutes.mk ns : List Nat",
     "FlowOpenHeld.type S : List Nat",
     "FlowOpenHeld.body T : List Nat",
@@ -322,13 +324,12 @@ def expectedGhost : List String :=
     "GateOf.type a : Option ScannerState",
     "GateOf.body x : Option ScannerState",
     "ImplicitKeyPack.body ns : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
+    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
     "InteriorGap.type tl : FrameTail",
-    "KeyFrames.type a : List Nat",
-    "KeyFrames.mapLevel ks : List Nat",
-    "KeyFrames.seqLevel ks : List Nat",
+    "KeyFrames.type a : List IndentStackCover.FrameLevel",
+    "KeyFrames.level ks : List IndentStackCover.FrameLevel",
     "KmSound.type km : Array Bool",
     "KmSound.body xs : Array Bool",
     "KmSound.body xs : Array Bool",
@@ -336,37 +337,37 @@ def expectedGhost : List String :=
     "PackAltG.type _g : Option ScannerState",
     "ParkCore.mk S : List Nat",
     "PendingNode.pendingContent ns : List Nat",
-    "PendingNode.pendingContent ks : List Nat",
-    "PendingNode.pendingContent ks : List Nat",
-    "PendingNode.pendingContent ks : List Nat",
+    "PendingNode.pendingContent ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingContent ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingContent ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingProps ns : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingBlockContent ks : List Nat",
+    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingBlockContent ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingBlockContent ns : List Nat",
-    "PendingNode.pendingBlockContent ks : List Nat",
-    "PendingNode.pendingBlock ks : List Nat",
+    "PendingNode.pendingBlockContent ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingBlock ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingBlock ns : List Nat",
-    "PendingNode.pendingBlock ks : List Nat",
+    "PendingNode.pendingBlock ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingMapValue ns : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
+    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingMapValue ns : List Nat",
     "PropsKeyPack.body ns : List Nat",
-    "PropsKeyPack.body ks : List Nat",
-    "PropsKeyPack.body ks : List Nat",
-    "ResumeFrames.type a : List Nat",
-    "ResumeFrames.level ks : List Nat",
-    "ResumeKeyCtx.body ks : List Nat",
-    "ResumeKeyCtx.body ksv : List Nat",
-    "ResumeKeyCtx.body ksq : List Nat",
-    "ResumeWidths.type ks : List Nat",
-    "ResumeWidths.type ks' : List Nat",
+    "PropsKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "PropsKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "ResumeFrames.type a : List IndentStackCover.FrameLevel",
+    "ResumeFrames.level ks : List IndentStackCover.FrameLevel",
+    "ResumeKeyCtx.body ks : List IndentStackCover.FrameLevel",
+    "ResumeKeyCtx.body ksv : List IndentStackCover.FrameLevel",
+    "ResumeKeyCtx.body ksq : List IndentStackCover.FrameLevel",
+    "ResumeWidths.type ks : List IndentStackCover.FrameLevel",
+    "ResumeWidths.type ks' : List IndentStackCover.FrameLevel",
     "SeqFrame.type a : FrameTail" ]
 
 run_cmd liftTermElabM do

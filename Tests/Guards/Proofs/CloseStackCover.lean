@@ -864,7 +864,7 @@ def expectedRows : List String :=
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
-   "accum_content_on_pendingBlock_indented #1 fn:accum_content_on_pendingBlock_indented.h_pay_seq := cases[cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingBlock_indented.h_pay_seq.h_cv))))|punt]|punt]",
+   "accum_content_on_pendingBlock_indented #1 fn:accum_content_on_pendingBlock_indented.h_pay_seq := cases[cases[lit(lo=—,idx=w,ks=map(…) :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingBlock_indented.h_pay_seq.h_cv))))|punt]|punt]",
    "accum_content_on_pendingBlock_indented #1 param:resumectx_of_landing.h_fS := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:resumectx_of_landing.h_fV := punt",
    "accum_content_on_pendingMapValue_indented #1 fn:accum_content_on_pendingMapValue_indented.h_cov_step := via:IndentStackCover.dispatchContent_cover(via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingMapValue_indented.h_cov_step.hc))))",
@@ -889,17 +889,17 @@ def expectedRows : List String :=
    "accum_content_on_pendingMapValue_indented #2 param:entryKeyPack_of_dispatch.h_dframes := relay(param:accum_content_on_pendingMapValue_indented.h_frames99)",
    "accum_content_on_pendingMapValue_indented #2 param:entryKeyPack_of_dispatch.h_nodeFV := relay(param:accum_content_on_pendingMapValue_indented.h_closeFV108)",
    "accum_content_on_pendingMapValue_indented #2 param:entryKeyPack_of_dispatch.h_dframesV := relay(param:accum_content_on_pendingMapValue_indented.h_framesV108)",
-   "accum_content_on_pendingMapValue_indented #1 fn:accum_content_on_pendingMapValue_indented.h_pay_res := cases[cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingMapValue_indented.h_pay_res.h_cv))))|punt]|punt]",
+   "accum_content_on_pendingMapValue_indented #1 fn:accum_content_on_pendingMapValue_indented.h_pay_res := cases[cases[lit(lo=—,idx=w,ks=map(…) :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingMapValue_indented.h_pay_res.h_cv))))|punt]|punt]",
    "accum_content_on_pendingMapValue_indented #1 param:resumectx_of_landing.h_fS := imp:param:accum_content_on_pendingMapValue_indented.h_frames99{step(relay(param:accum_content_on_pendingMapValue_indented.h_frames99))}",
    "accum_content_on_pendingMapValue_indented #1 param:resumectx_of_landing.h_fV := imp:param:accum_content_on_pendingMapValue_indented.h_framesV108{step(relay(param:accum_content_on_pendingMapValue_indented.h_framesV108))}",
    "accum_content_pending #1 fn:accum_content_pending.h_cov_step := via:IndentStackCover.dispatchContent_cover(via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_cov_step.hc))))",
-   "accum_content_pending #1 fn:accum_content_pending.h_pay_col0 := cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_pay_col0.h_cv))))|punt]",
-   "accum_content_pending #1 fn:accum_content_pending.h_pay_res := cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_pay_res.h_cv))))|punt]",
+   "accum_content_pending #1 fn:accum_content_pending.h_pay_col0 := cases[lit(lo=—,idx=w,ks=map(…) :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_pay_col0.h_cv))))|punt]",
+   "accum_content_pending #1 fn:accum_content_pending.h_pay_res := cases[lit(lo=—,idx=w,ks=map(…) :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_pay_res.h_cv))))|punt]",
    "accum_content_pending #1 fnp:accum_content_pending.h_defer_split.h_fS := relay(door:pendingContent.h_framesS)",
    "accum_content_pending #1 fnp:accum_content_pending.h_defer_split.h_fV := relay(door:pendingContent.h_framesV)",
    "accum_content_pending #1 local:accum_content_pending.h_fS := match[paid{cover=step(relay(door:pendingProps.h_closeFE))}|paid{cover=relay(door:pendingProps.h_closeFE)}|punt]",
    "accum_content_pending #1 local:accum_content_pending.h_fV := match[paid{cover=relay(door:pendingProps.h_closeFV)}|punt]",
-   "accum_content_pending #1 fn:accum_content_pending.h_pay_props := cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_pay_props.h_cv))))|punt]",
+   "accum_content_pending #1 fn:accum_content_pending.h_pay_props := cases[lit(lo=—,idx=w,ks=map(…) :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_pending.h_pay_props.h_cv))))|punt]",
    "accum_content_pending #1 param:resumectx_of_landing.h_fS := relay(local:accum_content_pending.h_fS)",
    "accum_content_pending #1 param:resumectx_of_landing.h_fV := relay(local:accum_content_pending.h_fV)",
    "accum_content_pending #1 ctor:pendingProps.h_closeFE := imp:door:pendingProps.h_closeFE{step(relay(door:pendingProps.h_closeFE))}",
@@ -962,7 +962,7 @@ def expectedRows : List String :=
    "colon_open_map_props #1 ctor:pendingMapValue.h_frames := match[paid{cover=step(relay(param:colon_open_map_props.h_routeF))}|punt]",
    "colon_open_map_props #1 ctor:pendingMapValue.h_closeFV := match[paid{cover=step(relay(param:colon_open_map_props.h_routeFV))}|punt]",
    "colon_open_map_props #1 ctor:pendingMapValue.h_framesV := match[paid{cover=step(relay(param:colon_open_map_props.h_routeFV))}|punt]",
-   "compact_open_map #1 ctor:pendingMapValue.h_closeF := paid{cover=lit(lo=n + 1,idx=n + 1 + m,ks=n + 1 + m :: [],by=via:CoverStep.cons_of_top_eq(via:IndentStackCover.dispatchBlockIndicators_cover(via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(lemma(IndentStackCover.covered_nil_of_top_le))))))}",
+   "compact_open_map #1 ctor:pendingMapValue.h_closeF := paid{cover=lit(lo=n + 1,idx=n + 1 + m,ks=map(…) :: [],by=via:CoverStep.cons_of_top_eq(via:IndentStackCover.dispatchBlockIndicators_cover(via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(lemma(IndentStackCover.covered_nil_of_top_le))))))}",
    "compact_open_map #1 ctor:pendingMapValue.h_frames := punt",
    "compact_open_map #1 ctor:pendingMapValue.h_closeFV := punt",
    "compact_open_map #1 ctor:pendingMapValue.h_framesV := punt",
@@ -984,7 +984,7 @@ def expectedRows : List String :=
    "entryPropsKeyPack_of_dispatch #1 fn:entryPropsKeyPack_of_dispatch.h_cov_step := via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(relay(fnp:entryPropsKeyPack_of_dispatch.h_cov_step.hc)))",
    "entryPropsKeyPack_of_dispatch #1 fn:entryPropsKeyPack_of_dispatch.h_pay := via:StreamAccum.dedent_cover_of_landing(relay(param:entryPropsKeyPack_of_dispatch.h_dframes))",
    "entryPropsKeyPack_of_dispatch #1 fn:entryPropsKeyPack_of_dispatch.h_payV := via:StreamAccum.dedent_cover_of_landing(relay(fnp:entryPropsKeyPack_of_dispatch.h_payV.h_cv))",
-   "indicator_open_map #1 fn:indicator_open_map.h_cov_in := cases[lit(lo=—,idx=—,ks=k :: [],by=lemma(StreamAccum.indicator_cover_at_col))|punt]",
+   "indicator_open_map #1 fn:indicator_open_map.h_cov_in := cases[lit(lo=—,idx=—,ks=map(…) :: [],by=lemma(StreamAccum.indicator_cover_at_col))|punt]",
    "indicator_open_map #1 param:colon_open_map.h_cov_in := step(relay(fn:indicator_open_map.h_cov_in))",
    "indicator_open_map #1 param:question_open_map.h_cov_in := step(relay(fn:indicator_open_map.h_cov_in))",
    "indicator_open_map #1 param:question_open_map.h_cov_nil := step(relay(fn:indicator_open_map.h_cov_in))",
@@ -1143,7 +1143,7 @@ valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLem
 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 \
 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 \
 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 \
-doorForgotten=8 doorDropped=23 doorsOther=4 nodes=103335"
+doorForgotten=8 doorDropped=23 doorsOther=4 nodes=104226"
 
 /-! ## §6 The reading -/
 

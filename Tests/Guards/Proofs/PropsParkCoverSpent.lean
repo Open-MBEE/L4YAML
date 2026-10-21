@@ -57,22 +57,22 @@ slot, because what that slot states about the index is only that there IS one �
 `IndentStackCover.Floor.pop_to` spends the widths half alone. -/
 
 -- The stream face, floored at the entry's own level …
-example {sc : ScannerState} {sp_start sp_node : SurfPos} {n lo : Nat} {ks : List Nat}
-    (h_fl : Floor lo n (n :: ks)) (h_cv : Covered lo (n :: ks) sc)
+example {sc : ScannerState} {sp_start sp_node : SurfPos} {n lo : Nat} {ks : List FrameLevel}
+    (h_fl : Floor lo n (FrameLevel.map n :: ks)) (h_cv : Covered lo (FrameLevel.map n :: ks) sc)
     (closeF : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
-      ResumeFrames (SLYamlStream sp_start) (n :: ks) sp_m) :
-    (∃ ks : List Nat,
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map n :: ks) sp_m) :
+    (∃ ks : List FrameLevel,
       ((∃ lo m : Nat, Floor lo m ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True :=
-  Or.inl ⟨n :: ks, Or.inl ⟨lo, n, h_fl, h_cv⟩, closeF⟩
+  Or.inl ⟨FrameLevel.map n :: ks, Or.inl ⟨lo, n, h_fl, h_cv⟩, closeF⟩
 
 -- … and the value face, floored one column above the `?`, in the SAME shape.
-example {sc : ScannerState} {sp_start sp_node : SurfPos} {n nv lo : Nat} {ks : List Nat}
+example {sc : ScannerState} {sp_start sp_node : SurfPos} {n nv lo : Nat} {ks : List FrameLevel}
     (h_fl : Floor lo (n + 1) ks) (h_cv : Covered lo ks sc)
     (closeFV : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_m) :
-    (∃ (nv : Nat) (ks : List Nat),
+    (∃ (nv : Nat) (ks : List FrameLevel),
       ((∃ lo m : Nat, Floor lo m ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_m) ∨ True :=
@@ -80,10 +80,10 @@ example {sc : ScannerState} {sp_start sp_node : SurfPos} {n nv lo : Nat} {ks : L
 
 -- A producer with no cover fills the slot and keeps its frames, which is what
 -- the five punting producers do.
-example {sc : ScannerState} {sp_start sp_node : SurfPos} {n : Nat} {ks : List Nat}
+example {sc : ScannerState} {sp_start sp_node : SurfPos} {n : Nat} {ks : List FrameLevel}
     (closeF : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) :
-    (∃ ks : List Nat,
+    (∃ ks : List FrameLevel,
       ((∃ lo m : Nat, Floor lo m ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True :=
@@ -105,12 +105,12 @@ three mapping arms do the reverse.  So the preference never discards a cover
 that was there to spend. -/
 
 -- The entry face's own shape, for comparison: a width bound, and no cover slot.
-example {sp_start sp_node : SurfPos} {n : Nat} {ks : List Nat}
-    (h_lt : ∀ k' ∈ ks, k' < n)
+example {sp_start sp_node : SurfPos} {n : Nat} {ks : List FrameLevel}
+    (h_lt : ∀ fr ∈ ks, fr.width < n)
     (closeFE : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_m sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
-    (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+    (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
       ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_m sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) ∨ True :=
@@ -124,7 +124,7 @@ unchanged: the longer run an extension parks, and the completed value's own
 park.  Both spends are the same chain — the one items 148/150 already run on
 the pack beside them. -/
 
-example {sc s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List Nat}
+example {sc s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List FrameLevel}
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_dispatch : scanNextToken_dispatchContent
       (if s_prep.allowDirectives then
@@ -142,7 +142,7 @@ park is off a line start by the constructor's own `h_col0`.  So both of
 payment is `dedent_cover_of_floor` — item 151's factoring — in one line. -/
 
 example {sc s_prep : ScannerState} {c : Char} {sp_scan : SurfPos}
-    {w lo m : Nat} {ksw ksw' : List Nat}
+    {w lo m : Nat} {ksw ksw' : List FrameLevel}
     (h_noflow : s_prep.inFlow = false)
     (h_larm : sp_scan.col ≠ 0 → s_prep.inFlow = false →
       s_prep.simpleKey.possible = true ∧ s_prep.simpleKey.pos.col = s_prep.col ∧
@@ -153,8 +153,8 @@ example {sc s_prep : ScannerState} {c : Char} {sp_scan : SurfPos}
     (h_base : SentinelBase sc) (h_mono : Mono sc)
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_fl : Floor lo m ksw) (h_cv : Covered lo ksw sc)
-    (hmem : w ∈ ksw) (h_ww : ResumeWidths ksw ksw' w) (h_scol : s_prep.col = w) :
-    ∃ lo : Nat, Floor lo w (w :: ksw') ∧ Covered lo (w :: ksw') s_prep :=
+    (hmem : FrameLevel.map w ∈ ksw) (h_ww : ResumeWidths ksw ksw' w) (h_scol : s_prep.col = w) :
+    ∃ lo : Nat, Floor lo w (FrameLevel.map w :: ksw') ∧ Covered lo (FrameLevel.map w :: ksw') s_prep :=
   dedent_cover_of_floor (preprocess_mono h_preprocess h_mono)
     (by rw [← h_scol]
         exact landing_floor_of_arm h_noflow h_larm (by omega) h_base h_preprocess)
@@ -162,7 +162,7 @@ example {sc s_prep : ScannerState} {c : Char} {sp_scan : SurfPos}
 
 -- And the same payment composed into the context the props arm builds.
 example {sc s_prep : ScannerState} {c : Char}
-    {sp_start sp_scan sp_mid sp_prep : SurfPos} {n lo : Nat} {ks : List Nat}
+    {sp_start sp_scan sp_mid sp_prep : SurfPos} {n lo : Nat} {ks : List FrameLevel}
     (hcol_mid : sp_mid.col = 0)
     (h_ws : GStar SSWhite sp_mid sp_prep)
     (h_ssl : SSLComments sp_scan sp_mid)
@@ -171,11 +171,11 @@ example {sc s_prep : ScannerState} {c : Char}
     (h_fl : Floor lo n ks) (h_cv : Covered lo ks sc)
     (fS : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m)
-    (h_pay : ∀ (w : Nat) (ksw ksw' : List Nat),
+    (h_pay : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
         ((∃ lo m : Nat, Floor lo m ksw ∧ Covered lo ksw sc) ∨ True) →
-        w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-        ((∃ lo : Nat, Floor lo w (w :: ksw') ∧
-          Covered lo (w :: ksw') s_prep) ∨ True)) :
+        FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+        ((∃ lo : Nat, Floor lo w (FrameLevel.map w :: ksw') ∧
+          Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True)) :
     ResumeKeyCtx s_prep sp_start sp_prep :=
   resumectx_of_landing hcol_mid h_ws h_ssl h_preprocess hcorr_prep
     (Or.inl ⟨ks, Or.inl ⟨lo, n, h_fl, h_cv⟩, fS⟩) (Or.inr trivial) h_pay

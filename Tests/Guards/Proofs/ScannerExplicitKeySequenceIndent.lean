@@ -41,6 +41,7 @@ ordinary sibling entry.  §4 is the family the check refuses. -/
 namespace L4YAML.Tests.Guards.ScannerExplicitKeySequenceIndent
 
 open L4YAML L4YAML.Scanner
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open L4YAML.Proofs.PreprocessIndentStable L4YAML.Proofs.IndentStackCover
 
 /-! ## §1  The predicate, and the two refuters it completes -/
@@ -75,13 +76,13 @@ example {s : ScannerState} {top : IndentEntry}
     left open.  `preprocess_landing_mem_or_seq` returns the landing width as a
     frame OR the landing on a sequence level; both consumers now close the
     second. -/
-example {lo : Nat} {ks : List Nat} {s s' : ScannerState} {top : IndentEntry}
+example {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {top : IndentEntry}
     (hok : scanKey s = .ok s') (h_noflow : s.inFlow = false)
     (h_top : s.indents.back? = some top)
     (h_at : (s.col : Int) = top.column)
     (h_floor : lo ≤ s.col)
     (h_cov : Covered lo ks s) :
-    s.col ∈ ks :=
+    FrameLevel.map s.col ∈ ks :=
   landing_mem_of_key hok h_noflow h_top h_at h_floor h_cov
 
 /-! ## §2  One landing column, three indicators -/

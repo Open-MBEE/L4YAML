@@ -75,10 +75,10 @@ example : Covered 1 [] qPushed := by
 
 /-- And the floor conjunct itself only closes at `n + 1`: `Floor lo n []` at the
     `?`'s own index would demand `1 ≤ 0`. -/
-example : Floor 1 (0 + 1) ([] : List Nat) :=
+example : Floor 1 (0 + 1) ([] : List FrameLevel) :=
   ⟨Nat.le_refl _, fun _ h => absurd h (List.not_mem_nil)⟩
 
-example : ¬ Floor 1 0 ([] : List Nat) := fun h => absurd h.1 (by omega)
+example : ¬ Floor 1 0 ([] : List FrameLevel) := fun h => absurd h.1 (by omega)
 
 /-- The seed at its own type.  `Mono` is load-bearing here for the same reason
     it is in `Covered.pop_to`: the push bounds the TOP. -/
@@ -113,22 +113,22 @@ rides through it untouched. -/
 
 /-- The chain: a key at `k` inside the `?` conses its own width, and the park it
     opens carries the index one above itself. -/
-example {lo k : Nat} {ks : List Nat} {s s' : ScannerState}
-    (hb : Floor lo k (k :: ks)) (hc : Covered lo (k :: ks) s)
-    (h_step : Covered lo (k :: ks) s → Covered lo (k :: ks) s') :
-    Floor lo (k + 1) (k :: ks) ∧ Covered lo (k :: ks) s' :=
+example {lo k : Nat} {ks : List FrameLevel} {s s' : ScannerState}
+    (hb : Floor lo k (FrameLevel.map k :: ks)) (hc : Covered lo (FrameLevel.map k :: ks) s)
+    (h_step : Covered lo (FrameLevel.map k :: ks) s → Covered lo (FrameLevel.map k :: ks) s') :
+    Floor lo (k + 1) (FrameLevel.map k :: ks) ∧ Covered lo (FrameLevel.map k :: ks) s' :=
   ⟨hb.mono_index (Nat.le_succ k), h_step hc⟩
 
 /-- The nested branch: a landing strictly deeper than the park conses its width,
     and `n < w` carries the higher index across. -/
-example {lo n w : Nat} {ks : List Nat} (hb : Floor lo (n + 1) ks) (hlt : n < w) :
-    Floor lo w (w :: ks) :=
+example {lo n w : Nat} {ks : List FrameLevel} (hb : Floor lo (n + 1) ks) (hlt : n < w) :
+    Floor lo w (FrameLevel.map w :: ks) :=
   (hb.mono_index hlt).cons (Nat.le_trans hb.1 hlt)
 
 /-- The dedent branch: item 149's hop, at the value lane's index. -/
-example {lo n w : Nat} {ks ks' : List Nat}
-    (h : Floor lo (n + 1) ks) (hmem : w ∈ ks) (hsub : ∀ k' ∈ ks', k' ∈ ks) :
-    Floor lo w (w :: ks') :=
+example {lo n w : Nat} {ks ks' : List FrameLevel}
+    (h : Floor lo (n + 1) ks) (hmem : FrameLevel.map w ∈ ks) (hsub : ∀ fr ∈ ks', fr ∈ ks) :
+    Floor lo w (FrameLevel.map w :: ks') :=
   h.pop_to hmem hsub
 
 /-! ## §3  The payment, composed
@@ -138,10 +138,10 @@ The value lane's landing calls `dedent_cover_of_landing` — item 149's lemma, a
 had always punted. -/
 
 example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
-    {n w : Nat} {ksV : List Nat}
+    {n w : Nat} {ksV : List FrameLevel}
     (h_cov : (Mono sc ∧ SentinelBase sc) ∨ True)
     (h_covV : (∃ lo : Nat, Floor lo (n + 1) ksV ∧ Covered lo ksV sc) ∨ True)
-    (hmemV : w ∈ ksV)
+    (hmemV : FrameLevel.map w ∈ ksV)
     (h_larm : sp_scan.col ≠ 0 → s_prep.inFlow = false →
       s_prep.simpleKey.possible = true ∧ s_prep.simpleKey.pos.col = s_prep.col ∧
       s_prep.simpleKeyAllowed = true ∧
@@ -150,9 +150,9 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
     (h_pre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_ind_eq : s'.indents = s_prep.indents)
     (h_noflow : s_prep.inFlow = false)
-    (h_step : ∀ (lo : Nat) (ks : List Nat), Covered lo ks sc → Covered lo ks s')
-    {ksV' : List Nat} (h_wV : ResumeWidths ksV ksV' w) :
-    (∃ lo : Nat, Floor lo w (w :: ksV') ∧ Covered lo (w :: ksV') s') ∨ True :=
+    (h_step : ∀ (lo : Nat) (ks : List FrameLevel), Covered lo ks sc → Covered lo ks s')
+    {ksV' : List FrameLevel} (h_wV : ResumeWidths ksV ksV' w) :
+    (∃ lo : Nat, Floor lo w (FrameLevel.map w :: ksV') ∧ Covered lo (FrameLevel.map w :: ksV') s') ∨ True :=
   dedent_cover_of_landing h_cov h_covV hmemV h_larm h_scol h_pre h_ind_eq
     h_noflow h_step ksV' h_wV
 
@@ -162,8 +162,8 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
 example {sc : ScannerState} {sp_start sp_scan : SurfPos}
     (h : ImplicitKeyPack sc sp_start sp_scan) :
     ∃ (k : Nat) (sp_key : SurfPos),
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, Floor lo k (k :: ks) ∧ Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, Floor lo k (FrameLevel.map k :: ks) ∧ Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True) := by
@@ -174,8 +174,8 @@ example {sc : ScannerState} {sp_start sp_scan : SurfPos}
 example {sc : ScannerState} {sp_start sp_p sp_scan : SurfPos}
     (h : PropsKeyPack sc sp_start sp_p sp_scan) :
     ∃ k : Nat,
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, Floor lo k (k :: ks) ∧ Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, Floor lo k (FrameLevel.map k :: ks) ∧ Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True) := by
@@ -253,14 +253,14 @@ private def censusV (inputs : List String) : Nat × Nat × Nat × Nat :=
 /-! ## §5  The membership split is not a punt the cover can remove
 
 Item 149 named it as the next one: `entryKeyPack_of_dispatch`'s dedent runs
-`by_cases hmem : w ∈ ks` and returns `KeyPackPunt.dedent` when the landing names
+`by_cases hmem : FrameLevel.map w ∈ ks` and returns `KeyPackPunt.dedent` when the landing names
 no frame, and `preprocess_landing_mem_or_seq` derives that membership from the
 cover the branch now holds.  Deriving it would change nothing, and the reason is
 one line of Lean.
 
 `KeyPackPunt.dedent` takes no argument, so the punt disjunct is inhabited for
 EVERY state.  The branch therefore already returns the pack at exactly the
-inputs where `w ∈ ks` holds, and a derivation of `w ∈ ks` from other facts
+inputs where `FrameLevel.map w ∈ ks` holds, and a derivation of `FrameLevel.map w ∈ ks` from other facts
 cannot add an input to that set — it can only re-prove what the split already
 decided.  What would move the domain is the opposite change: a PAYLOAD on the
 constructor, so that a consumer holding the cover can refute the punt instead of
@@ -268,7 +268,7 @@ the producer deriving around it.  That is the shape the `tab` and
 `implicitValue` reasons already have, and the shape `noFrame` had before it was
 deleted.
 
-**Item 297 deletes `dedent`.**  The `w ∉ ks` exit keys a fresh document at the
+**Item 297 deletes `dedent`.**  The `FrameLevel.map w ∉ ks` exit keys a fresh document at the
 landing (items 296/297, row 19's over-approximation), so the constructor has no
 production.  The exhibit below stands on `noKeyContext`, the nullary reason
 that remains. -/
@@ -279,20 +279,20 @@ example (s : ScannerState) : KeyPackPunt s := KeyPackPunt.noKeyContext
     not name: `preprocess_landing_mem_or_seq` wants the landing at or right of
     the cover's floor, and a dedent lands strictly LEFT of the park's index —
     `Floor`'s index half says nothing there. -/
-example : ¬ (∀ (lo n w : Nat) (ks : List Nat), Floor lo n ks → w < n → lo ≤ w) := by
+example : ¬ (∀ (lo n w : Nat) (ks : List FrameLevel), Floor lo n ks → w < n → lo ≤ w) := by
   intro h
   exact absurd (h 2 3 1 [] ⟨by omega, fun _ hx => absurd hx (List.not_mem_nil)⟩ (by omega))
     (by omega)
 
 /-- The lemma that WOULD settle it, at its type — and its three premises, of
     which the park's `SentinelBase` is the only one the branch holds today. -/
-example {sc s_prep : ScannerState} {c : Char} {lo : Nat} {ks : List Nat}
+example {sc s_prep : ScannerState} {c : Char} {lo : Nat} {ks : List FrameLevel}
     (hok : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_pop : s_prep.indents ≠ sc.indents)
     (h_base : SentinelBase sc)
     (h_floor : lo ≤ s_prep.col)
     (h_cov : Covered lo ks sc) :
-    s_prep.col ∈ ks ∨
+    FrameLevel.map s_prep.col ∈ ks ∨
       ∃ e, s_prep.indents.back? = some e ∧ e.isSequence = true ∧
         e.column = (s_prep.col : Int) :=
   preprocess_landing_mem_or_seq hok h_pop h_base h_floor h_cov

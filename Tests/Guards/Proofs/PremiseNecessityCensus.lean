@@ -332,8 +332,10 @@ declarations' own binders and not by a rescoring of an existing one.
 -- and three stubs, whose `_h` is unused until its lane proves it (HypothesisReaderCensus's tally moves the same way).
 -- 2026-10-21 (item 313): `constants` 1403 → 1405, `decls` 1117 → 1119, `READ` +1, `RELAY` +2, `UNUSED` 12 → 15 — the
 -- content-step lemma and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
+-- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
+-- dispatch-only transport and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
 def expectedModuleTallyP : String :=
-  "constants=1405 decls=1119 eta=414 FIELD=185 READ=1200 RELAY=2189 RETURN=138 UNUSED=15"
+  "constants=1407 decls=1121 eta=414 FIELD=185 READ=1201 RELAY=2190 RETURN=138 UNUSED=17"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
@@ -591,13 +593,13 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
         queue := queue.push s
   return alive
 
-/-- Sixteen dead binders in the whole explored closure, and every one is `UNUSED`.
-    Fifteen are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
-    does not move, six of them the named alternative's stubs and promised wrappers (item
+/-- Eighteen dead binders in the whole explored closure, and every one is `UNUSED`.
+    Seventeen are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
+    does not move, eight of them the named alternative's stubs and promised wrappers (item
     311: `PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`; item 313:
-    `PackAlt.step_content`'s three — each `trivial` until its promise or its lane is its
-    body, so its binders are dead by construction) — and the sixteenth is one module
-    over. -/
+    `PackAlt.step_content`'s three; item 314: `PackAlt.step_dispatch`'s two — each `trivial`
+    until its promise or its lane is its body, so its binders are dead by construction) —
+    and the eighteenth is one module over. -/
 -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is its
 -- thirteenth binder.
 def expectedDead : List String :=
@@ -606,6 +608,8 @@ def expectedDead : List String :=
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#4 (_h_preprocess) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#5 (_h_dispatch) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#10 (_h_src) [class marker]",
@@ -635,10 +639,12 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2"
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#4"
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#5"
-  | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6" => "lane stub"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4" => "lane stub"
   | _ => "family uniformity"
 
-def expectedDeadTally : String := "dead=16 UNUSED=16 RELAY=0"
+def expectedDeadTally : String := "dead=18 UNUSED=18 RELAY=0"
 
 run_cmd do
   let env ← getEnv

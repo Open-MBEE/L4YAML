@@ -4467,8 +4467,11 @@ script, as `expectedInlineArms` is. -/
 -- depth: the census raises the cap, and the same 264 sites are read at once.
 -- 2026-10-21 (item 313): `stubs` 3 → 4 — `PackAlt.step_content`, lane (b)'s transport wrapper, is `trivial` with its
 -- predicate proof promised after `-- refused:`; the `False` flip sorries every promised body (a lemma, not a site).
+-- 2026-10-21 (item 314): `sites` 264 → 203, `leaf` 161 → 100, `stubs` 4 → 5 — the content lane's sixty-one
+-- leaves hand the alternative on (through `PackAlt.step_content`/`step_dispatch` or verbatim) and are no `trivial` to flip;
+-- `PackAlt.step_dispatch` is the fifth promised body.
 def expectedPackFlip : String :=
-  "sites=264 decls=24 rounds=2 decline=264 relay=0 leaf=161 uncond=103 stubs=4"
+  "sites=203 decls=24 rounds=2 decline=203 relay=0 leaf=100 uncond=103 stubs=5"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4482,8 +4485,11 @@ def expectedPackFlip : String :=
 -- (`promised=2`: it and `ofRefused`), four of them surfacing only as the ones before them in the same application were
 -- paid (an application reports its first failing argument); the ones left are the `-`/`:` dispatch's (lane (e),
 -- `accum_block_on_closeThenBlock`) and the flow open's (`compact_open_map`); `decline` stands at 245, no root is paid yet.
+-- 2026-10-21 (item 314): `decline` 245 → 184 (`leaf` 151 → 90), `relayState` 3 → 3, `promised` 2 → 3 — the
+-- content lane's leaves are paid; what stands are its roots (the resumed sequence levels, the fresh parks of
+-- `content_dispatch_routed`), the key-pack lemmas' arms (no step in scope) and the other dispatches' sites.
 def expectedPackResidue : String :=
-  "sites=248 decls=22 rounds=2 decline=245 relayTrue=0 relayState=3 leaf=151 uncond=94 stubs=1 promised=2"
+  "sites=187 decls=22 rounds=2 decline=184 relayTrue=0 relayState=3 leaf=90 uncond=94 stubs=1 promised=3"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

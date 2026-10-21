@@ -1111,9 +1111,12 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- 2026-10-20 (item 309): `DECLINE-closed` 181 → 180, `DECLINE-free` 4 → 5 — `explFrameValueLine`'s
 -- `Or.inr h => Or.inr h` (generic in the alternative) hands back the premise's alternative where
 -- `Or.inr trivial` mentioned nothing.
+-- 2026-10-21 (item 314): `DECLINE-closed` 180 → 132, `DECLINE-free` 5 → 53 — forty-eight split leaves of the content
+-- lane hand back their hypothesis (`Or.inr h => Or.inr (PackAlt.step_content … h)` or `Or.inr h`) where they declined with
+-- a closed `trivial`; the leaf count, the roots and the agreement stand.
 def expectedSplitBranch : String :=
   "splits=166 leaves=363 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=180, DECLINE-free=5, PAY-free=177, VIA \
+agree=110/110 disagree=0 [DECLINE-closed=132, DECLINE-free=53, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

@@ -576,8 +576,10 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- 2026-10-21 (item 313): `constants` 1403 → 1405, `decls` 1117 → 1119, `READ` +1, `RELAY` +2, `UNUSED` 12 → 15 —
 -- `ExplicitValueRefused.step_content` (reads its predicate, relays the two step facts) and `PackAlt.step_content`, whose
 -- three binders are unused until the promise after `-- refused:` is its body.
+-- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
+-- dispatch-only transport and its promised wrapper (two unused binders until the promise is its body).
 def expectedModuleTally : String :=
-  "constants=1405 decls=1119 eta=414 FIELD=163 READ=1162 RELAY=2339 RETURN=48 UNUSED=15"
+  "constants=1407 decls=1121 eta=414 FIELD=163 READ=1163 RELAY=2340 RETURN=48 UNUSED=17"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.
@@ -598,7 +600,9 @@ def expectedUnused : List String :=
     "question_open_map#15 (_h_noflow_disp)",
     "step_content#4 (_h_preprocess)",
     "step_content#5 (_h_dispatch)",
-    "step_content#6 (_h)" ]
+    "step_content#6 (_h)",
+    "step_dispatch#3 (_h_dispatch)",
+    "step_dispatch#4 (_h)" ]
 
 run_cmd do
   let env ← getEnv

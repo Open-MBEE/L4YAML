@@ -20035,6 +20035,32 @@ theorem PackAlt.step_content {sc s_prep s' : ScannerState} {c : Char}
     (_h : PackAlt sc) : PackAlt s' :=
   trivial  -- refused: ExplicitValueRefused.step_content _h_preprocess _h_dispatch _h
 
+/-- **The same transport from the LANDING's own state** (item 314): a resuming context states the
+    alternative at `s_prep`, the preprocessed state, and the content dispatch carries it to `s'` —
+    the directive normalization writes no register field and no indent. -/
+lemma ExplicitValueRefused.step_dispatch {s_prep s' : ScannerState} {c : Char}
+    (h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) c = .ok s')
+    (h : ExplicitValueRefused s_prep) : ExplicitValueRefused s' := by
+  rcases h with h_ek | h_neg
+  · refine Or.inl ((ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans ?_)
+    split <;> simpa using h_ek
+  · refine Or.inr ((currentIndent_of_indents_eq
+      (IndentStackBase.dispatchContent_preserves_indents h_dispatch)).trans ?_)
+    split
+    · exact (currentIndent_of_indents_eq rfl).trans h_neg
+    · exact h_neg
+
+/-- The dispatch-only step on the named alternative (`trivial` while `PackAlt` is `True`, its
+    proof promised after `-- refused:`). -/
+theorem PackAlt.step_dispatch {s_prep s' : ScannerState} {c : Char}
+    (_h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) c = .ok s')
+    (_h : PackAlt s_prep) : PackAlt s' :=
+  trivial  -- refused: ExplicitValueRefused.step_dispatch _h_dispatch _h
+
 /-- The indicator dispatch's own `!inFlow` guard, run back to the flag: shared
     by both floors (items 27/28), which each need the post-update state's
     `needIndentCheck` and can only observe `inFlow` on it. -/
@@ -31384,7 +31410,7 @@ lemma content_dispatch_routed
                  h_covv.imp (fun ⟨lo, hb, hc⟩ =>
                    ⟨lo, hb, h_cov_lift lo (k :: ksv) hc⟩) id,
                  resumeMapRouteK h_ind contv⟩
-           | Or.inr _ => Or.inr trivial)
+           | Or.inr h => Or.inr (PackAlt.step_dispatch h_dispatch h))
       | inr _ =>
         cases h_suffixctx with
         -- Item 117: the SUFFIX context next — the park that closed here was a
@@ -31645,7 +31671,7 @@ lemma content_dispatch_routed
                  h_covv.imp (fun ⟨lo, hb, hc⟩ =>
                    ⟨lo, hb, h_cov_lift lo (k :: ksv) hc⟩) id,
                  resumeMapRouteK h_ind contv⟩
-           | Or.inr _ => Or.inr trivial)
+           | Or.inr h => Or.inr (PackAlt.step_dispatch h_dispatch h))
           -- **Item 168: the sequence face, spent.**  Same cons as the two lanes
           -- above and a shorter bottom — the landed entry joins the level the
           -- landing resumed and the enclosing collection's tail stays owed
@@ -32635,7 +32661,7 @@ lemma accum_content_on_pendingBlock_indented
                       kslot sp (SBlockIndented.node n .blockIn sp_scan sp h_bn)
                         sp (SCompactSeqTail.nil n sp)
                         sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                -- Item 93: the entry's own value-line pack (item 92's field)
                -- serves the frame face — the compact mapping this pack will
                -- build IS this entry's content, `nil` sequence tail
@@ -32646,7 +32672,7 @@ lemma accum_content_on_pendingBlock_indented
                      (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                 | Or.inr _ => Or.inr trivial⟩)
+                 | Or.inr h => Or.inr h⟩)
                -- Item 125: an entry's own compact slot (see the root site) —
                -- the field's face is the same frame `h_compact` carries above.
                (Or.inr ⟨h_close_old, h_col_old,
@@ -32655,7 +32681,7 @@ lemma accum_content_on_pendingBlock_indented
                      (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                 | Or.inr _ => Or.inr trivial⟩)
+                 | Or.inr h => Or.inr h⟩)
                -- Item 99: the frames feed the pack's resume twin — the node
                -- (or the empty entry) closes this entry, the nil tail closes
                -- the sequence, and the levels below ride through.
@@ -32703,14 +32729,14 @@ lemma accum_content_on_pendingBlock_indented
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                           sp_end h_tail)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                (match h_closeFV_old with
                 | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
                     fun sp_m h_ssl =>
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
                           sp_end h_tail)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                -- Item 149: this park carries no cover, so its dedent hop has none to pay.
                (Or.inr trivial) hna hnt h_ska
                hcorr_prep hcorr_result h_corr h_not_doc h_flow_disp
@@ -32736,7 +32762,7 @@ lemma accum_content_on_pendingBlock_indented
                             h_sep_all (h_flow_all (n + 1))
                             (white_prepend_SSLComments h_trailing_ws h_ssl)))
                         sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 110: `h_close_entry_old`'s RESUME face, transported the
              -- same way that closure is — the entry's node folds in, the
              -- sequence tail rides, and the levels BELOW the entry stand
@@ -32779,7 +32805,7 @@ lemma accum_content_on_pendingBlock_indented
                           h_sep_all (h_flow_all (n + 1))
                           (white_prepend_SSLComments h_trailing_ws h_ssl)))
                       sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- **Item 198: the value-line stack, relayed with the content.**
              -- `h_closeF_old`'s twin across the identical fold — the park's
              -- entry closes on the node this arm just read, and what stands
@@ -32793,7 +32819,7 @@ lemma accum_content_on_pendingBlock_indented
                         (SBlockNode.flowInBlock (n + 1) .blockIn sp_scan sp_prep sp_gram sp_final
                           h_sep_all (h_flow_all (n + 1))
                           (white_prepend_SSLComments h_trailing_ws h_ssl)))⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
               -- **Item 207: and the park's own indent check.**  The entry-level park
               -- is the same content dispatch one slot in, so the same five arguments
               -- `h_arm` is paid with answer the flag too.
@@ -32827,7 +32853,7 @@ lemma accum_content_on_pendingBlock_indented
                       kslot sp (SBlockIndented.node n .blockIn sp_scan sp h_bn)
                         sp (SCompactSeqTail.nil n sp)
                         sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                -- Item 94: the entry's own value-line pack (item 92's field)
                -- serves the frame face, `nil` sequence tail — as at the
                -- `entryKeyPack_of_dispatch` site above (`? - &p a: 1⏎: - w`).
@@ -32837,7 +32863,7 @@ lemma accum_content_on_pendingBlock_indented
                      (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                 | Or.inr _ => Or.inr trivial⟩)
+                 | Or.inr h => Or.inr h⟩)
                -- Item 115: items 99/108's faces, as at the
                -- `entryKeyPack_of_dispatch` site above — the run-headed key's
                -- mapping (or the empty entry) closes this entry, the nil tail
@@ -32882,14 +32908,14 @@ lemma accum_content_on_pendingBlock_indented
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                           sp_end h_tail)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                (match h_closeFV_old with
                 | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
                     fun sp_m h_ssl =>
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
                           sp_end h_tail)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                -- Item 149: this park carries no cover, so its dedent hop has none to pay.
                (Or.inr trivial)
                h_ska (by revert h_flow_disp; split <;> (intro h; exact h))
@@ -32911,7 +32937,7 @@ lemma accum_content_on_pendingBlock_indented
                      (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                 | Or.inr _ => Or.inr trivial⟩)
+                 | Or.inr h => Or.inr h⟩)
                hcorr_prep h_corr h_preprocess)
              ⟨h_nic_s, h_ind_s⟩
              -- Item 68: the entry park sits at `n + 1` (item 59), the run starts
@@ -32930,7 +32956,7 @@ lemma accum_content_on_pendingBlock_indented
                   (fun sp_m h_bn sp_i sp_c h_iv h_lit sp_v h_sbi =>
                     kslot sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                       sp_m (SCompactSeqTail.nil n sp_m) sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 114: the ENTRY's chain — the run's node fills `[184]`'s
              -- slot and the tail rides (`k:⏎  - &p a⏎  - y`).  Item 179: the
              -- face names the raw column beside the shifted route.
@@ -32944,7 +32970,7 @@ lemma accum_content_on_pendingBlock_indented
                   fun sp_m h_bn sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi =>
                     kslot sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                       sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 114: the entry-level resume frames — item 110's landing
              -- spend rides the run (`k:⏎  - &p a⏎b: 2` pops).
              (match h_closeF_old with
@@ -32968,7 +32994,7 @@ lemma accum_content_on_pendingBlock_indented
                   fun sp_m h_bn sp_end h_tail =>
                     closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                       sp_end h_tail⟩
-              | Or.inr _ => Or.inr trivial),
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
            hcorr_result⟩
   · -- Item 26: `  - |` — `[198]`'s block scalar at the ENTRY's index.  The
     -- node is complete where the scanner stopped ([170]'s `l-chomped-empty`
@@ -33012,7 +33038,7 @@ lemma accum_content_on_pendingBlock_indented
                       (SBlockIndented.node n .blockIn sp_scan sp_m
                         (h_nodeAt sp_m h_ssl))
                       sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 110: `h_close_entry_old`'s RESUME face, the re-read node
              -- folded in exactly as that closure folds it — the landing pops
              -- to a level the sequence stands in (`k:⏎  - |⏎    x⏎b: 2`).
@@ -33046,7 +33072,7 @@ lemma accum_content_on_pendingBlock_indented
                       (SBlockIndented.node n .blockIn sp_scan sp_m
                         (h_nodeAt sp_m h_ssl))
                       sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 198: same relay, the re-read node folded in as above.
              (match h_closeFV_old with
               | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
@@ -33054,7 +33080,7 @@ lemma accum_content_on_pendingBlock_indented
                     closeFV sp_final
                       (SBlockIndented.node n .blockIn sp_scan sp_final
                         (h_nodeAt sp_final h_ssl))⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
               -- **Item 207: and the park's own indent check.**  The entry-level park
               -- is the same content dispatch one slot in, so the same five arguments
               -- `h_arm` is paid with answer the flag too.
@@ -33091,7 +33117,7 @@ lemma accum_content_on_pendingBlock_indented
                       kslot sp (SBlockIndented.node n .blockIn sp_scan sp h_bn)
                         sp (SCompactSeqTail.nil n sp)
                         sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                -- Item 93: the entry's own value-line pack (item 92's field)
                -- serves the frame face — the compact mapping this pack will
                -- build IS this entry's content, `nil` sequence tail
@@ -33102,7 +33128,7 @@ lemma accum_content_on_pendingBlock_indented
                      (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                 | Or.inr _ => Or.inr trivial⟩)
+                 | Or.inr h => Or.inr h⟩)
                -- Item 125: an entry's own compact slot (see the root site) —
                -- the field's face is the same frame `h_compact` carries above.
                (Or.inr ⟨h_close_old, h_col_old,
@@ -33111,7 +33137,7 @@ lemma accum_content_on_pendingBlock_indented
                      (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                 | Or.inr _ => Or.inr trivial⟩)
+                 | Or.inr h => Or.inr h⟩)
                -- Item 99: the frames feed the pack's resume twin — the node
                -- (or the empty entry) closes this entry, the nil tail closes
                -- the sequence, and the levels below ride through.
@@ -33159,14 +33185,14 @@ lemma accum_content_on_pendingBlock_indented
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                           sp_end h_tail)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                (match h_closeFV_old with
                 | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
                     fun sp_m h_ssl =>
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
                           sp_end h_tail)⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr h)
                -- Item 149: this park carries no cover, so its dedent hop has none to pay.
                (Or.inr trivial) hna hnt h_ska
                hcorr_prep hcorr_result h_corr h_not_doc h_flow_disp
@@ -33192,7 +33218,7 @@ lemma accum_content_on_pendingBlock_indented
                             h_sep_all h_node_f
                             (white_prepend_SSLComments h_tws_f h_ssl)))
                         sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 110: the multi-line value's face, exactly as above
              -- (`k:⏎  - "p⏎    q"⏎b: 2`).
              (match h_closeF_old with
@@ -33231,7 +33257,7 @@ lemma accum_content_on_pendingBlock_indented
                           h_sep_all h_node_f
                           (white_prepend_SSLComments h_tws_f h_ssl)))
                       sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              -- Item 198: same relay, the multi-line value's node.
              (match h_closeFV_old with
               | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
@@ -33241,7 +33267,7 @@ lemma accum_content_on_pendingBlock_indented
                         (SBlockNode.flowInBlock (n + 1) .blockIn sp_scan sp_prep sp_gramf sp_final
                           h_sep_all h_node_f
                           (white_prepend_SSLComments h_tws_f h_ssl)))⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
               -- **Item 207: and the park's own indent check.**  The entry-level park
               -- is the same content dispatch one slot in, so the same five arguments
               -- `h_arm` is paid with answer the flag too.
@@ -33500,7 +33526,7 @@ lemma accum_content_on_pendingMapValue_indented
             (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
               route sp_v (SBlockMapEntry.explicit n sp_q sp_scan sp sp_i sp_c sp_v
                 h_qlit (SBlockIndented_blockIn_to_blockOut h_bi) h_iv h_lit h_sbi))⟩
-        | Or.inr _ => Or.inr trivial⟩
+        | Or.inr h => Or.inr h⟩
   have h_compact_vslot : ((∀ sp, SBlockIndented n .blockIn sp_scan sp →
       SLYamlStream sp_start sp) ∧ sp_scan.col = n + 1 ∧
       -- Item 196: the chain, in step with the pack conjunct it funds.
@@ -33519,7 +33545,7 @@ lemma accum_content_on_pendingMapValue_indented
             (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
               route sp_v (SBlockMapEntry.explicit n sp_q sp_scan sp sp_i sp_c sp_v
                 h_qlit (SBlockIndented_blockIn_to_blockOut h_bi) h_iv h_lit h_sbi))⟩
-        | Or.inr _ => Or.inr trivial⟩
+        | Or.inr h => Or.inr h⟩
     | Or.inr _ => Or.inr trivial
   rcases indentedValue_reads_at_any_indent (h_src := h_src) sc sp_scan (n + 1) s_prep s' c sp_prep sp_scan'
       h_floor_old h_col0_old hcorr_prep hcorr_result h_corr h_preprocess h_not_doc h_flow_disp h_dispatch with
@@ -33605,7 +33631,7 @@ lemma accum_content_on_pendingMapValue_indented
                               h_sep_all (h_flow_all (n + 1))
                               (white_prepend_SSLComments h_trailing_ws h_ssl))))
                         h_ind h_lit h_sbi))⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                -- Item 93: the park's twin, as at the root arm
                -- (`k:⏎  ? a: b⏎  : - w`).
                (match h_kslot with
@@ -33616,7 +33642,7 @@ lemma accum_content_on_pendingMapValue_indented
                           h_sep_all (h_flow_all (n + 1))
                           (white_prepend_SSLComments h_trailing_ws h_ssl))
                         sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                | Or.inr _ => Or.inr trivial))
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)))
               (content_park_arm (preprocess_some_peek h_preprocess)
                 h_flow_disp h_not_doc h_dispatch hcorr_result)
              -- **Item 109: the park's own RESUME frames** — the SAME node the
@@ -33648,7 +33674,7 @@ lemma accum_content_on_pendingMapValue_indented
                   closeFV sp_mid (SBlockNode.flowInBlock (n + 1) .blockIn sp_scan sp_prep sp_gram
                     sp_mid h_sep_all (h_flow_all (n + 1))
                     (white_prepend_SSLComments h_trailing_ws h_ssl))⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              (nodir_of_content_dispatch h_dispatch)
              (completedTail_of_dispatch h_dispatch hna hnt)
              -- **Item 207: and the park's own indent check.**  `content_park_nic_any` is
@@ -33751,7 +33777,7 @@ lemma accum_content_on_pendingMapValue_indented
                   h_cov.imp (fun ⟨lo, hb, hc⟩ =>
                     ⟨lo, _, hb, h_cov_step lo ks hc⟩) id,
                   closeFV⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              (nodir_of_content_dispatch h_dispatch)
              -- Item 199: a sentinel-level props park stands under no entry, so it has
              -- no ENTRY face to bottom — `h_closeFE` is punted here for the same
@@ -33799,13 +33825,13 @@ lemma accum_content_on_pendingMapValue_indented
                         (SBlockIndented.node n .blockOut sp_scan sp_mid
                           (SBlockNode_blockIn_to_blockOut (h_nodeAt sp_mid h_ssl)))
                         h_iv h_lit h_sbi))⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                (match h_kslot with
                 | Or.inl ⟨ns, kslot⟩ => Or.inl ⟨ns, fun nv hmem =>
                     (fun sp_mid sp_i sp_c h_ssl h_iv h_lit sp_v h_sbi =>
                       kslot nv hmem sp_mid (h_nodeAt sp_mid h_ssl)
                         sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                | Or.inr _ => Or.inr trivial))
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)))
                (content_park_arm (preprocess_some_peek h_preprocess)
                  h_flow_disp h_not_doc h_dispatch hcorr_result)
              -- Item 112: items 99/108's faces — the re-read node feeds the
@@ -33824,7 +33850,7 @@ lemma accum_content_on_pendingMapValue_indented
                     ⟨lo, _, hb, h_cov_step lo ks hc⟩) id,
                   fun sp_mid h_ssl =>
                   closeFV sp_mid (h_nodeAt sp_mid h_ssl)⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              (nodir_of_content_dispatch h_dispatch)
              (completedTail_of_dispatch h_dispatch hna hnt)
              -- **Item 154: and the park's own indent check.**  `[170]`/`[174]`'s body
@@ -33904,7 +33930,7 @@ lemma accum_content_on_pendingMapValue_indented
                               h_sep_all h_node_f
                               (white_prepend_SSLComments h_tws_f h_ssl))))
                         h_ind h_lit h_sbi))⟩
-                | Or.inr _ => Or.inr trivial)
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                -- Item 93: the park's twin, the multi-line node folded in as
                -- the closure folds it (`k:⏎  ? a: "p⏎      q"⏎  : - w`).
                (match h_kslot with
@@ -33915,7 +33941,7 @@ lemma accum_content_on_pendingMapValue_indented
                           h_sep_all h_node_f
                           (white_prepend_SSLComments h_tws_f h_ssl))
                         sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                | Or.inr _ => Or.inr trivial))
+                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)))
               (content_park_arm (preprocess_some_peek h_preprocess)
                 h_flow_disp h_not_doc h_dispatch hcorr_result)
              -- Item 109: the park's own frames, the multi-line node folded in
@@ -33936,7 +33962,7 @@ lemma accum_content_on_pendingMapValue_indented
                   fun sp_mid h_ssl =>
                   closeFV sp_mid (SBlockNode.flowInBlock (n + 1) .blockIn sp_scan sp_prep sp_gramf
                     sp_mid h_sep_all h_node_f (white_prepend_SSLComments h_tws_f h_ssl))⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
              (nodir_of_content_dispatch h_dispatch)
              (completedTail_of_dispatch h_dispatch hna hnt)
              -- **Item 207: and the park's own indent check.**  `content_park_nic_any` is
@@ -34765,7 +34791,7 @@ lemma accum_content_pending (sc : ScannerState)
         match h_closeFVS_p with
         | Or.inl ⟨nv, ks, h_cov, closeFV⟩ => Or.inl ⟨nv, ks, h_cov, fun sp_m h_ssl' =>
             closeFV sp_m (h_nodeAt sp_m h_ssl')⟩
-        | Or.inr _ => Or.inr trivial
+        | Or.inr h => Or.inr h
       -- **Item 153: and the payment.**  This arm is the break-crossed one and
       -- the park is off a line start by its own `h_col0` field (a `[96]` run is
       -- at least one character wide), so `landing_floor_of_arm` has both of its
@@ -35475,7 +35501,7 @@ lemma accum_content_pending (sc : ScannerState)
                               (fun sp_mid sp_i sp_c h_ssl h_ind h_lit sp_v h_sbi =>
                                 kslot nv hmem sp_mid (h_nodeAt sp_mid h_ssl)
                                   sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (content_park_arm (preprocess_some_peek h_preprocess)
                              h_flow_disp h_not_doc h_dispatch hcorr_result)
                          -- Item 114: the mapping producers' frames ride onto
@@ -35501,7 +35527,7 @@ lemma accum_content_pending (sc : ScannerState)
                               h_cov.imp (fun ⟨lo, m, hb, hc⟩ =>
                                 ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
                               fun sp_mid h_ssl => closeFVS sp_mid (h_nodeAt sp_mid h_ssl)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                          (nodir_of_content_dispatch h_dispatch)
                          (completedTail_of_dispatch h_dispatch hamp hbang)
                          -- **Item 207: and the park's own indent check.**  `content_park_nic_any` is
@@ -35551,7 +35577,7 @@ lemma accum_content_pending (sc : ScannerState)
                               (fun sp_mid sp_i sp_c h_ssl h_ind h_lit sp_v h_sbi =>
                                 kslot nv hmem sp_mid (h_nodeAt sp_mid h_ssl)
                                   sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (content_park_arm (preprocess_some_peek h_preprocess)
                              h_flow_disp h_not_doc h_dispatch hcorr_result)
                          -- Item 114: the mapping frames ride the re-read
@@ -35576,7 +35602,7 @@ lemma accum_content_pending (sc : ScannerState)
                               h_cov.imp (fun ⟨lo, m, hb, hc⟩ =>
                                 ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
                               fun sp_mid h_ssl => closeFVS sp_mid (h_nodeAt sp_mid h_ssl)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                          (nodir_of_content_dispatch h_dispatch)
                          (completedTail_of_dispatch h_dispatch hamp hbang)
                          -- **Item 207: and the park's own indent check.**  `content_park_nic_any` is
@@ -35594,20 +35620,20 @@ lemma accum_content_pending (sc : ScannerState)
               have h_routeE_k : (∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
                   ∀ sp_end : SurfPos, SCompactSeqTail k sp_m sp_end →
                   SLYamlStream sp_start sp_end) ∨ PackAlt sc := by
-                rcases h_routeE_p with ⟨ne, hne, r⟩ | _
+                rcases h_routeE_p with ⟨ne, hne, r⟩ | h_alt
                 · obtain rfl : ne = k := by omega
                   exact Or.inl r
-                · exact Or.inr trivial
+                · exact Or.inr h_alt
               have h_kslotE_k : (∃ nv : Nat,
                   ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
                   ∀ sp_e : SurfPos, SCompactSeqTail k sp_m sp_e →
                   ∀ sp_i sp_c : SurfPos, SIndent nv sp_e sp_i → GLit ':' sp_i sp_c →
                   ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
                   SLYamlStream sp_start sp_v) ∨ PackAlt sc := by
-                rcases h_kslotE_p with ⟨ne, nv, hne, r⟩ | _
+                rcases h_kslotE_p with ⟨ne, nv, hne, r⟩ | h_alt
                 · obtain rfl : ne = k := by omega
                   exact Or.inl ⟨nv, r⟩
-                · exact Or.inr trivial
+                · exact Or.inr h_alt
               have h_closeFE_k : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
                   ((∃ lo : Nat, IndentStackCover.Floor lo k ks ∧
                     IndentStackCover.Covered lo ks sc) ∨ True) ∧
@@ -35626,10 +35652,10 @@ lemma accum_content_pending (sc : ScannerState)
                   ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
                   ∀ sp_end : SurfPos, SCompactSeqTail k sp_m sp_end →
                   KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc := by
-                rcases h_closeFEV_p with ⟨ne, nv, ks, hne, h_ltk, r⟩ | _
+                rcases h_closeFEV_p with ⟨ne, nv, ks, hne, h_ltk, r⟩ | h_alt
                 · obtain rfl : ne = k := by omega
                   exact Or.inl ⟨nv, ks, h_ltk, r⟩
-                · exact Or.inr trivial
+                · exact Or.inr h_alt
               -- One question, one deferral: is there a reading of this value at
               -- EVERY index?  Both negative answers — a block-scalar header and
               -- a step that crossed a break — are already-named families.
@@ -35765,7 +35791,7 @@ lemma accum_content_pending (sc : ScannerState)
                                 fun sp_m h_ssl sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi =>
                                   kslotE sp_m (h_nodeAt sp_m h_ssl)
                                     sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-                            | Or.inr _ => Or.inr trivial)
+                            | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (match h_closeFE_k with
                             | Or.inl ⟨ks, h_lt, h_cv, closeFE⟩ => Or.inl ⟨ks, h_lt,
                                 -- Item 155: the entry face carries a cover now,
@@ -35791,7 +35817,7 @@ lemma accum_content_pending (sc : ScannerState)
                             | Or.inl ⟨nv, ks, h_ltk, closeFEV⟩ => Or.inl ⟨nv, ks, h_ltk,
                                 fun sp_mid h_ssl sp_end h_tail =>
                                   closeFEV sp_mid (h_nodeAt sp_mid h_ssl) sp_end h_tail⟩
-                            | Or.inr _ => Or.inr trivial)
+                            | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                             -- **Item 207: and the park's own indent check.**  The entry-level park
                             -- is the same content dispatch one slot in, so the same five arguments
                             -- `h_arm` is paid with answer the flag too.
@@ -35814,7 +35840,7 @@ lemma accum_content_pending (sc : ScannerState)
                               (fun sp_mid sp_i sp_c h_ssl h_ind h_lit sp_v h_sbi =>
                                 kslot nv hmem sp_mid (h_nodeAt sp_mid h_ssl)
                                   sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (content_park_arm (preprocess_some_peek h_preprocess)
                              h_flow_disp h_not_doc h_dispatch hcorr_result)
                          -- Item 114: the mapping frames ride, one index up
@@ -35839,7 +35865,7 @@ lemma accum_content_pending (sc : ScannerState)
                               h_cov.imp (fun ⟨lo, m, hb, hc⟩ =>
                                 ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
                               fun sp_mid h_ssl => closeFVS sp_mid (h_nodeAt sp_mid h_ssl)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                          (nodir_of_content_dispatch h_dispatch)
                          (completedTail_of_dispatch h_dispatch hamp hbang)
                          -- **Item 207: and the park's own indent check.**  `content_park_nic_any` is
@@ -35887,7 +35913,7 @@ lemma accum_content_pending (sc : ScannerState)
                                 fun sp_m h_ssl sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi =>
                                   kslotE sp_m (h_nodeAt sp_m h_ssl)
                                     sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-                            | Or.inr _ => Or.inr trivial)
+                            | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (match h_closeFE_k with
                             | Or.inl ⟨ks, h_lt, h_cv, closeFE⟩ => Or.inl ⟨ks, h_lt,
                                 -- Item 155: the entry face carries a cover now,
@@ -35907,7 +35933,7 @@ lemma accum_content_pending (sc : ScannerState)
                             | Or.inl ⟨nv, ks, h_ltk, closeFEV⟩ => Or.inl ⟨nv, ks, h_ltk,
                                 fun sp_mid h_ssl sp_end h_tail =>
                                   closeFEV sp_mid (h_nodeAt sp_mid h_ssl) sp_end h_tail⟩
-                            | Or.inr _ => Or.inr trivial)
+                            | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                             -- **Item 207: and the park's own indent check.**  The entry-level park
                             -- is the same content dispatch one slot in, so the same five arguments
                             -- `h_arm` is paid with answer the flag too.
@@ -35935,7 +35961,7 @@ lemma accum_content_pending (sc : ScannerState)
                               (fun sp_mid sp_i sp_c h_ssl h_ind h_lit sp_v h_sbi =>
                                 kslot nv hmem sp_mid (h_nodeAt sp_mid h_ssl)
                                   sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (content_park_arm (preprocess_some_peek h_preprocess)
                              h_flow_disp h_not_doc h_dispatch hcorr_result)
                          -- Item 114: the mapping frames ride the re-read
@@ -35960,7 +35986,7 @@ lemma accum_content_pending (sc : ScannerState)
                               h_cov.imp (fun ⟨lo, m, hb, hc⟩ =>
                                 ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
                               fun sp_mid h_ssl => closeFVS sp_mid (h_nodeAt sp_mid h_ssl)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                          (nodir_of_content_dispatch h_dispatch)
                          (completedTail_of_dispatch h_dispatch hamp hbang)
                          -- **Item 154: and the park's own indent check.**  `[170]`/`[174]`'s body
@@ -36001,7 +36027,7 @@ lemma accum_content_pending (sc : ScannerState)
                                 fun sp_m h_ssl sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi =>
                                   kslotE sp_m (h_nodeAt sp_m h_ssl)
                                     sp_e h_tail sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-                            | Or.inr _ => Or.inr trivial)
+                            | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (match h_closeFE_k with
                             | Or.inl ⟨ks, h_lt, h_cv, closeFE⟩ => Or.inl ⟨ks, h_lt,
                                 -- Item 155: the entry face carries a cover now,
@@ -36021,7 +36047,7 @@ lemma accum_content_pending (sc : ScannerState)
                             | Or.inl ⟨nv, ks, h_ltk, closeFEV⟩ => Or.inl ⟨nv, ks, h_ltk,
                                 fun sp_mid h_ssl sp_end h_tail =>
                                   closeFEV sp_mid (h_nodeAt sp_mid h_ssl) sp_end h_tail⟩
-                            | Or.inr _ => Or.inr trivial)
+                            | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                             -- **Item 207: and the park's own indent check.**  The entry-level park
                             -- is the same content dispatch one slot in, so the same five arguments
                             -- `h_arm` is paid with answer the flag too.
@@ -36043,7 +36069,7 @@ lemma accum_content_pending (sc : ScannerState)
                               (fun sp_mid sp_i sp_c h_ssl h_ind h_lit sp_v h_sbi =>
                                 kslot nv hmem sp_mid (h_nodeAt sp_mid h_ssl)
                                   sp_i sp_c h_ind h_lit sp_v h_sbi)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                            (content_park_arm (preprocess_some_peek h_preprocess)
                              h_flow_disp h_not_doc h_dispatch hcorr_result)
                          -- Item 114: the mapping frames ride the fixed-index
@@ -36068,7 +36094,7 @@ lemma accum_content_pending (sc : ScannerState)
                               h_cov.imp (fun ⟨lo, m, hb, hc⟩ =>
                                 ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
                               fun sp_mid h_ssl => closeFVS sp_mid (h_nodeAt sp_mid h_ssl)⟩
-                          | Or.inr _ => Or.inr trivial)
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))
                          (nodir_of_content_dispatch h_dispatch)
                          (completedTail_of_dispatch h_dispatch hamp hbang)
                          -- **Item 207: and the park's own indent check.**  `content_park_nic_any` is

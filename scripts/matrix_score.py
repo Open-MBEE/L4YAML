@@ -44,7 +44,8 @@ def parse_json_stream(text):
         i = end
     return vals
 
-TIMEOUT_RC = 124   # sentinel exit code for a tester killed by the harness's timeout
+TIMEOUT_RC = 'timeout'   # the harness killed the tester; distinct from every exit code a tester can return
+START_MARK = b'\x00L4YAML-TESTER-STARTED\n'   # emitted by the docker wrapper before the tester runs
 
 _harness_errors_reported = set()
 
@@ -55,18 +56,36 @@ def harness_error(msg):
         print(f"# harness error: {msg}", file=sys.stderr)
     return 'harness-error'
 
+def docker_wrapped(cmd):
+    """`docker exec -i <container> <tester>` → the same, through `sh`, which prints
+    START_MARK before exec'ing the tester.  A reply without the mark never reached
+    the tester (container stopped, daemon gone, tester missing): a harness failure,
+    not a parser rejection, whatever exit code docker itself returned."""
+    container, tester = cmd[3], cmd[4]
+    return ['docker', 'exec', '-i', container, 'sh', '-c',
+            'printf "\\000L4YAML-TESTER-STARTED\\n"; exec "$1"', 'sh', tester] + list(cmd[5:])
+
 def run(cmd, stdin_bytes, timeout):
-    """Return (rc, stdout); rc is None when the tester could not be started at all."""
+    """Return (rc, stdout); rc is None when the tester could not be started at all,
+    TIMEOUT_RC when the harness killed it."""
+    dockered = cmd[0] == 'docker'
     try:
-        p = subprocess.run(cmd, input=stdin_bytes,
-                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        p = subprocess.run(docker_wrapped(cmd) if dockered else cmd, input=stdin_bytes,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            timeout=timeout)
-        return p.returncode, p.stdout
     except subprocess.TimeoutExpired:
         return TIMEOUT_RC, b''
     except OSError as e:
         harness_error(f"cannot run {cmd[0]}: {e}")
         return None, b''
+    if dockered:
+        if not p.stdout.startswith(START_MARK):
+            err = p.stderr.decode('utf-8', 'replace').strip().splitlines()
+            harness_error(f"docker exec did not reach {cmd[4]} in {cmd[3]}: "
+                          f"{err[-1] if err else f'rc={p.returncode}'}")
+            return None, b''
+        return p.returncode, p.stdout[len(START_MARK):]
+    return p.returncode, p.stdout
 
 def tester_available(cmd):
     """Preflight: None if the tester can be started, else the reason it cannot.
@@ -91,10 +110,10 @@ def rc_category(rc, is_err):
     """Category decided by the exit code alone; None when the output must be compared."""
     if rc is None:
         return 'harness-error'   # checked first so a broken harness never scores err-ok
+    if rc == TIMEOUT_RC:
+        return 'timeout'         # before is_err: a killed tester rejected nothing
     if is_err:
         return 'err-ok' if rc != 0 else 'err-miss'
-    if rc == TIMEOUT_RC:
-        return 'timeout'
     if rc != 0:
         return 'reject'
     return None
@@ -123,17 +142,20 @@ def score_one(cmd, d, axis, timeout):
         got = out.decode('utf-8', 'replace')
         return ('pass' if norm_events(got) == norm_events(exp) else 'diff', tid)
     else:  # json
+        # Read the oracle before the tester's verdict can short-circuit: a bad
+        # in.json is the harness's fault whether or not the tester rejected the
+        # input.  Error tests are exempt — a few carry a stale in.json (9MQT/01,
+        # DK95/01, DK95/06) and correct behavior is still to reject the input.
+        exp = None
+        if not is_err:
+            try:
+                exp = parse_json_stream(open(d + '/in.json', encoding='utf-8').read())
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+                return (harness_error(f"unusable oracle {d}/in.json: {e}"), tid)
         rc, out = run(cmd, inp, timeout)
-        # a few error tests carry a stale in.json (9MQT/01, DK95/01,
-        # DK95/06); correct behavior is still to reject the input
         cat = rc_category(rc, is_err)
         if cat:
             return (cat, tid)
-        try:
-            exp = parse_json_stream(open(d + '/in.json', encoding='utf-8').read())
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
-            # the oracle is test data, so a bad one is the harness's fault
-            return (harness_error(f"unusable oracle {d}/in.json: {e}"), tid)
         try:
             got = parse_json_stream(out.decode('utf-8', 'replace'))
         except json.JSONDecodeError:

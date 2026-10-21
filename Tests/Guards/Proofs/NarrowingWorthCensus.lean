@@ -471,8 +471,10 @@ def chainKeySet : Std.HashSet String :=
 -- Item 287: the `h_vslot` row's own numbers — one pair, five splits, eleven
 -- supplies, one `inner` — left with it.
 -- 2026-10-20 (item 306): `splits` 95 → 101, the six on `h_closeFV_old` (a `-` row: neither chain nor inner).
+-- 2026-10-20 (item 307): `pairs` 35 → 36, `splits` 101 → 106, `sup` 101 → 102 — the four on `h_closeFV_old` at the
+-- two block routes and the content route's one on `h_mapFV108` (its `h_vpack`, a `match`).
 def expectedWorthTally : String :=
-  "pairs=35 splits=101 sup=101 chainPairs=6 chainSplits=12 innerPairs=8 innerSplits=32"
+  "pairs=36 splits=106 sup=102 chainPairs=6 chainSplits=12 innerPairs=8 innerSplits=32"
 
 /-- The ledger, worth-first.  `chain` is §3's verdict — a narrowing here lands
     on another unconditional inhabitant; `inner` means the face carries a
@@ -489,13 +491,17 @@ def expectedWorthTally : String :=
     places earlier, its label unmoved. -/
 -- 2026-10-20 (item 306): the content lemma's `h_closeFV_old` row reads `splits=10` (4 + the six
 -- key-pack stack matches) and sorts second; a `-` row still — the face is the stack itself.
+-- 2026-10-20 (item 307): the two block routes' `h_closeFV_old` rows read `splits=6` and `splits=4`
+-- (`h_vpack` and `h_mapFV` from the stack at each) and sort up; a new `splits=1` row for the content
+-- route's `h_mapFV108` (its `h_vpack`).
 def expectedWorthLedger : List String :=
   ["splits=11 sup=1 inner h_closeF_old :: accum_content_on_pendingBlock_indented#14",
    "splits=10 sup=1 - h_closeFV_old :: accum_content_on_pendingBlock_indented#29",
    "splits=8 sup=1 - h_kslot_old :: accum_content_on_pendingBlock_indented#13",
    "splits=7 sup=1 inner h_closeF99 :: accum_content_on_pendingMapValue_indented#18",
+   "splits=6 sup=1 - h_closeFV_old :: accum_block_on_pendingBlock#29",
    "splits=5 sup=1 - h_seqF168 :: accum_content_on_pendingMapValue_indented#35",
-   "splits=4 sup=1 - h_closeFV_old :: accum_block_on_pendingBlock#29",
+   "splits=4 sup=1 - h_closeFV_old :: accum_block_on_pendingBlockContent#35",
    "splits=4 sup=1 inner h_closeFV108 :: accum_content_on_pendingMapValue_indented#20",
    "splits=3 sup=4 - h_cov :: indicator_open_map#27",
    "splits=3 sup=1 - h_expl :: accum_content_on_pendingMapValue_indented#15",
@@ -506,7 +512,6 @@ def expectedWorthLedger : List String :=
    "splits=3 sup=1 chain h_kslot :: accum_content_on_pendingMapValue_indented#17",
    "splits=3 sup=1 chain h_kslotUp :: accum_block_on_pendingBlock#28",
    "splits=3 sup=1 chain h_kslotUp_old :: accum_content_on_pendingBlock_indented#28",
-   "splits=2 sup=1 - h_closeFV_old :: accum_block_on_pendingBlockContent#35",
    "splits=2 sup=1 inner h_closeF_old :: accum_block_on_pendingBlockContent#34",
    "splits=2 sup=1 inner h_routeF :: colon_open_map_implicit#12",
    "splits=2 sup=1 inner h_routeF :: colon_open_map_props#12",
@@ -520,6 +525,7 @@ def expectedWorthLedger : List String :=
    "splits=1 sup=11 - h_valFV :: accum_block_on_closeThenBlock#31",
    "splits=1 sup=4 - h_expl :: explFrameValueLine#3",
    "splits=1 sup=1 - h_kslot :: accum_block_on_pendingBlockContent#14",
+   "splits=1 sup=1 - h_mapFV108 :: accum_block_on_pendingContent#32",
    "splits=1 sup=1 - h_resV_land :: question_open_map#27",
    "splits=1 sup=1 - h_routeS :: colon_open_map_implicit#27",
    "splits=1 sup=1 chain h_kslot :: colon_open_map_implicit#11",
@@ -533,7 +539,8 @@ def expectedWorthLedger : List String :=
     the state-reachable count and the state splits do not move. -/
 -- Item 287: the `h_vslot` row, again.
 -- 2026-10-20 (item 306): `splits` 95 → 101 (the same six); no pair, state face or state split moves.
-def expectedBranchReach : String := "branchPairs=35 stateReachable=1 splits=101 stateSplits=3"
+-- 2026-10-20 (item 307): `branchPairs` 35 → 36, `splits` 101 → 106 (the same five).
+def expectedBranchReach : String := "branchPairs=36 stateReachable=1 splits=106 stateSplits=3"
 
 open Meta in
 run_cmd do

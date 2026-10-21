@@ -470,6 +470,8 @@ def expectedCross : List String :=
     **not one of the 43 reaches a producer.**  The landing table's own parts are
     summed here too, so a row added to it without its total moving fails.  If
     item 212's lists move, its gate fails before this one does. -/
+-- 2026-10-20 (item 307, second chain): back to `landed=43 total=80` — the content route's `h_vpack` was an
+-- `.imp` (a landed producer) for one chain and is a `match` now.
 def expectedPipeSplit : String :=
   "pipes=0/0 producers=37/11 landed=43 landed-producers=0 total=80"
 

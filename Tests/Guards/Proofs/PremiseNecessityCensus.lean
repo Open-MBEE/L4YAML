@@ -325,16 +325,20 @@ declarations' own binders and not by a rescoring of an existing one.
 -- 1182, the rest unchanged — the same binders the plain roster names
 -- (`HypothesisReaderCensus`'s note), read peeled — the same eleven rows with the
 -- same verdicts (`602-rosterP-303.out` → `612-rosterP-304.out`, 4097 → 4108).
+-- 2026-10-20 (item 307): `constants` 1388 → 1393, `decls` 1105 → 1110, `READ` 1182 → 1198, `RELAY` 2180 → 2179 — as `HypothesisReaderCensus`:
+-- `closeThenBlock`'s three new haves and their match auxiliaries, and the γ roots' reads.
 def expectedModuleTallyP : String :=
-  "constants=1388 decls=1105 eta=414 FIELD=185 READ=1182 RELAY=2180 RETURN=138 UNUSED=9"
+  "constants=1393 decls=1110 eta=414 FIELD=185 READ=1198 RELAY=2179 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
 -- `PendingNode.pendingMapValue.h_vslot`, a constructor field read ETA.
 -- Item 300: the two new optional contexts (`h_markerline`, `h_marker_new`)
 -- read READ under this peel too.
+-- 2026-10-20 (item 307): `READ` 86 → 87, `RELAY` 38 → 37 — `accum_block_on_pendingContent`'s `h_mapFV108` is READ
+-- (a `match`) where it was RELAYed; as `HypothesisReaderCensus.expectedOptTally`.
 def expectedOptTallyP : String :=
-  "total=163 ETA=33 FIELD=4 READ=86 RELAY=38 RETURN=2"
+  "total=163 ETA=33 FIELD=4 READ=87 RELAY=37 RETURN=2"
 
 run_cmd do
   let env ← getEnv

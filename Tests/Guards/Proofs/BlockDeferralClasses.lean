@@ -4443,20 +4443,22 @@ each one's surface SMALLER than the family's.  The whole-family flip reads
 **103 sites in 20 declarations, in 3 rounds** (101 + 2 + 0): 102 declines and
 one relay.  By shape, **70** are split leaves — `| Or.inr _ => Or.inr trivial`,
 a decline conditional on the incoming optional declining, i.e. TRANSPORT — and
-**32** are unconditional, the ROOTS.  The pin is read from this side by the
+**32** are unconditional, the ROOTS — **29** since item 307 threaded the three γ roots.  The pin is read from this side by the
 script, as `expectedInlineArms` is. -/
 
+-- 2026-10-20 (item 307): `uncond` 32 → 29, `leaf` 70 → 72 — the three γ roots are threaded
+-- (`h_vpack` from the closed park's stack, closed), so their bare declines are gone.
 def expectedPackFlip : String :=
-  "sites=103 decls=20 rounds=3 decline=102 relay=1 leaf=70 uncond=32"
+  "sites=102 decls=20 rounds=3 decline=101 relay=1 leaf=72 uncond=29"
 
-/-! **The 32 roots, by what the register does there** — a READING of each site
+/-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):
 
 | the register at the site | roots | where |
 |---|---|---|
 | provably DEAD — no `?` frame is open | 20 | `accum_block_on_noPending` ×2 (`h_noek`); the `pendingDocEnd`/`pendingDocStart` arms of `accum_block_pending` ×3 and `accum_flow_open_depth0`'s `noPending`/`pendingDocStart` arms ×5 (a marker scan writes `explicitKeyLine := none`); `FlowBaseRoutes.ofValue` ×1 (a flow open saves the register to `explicitKeyStack` and writes `none`); `content_dispatch_routed` ×6 (bare-document content under a `noPending` park); `colon_open_map_explicit` ×2 (the frame's own `:` fired — `scanValue`'s `explicitValue` branch writes `none`); `pendingFlow`'s arm ×1 (12.4 deletes it) |
 | a different FACE — this `∨ True` is not "pack unknown" | 9 | `colon_open_map`/`_implicit`/`_props` ×3 and `compact_open_map` ×1 are `pendingMapValue.h_expl`, the entry's own `?` slot, which an implicit entry does not have — its alternative is the stamp, passed beside it as `h_stamp`; `accum_content_pending` ×3 are `h_kslotUp`, the frame ABOVE — never class A's, since a nested `?` overwrites the register (the rows below); `accum_content_on_pendingMapValue_indented` ×1 is `h_kslotE` and the node-domain faces; `accum_content_pending` ×1 is `h_vslot51.imp … (fun _ => trivial)`, a relay of the `?` park's slot |
-| LIVE, the pack available upstream, NOT threaded — the γ roots | 3 | `accum_block_on_pendingBlock`'s dedent `-`, `accum_block_on_pendingBlockContent`'s `k ≠ n` `-`, `accum_block_on_pendingContent`'s non-`:` indicator: each calls `accum_block_on_closeThenBlock` with `h_vpack := Or.inr trivial` AND `h_vslot := Or.inr trivial`, and the landed-`-` arm pays the new park's `h_kslot` from `h_vslot` ALONE (item 188's `slotLandedSeq`) — `h_vpack` is the `:` arm's.  So a `-` that lands on the frame's key sequence from any park that is not the `?` park itself hands the next entry no pack, and the class-A `:` after it is this escape |
+| ~~LIVE, the pack available upstream, NOT threaded~~ — the γ roots, THREADED at item 307 (`h_vpack` is the closed park's stack closed at the landing, `h_mapFV` the stack itself, and `closeThenBlock`'s landed-`-` arm resumes it) | ~~3~~ 0 | `accum_block_on_pendingBlock`'s dedent `-`, `accum_block_on_pendingBlockContent`'s `k ≠ n` `-`, `accum_block_on_pendingContent`'s non-`:` indicator: each calls `accum_block_on_closeThenBlock` with `h_vpack := Or.inr trivial` AND `h_vslot := Or.inr trivial`, and the landed-`-` arm pays the new park's `h_kslot` from `h_vslot` ALONE (item 188's `slotLandedSeq`) — `h_vpack` is the `:` arm's.  So a `-` that lands on the frame's key sequence from any park that is not the `?` park itself hands the next entry no pack, and the class-A `:` after it is this escape |
 
 **The runtime, by KEY SHAPE.**  §6 pinned the register's family and §7 the
 sequence family item 188 paid; the three sites take ANY park inside a frame, so

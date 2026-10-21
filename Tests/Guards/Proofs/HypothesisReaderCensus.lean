@@ -561,8 +561,12 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- (`entryKeyPack_of_dispatch.match_1_14/_18`, `entryPropsKeyPack_of_dispatch
 -- .match_1_12/_16`) that split `KeyFrames.resumeAt`'s sum at the two key-pack
 -- lemmas' value-line resumes.  No existing row moves or renumbers.
+-- 2026-10-20 (item 307): `constants` 1388 → 1392, `decls` 1105 → 1109, `READ` 1144 → 1154 — `closeThenBlock`'s three new
+-- haves (`h_resSeqV`, `h_resKslot`, `h_slotV'`) and their match auxiliaries; the γ roots read `h_closeFV_old`/`h_mapFV108`.
+-- 2026-10-20 (item 307, second chain): `constants` 1392 → 1393, `decls` 1109 → 1110, `READ` 1154 → 1160, `RELAY` 2330 → 2329 — the three relays are `match`es
+-- (one more auxiliary, one more read each; the `.imp` relay gone).
 def expectedModuleTally : String :=
-  "constants=1388 decls=1105 eta=414 FIELD=163 READ=1144 RELAY=2330 RETURN=48 UNUSED=9"
+  "constants=1393 decls=1110 eta=414 FIELD=163 READ=1160 RELAY=2329 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
@@ -639,7 +643,9 @@ inherit their parents' binders filtered out so the denominator is declarations. 
 -- Item 300: two more optional contexts, both READ — `content_dispatch_routed`'s
 -- `h_markerline` (cased in both cascades) and `km_push_at_open`'s
 -- `h_marker_new` (applied to the base-open premise).
-def expectedOptTally : String := "total=163 ETA=33 READ=86 RELAY=44"
+-- 2026-10-20 (item 307): `READ` 86 → 87, `RELAY` 44 → 43 — `accum_block_on_pendingContent`'s `h_mapFV108` is READ
+-- (a `match`) where it was RELAYed.
+def expectedOptTally : String := "total=163 ETA=33 READ=87 RELAY=43"
 
 /-- The six item 212 enumerated, by verdict — seven since item 300.  Six are
     read in `content_dispatch_routed`'s own term (`h_markerline`, the marker

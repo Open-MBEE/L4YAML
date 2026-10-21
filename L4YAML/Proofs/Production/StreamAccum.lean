@@ -24421,6 +24421,46 @@ lemma accum_block_on_closeThenBlock
                   (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot h_indented h_tail)))⟩
           else Or.inr trivial
       | _ => Or.inr trivial
+    -- ═══ **Item 307: THE SPEND — the closed park's stack, resumed at this landing's
+    -- width in its SEQUENCE case.**  The dedent routes hand this lemma their stack as
+    -- `h_mapFV` (`?⏎-⏎  - a⏎- b⏎: w`: the inner park's stack is `[0]` over the frame's
+    -- line, item 305's push); `KeyFrames.resumeAt k` pops the levels above `k`, and
+    -- when level `k` is a sequence this `-` is its next entry — `SCompactSeqTail.cons`
+    -- onto the resumed tail gives the new park its own stack (the levels under `k`)
+    -- and, closed, its own `h_kslot`.  A mapping level at `k` declines here (a `-` at a
+    -- mapping's width is refuted elsewhere).  `h_vslot`'s bottom (item 305) stays
+    -- first; this is the fallback behind it. ═══
+    have h_resSeqV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+        ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
+        ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
+        KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True := by
+      rcases h_mapFV with ⟨nv, ks, fV⟩ | _
+      · by_cases hmem : k ∈ ks
+        · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_ssl).resumeAt hmem
+          rcases cont with _ | contS
+          · exact Or.inr trivial
+          · exact Or.inl ⟨nv, ks', h_w.lt, fun sp_m h_node sp_e h_tail =>
+              contS sp_e (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_m sp_e
+                h_ind h_dash h_gnot h_node h_tail)⟩
+        · exact Or.inr trivial
+      · exact Or.inr trivial
+    -- The same resume, CLOSED: the new park's own value line (`h_kslot`).
+    have h_resKslot : (∃ nv : Nat, ∀ sp_m : SurfPos, SBlockIndented k .blockIn sp_scan' sp_m →
+        ∀ sp_e : SurfPos, SCompactSeqTail k sp_m sp_e →
+        ∀ sp_i sp_c : SurfPos, SIndent nv sp_e sp_i → GLit ':' sp_i sp_c →
+        ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
+        SLYamlStream sp_start sp_v) ∨ True :=
+      match h_resSeqV with
+      | Or.inl ⟨nv, _, _, cont⟩ => Or.inl ⟨nv, fun sp_m h_node sp_e h_tail =>
+          (cont sp_m h_node sp_e h_tail).close⟩
+      | Or.inr _ => Or.inr trivial
+    have h_slotV' : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+        ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
+        ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
+        KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True :=
+      match h_slotV with
+      | Or.inl x => Or.inl x
+      | Or.inr _ => h_resSeqV
     have h_seqFramesV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
@@ -24431,8 +24471,8 @@ lemma accum_block_on_closeThenBlock
             fun sp_final h_indented sp_end h_tail =>
               closeFV sp_end (nestedBlockSeq hnn h_ssl
                 (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot h_indented h_tail))⟩
-        · exact h_slotV
-      · exact h_slotV
+        · exact h_slotV'
+      · exact h_slotV'
     exact ⟨sp_mid, sp_mid, sp_mid, sp_scan', h_stream_new,
            BlockStack.nil sp_mid, FlowStackB.nil sp_mid .sep,
            PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_mid sp_scan' k
@@ -24474,8 +24514,9 @@ lemma accum_block_on_closeThenBlock
                       hkv sp_e (slotLandedSeq hnk h_ssl
                         (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot
                           h_indented h_tail))⟩
-                  else Or.inr trivial
-              | _ => Or.inr trivial)
+                  -- Item 307: behind the slot, the resumed stack's close.
+                  else h_resKslot
+              | _ => h_resKslot)
              -- Item 99: the resume frames — the entry and the tail close the
              -- root sequence over the same closed prefix.
              -- **Item 155: …and the level the closed park awaited a node for,
@@ -25298,7 +25339,15 @@ lemma accum_block_on_pendingContent
     -- in it.  The escape is REFUSED here, not paid (`"a" - b`, `[1] ? b`).
     exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' c
       sp_prep sp_scan' h_close_pending
-      (Or.inr trivial) (Or.inr (fun h_res _ => (nodeStop_refutes_inline_residue h_line
+      -- Item 307: the pack is the park's own stack (`h_mapFV108`, handed on below),
+      -- closed at the landing — the third γ root of item 301.
+      (match h_mapFV108 with
+       | Or.inl ⟨nv, _, fV⟩ => Or.inl ⟨[nv],
+           fun nv' hmem sp_m sp_i sp_c h_ssl_m h_iv h_lit sp_v h_sbi => by
+             obtain rfl := List.mem_singleton.mp hmem
+             exact (fV sp_m h_ssl_m).close sp_i sp_c h_iv h_lit sp_v h_sbi⟩
+       | Or.inr _ => Or.inr trivial)
+      (Or.inr (fun h_res _ => (nodeStop_refutes_inline_residue h_line
         ((block_indicator_char h_dispatch).imp id (fun h => h.resolve_left hc)) h_res).elim)) hcorr_prep hcorr_result h_corr h_noflow
       h_park h_preprocess h_dispatch (Or.inr trivial) (Or.inr trivial)
       h_bare h_dn h_fv h_base h_mono (Or.inl h_tail139) (Or.inr trivial)
@@ -25595,7 +25644,16 @@ lemma accum_block_on_pendingBlockContent
         -- indicator siblings have used at every width since item 13.
         exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' '-'
           _ sp_scan' h_close_pending
-          (Or.inr trivial) (Or.inr (fun h_res _ => (nodeStop_refutes_inline_residue h_line (Or.inl rfl) h_res).elim)) hcorr_prep hcorr_result h_corr h_noflow
+          -- Item 307: the pack, from the stack — the entry is complete and the sequence
+          -- at `n` ends at the landing (`accum_block_on_pendingBlock`'s note).
+          (match h_closeFV_old with
+           | Or.inl ⟨nv, _, _, closeFV⟩ => Or.inl ⟨[nv],
+               fun nv' hmem sp_m sp_i sp_c h_ssl_m h_iv h_lit sp_v h_sbi => by
+                 obtain rfl := List.mem_singleton.mp hmem
+                 exact (closeFV sp_m h_ssl_m sp_m (SCompactSeqTail.nil n sp_m)).close
+                   sp_i sp_c h_iv h_lit sp_v h_sbi⟩
+           | Or.inr _ => Or.inr trivial)
+          (Or.inr (fun h_res _ => (nodeStop_refutes_inline_residue h_line (Or.inl rfl) h_res).elim)) hcorr_prep hcorr_result h_corr h_noflow
           h_park h_preprocess h_dispatch (Or.inr trivial) (Or.inr trivial)
           h_bare h_dn h_fv h_base h_mono (Or.inl h_tail139) (Or.inr trivial)
           -- **Item 167: …and the same route at the entry-CONTENT park.**  This
@@ -25609,8 +25667,12 @@ lemma accum_block_on_pendingBlockContent
           (Or.inr trivial)
           -- Item 175: an entry-content park holds no property run.
           (Or.inr trivial)
-          -- Item 197: nor a value-line-bottomed one, for both reasons at once.
-          (Or.inr trivial)
+          -- ~~Item 197: nor a value-line-bottomed one, for both reasons at once.~~
+          -- **Item 307: the stack, for the `-` arm's resume.**
+          (match h_closeFV_old with
+           | Or.inl ⟨nv, ks, _, closeFV⟩ => Or.inl ⟨nv, ks, fun sp_m h_ssl_m =>
+               closeFV sp_m h_ssl_m sp_m (SCompactSeqTail.nil n sp_m)⟩
+           | Or.inr _ => Or.inr trivial)
           -- Item 198: this park's own `h_closeFV` is a SEQUENCE face (the
           -- collection's tail), not the awaited-node face this relay carries;
           -- the `-` landing here conses onto the collection and spends it at
@@ -26191,7 +26253,22 @@ lemma accum_block_on_pendingBlock
         -- the branch is a LANDED one, so the break it crossed refutes the
         -- inline residue.
         exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' '-'
-          _ sp_scan' h_close_pending (Or.inr trivial) (Or.inr (fun h_res _ => (sslComments_refutes_inline_residue h_ssl (Or.inl rfl) h_res).elim)) hcorr_prep hcorr_result
+          _ sp_scan' h_close_pending
+          -- ═══ **Item 307: the pack, from the stack.**  The awaited entry closes EMPTY
+          -- on the landing's comments and the sequence at `n` ends there (the landing
+          -- is left of `n`); the stack over that is item 198's `h_closeFV_old`, and
+          -- closed it is the frame's line at the landing — the `:` arm's pack
+          -- (`?⏎-⏎  -⏎: w`).  Item 301 read this root as "the pack available upstream,
+          -- not threaded"; threaded now, and the stack itself rides as `h_mapFV`
+          -- below for the `-` arm's resume. ═══
+          (match h_closeFV_old with
+           | Or.inl ⟨nv, _, _, closeFV⟩ => Or.inl ⟨[nv],
+               fun nv' hmem sp_m sp_i sp_c h_ssl_m h_iv h_lit sp_v h_sbi => by
+                 obtain rfl := List.mem_singleton.mp hmem
+                 exact (closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl_m)
+                   sp_m (SCompactSeqTail.nil n sp_m)).close sp_i sp_c h_iv h_lit sp_v h_sbi⟩
+           | Or.inr _ => Or.inr trivial)
+          (Or.inr (fun h_res _ => (sslComments_refutes_inline_residue h_ssl (Or.inl rfl) h_res).elim)) hcorr_prep hcorr_result
           h_corr h_noflow (Or.inr (by omega)) h_preprocess h_dispatch (Or.inr trivial)
           (Or.inr trivial) h_bare h_dn h_fv h_base h_mono (Or.inr trivial) (Or.inr trivial)
           -- **Item 167: the enclosing collection, spent at the dedent.**  The
@@ -26207,8 +26284,14 @@ lemma accum_block_on_pendingBlock
           (Or.inr trivial)
           -- Item 175: an entry park holds no property run.
           (Or.inr trivial)
-          -- Item 197: and the value-line-bottomed resume, for the same reason.
-          (Or.inr trivial)
+          -- ~~Item 197: and the value-line-bottomed resume, for the same reason.~~
+          -- **Item 307: the stack, for the `-` arm's resume** — the empty entry and
+          -- the ended sequence, exactly as the pack above.
+          (match h_closeFV_old with
+           | Or.inl ⟨nv, ks, _, closeFV⟩ => Or.inl ⟨nv, ks, fun sp_m h_ssl_m =>
+               closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl_m)
+                 sp_m (SCompactSeqTail.nil n sp_m)⟩
+           | Or.inr _ => Or.inr trivial)
           -- Item 198: as at `accum_block_on_pendingBlockContent` — a sequence
           -- park's value-line face is not the awaited-node face.
           (Or.inr trivial)

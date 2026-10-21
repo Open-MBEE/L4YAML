@@ -12,6 +12,7 @@ public import L4YAML.Scanner.TokenQueries
 public import L4YAML.Scanner.Document
 public import L4YAML.Scanner.NodeProperties
 public import L4YAML.Scanner.Scalar
+public import L4YAML.Scanner.ScalarFast
 public import L4YAML.Scanner.SimpleKey
 
 public meta import L4YAML.Spec.YamlSpec

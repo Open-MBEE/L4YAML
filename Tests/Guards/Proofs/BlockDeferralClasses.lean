@@ -4476,8 +4476,11 @@ script, as `expectedInlineArms` is. -/
 -- (item 317 ended the register at a marker, so the sentinel disjunct had no producer); the block lane's two transport
 -- wrappers `PackAlt.step_blockEntry`/`step_value` are the sixth and seventh promised bodies, and one dash-arm leaf of
 -- `accum_block_on_pendingBlock` is paid through the first (item 319's consumer probe).
+-- 2026-10-21 (item 319): `sites` 196 → 163, `leaf` 93 → 60 — the block lane's thirty-three leaf transports and identities
+-- are paid (fourteen through `PackAlt.step_blockEntry`, nineteen `Or.inr h_alt` at the park's own state); the two `h_resKslot`
+-- relays were never sites of this mode.  The roots stand at 103.
 def expectedPackFlip : String :=
-  "sites=196 decls=24 rounds=2 decline=196 relay=0 leaf=93 uncond=103 stubs=7"
+  "sites=163 decls=24 rounds=2 decline=163 relay=0 leaf=60 uncond=103 stubs=7"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4500,8 +4503,14 @@ def expectedPackFlip : String :=
 -- 2026-10-21 (item 318): `decline` 178 → 177 (`leaf` 84 → 83), `promised` 3 → 5 — the one paid dash leaf, and the two
 -- block-lane transports' promises (`ExplicitValueRefused.step_blockEntry`, `.step_value`) substituted and elaborating;
 -- `relayState` stands at 3 (`accum_block_on_closeThenBlock`'s `h_resKslot` ×2, `compact_open_map`'s `h_expl105`), item 319's.
+-- 2026-10-21 (item 319): `decline` 177 → 144 (`leaf` 83 → 50), `relayState` 3 → 2, `rounds` 2 → 3 — the block lane's
+-- thirty-three transports and identities and its two `h_resKslot` relays are paid; the third round surfaced one relay the
+-- paid ones had hidden (`accum_block_on_closeThenBlock`'s `h_seqFramesV`, an application reports its first failing argument),
+-- which stands beside `compact_open_map`'s `h_expl105`.  What declines in the block lane now (39 rows) is measured by kind in
+-- item 319's entry: twelve side-condition declines on resume facts, three catch-alls, five fresh fields, fourteen caller-side
+-- premises of `accum_block_pending`, and `accum_block_on_noPending`'s five roots.
 def expectedPackResidue : String :=
-  "sites=180 decls=22 rounds=2 decline=177 relayTrue=0 relayState=3 leaf=83 uncond=94 stubs=1 promised=5"
+  "sites=146 decls=22 rounds=3 decline=144 relayTrue=0 relayState=2 leaf=50 uncond=94 stubs=1 promised=5"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

@@ -18,8 +18,10 @@ Two flips, one instrument (item 312 added the second):
   sites a lane must replace by a payment.
 * **`--alt refused` (the RESIDUE)** — `PackAlt sc` becomes `ExplicitValueRefused sc`, the predicate
   the family will carry; `PackAltG g` stays `True` (the frame's carrier is lane (d)'s open
-  question), `PackAlt.ofRefused` becomes the identity it will be, `PackAltG.ofPark` holds as it is
-  and `PackAlt.ofGateClose` is sorried (`stubs=1`).  A bare `trivial` still fails (an unpaid
+  question), every `PackAlt`-level lemma whose `trivial` body names its predicate-level proof after
+  `-- refused:` gets that proof (`PackAlt.ofRefused` the identity, a transport its
+  `ExplicitValueRefused.step_…`; counted as `promised=`), `PackAltG.ofPark` holds as it is and
+  `PackAlt.ofGateClose` is sorried (`stubs=1`).  A bare `trivial` still fails (an unpaid
   decline), and so does every relay BETWEEN TWO PARK STATES — `Or.inr h` with `h : PackAlt sc`
   where `PackAlt s'` is owed, `.imp f id` across a step — which `--alt false` cannot see (`False`
   to `False` is the identity).  Those are the TRANSPORTS a lane must prove (one preservation
@@ -41,7 +43,7 @@ Reads one line, pinned in `BlockDeferralClasses.expectedPackFlip` (`--alt false`
 `expectedPackResidue` (`--alt refused`):
 
     PACK-FLIP    sites=… decls=… rounds=… decline=… relay=… leaf=… uncond=… stubs=…
-    PACK-RESIDUE sites=… decls=… rounds=… decline=… relayTrue=… relayState=… leaf=… uncond=… stubs=…
+    PACK-RESIDUE sites=… decls=… rounds=… decline=… relayTrue=… relayState=… leaf=… uncond=… stubs=… promised=…
 
 `leaf` counts the declines inside a match arm or an `else` — `| … => Or.inr trivial`,
 `| … => exact Or.inr trivial`, `else Or.inr trivial`, `· exact Or.inr trivial` — conditional on
@@ -64,14 +66,18 @@ PIN = ROOT / "Tests/Guards/Proofs/BlockDeferralClasses.lean"
 PACKALT = "abbrev PackAlt (_sc : ScannerState) : Prop := True"
 PACKALTG = "abbrev PackAltG (_g : Option ScannerState) : Prop := True"
 MODES = {
-    # body of PackAlt, body of PackAltG, and what each stub's `trivial` becomes (None = left as it is)
+    # body of PackAlt, body of PackAltG, and what the two frame stubs' `trivial` becomes (None = left as it is)
     "false": dict(alt="False", altG="False",
-                  stubs={"theorem PackAlt.ofRefused ": "sorry", "theorem PackAltG.ofPark ": "sorry",
-                         "theorem PackAlt.ofGateClose ": "sorry"}),
+                  stubs={"theorem PackAltG.ofPark ": "sorry", "theorem PackAlt.ofGateClose ": "sorry"}),
     "refused": dict(alt="ExplicitValueRefused _sc", altG=None,
-                    stubs={"theorem PackAlt.ofRefused ": "_h", "theorem PackAltG.ofPark ": None,
-                           "theorem PackAlt.ofGateClose ": "sorry"}),
+                    stubs={"theorem PackAltG.ofPark ": None, "theorem PackAlt.ofGateClose ": "sorry"}),
 }
+# A `PackAlt`-level lemma whose body is `trivial` while `PackAlt` is `True` names, after `-- refused:`,
+# the predicate-level proof that stands in its place once `PackAlt` is the predicate (item 313):
+# `PackAlt.ofRefused` is `_h`, a transport `ExplicitValueRefused.step_… … _h`.  The `False` flip sorries
+# such a body (it is a lemma, not a site: counted in `stubs`); the residue substitutes the promise
+# (counted in `promised`).
+REFUSED = re.compile(r"\btrivial(\s+)-- refused: (.+?)\s*$")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
 LEAF = re.compile(r"^(\| .*=> (exact )?Or\.inr trivial|else Or\.inr trivial|· exact Or\.inr trivial)")
 ERR = re.compile(r"^L4YAML/Proofs/Production/StreamAccum\.lean:(\d+):(\d+): error: (.*)")
@@ -161,7 +167,15 @@ def main():
         if body is not None:
             L[hits[0]] = old[: -len("True")] + body
             flipped += 1
-    stubs = 0
+    promised = stubs = 0
+    for i, l in enumerate(L):
+        if (m := REFUSED.search(l)):
+            if args.alt == "refused":
+                L[i] = l[: m.start()] + "(" + m.group(2) + ")"
+                promised += 1
+            else:
+                L[i] = l[: m.start()] + "sorry"
+                stubs += 1
     for head, body in mode["stubs"].items():
         i = next(i for i, l in enumerate(L) if l.startswith(head))
         j = next(k for k in range(i, i + 3) if L[k].endswith(":= trivial"))
@@ -170,7 +184,7 @@ def main():
         L[j] = L[j][: -len("trivial")] + body
         if body == "sorry":
             stubs += 1
-    print(f"--alt {args.alt}: flipped {flipped} bodies, sorried {stubs} stubs")
+    print(f"--alt {args.alt}: flipped {flipped} bodies, sorried {stubs} stubs, substituted {promised} promised bodies")
     i0 = next(i for i, l in enumerate(L) if re.match(r"^(private )?(lemma|theorem|def|abbrev|structure|inductive) ", l))
     while L[i0 - 1].strip() != "":
         i0 -= 1
@@ -313,7 +327,8 @@ def main():
     else:
         sites = len(census) - kinds["CASCADE"]
         line = (f"sites={sites} decls={len(by)} rounds={rounds} decline={kinds['DECLINE']} "
-                f"relayTrue={kinds['RELAY']} relayState={kinds['RELAY-STATE']} leaf={leaf} uncond={uncond} stubs={stubs}")
+                f"relayTrue={kinds['RELAY']} relayState={kinds['RELAY-STATE']} leaf={leaf} uncond={uncond} "
+                f"stubs={stubs} promised={promised}")
         label, pin = "PACK-RESIDUE", "expectedPackResidue"
     if kinds["CASCADE"]:
         line += f" cascade={kinds['CASCADE']}"

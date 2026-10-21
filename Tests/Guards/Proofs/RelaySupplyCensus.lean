@@ -984,9 +984,12 @@ def expectedProducers : List String :=
 -- (`accum_step_flow`) hand `flowVPack_of_close resume.vslot` into the content park's `h_vpack` through
 -- `.imp id PackAlt.ofGateClose`: the frame's alternative (`PackAltG g`) becomes the park's (`PackAlt s'`) through a
 -- named conversion, which the census rightly reads as a producer — it is lane (d)'s stub.
+-- 2026-10-21 (item 313): `piped` 45 → 54, `producers` 2 → 3, `Or.imp⇒FIELD` 21 → 29, `Or.imp⇒VIA` 2 → 3 — the content
+-- lane's transports are `Or.imp` pipes whose right map is `PackAlt.step_content h_preprocess h_dispatch`, landing in the
+-- park the content step builds (eight in a field, one through `explFrameValueLine`, which the census reads as a producer).
 def expectedPipeLanding : String :=
-  "piped=45 producers=2 [Or.imp⇒FIELD=21, Or.imp⇒LOCAL=5, Or.imp⇒RELAY=10, \
-Or.imp⇒SPLIT=3, Or.imp⇒VIA=2, dite⇒SPLIT=4]"
+  "piped=54 producers=3 [Or.imp⇒FIELD=29, Or.imp⇒LOCAL=5, Or.imp⇒RELAY=10, \
+Or.imp⇒SPLIT=3, Or.imp⇒VIA=3, dite⇒SPLIT=4]"
 
 /-- What the SPLITs decide (DOCS item 216), and the row that matters is
     `elsewhere=0`: **not one leaf of any case split in this module is decided

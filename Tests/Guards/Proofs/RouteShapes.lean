@@ -726,6 +726,9 @@ def expectedClosures : List String :=
    "mk.key[LEE5LE2] opt: [kc=_] _: SBlockMapEntry(_) > SCompactMapTail(_) ⇒ Resume(_)▹Stream",
    "mk.key[LEE6LEE2] opt: [kc=_] _: SBlockMapEntry(_) > SCompactMapTail(_) ⇒ Key(_)▹ExplValueLine(_)",
    "mk.vslot[LE] opt: sp_br: SFlowContent(n,flowOut) > SSLComments > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream"]
+-- 2026-10-21 (item 313): the props park's four spines (`h_kslot`, `h_routeE`, `h_kslotE`, `h_closeFEV`) read `carry` where
+-- they read `fwd` at the two content-step sites — the field is handed on through `.imp id (PackAlt.step_content …)` now,
+-- a carried step rather than a verbatim forward; `fwd` 2 → 0, `carry` +2 on each.
 def expectedSpines : List String :=
   -- Item 305: `pendingBlock.h_closeFV`'s spine — the compact arm pays it (one site fewer punts, one more carried).
   ["  stream=0 carry=16 fwd=0 punt=0 closed=0 SSLComments ⇒ Stream  ← pendingContent.h_closable, pendingBlockContent.h_closable",
@@ -739,13 +742,13 @@ def expectedSpines : List String :=
    "  stream=1 carry=11 fwd=0 punt=4 closed=0 SSLComments ⇒ Key(_)▹ExplValueLine(_)  ← pendingContent.h_framesV, pendingMapValue.h_framesV",
    "  stream=0 carry=3 fwd=0 punt=7 closed=0 SSLComments > SCompactMapTail(_) ⇒ Resume(_)▹SeqEntryTail(_)  ← pendingContent.h_seqF",
    "  stream=0 carry=6 fwd=0 punt=0 closed=0 SBlockNode(_,blockIn) ⇒ Stream  ← pendingProps.h_route",
-   "  stream=0 carry=2 fwd=2 punt=2 closed=0 SBlockNode(_,blockIn) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingProps.h_kslot",
-   "  stream=0 carry=1 fwd=2 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) ⇒ Stream  ← pendingProps.h_routeE",
-   "  stream=0 carry=1 fwd=2 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingProps.h_kslotE",
+   "  stream=0 carry=4 fwd=0 punt=2 closed=0 SBlockNode(_,blockIn) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingProps.h_kslot",
+   "  stream=0 carry=3 fwd=0 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) ⇒ Stream  ← pendingProps.h_routeE",
+   "  stream=0 carry=3 fwd=0 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingProps.h_kslotE",
    "  stream=0 carry=3 fwd=0 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) ⇒ Resume(_)▹Stream  ← pendingProps.h_closeFE",
    "  stream=0 carry=3 fwd=0 punt=3 closed=0 SBlockNode(_,blockIn) ⇒ Resume(_)▹Stream  ← pendingProps.h_closeF",
    "  stream=0 carry=3 fwd=0 punt=3 closed=0 SBlockNode(_,blockIn) ⇒ Key(_)▹ExplValueLine(_)  ← pendingProps.h_closeFV",
-   "  stream=0 carry=1 fwd=2 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) ⇒ Key(_)▹ExplValueLine(_)  ← pendingProps.h_closeFEV",
+   "  stream=0 carry=3 fwd=0 punt=3 closed=0 [_=_+1] SBlockNode(_,blockIn) > SCompactSeqTail(_) ⇒ Key(_)▹ExplValueLine(_)  ← pendingProps.h_closeFEV",
    "  stream=0 carry=0 fwd=0 punt=0 closed=0 GAlt(SLBareDocument,GSeq(SENode,SSLComments)) ⇒ Stream  ← pendingDocStart.h_doc_route",
    "  stream=0 carry=0 fwd=0 punt=0 closed=0 SLDirectiveDocument ⇒ Stream  ← pendingDirective.h_dir_route",
    "  stream=0 carry=6 fwd=0 punt=0 closed=0 SSLComments > SCompactSeqTail(_) ⇒ Stream  ← pendingBlockContent.h_closable_entry",
@@ -770,6 +773,8 @@ def expectedSpines : List String :=
 -- Item 287: the same 47 rows.  With `accum_block_on_closeThenBlock`'s inline
 -- application gone, the walk reaches `compact_open_map` from it before it
 -- reaches the escape through the stamp wrappers, so those two rows trade places.
+-- 2026-10-21 (item 313): the two props-park sites of `accum_content_pending` carry their four alternative-bearing fields
+-- through `.imp id (PackAlt.step_content …)` (`fwd` → `carry` on `h_kslot`, `h_routeE`, `h_kslotE`, `h_closeFEV`).
 def expectedSites : List String :=
   -- Item 305: the compact arm's `h_closeFV` hand-off is a carry (the `?` slot's bottom), not a punt.
   ["  accum_block_on_closeThenBlock: nil park=pendingBlock stream=bound:h_stream_new:=param:h_close_pending closedBy=[SSLComments ⇒ Stream] h_close=carry,h_close_entry=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=carry,h_closeFV=carry",
@@ -797,8 +802,8 @@ def expectedSites : List String :=
    "  accum_content_on_pendingMapValue_indented: nil park=pendingProps stream=param:h_stream_block closedBy=[] h_route=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_kslot=carry,h_routeE=punt,h_kslotE=punt,h_closeFE=punt,h_closeF=carry,h_closeFV=carry,h_closeFEV=punt",
    "  accum_content_on_pendingMapValue_indented: nil park=pendingContent stream=bound:h_stream':=param:h_close_old closedBy=[SBlockNode(_+1,blockIn) ⇒ Stream] h_closable=carry,h_key=closed,h_key=closed,h_key=closed,h_key=closed,h_key=closed,h_vpack=carry,h_framesS=carry,h_framesV=carry,h_seqF=carry",
    "  accum_content_on_pendingMapValue_indented: nil park=pendingContent stream=param:h_stream_block closedBy=[] h_closable=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_vpack=carry,h_framesS=carry,h_framesV=carry,h_seqF=carry",
-   "  accum_content_pending: nil park=pendingProps stream=param:h_stream_block closedBy=[] h_route=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_kslot=fwd,h_routeE=fwd,h_kslotE=fwd,h_closeFE=carry,h_closeF=carry,h_closeFV=carry,h_closeFEV=fwd",
-   "  accum_content_pending: nil park=pendingProps stream=param:h_stream_block closedBy=[] h_route=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_kslot=fwd,h_routeE=fwd,h_kslotE=fwd,h_closeFE=carry,h_closeF=carry,h_closeFV=carry,h_closeFEV=fwd",
+   "  accum_content_pending: nil park=pendingProps stream=param:h_stream_block closedBy=[] h_route=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_kslot=carry,h_routeE=carry,h_kslotE=carry,h_closeFE=carry,h_closeF=carry,h_closeFV=carry,h_closeFEV=carry",
+   "  accum_content_pending: nil park=pendingProps stream=param:h_stream_block closedBy=[] h_route=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_kslot=carry,h_routeE=carry,h_kslotE=carry,h_closeFE=carry,h_closeF=carry,h_closeFV=carry,h_closeFEV=carry",
    "  accum_content_pending: nil park=pendingContent stream=param:h_stream_block closedBy=[] h_closable=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_vpack=carry,h_framesS=carry,h_framesV=carry,h_seqF=punt",
    "  accum_content_pending: nil park=pendingContent stream=param:h_stream_block closedBy=[] h_closable=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_vpack=carry,h_framesS=carry,h_framesV=carry,h_seqF=punt",
    "  accum_content_pending: nil park=pendingBlockContent stream=param:h_stream_block closedBy=[] h_closable=carry,h_closable_entry=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_key=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=punt,h_closeFV=carry",
@@ -890,17 +895,20 @@ def expectedK : List String :=
 -- 2026-10-21 (item 311): `routeArgs` 154 → 156, `routeFwd` 50 → 52 — the two flow closes hand `flowVPack_of_close
 -- resume.vslot` into the content park through `.imp id PackAlt.ofGateClose` (the frame's named alternative into the
 -- park's), and the wrapped route is read as one more forwarded route argument at each close.
+-- 2026-10-21 (item 313): `fwd` 8 → 0 and `carry` 161 → 169 (the optional and build tallies the same way), `routeArgs`
+-- 156 → 154, `routeFwd` 52 → 50 — the props parks' eight verbatim forwards are carried steps through
+-- `.imp id (PackAlt.step_content …)` now, and two route arguments that were forwarded are carried.
 def expectedLine : String :=
   "closures=54 packed=14 optional=40 guarded=13 facts=3 others=1 byHead=6 byFirst=8 \
 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 \
-stream=8 carry=161 fwd=8 punt=78 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 \
-closed=0] optional[stream=4 carry=111 fwd=8 punt=72 closed=0] packSlots=104 \
+stream=8 carry=169 fwd=0 punt=78 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 \
+closed=0] optional[stream=4 carry=119 fwd=0 punt=72 closed=0] packSlots=104 \
 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 \
 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 \
 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=7 flowSlots=42 flow[stream=8 \
-carry=29 fwd=0 punt=4 closed=1] routeArgs=156 routeStream=21 routeCarry=47 routeFwd=52 \
+carry=29 fwd=0 punt=4 closed=1] routeArgs=154 routeStream=21 routeCarry=47 routeFwd=50 \
 routeClosed=36 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 \
-builders=13 builds=170 buildSlots=1101 build[stream=17 carry=276 fwd=705 punt=82 \
+builders=13 builds=170 buildSlots=1101 build[stream=17 carry=284 fwd=697 punt=82 \
 closed=21] buildStreamSlots=17 buildSpines=10 routePairs=9 routeSpines=5 k=14 kHeads=6 \
 streamBuilders=9"
 

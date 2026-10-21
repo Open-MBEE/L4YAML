@@ -553,7 +553,8 @@ def ExplicitValueRefused (sc : ScannerState) : Prop :=
 abbrev PackAlt (_sc : ScannerState) : Prop := True
 
 /-- A payment of the alternative from the predicate (the identity once `PackAlt` is it). -/
-theorem PackAlt.ofRefused {sc : ScannerState} (_h : ExplicitValueRefused sc) : PackAlt sc := trivial
+theorem PackAlt.ofRefused {sc : ScannerState} (_h : ExplicitValueRefused sc) : PackAlt sc :=
+  trivial  -- refused: _h
 
 /-- **A flow frame's alternative.**  `FlowBaseRoutes` carries no park state, so what the open
     declines on the frame's pack and stack is carried to the close as `PackAltG g`, indexed by
@@ -20001,6 +20002,39 @@ lemma ExplicitValueRefused.not_of_classA {sc s_prep : ScannerState} {c : Char}
   · rw [indent_neg_dis_of_park h_preprocess h_neg] at h_indent
     omega
 
+/-- **Lane (b)'s transport: the alternative survives a CONTENT step** (item 313).  A park at `sc`
+    whose explicit value is refused — a dead register, or the sentinel indent — hands the park the
+    content dispatch builds the same refusal: preprocessing writes neither register field
+    (`ekl_dis_eq_park`) and unwinds no sentinel (`indent_neg_dis_of_park`), and the content dispatch
+    — a scalar, a quoted scalar, a property, an alias, a block scalar — writes no register field
+    (`dispatchContent_preserves_explicitKeyLine`) and no indent
+    (`IndentStackBase.dispatchContent_preserves_indents`).  The fourteen leaves of
+    `accum_content_pending` and the one of `accum_content_on_pendingMapValue_indented` that relay a
+    park's pack or stack into the park the step builds are this lemma's spends. -/
+lemma ExplicitValueRefused.step_content {sc s_prep s' : ScannerState} {c : Char}
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) c = .ok s')
+    (h : ExplicitValueRefused sc) : ExplicitValueRefused s' := by
+  rcases h with h_ek | h_neg
+  · exact Or.inl ((ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans
+      ((ekl_dis_eq_park h_preprocess).trans h_ek))
+  · exact Or.inr ((currentIndent_of_indents_eq
+      (IndentStackBase.dispatchContent_preserves_indents h_dispatch)).trans
+      (indent_neg_dis_of_park h_preprocess h_neg))
+
+/-- The same step on the named alternative.  `trivial` while `PackAlt` is `True`; the census's
+    residue mode substitutes the proof promised after `-- refused:` (`scripts/pack_flip_census.py`),
+    and the final flip makes that proof the body. -/
+theorem PackAlt.step_content {sc s_prep s' : ScannerState} {c : Char}
+    (_h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (_h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) c = .ok s')
+    (_h : PackAlt sc) : PackAlt s' :=
+  trivial  -- refused: ExplicitValueRefused.step_content _h_preprocess _h_dispatch _h
+
 /-- The indicator dispatch's own `!inFlow` guard, run back to the flag: shared
     by both floors (items 27/28), which each need the post-update state's
     `needIndentCheck` and can only observe `inFlow` on it. -/
@@ -31299,7 +31333,7 @@ lemma content_dispatch_routed
               IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
-            KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt sc) →
+            KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt s') →
           PropsKeyPack s' sp_start sp_prep sp_run ∨ KeyPackPunt s' := by
         intro k sp_land hcol0 h_ind h_sk_poss h_sk_pos h_route_k h_resF h_resFV
         -- Item 29: the run's COLUMN, from the same two facts item 28 used
@@ -31548,7 +31582,7 @@ lemma content_dispatch_routed
               IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
-            KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt sc) →
+            KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt s') →
           -- Item 168: and the sequence face, which only the RESUMING context
           -- can have — the other three open a document, a suffix's document or
           -- the stream's first one, and no sequence entry encloses any of them.
@@ -33699,7 +33733,7 @@ lemma accum_content_on_pendingMapValue_indented
              -- `explFrameValueLine` out inline, shadow and all** — it is that
              -- lemma's body verbatim, so it is that lemma's call now, and both
              -- funders ride out together.
-             (explFrameValueLine h_expl h_kslot)
+             ((explFrameValueLine h_expl h_kslot).imp id (PackAlt.step_content h_preprocess h_dispatch))
              -- Item 114: as at the root arm — no chain at a VALUE (`§9.2`),
              -- the node-domain frames ride (`k:⏎  m:⏎    a: &p b⏎  n: 2`).
              (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
@@ -34978,7 +35012,7 @@ lemma accum_content_pending (sc : ScannerState)
                          h_kcol_ext h_kcol (dispatchContent_anchor_simpleKey h_dispatch).1,
                          -- Items 94/111: the run grows, the entry does not move
                          -- — all three twins ride.
-                         h_kslot_pk,
+                         (h_kslot_pk.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                          -- Item 148: the cover rides the property transport too.
                          (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                            h_cov.imp (fun ⟨lo, hb, hc⟩ =>
@@ -34986,7 +35020,7 @@ lemma accum_content_pending (sc : ScannerState)
                          -- Item 150: and the value-line twin's, the same step.
                          (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                            h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id)⟩,
+                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch))⟩,
                        h_run.blockKey_addAnchor
                          (GStar_SSWhite_to_SSeparateInLine sp_scan sp_prep h_ws) h_prop, ?_,
                        by
@@ -35011,10 +35045,10 @@ lemma accum_content_pending (sc : ScannerState)
                      (separateLines_col_ge h_sep2 h) (anchorProperty_col_lt h_prop))) id)
                    (dispatchContent_anchor_simpleKey h_dispatch).2
                    -- Item 91: the run grows, the frame does not move.
-                   h_kslot_p
+                   (h_kslot_p.imp id (PackAlt.step_content h_preprocess h_dispatch))
                    -- Item 114: nor do the park's resume faces — the anchor
                    -- lives inside the same awaited node.
-                   h_routeE_p h_kslotE_p
+                   (h_routeE_p.imp id (PackAlt.step_content h_preprocess h_dispatch)) (h_kslotE_p.imp id (PackAlt.step_content h_preprocess h_dispatch))
                    -- Item 155: the ENTRY face steps with them, on the same reading.
                    (h_closeFE_p.imp (fun ⟨ne, ks, hne, h_lt, h_cv, r⟩ => ⟨ne, ks, hne, h_lt,
                      h_cv.imp (fun ⟨lo, hb, hc⟩ => ⟨lo, hb, h_cov_step lo ks hc⟩) id, r⟩) id)
@@ -35027,11 +35061,11 @@ lemma accum_content_pending (sc : ScannerState)
                      r⟩) id)
                    (h_closeFVS_p.imp (fun ⟨nv, ks, h_cov, r⟩ => ⟨nv, ks,
                      h_cov.imp (fun ⟨lo, m, hb, hc⟩ => ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
-                     r⟩) id)
+                     r⟩) (PackAlt.step_content h_preprocess h_dispatch))
                  (nodir_of_content_dispatch h_dispatch)
                  -- Item 199: the ENTRY face's value-line twin steps with it — the field
                  -- carries no cover, so the step is the identity.
-                 h_closeFEV_p,
+                 (h_closeFEV_p.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                hcorr_result⟩
       · by_cases hbang : c = '!'
         · -- ═══ `!` on the run's line: the mirror ═══
@@ -35124,7 +35158,7 @@ lemma accum_content_pending (sc : ScannerState)
                        refine Or.inl ⟨⟨k, h_route_k,
                            h_kcol_ext h_kcol (dispatchContent_tag_simpleKey h_dispatch).1,
                            -- Items 94/111: as at the `&` transport above.
-                           h_kslot_pk,
+                           (h_kslot_pk.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                            -- Item 148: the cover rides the property transport too.
                            (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                              h_cov.imp (fun ⟨lo, hb, hc⟩ =>
@@ -35132,7 +35166,7 @@ lemma accum_content_pending (sc : ScannerState)
                            -- Item 150: and the value-line twin's, the same step.
                          (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                            h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id)⟩,
+                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch))⟩,
                          h_run.blockKey_addTag
                            (GStar_SSWhite_to_SSeparateInLine sp_scan sp_prep h_ws) h_prop, ?_,
                          by
@@ -35156,9 +35190,9 @@ lemma accum_content_pending (sc : ScannerState)
                      (h_ncol_p.imp (fun h => Nat.le_of_lt (Nat.lt_of_le_of_lt
                        (separateLines_col_ge h_sep2 h) (tagProperty_col_lt h_prop))) id)
                      (dispatchContent_tag_simpleKey h_dispatch).2
-                     h_kslot_p
+                     (h_kslot_p.imp id (PackAlt.step_content h_preprocess h_dispatch))
                      -- Item 114: the faces ride the extension, as at `&`.
-                     h_routeE_p h_kslotE_p
+                     (h_routeE_p.imp id (PackAlt.step_content h_preprocess h_dispatch)) (h_kslotE_p.imp id (PackAlt.step_content h_preprocess h_dispatch))
                      -- Item 155: the ENTRY face steps with them, on the same reading.
                      (h_closeFE_p.imp (fun ⟨ne, ks, hne, h_lt, h_cv, r⟩ => ⟨ne, ks, hne, h_lt,
                        h_cv.imp (fun ⟨lo, hb, hc⟩ => ⟨lo, hb, h_cov_step lo ks hc⟩) id, r⟩) id)
@@ -35171,11 +35205,11 @@ lemma accum_content_pending (sc : ScannerState)
                        r⟩) id)
                      (h_closeFVS_p.imp (fun ⟨nv, ks, h_cov, r⟩ => ⟨nv, ks,
                        h_cov.imp (fun ⟨lo, m, hb, hc⟩ => ⟨lo, m, hb, h_cov_step lo ks hc⟩) id,
-                       r⟩) id)
+                       r⟩) (PackAlt.step_content h_preprocess h_dispatch))
                    (nodir_of_content_dispatch h_dispatch)
                    -- Item 199: the ENTRY face's value-line twin steps with it — the field
                    -- carries no cover, so the step is the identity.
-                   h_closeFEV_p,
+                   (h_closeFEV_p.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                  hcorr_result⟩
         · by_cases hstar : c = '*'
           · -- ═══ `*` on the run's line: REFUTED (items 9e/9k) ═══
@@ -35338,7 +35372,7 @@ lemma accum_content_pending (sc : ScannerState)
                         (SFlowNode.propsContent 0 .blockKey sp_p sp_scan sp_prep sp_scan'
                           h_props_bk h_sep_bk
                           (SFlowContent.doubleQ 0 .blockKey sp_prep sp_scan' h_dq)),
-                      GStar.nil _, h_kcol_of h_pp, h_kslot_pk,
+                      GStar.nil _, h_kcol_of h_pp, (h_kslot_pk.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                       -- Item 148: the cover rides the property transport too.
                       (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                         h_cov.imp (fun ⟨lo, hb, hc⟩ =>
@@ -35346,7 +35380,7 @@ lemma accum_content_pending (sc : ScannerState)
                       -- Item 150: and the value-line twin's, the same step.
                       (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                         h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                          ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id), Or.inr trivial⟩
+                          ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
                   · by_cases hsq : c = '\''
                     · subst hsq
                       obtain ⟨h_pp, h_cond⟩ :=
@@ -35360,7 +35394,7 @@ lemma accum_content_pending (sc : ScannerState)
                           (SFlowNode.propsContent 0 .blockKey sp_p sp_scan sp_prep sp_scan'
                             h_props_bk h_sep_bk
                             (SFlowContent.singleQ 0 .blockKey sp_prep sp_scan' h_sq)),
-                        GStar.nil _, h_kcol_of h_pp, h_kslot_pk,
+                        GStar.nil _, h_kcol_of h_pp, (h_kslot_pk.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                         -- Item 148: the cover rides the property transport too.
                         (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
@@ -35368,7 +35402,7 @@ lemma accum_content_pending (sc : ScannerState)
                         -- Item 150: and the value-line twin's, the same step.
                         (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id), Or.inr trivial⟩
+                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
                     · obtain ⟨h_sk_pres, h_cond⟩ :=
                         dispatchContent_plainScalar_key_prod _ sp_prep
                           (corr_of_allowDirectives_update hcorr_prep) hpeek_disp h_flow_disp
@@ -35382,7 +35416,7 @@ lemma accum_content_pending (sc : ScannerState)
                           (SFlowNode.propsContent 0 .blockKey sp_p sp_scan sp_prep sp_gram2
                             h_props_bk h_sep_bk
                             (SFlowContent.plain 0 .blockKey sp_prep sp_gram2 h_ol)),
-                        h_tws2, h_kcol_of (by rw [h_sk_pres]), h_kslot_pk,
+                        h_tws2, h_kcol_of (by rw [h_sk_pres]), (h_kslot_pk.imp id (PackAlt.step_content h_preprocess h_dispatch)),
                         -- Item 148: the cover rides the property transport too.
                         (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
@@ -35390,7 +35424,7 @@ lemma accum_content_pending (sc : ScannerState)
                         -- Item 150: and the value-line twin's, the same step.
                         (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id), Or.inr trivial⟩
+                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
             -- Item 24: the run's route index decides which readings of the
             -- decorated value are available.  At 0 the whole of
             -- `dispatchContent_evidence_content` is — including `[198]`'s

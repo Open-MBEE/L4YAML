@@ -476,8 +476,10 @@ def expectedCross : List String :=
 -- 2026-10-21 (item 311): `landed` 43 → 45, `landed-producers` 0 → 2, `total` 80 → 82 — the two flow closes hand
 -- `flowVPack_of_close resume.vslot` into the content park through `.imp id PackAlt.ofGateClose` (the frame's named
 -- alternative into the park's); a pipe whose right map is a lemma lands as a producer, and that lemma is lane (d)'s stub.
+-- 2026-10-21 (item 313): `landed` 45 → 54, `landed-producers` 2 → 3, `total` 82 → 91 — the content lane's transports are
+-- `Or.imp` pipes with `PackAlt.step_content` on the right, landing in the park the content step builds.
 def expectedPipeSplit : String :=
-  "pipes=0/0 producers=37/11 landed=45 landed-producers=2 total=82"
+  "pipes=0/0 producers=37/11 landed=54 landed-producers=3 total=91"
 
 end L4YAML.Tests.Guards.ConclusionRouteCensus
 

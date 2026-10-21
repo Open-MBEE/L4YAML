@@ -573,8 +573,11 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- 2026-10-21 (item 311): `constants` 1398 → 1403, `decls` 1114 → 1117, `UNUSED` 9 → 12 — the named alternative's two
 -- abbrevs and three stubs (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`), each stub's `_h` unused by
 -- construction until its lane proves it.
+-- 2026-10-21 (item 313): `constants` 1403 → 1405, `decls` 1117 → 1119, `READ` +1, `RELAY` +2, `UNUSED` 12 → 15 —
+-- `ExplicitValueRefused.step_content` (reads its predicate, relays the two step facts) and `PackAlt.step_content`, whose
+-- three binders are unused until the promise after `-- refused:` is its body.
 def expectedModuleTally : String :=
-  "constants=1403 decls=1117 eta=414 FIELD=163 READ=1161 RELAY=2337 RETURN=48 UNUSED=12"
+  "constants=1405 decls=1119 eta=414 FIELD=163 READ=1162 RELAY=2339 RETURN=48 UNUSED=15"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.
@@ -592,7 +595,10 @@ def expectedUnused : List String :=
     "ofGateClose#2 (_h)",
     "ofPark#2 (_h)",
     "ofRefused#1 (_h)",
-    "question_open_map#15 (_h_noflow_disp)" ]
+    "question_open_map#15 (_h_noflow_disp)",
+    "step_content#4 (_h_preprocess)",
+    "step_content#5 (_h_dispatch)",
+    "step_content#6 (_h)" ]
 
 run_cmd do
   let env ← getEnv

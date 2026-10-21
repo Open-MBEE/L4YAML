@@ -772,7 +772,10 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- 2026-10-21 (item 311): `theorems` 5469 → 5472 — the named alternative's three conversion stubs (`PackAlt.ofRefused`,
 -- `PackAltG.ofPark`, `PackAlt.ofGateClose`); the no-op counts stand: `∨ PackAltG g` on the frame's conclusions is `True` by
 -- definition, so `FlowBaseRoutes.key`/`vslot` and the two key-route lemmas read as they did.
-def expectedNoopTally : String := "theorems=5472 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
+-- 2026-10-21 (item 313): `theorems` 5472 → 5474 — `ExplicitValueRefused.step_content` and `PackAlt.step_content`; neither
+-- concludes an `∨ True` no-op (the wrapper concludes `PackAlt s'`, read by elaboration and by whnf alike), so the no-op
+-- counts stand.
+def expectedNoopTally : String := "theorems=5474 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

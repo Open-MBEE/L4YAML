@@ -583,8 +583,11 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `UNUSED` 17 → 24 — the block lane's two transports and their two wrappers (+4) less item 309's three indent lemmas (−3);
 -- `not_of_classA` lost its indent premise and the two content transports hand `h` on whole (one register equation each)
 -- where they destructured it; the seven `_`-binders of `PackAlt.step_blockEntry` and `PackAlt.step_value` are the new UNUSED.
+-- 2026-10-21 (item 320): `constants` 1408 → 1409, `decls` 1122 → 1123, `eta` 414 → 416, `READ` 1161 → 1166 — the marker
+-- constructors' new field `h_noek` (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split
+-- arms' `h_alt`, and the `h_seqFramesV` relay's wrapper; RELAY, RETURN and UNUSED stand.
 def expectedModuleTally : String :=
-  "constants=1408 decls=1122 eta=414 FIELD=163 READ=1161 RELAY=2343 RETURN=48 UNUSED=24"
+  "constants=1409 decls=1123 eta=416 FIELD=163 READ=1166 RELAY=2343 RETURN=48 UNUSED=24"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.

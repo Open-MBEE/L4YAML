@@ -326,6 +326,8 @@ def expectedTransports : List String :=
 -- content lane's sixty-one leaf payments (each `Or.inr trivial` an application or a hypothesis now); every row stands.
 -- 2026-10-21 (item 315): `nodes` 103286 → 103289 — the key-pack lemmas' six arms step through the wrapper (three a side).
 -- 2026-10-21 (item 315): `floorNodes` 26215 → 26216 — `entryPropsKeyPack_of_dispatch`'s new premise in the floor walk.
+-- 2026-10-21 (item 320): `nodes` 103289 floorNodes → 103324 floorNodes — the marker parks' field, the eight payments, the relay and the
+-- two split arms grow the family's terms; rows and payments stand.
 def expectedLine : String :=
   "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 \
 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 \
@@ -335,7 +337,7 @@ coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=6
 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 \
 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 \
 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 \
-rootMonoSite=1 rootNtop=1 nodes=103289 floorNodes=26216"
+rootMonoSite=1 rootNtop=1 nodes=103324 floorNodes=26220"
 
 /-! ## §4 The reading -/
 

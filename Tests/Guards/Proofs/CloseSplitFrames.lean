@@ -750,12 +750,14 @@ def expectedDoor : List String :=
 -- 2026-10-20 (item 307, second chain): `decisions` 139 → 141.
 -- 2026-10-21 (item 319): `apps` 45 → 47 — `accum_block_on_closeThenBlock`'s two `h_resKslot` relays are applications now
 -- (`h_resKslot.imp id (PackAlt.step_blockEntry h_preprocess h_dispatch)`, the block lane's transport); every other count stands.
+-- 2026-10-21 (item 320): `apps` 47 → 48 — `accum_block_on_closeThenBlock`'s `h_seqFramesV` relay is an application now
+-- (`.imp id (PackAlt.step_blockEntry h_preprocess h_dispatch)`); every other count stands.
 def expectedLine : String :=
   "asked=13 both=8 lemmas=2 walked=6 feedFunnel=2 feedExplicit=2 feedDeferred=4 \
 feedTuple=0 entry=8 entrySBI=4 kslot=8 kslotUp=8 closeF=4 closeFV=8 seqF=8 top=4 \
 floor=0 cover=4 cover2=4 floorB=4 aboveKN=0 aboveKMem=0 aboveKNv=2 aboveKEx=2 \
 hands=4 besideKN=1 besideKMem=2 besideKNv=0 puntKN=1 puntKMem=2 besideNone=2 \
-decisions=141 decOnK=25 decKN=10 decKMem=10 decKNv=5 apps=47 funnelArgs=2 \
+decisions=141 decOnK=25 decKN=10 decKMem=10 decKNv=5 apps=48 funnelArgs=2 \
 doorDropped=4/2 closeSites=8 params=7"
 
 /-! ## §5 The reading -/

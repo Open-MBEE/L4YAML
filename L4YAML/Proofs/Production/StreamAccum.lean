@@ -1927,7 +1927,11 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- **Item 284 — the indicator this park stands on OFFERS a slot** (LAST,
       -- same reason).  A run started off this park and an open dispatched from
       -- it read their slot face off the token the dispatch just pushed.
-      (h_offer : OfferPred sc.tokens) :
+      (h_offer : OfferPred sc.tokens)
+      -- Item 320: the park's register, DEAD — `scanDocumentEnd` ends every open node, the
+      -- `?` frame among them (item 317), so a `:` landing on this park is never a class-A
+      -- value; lane (e)'s carrier, paid by `scanDocumentEnd_explicitKeyLine`.
+      (h_noek : sc.explicitKeyLine = none) :
       PendingNode sc false sp_start sp_block sp_scan
   /-- Document start `---` scanned. The gap contains SCDirectivesEnd
       (possibly preceded by directives). Awaiting content or SSLComments
@@ -1981,7 +1985,9 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- `dispatch_refutes_sameLine` reads for a `-`/`?`/`:` at this park, and
       -- what a content park can carry past the marker where the last-real
       -- token form above cannot (item 300).
-      (h_docline : sc.docStartLine = some sc.line) :
+      (h_docline : sc.docStartLine = some sc.line)
+      -- Item 320: the register, dead after `---` as after `...` (item 317; lane (e)).
+      (h_noek : sc.explicitKeyLine = none) :
       PendingNode sc false sp_start sp_block sp_scan
   /-- Directive `%` scanned. The gap contains directive content.
       Awaiting next `%` (accumulate) or `---` (form directive document).
@@ -2813,8 +2819,8 @@ lemma PendingNode.arm_tight_or_col {sc : ScannerState}
   | pendingFlow _ _ _ _ h_arm _ _ => exact h_arm
   -- Item 223: …and so do the two document markers, whose scans clear the saved
   -- key on the same pass that re-arms the flag.
-  | pendingDocEnd _ _ _ _ _ h_arm _ => exact h_arm
-  | pendingDocStart _ _ _ _ _ _ _ h_arm _ _ => exact Or.inl h_arm
+  | pendingDocEnd _ _ _ _ _ h_arm _ _ => exact h_arm
+  | pendingDocStart _ _ _ _ _ _ _ h_arm _ _ _ => exact Or.inl h_arm
 
 /-- **The loose reading, as a projection of the tight one** (item 223).  Item 78
     stated this over nine arms because the nine carriers then had nine different
@@ -3546,7 +3552,7 @@ lemma PendingNode.dirRoute {sc : ScannerState} {sp_start sp_block sp_scan : Surf
         (ssl_comments_extend_prefixes (h_nodoc h_noflow) h_ssl)
         (GOpt.some sp_mid sp_end (SLAnyDocument.directive sp_mid sp_end h_dd))
         (GStar.nil _)
-  | pendingDocEnd _ _ _ _ h_marker _ =>
+  | pendingDocEnd _ _ _ _ h_marker _ _ =>
     exact fun sp_mid h_ssl sp_end h_dd =>
       SLYamlStream.suffixContinue sp_start sp_block sp_mid sp_mid sp_end sp_end
         h_stream
@@ -6113,12 +6119,12 @@ lemma PendingNode.close_with_ssl {sc : ScannerState}
     exact SLYamlStream.scannerDrop sp_start sp_block sp_scan sp_mid h_stream h_ssl
   | pendingBlockContent _ _ _ _ _ h_closable _ _ _ _ =>
     exact h_closable h_nd sp_mid h_ssl
-  | pendingDocEnd _ _ _ _ h_marker _ =>
+  | pendingDocEnd _ _ _ _ h_marker _ _ =>
     exact SLYamlStream.suffixContinue sp_start sp_block sp_mid sp_mid sp_mid sp_mid
       h_stream (GPlus.mk sp_block sp_mid sp_mid
         (SLDocumentSuffix.mk sp_block sp_scan sp_mid h_marker h_ssl) (GStar.nil _))
       (GStar.nil _) (GOpt.none _) (GStar.nil _)
-  | pendingDocStart _ _ _ h_doc_route _ _ _ _ =>
+  | pendingDocStart _ _ _ h_doc_route _ _ _ _ _ =>
     exact h_doc_route sp_mid
       (GAlt.right sp_scan sp_mid
         (GSeq.mk sp_scan sp_scan sp_mid (GEps.mk sp_scan) h_ssl))
@@ -9117,7 +9123,9 @@ lemma structural_dispatch_to_pending
                                scanDocumentEnd_simpleKey_false hde⟩)
              -- Item 207: `[204]`'s three columns, read off the marker the park
              -- already carries.
-             (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega)),
+             (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega))
+             -- Item 320: the register the marker ended.
+             (ExplicitKeyCoupling.scanDocumentEnd_explicitKeyLine hde),
            fun h => Bool.noConfusion h, hcorr'⟩
   -- Proof of doc_start_tac
   intro hat hcol_s h_eq; subst h_eq
@@ -9151,7 +9159,8 @@ lemma structural_dispatch_to_pending
       -- built but the park does not keep.
       (nic0_of_col_pos (by rw [scDirectivesEnd_col h_marker]; omega))
       -- Item 299: the marker's line, off the field `scanDocumentStart` sets.
-      (scanDocumentStart_docStartLine _),
+      (scanDocumentStart_docStartLine _)
+      (ExplicitKeyCoupling.scanDocumentStart_explicitKeyLine _),
     fun h => Bool.noConfusion h, hcorr'⟩
 
 -- Every `.ok (some _)` branch of `scanNextToken_dispatchStructural` requires
@@ -9326,7 +9335,8 @@ lemma structural_dispatch_after_directives
       -- built but the park does not keep.
       (nic0_of_col_pos (by rw [scDirectivesEnd_col h_marker]; omega))
       -- Item 299: the marker's line, off the field `scanDocumentStart` sets.
-      (scanDocumentStart_docStartLine _),
+      (scanDocumentStart_docStartLine _)
+      (ExplicitKeyCoupling.scanDocumentStart_explicitKeyLine _),
     fun h => Bool.noConfusion h, hcorr'⟩
 
 -- Helper (4f.3): gap closure + dispatch → PendingNode at SSLComments midpoint.
@@ -12755,7 +12765,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       (Or.inr trivial) (Or.inl h_tail143)
       (h_frS176.imp (fun ⟨ks, _, f⟩ => ⟨ks, f⟩) id)
       (h_frV201.imp (fun ⟨nv, ks, _, f⟩ => ⟨nv, ks, f⟩) id)
-  | pendingDocEnd _ _ _ h_line h_marker _ =>
+  | pendingDocEnd _ _ _ h_line h_marker _ _ =>
     -- Item 36: `[204]`'s suffix set weakens to item 10's at the CONSUMER.
     -- ═══ Item 118: the `...` park pays the flow open's suffix face — the
     -- marker plus the landing's `[79] s-l-comments` is `[205]
@@ -12961,7 +12971,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       · exact (flowOpen_underRunTab_refuted h_floor_p h_ltsl2
           (fun h => by rw [h] at h_col02; omega) h_col02 hj h_ind h_tab
           h_c h_preprocess).elim
-  | pendingDocStart _ _ _ _ _ _ _ h_armD _ _ h_doclineD =>
+  | pendingDocStart _ _ _ _ _ _ _ h_armD _ _ h_doclineD _ =>
     rename_i h_doc_route
     obtain ⟨sp_gap, h_sep0, hcorr_gap⟩ :=
       preprocess_some_separate_0_anyCol sc sp_scan s_prep c h_corr h_preprocess
@@ -24586,6 +24596,8 @@ lemma accum_block_on_closeThenBlock
                 KeyFrames.bottom sp_e (hkv sp_e (slotLandedSeq hnk h_ssl
                   (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot h_indented h_tail)))⟩
           else Or.inr trivial
+      -- Item 320: the slot's own alternative, handed on (the catch-all below keeps the residue arm).
+      | Or.inl ⟨_, _, _, _, _, _, _, _, Or.inr h_alt, _⟩ => Or.inr h_alt
       | _ => Or.inr trivial
     -- ═══ **Item 307: THE SPEND — the closed park's stack, resumed at this landing's
     -- width in its SEQUENCE case.**  The dedent routes hand this lemma their stack as
@@ -24706,10 +24718,13 @@ lemma accum_block_on_closeThenBlock
                         (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot
                           h_indented h_tail))⟩
                   else Or.inr trivial
+              -- Item 320: the frame-above alternative, carried across the `-` (the catch-all keeps the residue arm).
+              | Or.inl ⟨_, _, _, _, _, _, _, _, _, Or.inr h_alt⟩ =>
+                  Or.inr (PackAlt.step_blockEntry h_preprocess h_dispatch h_alt)
               | _ => Or.inr trivial)
              -- **Item 198: the value-line stack, across the same step.**  Built above
              -- from `h_valFV`, exactly as `h_closeF` is built from `h_valF`.
-             h_seqFramesV
+             (h_seqFramesV.imp id (PackAlt.step_blockEntry h_preprocess h_dispatch))
              -- Item 208: and the entry's TOP, off the landing's own floor — from the
              -- walk's unwind where the park stood off a line start, from item 207's
              -- flag where it stood on one.
@@ -26943,7 +26958,7 @@ lemma accum_block_pending (sc : ScannerState)
       -- Item 256: and its shape, which with the empty stack pays the root's
       -- resume frames at floor 0.
       h_mono
-  | pendingDocEnd _ _ _ h_line h_marker h_arm77 h_nic0E =>
+  | pendingDocEnd _ _ _ h_line h_marker h_arm77 h_nic0E _ h_noekE =>
     -- Item 36: `[204] l-document-suffix` ends the marker with `s-l-comments`,
     -- so a `-`/`?`/`:` on the marker's own line is a state the scanner refuses
     -- (`trailingContentAfterDocEnd`).  The escape is REFUSED here, not paid.
@@ -26954,7 +26969,7 @@ lemma accum_block_pending (sc : ScannerState)
     -- own slot. ═══
     exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' c sp_prep sp_scan'
       h_close_pending
-      (Or.inr trivial) (Or.inr (fun h_res _ => (docEnd_refutes_inline_residue h_line
+      (Or.inr (PackAlt.ofRefused h_noekE)) (Or.inr (fun h_res _ => (docEnd_refutes_inline_residue h_line
         (block_indicator_char h_dispatch) h_res).elim)) hcorr_prep hcorr_result h_corr h_noflow
       h_arm77
       h_preprocess h_dispatch
@@ -26971,16 +26986,16 @@ lemma accum_block_pending (sc : ScannerState)
       -- Item 197: nor a value-line-bottomed stack, for item 173's reason.
       -- Item 198: and no awaited node behind a marker.
       h_bare h_dn h_fv h_base h_mono (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
-      (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
+      (Or.inr trivial) (Or.inr trivial) (Or.inr (PackAlt.ofRefused h_noekE)) (Or.inr (PackAlt.ofRefused h_noekE))
       -- Item 208: item 207's field.
       h_nic0E
-  | pendingDocStart _ _ _ h_doc_route h_nic48 h_real48 _ h_arm77 _ h_nic0S h_docline48 =>
+  | pendingDocStart _ _ _ h_doc_route h_nic48 h_real48 _ h_arm77 _ h_nic0S h_docline48 h_noekS =>
     -- ═══ Item 48: the marker still on the line refutes all three indicators
     -- — B1/B2's `markerOnLine` for `-`/`?`, B4 for `:` — so the arm's
     -- inline residue is EMPTY and only the landed close remains. ═══
     exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' c sp_prep sp_scan'
       h_close_pending
-      (Or.inr trivial) (Or.inr (fun _ h_pay =>
+      (Or.inr (PackAlt.ofRefused h_noekS)) (Or.inr (fun _ h_pay =>
         (dispatch_refutes_sameLine h_nic48 h_real48 (Or.inr (Or.inl h_docline48))
           (preprocess_preserves_implicitValueLine sc s_prep c h_preprocess)
           (preprocess_preserves_docStartLine sc s_prep c h_preprocess)
@@ -27002,7 +27017,7 @@ lemma accum_block_pending (sc : ScannerState)
       -- Item 197: and no value-line-bottomed stack, for item 173's reason.
       -- Item 198: and no awaited node behind a `...` marker either.
       h_bare h_dn h_fv h_base h_mono (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
-      (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
+      (Or.inr trivial) (Or.inr trivial) (Or.inr (PackAlt.ofRefused h_noekS)) (Or.inr (PackAlt.ofRefused h_noekS))
       -- Item 208: item 207's field.
       h_nic0S
   | pendingContent _ _ _ h_line _ h_key h_stale47 h_vpack51 h_arm77 h_framesS109
@@ -34523,7 +34538,7 @@ lemma accum_content_pending (sc : ScannerState)
       (h_arm76.resolve_right (by rw [h_scflow]; simp)).left
       h_not_doc h_flow_disp h_dispatch
       (h_nodoc h_scflow)
-  | pendingDocEnd _ _ _ h_line h_marker _ h_nic0E h_offerE =>
+  | pendingDocEnd _ _ _ h_line h_marker _ h_nic0E h_offerE h_noekE =>
     -- ═══ Item 42: the no-break arm is EMPTY.  `[204]` stops the marker's line
     -- at a break or a `#`, and the content dispatch returns `.ok` on neither
     -- (`...#foo` never scans a marker at all — `[206] c-forbidden` wants a
@@ -34536,7 +34551,7 @@ lemma accum_content_pending (sc : ScannerState)
     -- faces are, and the stream behind the marker is the invariant's own.  So
     -- `...⏎a: 1` and `a: 1⏎...⏎b: 2` land their next document in
     -- `suffixContinue`'s own slot instead of a fresh `implicitContinue` one. ═══
-    exact h_defer_split (h_srcP := Or.inr h_offerE) (Or.inr trivial) (Or.inr trivial)
+    exact h_defer_split (h_srcP := Or.inr h_offerE) (Or.inr trivial) (Or.inr (PackAlt.ofRefused h_noekE))
       (Or.inl (fun sp_m h_ssl =>
         ⟨sp_block, sp_m, h_stream_block,
          GPlus.mk sp_block sp_m sp_m
@@ -34639,7 +34654,7 @@ lemma accum_content_pending (sc : ScannerState)
     subst h_colon
     exact absurd h_adj
       (checkAdjacentValue_refutes_stale (h_stale h_res) h_flow_disp h_pay h_pay_sk)
-  | pendingDocStart _ _ _ h_doc_route h_nicS h_realS h_markerS h_armS _ h_nic0S h_doclineS =>
+  | pendingDocStart _ _ _ h_doc_route h_nicS h_realS h_markerS h_armS _ h_nic0S h_doclineS h_noekS =>
     -- ═══ Item 43: `--- a` — `[208] l-explicit-document`'s one-line body.
     -- A mid-line park cannot close first, so the dispatch runs ROUTED: the
     -- node anchors at the park (just after the `---`), the crossed whites are
@@ -34653,7 +34668,7 @@ lemma accum_content_pending (sc : ScannerState)
     -- same route this branch has spent on the marker's own line since item 43,
     -- now stated over the landing's `[79] s-l-comments` so `---⏎hello` and
     -- `---⏎a: 1` are one explicit document each instead of two. ═══
-    refine h_defer_split (h_srcP := Or.inr (offerPred_of_docStart h_realS h_markerS)) (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
+    refine h_defer_split (h_srcP := Or.inr (offerPred_of_docStart h_realS h_markerS)) (Or.inr trivial) (Or.inr (PackAlt.ofRefused h_noekS)) (Or.inr trivial)
       (Or.inl (fun sp_m h_ssl => ⟨sp_scan, h_ssl, fun sp h_bn =>
         h_doc_route sp (GAlt.left sp_scan sp (SLBareDocument.mk sp_scan sp h_bn))⟩))
       -- Item 139: a `---` park's tail is a `.documentStart` token — excluded

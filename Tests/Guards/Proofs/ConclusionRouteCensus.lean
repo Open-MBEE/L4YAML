@@ -478,8 +478,10 @@ def expectedCross : List String :=
 -- alternative into the park's); a pipe whose right map is a lemma lands as a producer, and that lemma is lane (d)'s stub.
 -- 2026-10-21 (item 313): `landed` 45 → 54, `landed-producers` 2 → 3, `total` 82 → 91 — the content lane's transports are
 -- `Or.imp` pipes with `PackAlt.step_content` on the right, landing in the park the content step builds.
+-- 2026-10-21 (item 320): `landed` 54 → 55, `total` 91 → 92 — `accum_block_on_closeThenBlock`'s `h_seqFramesV` lands in the
+-- new park through `.imp id (PackAlt.step_blockEntry …)`, the relay item 319's payments surfaced; producers stand.
 def expectedPipeSplit : String :=
-  "pipes=0/0 producers=37/11 landed=54 landed-producers=3 total=91"
+  "pipes=0/0 producers=37/11 landed=55 landed-producers=3 total=92"
 
 end L4YAML.Tests.Guards.ConclusionRouteCensus
 

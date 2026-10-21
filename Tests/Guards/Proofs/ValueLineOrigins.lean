@@ -716,9 +716,12 @@ def expectedOrigins : List String := [
 -- `PackAlt.step_blockEntry` (the block lane's transport, item 319's consumer probe) instead of punting with `trivial`.
 -- 2026-10-21 (item 319): 19 rows re-read — the block lane's paid arms hand the park's alternative on (`stamp` or a
 -- `step` through `PackAlt.step_blockEntry`) where they punted with `trivial`; regenerated from the census's own rows.
+-- 2026-10-21 (item 320): 3 rows re-read — the marker arms' premises pay through `PackAlt.ofRefused h_noek…` (a `fact`
+-- reading) where they punted, and `accum_block_on_closeThenBlock`'s `h_seqFramesV` steps through the transport; regenerated
+-- from the census's own rows.
 def expectedRows : List String := [
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslot := alt/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[punt,stamp,fact] ⊢ none-held 0/1",
-  "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp := paid:chain/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[punt] ⊢ none-held 0/1",
+  "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp := paid:chain/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[punt,stamp] ⊢ none-held 0/1",
   "accum_block_on_closeThenBlock #1 param:indicator_open_map.h_explUp_chain := alt/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[stamp,punt] ⊢ none-held 0/1",
   "accum_block_on_closeThenBlock #1 param:slotChainMap.up := paid:chain/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] ⊢ none-held 0/1",
   "accum_block_on_closeThenBlock #2 param:slotChainMap.up := paid:chain/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[absurd] ⊢ none-held 0/1",
@@ -761,9 +764,9 @@ def expectedRows : List String := [
   "accum_block_pending #1 param:accum_block_on_closeThenBlock.h_vslot := stamp/stamp pos=[] origins=[] none=[stamp] ⊢ —",
   "accum_block_pending #2 param:accum_block_on_closeThenBlock.h_vpack := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
   "accum_block_pending #2 param:accum_block_on_closeThenBlock.h_vslot := stamp/stamp pos=[] origins=[] none=[stamp] ⊢ —",
-  "accum_block_pending #3 param:accum_block_on_closeThenBlock.h_vpack := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
+  "accum_block_pending #3 param:accum_block_on_closeThenBlock.h_vpack := punt/stamp pos=[] origins=[] none=[stamp] ⊢ —",
   "accum_block_pending #3 param:accum_block_on_closeThenBlock.h_vslot := stamp/stamp pos=[] origins=[] none=[stamp] ⊢ —",
-  "accum_block_pending #4 param:accum_block_on_closeThenBlock.h_vpack := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
+  "accum_block_pending #4 param:accum_block_on_closeThenBlock.h_vpack := punt/stamp pos=[] origins=[] none=[stamp] ⊢ —",
   "accum_block_pending #4 param:accum_block_on_closeThenBlock.h_vslot := stamp/stamp pos=[] origins=[] none=[stamp] ⊢ —",
   "accum_block_pending #5 param:accum_block_on_closeThenBlock.h_vpack := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
   "accum_block_pending #5 param:accum_block_on_closeThenBlock.h_vslot := stamp/stamp pos=[] origins=[] none=[stamp] ⊢ —",
@@ -904,6 +907,8 @@ def expectedRows : List String := [
 -- 2026-10-20 (item 306): the positions' origin sets re-read with the three new origins
 -- (`O3`, `O7`, `O10`) and the renumbering behind them; no position is born or dies.
 -- 2026-10-20 (item 307): the positions' origin sets re-read (three new origins, renumbered).
+-- 2026-10-21 (item 320): 1 position rows re-read — `accum_block_on_closeThenBlock.h_vpack`'s premise at the marker arms
+-- is paid through `PackAlt.ofRefused h_noek…` (a fact where it punted); regenerated from the census's own rows.
 def expectedPerPos : List String := [
   "ctor:pendingContent.h_key packaged writers=12 punt=0 stamp=0 built=12 unborn=0 dead=0 allHeld=0 someHeld=2 noneHeld=4 origins=[O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O26,O27,O28,O29,O30,O31,O37,O38,O39,O40,O41,O42,O43,O49,O53,O57,O60,O61,O74,O75] ⊢ 17/38 held",
   "ctor:pendingContent.h_vpack writers=12 punt=2 stamp=0 built=10 unborn=0 dead=0 allHeld=0 someHeld=8 noneHeld=2 origins=[O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O22,O26,O27,O28,O29,O30,O31,O32,O36,O37,O38,O39,O40,O41,O42,O43,O44,O49,O50,O53,O54,O57,O60,O61,O74,O75] ⊢ 20/44 held",
@@ -920,7 +925,7 @@ def expectedPerPos : List String := [
   "ctor:pendingMapValue.h_vslot writers=6 punt=0 stamp=3 built=3 unborn=0 dead=0 allHeld=1 someHeld=1 noneHeld=1 origins=[O0,O1,O2,O3,O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O22,O26,O27,O28,O29,O30,O31,O32,O36,O37,O38,O39,O40,O41,O42,O43,O44,O49,O50,O53,O54,O57,O59,O60,O61,O68,O69,O70,O71,O72,O73,O74,O75] ⊢ 27/55 held",
   "ctor:pendingMapValue.h_kslot writers=6 punt=2 stamp=0 built=4 unborn=0 dead=0 allHeld=0 someHeld=2 noneHeld=2 origins=[O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O26,O27,O28,O29,O30,O31,O37,O38,O39,O40,O41,O42,O43,O49,O53,O57,O60,O61,O74,O75] ⊢ 17/38 held",
   "ctor:pendingMapValue.h_explUp writers=6 punt=5 stamp=0 built=1 unborn=0 dead=0 allHeld=0 someHeld=0 noneHeld=1 origins=[O75] ⊢ 0/1 held",
-  "param:accum_block_on_closeThenBlock.h_vpack writers=11 punt=4 stamp=0 built=7 unborn=0 dead=0 allHeld=0 someHeld=4 noneHeld=3 origins=[O0,O1,O2,O3,O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O22,O26,O27,O28,O29,O30,O31,O32,O36,O37,O38,O39,O40,O41,O42,O43,O44,O49,O50,O53,O54,O57,O60,O61,O74,O75] ⊢ 21/48 held",
+  "param:accum_block_on_closeThenBlock.h_vpack writers=11 punt=2 stamp=2 built=7 unborn=0 dead=0 allHeld=0 someHeld=4 noneHeld=3 origins=[O0,O1,O2,O3,O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O22,O26,O27,O28,O29,O30,O31,O32,O36,O37,O38,O39,O40,O41,O42,O43,O44,O49,O50,O53,O54,O57,O60,O61,O74,O75] ⊢ 21/48 held",
   -- Item 287: the eleven writers, per position.
   "param:accum_block_on_closeThenBlock.h_vslot writers=11 punt=0 stamp=10 built=1 unborn=0 dead=0 allHeld=0 someHeld=0 noneHeld=1 origins=[O75] ⊢ 0/1 held",
   "param:accum_block_on_pendingBlock.h_kslot writers=1 punt=0 stamp=0 built=1 unborn=0 dead=0 allHeld=0 someHeld=0 noneHeld=1 origins=[O75] ⊢ 0/1 held",
@@ -1064,13 +1069,16 @@ def expectedUnborn : List String := []
 -- 2026-10-21 (item 319): `follows` 339 → 342, `liteNodes` 529329 → 529533 — the block lane's paid arms hand their
 -- alternative on (three more origins followed through a transport; the fourteen `PackAlt.step_blockEntry` applications and
 -- the two `.imp` relays grow the terms); rows and positions as re-pinned above.
+-- 2026-10-21 (item 320): `punt` 26 → 24, `stamp` 16 → 18, `follows` 342 → 343, `nodes` 12556 → 12575, `liteNodes` 529533 → 529719
+-- — the marker arms' two `h_vpack` premises are stamped from the parks' new field, one more origin is followed through the
+-- `h_seqFramesV` relay, and the field, the payments, the relay and the split arms grow the terms; rows as re-pinned above.
 def expectedLine : String :=
   "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 \
-paramRows=82 packagedRows=29 punt=26 stamp=16 built=138 origins=76 originRows=41 \
+paramRows=82 packagedRows=29 punt=24 stamp=18 built=138 origins=76 originRows=41 \
 route=23 frames=30 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
 someHeld=39 noneHeld=76 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
-relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=342 lets=570 lapps=696 alts=4495 \
-nodes=12556 liteNodes=529533"
+relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=343 lets=570 lapps=696 alts=4495 \
+nodes=12575 liteNodes=529719"
 
 /-! ## §4 The reading -/
 

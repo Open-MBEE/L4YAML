@@ -339,8 +339,11 @@ declarations' own binders and not by a rescoring of an existing one.
 -- `RETURN` 138 → 139, `UNUSED` 17 → 24 — the block lane's two transports and two wrappers (+4) less item 309's three
 -- indent lemmas (−3); `not_of_classA` reads one premise fewer, the two content transports return their one equation,
 -- and the two wrappers' seven `_`-binders are the new UNUSED.
+-- 2026-10-21 (item 320): `  "constants` 1408 decls → 1409 decls — the marker constructors' new field `h_noek`
+-- (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split arms' `h_alt`, and the `h_seqFramesV`
+-- relay's wrapper; RELAY, RETURN and UNUSED stand.
 def expectedModuleTallyP : String :=
-  "constants=1408 decls=1122 eta=414 FIELD=185 READ=1199 RELAY=2192 RETURN=139 UNUSED=24"
+  "constants=1409 decls=1123 eta=416 FIELD=185 READ=1204 RELAY=2192 RETURN=139 UNUSED=24"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

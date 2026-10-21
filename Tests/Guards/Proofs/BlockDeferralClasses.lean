@@ -3683,10 +3683,12 @@ example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos}
     (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col)
     -- Item 284: and the offer the `...` records — the token the marker pushed,
     -- which `structural_dispatch_to_pending` reads off `scanDocumentEnd`.
-    (h_offer : OfferPred sc.tokens) :
+    (h_offer : OfferPred sc.tokens)
+    -- Item 320: and the dead register the marker leaves (lane (e)'s field).
+    (h_noek : sc.explicitKeyLine = none) :
     PendingNode sc false sp_start sp_block sp_scan :=
   PendingNode.pendingDocEnd (h_offer := h_offer) sp_start sp_block sp_scan h_line h_marker h_arm
-    (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega))
+    (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega)) h_noek
 
 /-- …and the `---` park, whose marker its producers hold but the constructor
     does not keep, which is why the field is stated rather than derived. -/
@@ -4479,8 +4481,12 @@ script, as `expectedInlineArms` is. -/
 -- 2026-10-21 (item 319): `sites` 196 → 163, `leaf` 93 → 60 — the block lane's thirty-three leaf transports and identities
 -- are paid (fourteen through `PackAlt.step_blockEntry`, nineteen `Or.inr h_alt` at the park's own state); the two `h_resKslot`
 -- relays were never sites of this mode.  The roots stand at 103.
+-- 2026-10-21 (item 320): `sites` 163 → 155, `uncond` 103 → 95 — the eight marker-arm premises of `accum_block_pending` and
+-- `accum_content_pending` pay through `PackAlt.ofRefused h_noek…` (the marker parks' dead-register field, lane (e)); the
+-- eighteen other `(Or.inr trivial)` of those arms are `∨ True` optionals, which this mode reads as relays when paid and
+-- which are therefore not paid; the surfaced `h_seqFramesV` relay was never a site of this mode.
 def expectedPackFlip : String :=
-  "sites=163 decls=24 rounds=2 decline=163 relay=0 leaf=60 uncond=103 stubs=7"
+  "sites=155 decls=24 rounds=2 decline=155 relay=0 leaf=60 uncond=95 stubs=7"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4509,8 +4515,11 @@ def expectedPackFlip : String :=
 -- which stands beside `compact_open_map`'s `h_expl105`.  What declines in the block lane now (39 rows) is measured by kind in
 -- item 319's entry: twelve side-condition declines on resume facts, three catch-alls, five fresh fields, fourteen caller-side
 -- premises of `accum_block_pending`, and `accum_block_on_noPending`'s five roots.
+-- 2026-10-21 (item 320): `decline` 144 → 136, `relayState` 2 → 1 — the eight marker-arm premises paid from the new field,
+-- `accum_block_on_closeThenBlock`'s `h_seqFramesV` relayed through `PackAlt.step_blockEntry`, and two catch-alls split into
+-- their inner-alternative arm; what declines in the block lane now is item 319's list less these (item 320's entry).
 def expectedPackResidue : String :=
-  "sites=146 decls=22 rounds=3 decline=144 relayTrue=0 relayState=2 leaf=50 uncond=94 stubs=1 promised=5"
+  "sites=137 decls=22 rounds=2 decline=136 relayTrue=0 relayState=1 leaf=50 uncond=86 stubs=1 promised=5"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

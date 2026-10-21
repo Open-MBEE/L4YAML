@@ -2194,6 +2194,28 @@ lemma consumeBOM_preserves_explicitKey (s : ScannerState) :
   · simpa using advance_preserves_explicitKeyCol s
 
 
+/-! ### The document markers end the register (item 320)
+
+`scanDocumentStart` and `scanDocumentEnd` write `explicitKeyLine := none` in their final update
+(item 317: a marker ends every open node, the `?` frame among them).  These two lemmas are what a
+marker park's dead-register field is paid with. -/
+
+/-- The `---` scan's register, dead: the final update writes it. -/
+lemma scanDocumentStart_explicitKeyLine (s : ScannerState) :
+    (scanDocumentStart s).explicitKeyLine = none := by
+  unfold scanDocumentStart
+  rfl
+
+/-- The `...` scan's register, dead on every arm of the scan that returns. -/
+lemma scanDocumentEnd_explicitKeyLine {s s' : ScannerState}
+    (hok : scanDocumentEnd s = .ok s') : s'.explicitKeyLine = none := by
+  unfold scanDocumentEnd at hok
+  simp only [bind, Except.bind] at hok
+  repeat (any_goals (split at hok))
+  all_goals (try contradiction)
+  all_goals (simp only [Except.ok.injEq] at hok; subst hok; rfl)
+
+
 end L4YAML.Proofs.ExplicitKeyCoupling
 
 end Blanket

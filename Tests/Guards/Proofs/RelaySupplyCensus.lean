@@ -987,9 +987,12 @@ def expectedProducers : List String :=
 -- 2026-10-21 (item 313): `piped` 45 → 54, `producers` 2 → 3, `Or.imp⇒FIELD` 21 → 29, `Or.imp⇒VIA` 2 → 3 — the content
 -- lane's transports are `Or.imp` pipes whose right map is `PackAlt.step_content h_preprocess h_dispatch`, landing in the
 -- park the content step builds (eight in a field, one through `explFrameValueLine`, which the census reads as a producer).
+-- 2026-10-21 (item 320): `piped` 54 → 55, `Or.imp⇒SPLIT` 3 → 4 — `accum_block_on_closeThenBlock`'s `h_seqFramesV` is relayed
+-- through `.imp id (PackAlt.step_blockEntry h_preprocess h_dispatch)` into the new park's split field (the relay item 319's
+-- payments surfaced); producers and the other landings stand.
 def expectedPipeLanding : String :=
-  "piped=54 producers=3 [Or.imp⇒FIELD=29, Or.imp⇒LOCAL=5, Or.imp⇒RELAY=10, \
-Or.imp⇒SPLIT=3, Or.imp⇒VIA=3, dite⇒SPLIT=4]"
+  "piped=55 producers=3 [Or.imp⇒FIELD=29, Or.imp⇒LOCAL=5, Or.imp⇒RELAY=10, \
+Or.imp⇒SPLIT=4, Or.imp⇒VIA=3, dite⇒SPLIT=4]"
 
 /-- What the SPLITs decide (DOCS item 216), and the row that matters is
     `elsewhere=0`: **not one leaf of any case split in this module is decided
@@ -1043,11 +1046,14 @@ Or.imp⇒SPLIT=3, Or.imp⇒VIA=3, dite⇒SPLIT=4]"
 -- `DECLINE|PAY` 148 → 153; and the landed-`-` arm's own tree grows behind `h_resSeqV`/`h_resKslot`/`h_slotV'`
 -- (all `match`es): its 7-leaf shape reads 11 leaves and one `DECLINE|DECLINE|PAY` is a 5-leaf shape —
 -- `leaves` 347 → 363, `DECLINE` 178 → 185, `PAY` 168 → 177; no `VIA` beyond `flowKeyRoute_of_root`'s one.
+-- 2026-10-21 (item 320): `leaves` 363 → 364, `DECLINE` 185 → 186, one vector `DECLINE|DECLINE|PAY` → `DECLINE|DECLINE|DECLINE|PAY`
+-- (3 → 2 and 4 → 5) — a catch-all of `accum_block_on_closeThenBlock` split into its inner-alternative arm, which this
+-- census reads as one more leaf on that split's vector; the paid arm is a PAY it already counted.
 def expectedSplitLanding : String :=
-  "survived=166 collapsed=1 leaves=363 elsewhere=1 [DECLINE=185, PAY=177, VIA=1] \
+  "survived=166 collapsed=1 leaves=364 elsewhere=1 [DECLINE=186, PAY=177, VIA=1] \
 [DECLINE|DECLINE|DECLINE|DECLINE|DECLINE|DECLINE|PAY|PAY|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|DECLINE|PAY=4, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|PAY=3, DECLINE|DECLINE|PAY|PAY|PAY=2, DECLINE|PAY=153, \
+DECLINE|DECLINE|DECLINE|PAY=5, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
+DECLINE|DECLINE|PAY=2, DECLINE|DECLINE|PAY|PAY|PAY=2, DECLINE|PAY=153, \
 DECLINE|PAY|PAY=1, PAY|VIA=1]"
 
 /-- **Which BRANCH is taken (DOCS item 217).**  Item 216 resolved what a split
@@ -1120,9 +1126,11 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- 2026-10-21 (item 319): `DECLINE-closed` 131 → 98, `DECLINE-free` 54 → 87 — the block lane's thirty-three leaf
 -- transports and identities hand back their hypothesis (`Or.inr h_alt => Or.inr (PackAlt.step_blockEntry … h_alt)` or
 -- `Or.inr h_alt`) where they closed with `trivial`; splits, roots and the agreement stand.
+-- 2026-10-21 (item 320): `leaves` 363 → 364, `DECLINE-free` 87 → 88 — the split catch-all's new inner-alternative arm hands
+-- its hypothesis back (`Or.inr h_alt`), one more free leaf on that split; roots and the agreement stand.
 def expectedSplitBranch : String :=
-  "splits=166 leaves=363 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=98, DECLINE-free=87, PAY-free=177, VIA \
+  "splits=166 leaves=364 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
+agree=110/110 disagree=0 [DECLINE-closed=98, DECLINE-free=88, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

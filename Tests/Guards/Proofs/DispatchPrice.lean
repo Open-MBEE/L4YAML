@@ -299,8 +299,10 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
 -- 2026-10-21 (item 318): `stepHolders` 1714 → 1716, `dispHolders` 310 → 314 — the block lane's two transports
 -- (`ExplicitValueRefused.step_blockEntry`, `.step_value`) and their `PackAlt` wrappers hold the block dispatch, the two
 -- predicate lemmas also the preprocess; item 309's three indent lemmas, deleted, held neither step.
+-- 2026-10-21 (item 320): `stepHolders` 1716 → 1717 — `ExplicitKeyCoupling.scanDocumentEnd_explicitKeyLine` holds the `...`
+-- scan's step (`scanDocumentEnd s = .ok s'`), the marker parks' dead-register fact; the dispatch holders stand.
 def expectedSteps : String :=
-  "stepHolders=1716 dispHolders=314 dispTwoCorr=29 fns=72 fnsIx=26"
+  "stepHolders=1717 dispHolders=314 dispTwoCorr=29 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another

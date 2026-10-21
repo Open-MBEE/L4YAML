@@ -380,6 +380,100 @@ lemma ResumeFrames.resumeAt {P : SurfPos → Prop} {sp : SurfPos} :
         · exact absurd (Nat.lt_trans (h_lt j hmem') hlt) (Nat.lt_irrefl _)
         · exact h_w.keep k' h' hlt
 
+/-- **The value-line stack of a park inside a `?` frame's KEY, over MIXED
+    levels** (item 302).  `ResumeFrames` records the still-open MAPPING levels
+    above a park.  A park deep inside the frame's key sequence stands inside
+    SEQUENCE levels too — `?⏎-⏎  - a⏎- b⏎: w` lands two levels out, and
+    `?⏎- k:⏎    - a⏎- b⏎: w` has a mapping level between the sequence levels —
+    and the dedenting `-` must cons its entry onto the level at its own width
+    before the frame's `[190] s-indent(nv) ':'` line is reached.  Item 167
+    carried the sequence lane's tail as ONE width (`SeqEntryTail`) because the
+    STREAM has the document reading to fall back on; the frame's value line has
+    none, so this is the stack `ResumeFrames` is, with a sequence level beside
+    the mapping one.  `P` is the bottom, as there:
+    `KeyFrames (ExplValueLine sp_start nv)`.  Every `ResumeFrames` embeds
+    (`KeyFrames.ofResumeFrames`), so what the mapping lane pays rides unchanged. -/
+inductive KeyFrames (P : SurfPos → Prop) : List Nat → SurfPos → Prop where
+  | bottom (sp : SurfPos) (h_bot : P sp) :
+      KeyFrames P [] sp
+  | mapLevel (k : Nat) (ks : List Nat) (sp : SurfPos)
+      (h_lt : ∀ k' ∈ ks, k' < k)
+      (h_cont : ∀ sp_end, SCompactMapTail k sp sp_end →
+        KeyFrames P ks sp_end) :
+      KeyFrames P (k :: ks) sp
+  | seqLevel (k : Nat) (ks : List Nat) (sp : SurfPos)
+      (h_lt : ∀ k' ∈ ks, k' < k)
+      (h_cont : ∀ sp_end, SCompactSeqTail k sp sp_end →
+        KeyFrames P ks sp_end) :
+      KeyFrames P (k :: ks) sp
+
+/-- Close every level with its empty tail, reaching the bottom —
+    `ResumeFrames.close` with the sequence arm beside the mapping one. -/
+lemma KeyFrames.close {P : SurfPos → Prop} :
+    ∀ {ks : List Nat} {sp : SurfPos},
+      KeyFrames P ks sp → P sp
+  | [], _, h => by cases h with | bottom _ h_bot => exact h_bot
+  | k :: ks, sp, h => by
+      cases h with
+      | mapLevel _ _ _ _ h_cont => exact (h_cont sp (SCompactMapTail.nil k sp)).close
+      | seqLevel _ _ _ _ h_cont => exact (h_cont sp (SCompactSeqTail.nil k sp)).close
+
+/-- Every mapping-lane stack is a key stack, level for level. -/
+lemma KeyFrames.ofResumeFrames {P : SurfPos → Prop} :
+    ∀ {ks : List Nat} {sp : SurfPos},
+      ResumeFrames P ks sp → KeyFrames P ks sp
+  | [], _, h => by cases h with | bottom _ h_bot => exact .bottom _ h_bot
+  | k :: ks, sp, h => by
+      cases h with
+      | level _ _ _ h_lt h_cont =>
+        exact .mapLevel k ks sp h_lt
+          (fun sp_end h_tail => KeyFrames.ofResumeFrames (h_cont sp_end h_tail))
+
+/-- **The dedent's spend, by KIND**: pop the levels strictly above `j` (their
+    tails are empty — the landing ended them) and hand back the `j` level's own
+    continuation, a MAPPING tail or a SEQUENCE tail, with the popped stack's
+    widths named exactly (`ResumeWidths`).  `ResumeFrames.resumeAt`'s proof,
+    the two constructors' arms sharing the bookkeeping. -/
+lemma KeyFrames.resumeAt {P : SurfPos → Prop} {sp : SurfPos} :
+    ∀ {ks : List Nat}, KeyFrames P ks sp → ∀ {j : Nat}, j ∈ ks →
+      ∃ ks', ResumeWidths ks ks' j ∧
+        ((∀ sp_end, SCompactMapTail j sp sp_end → KeyFrames P ks' sp_end) ∨
+         (∀ sp_end, SCompactSeqTail j sp sp_end → KeyFrames P ks' sp_end))
+  | [], _, _, hmem => absurd hmem (List.not_mem_nil)
+  | k :: ks, h, j, hmem => by
+      -- the landing is strictly below the top level: pop it (its tail is empty)
+      have top : ∀ (h_lt : ∀ k' ∈ ks, k' < k) (h_rest : KeyFrames P ks sp),
+          j ∈ ks → ∃ ks', ResumeWidths (k :: ks) ks' j ∧
+            ((∀ sp_end, SCompactMapTail j sp sp_end → KeyFrames P ks' sp_end) ∨
+             (∀ sp_end, SCompactSeqTail j sp sp_end → KeyFrames P ks' sp_end)) := by
+        intro h_lt h_rest hmem'
+        obtain ⟨ks', h_w, cont⟩ := h_rest.resumeAt hmem'
+        refine ⟨ks', fun k' => ⟨fun hk' =>
+          ⟨List.mem_cons_of_mem _ (h_w.sub k' hk'), h_w.lt k' hk'⟩, ?_⟩, cont⟩
+        rintro ⟨hm, hlt⟩
+        rcases List.mem_cons.mp hm with rfl | h'
+        · exact absurd (Nat.lt_trans (h_lt j hmem') hlt) (Nat.lt_irrefl _)
+        · exact h_w.keep k' h' hlt
+      -- the landing IS the top level: hand back its continuation
+      have here : ∀ (h_lt : ∀ k' ∈ ks, k' < k), j = k → ResumeWidths (k :: ks) ks j := by
+        intro h_lt hj; subst hj
+        exact fun k' => ⟨fun hk' => ⟨List.mem_cons_of_mem _ hk', h_lt k' hk'⟩, by
+          rintro ⟨hm, hlt⟩
+          rcases List.mem_cons.mp hm with rfl | h'
+          · exact absurd hlt (Nat.lt_irrefl _)
+          · exact h'⟩
+      cases h with
+      | mapLevel _ _ _ h_lt h_cont =>
+        by_cases hj : j = k
+        · exact ⟨ks, here h_lt hj, Or.inl (hj ▸ h_cont)⟩
+        · exact top h_lt (h_cont sp (SCompactMapTail.nil k sp))
+            ((List.mem_cons.mp hmem).elim (fun h => absurd h hj) id)
+      | seqLevel _ _ _ h_lt h_cont =>
+        by_cases hj : j = k
+        · exact ⟨ks, here h_lt hj, Or.inr (hj ▸ h_cont)⟩
+        · exact top h_lt (h_cont sp (SCompactSeqTail.nil k sp))
+            ((List.mem_cons.mp hmem).elim (fun h => absurd h hj) id)
+
 /-- **The explicit frame's value line**, named (item 108).  `[186]`'s key is
     complete at `sp_e`, and what the `[188]` entry still owes is `[190]
     s-indent(nv) ':' s-l+block-indented(nv, block-out)`, after which it reaches

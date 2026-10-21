@@ -723,7 +723,10 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- Item 300: 5459 → 5460, `flowOpen_marker` — the stamp lemma's twin, whose
 -- conclusion is an `∨ True` the way `flowOpen_stamp`'s is, so `byElab` and
 -- `byWhnf` read 18 and still agree.
-def expectedNoopTally : String := "theorems=5460 byElab=18 byWhnf=18 elabOnly=0 whnfOnly=0"
+-- 2026-10-20 (item 303): `theorems` 5460 → 5463 — `KeyFrames.close`,
+-- `KeyFrames.ofResumeFrames`, `KeyFrames.resumeAt` (item 302's stack); none is a
+-- no-op conclusion, so the four other counts stand.
+def expectedNoopTally : String := "theorems=5463 byElab=18 byWhnf=18 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

@@ -533,8 +533,23 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `close_km_pop`, `close_col_of_base`, `keyPackPunt_transport` and
 -- `accum_flow_open_depth0`.  Later binders renumber and keep their verdicts;
 -- no other row moves.
+-- 2026-10-20 (item 303): `constants` 1366 → 1386, `decls` 1084 → 1103, `eta`
+-- 390 → 414, `READ` 1125 → 1138, `RELAY` 2314 → 2330 — `KeyFrames`, item 302's
+-- value-line resume stack over mixed levels (the inductive with its three
+-- constructors and recursors, `KeyFrames.close`, `KeyFrames.ofResumeFrames`,
+-- `KeyFrames.resumeAt`), which nothing in the library reads yet.  The roster
+-- (`scratchpad/l4yaml-row12-steps/601-roster-303.out` against
+-- `556-roster-300.out`, 4044 → 4097 rows) gains exactly the 53 rows of those
+-- declarations and nothing else: ETA 24 — `KeyFrames.bottom#1`, `mapLevel#4/#5`,
+-- `seqLevel#4/#5`, `rec#4–#7`, and the structural-recursion auxiliaries
+-- `below#1`, `below.bottom#1`, `below.mapLevel#…` ×4, `below.seqLevel#…` ×4,
+-- `below.rec#…` ×5; READ 13 — `casesOn` ×3, `below.casesOn` ×3, `brecOn#…`,
+-- and the `match_1` auxiliaries of `close` ×2, `ofResumeFrames` ×2,
+-- `resumeAt` ×2; RELAY 16 — `recOn` ×4, `casesOn#…`, `below.casesOn` ×2,
+-- `brecOn#…`, `close#…`, `ofResumeFrames#…`, `resumeAt` ×2 and the three
+-- `match_1` auxiliaries ×1/×1/×2.  No existing row moves or renumbers.
 def expectedModuleTally : String :=
-  "constants=1366 decls=1084 eta=390 FIELD=158 READ=1125 RELAY=2314 RETURN=48 UNUSED=9"
+  "constants=1386 decls=1103 eta=414 FIELD=158 READ=1138 RELAY=2330 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is

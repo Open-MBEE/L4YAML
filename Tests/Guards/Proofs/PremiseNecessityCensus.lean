@@ -310,8 +310,18 @@ declarations' own binders and not by a rescoring of an existing one.
 -- `READ` 1159 → 1163, `RELAY` 2151 → 2164 — the sibling's twenty new rows
 -- with the same verdicts under this peel (`557-rosterP-300.out` against
 -- `526-rosterP-299.out`, 4024 → 4044 rows; no other row moves).
+-- 2026-10-20 (item 303): `constants` 1366 → 1386, `decls` 1084 → 1103, `eta`
+-- 390 → 414, `READ` 1163 → 1176, `RELAY` 2164 → 2180 — `KeyFrames` (item 302's
+-- value-line resume stack: the inductive, its constructors and recursors,
+-- `close`, `ofResumeFrames`, `resumeAt`), read by nothing in the library yet.
+-- The peeled roster (`scratchpad/l4yaml-row12-steps/602-rosterP-303.out`
+-- against `557-rosterP-300.out`, 4044 → 4097 rows) gains exactly the 53 rows
+-- the plain roster gains (`HypothesisReaderCensus`'s note), with the SAME
+-- verdicts — ETA 24, READ 13, RELAY 16 — because none of the new declarations
+-- has an `h_*` binder for the peeled reading to treat differently; no existing
+-- row moves.
 def expectedModuleTallyP : String :=
-  "constants=1366 decls=1084 eta=390 FIELD=180 READ=1163 RELAY=2164 RETURN=138 UNUSED=9"
+  "constants=1386 decls=1103 eta=414 FIELD=180 READ=1176 RELAY=2180 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

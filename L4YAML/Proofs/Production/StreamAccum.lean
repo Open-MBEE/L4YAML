@@ -12728,11 +12728,17 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       (Or.inr trivial) (Or.inl h_tail143)
       (h_closeF176.imp (fun ⟨ks, _, _, closeF⟩ =>
         ⟨ks, fun sp_m h_ssl => closeF sp_m h_ssl sp_m (SCompactSeqTail.nil n176 sp_m)⟩) id)
-      -- Item 201: item 197's own field, at the same empty tail — the sequence
+      -- Item 201: item 197's own field ~~at the same empty tail~~ — the sequence
       -- lane's value-line resume (`h_closeFV`, built at item 198) reaches the
-      -- flow open for the first time here.
-      (h_cFV201.imp (fun ⟨nv, ks, _, closeFV⟩ =>
-        ⟨nv, ks, fun sp_m h_ssl => closeFV sp_m h_ssl sp_m (SCompactSeqTail.nil n176 sp_m)⟩) id)
+      -- flow open for the first time here.  **Item 306: the entry's own level is
+      -- PUSHED where its tail was closed**, as on every stack handed past an
+      -- entry's content.  `flowKeyRoute_of_root` declines the sequence case, so
+      -- a flow key landing at the entry's own column is payable here and not
+      -- yet informative.
+      (h_cFV201.imp (fun ⟨nv, ks, h_ltk, closeFV⟩ =>
+        ⟨nv, n176 :: ks, fun sp_m h_ssl =>
+          KeyFrames.seqLevel n176 ks sp_m h_ltk (fun sp_end h_tail =>
+            closeFV sp_m h_ssl sp_end h_tail)⟩) id)
   | pendingFlow _ _ _ _ _ _ _ h_live0F =>
     -- The deferred state: its own closing strategy is the drop, and the flow
     -- node opened here keeps riding it (β.5 retires this with pendingFlow, R3).
@@ -32441,11 +32447,37 @@ lemma accum_content_on_pendingBlock_indented
                       closeF sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
                         sp_m (SCompactSeqTail.nil n sp_m)⟩
                 | Or.inr _ => Or.inr trivial)
-               -- Item 108: the sequence entry's own explicit frame is
+               -- ~~Item 108: the sequence entry's own explicit frame is
                -- `h_kslot_old`'s, which is not a stack — the `?`-headed
-               -- sequence key keeps its residue.
+               -- sequence key keeps its residue.~~  **Item 306: the stack is
+               -- `h_closeFV_old`'s (item 198), with the entry's own level PUSHED
+               -- on it.**  The key's mapping is this entry's node, so a dedent
+               -- back to `n` from inside it is this sequence's next entry
+               -- (`?⏎- a: 1⏎- b⏎: w`): `KeyFrames.seqLevel n` over the node with
+               -- the tail kept open, where the stream twin above closes it `nil`.
+               -- The dedent face is the same push over the EMPTY entry.  No
+               -- cover: the entry park carries none on this lane (item 149).
+               (match h_closeFV_old with
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                    fun k' hk' => by
+                      rcases List.mem_cons.mp hk' with rfl | h'
+                      · exact Nat.le_refl _
+                      · exact Nat.le_of_lt (h_ltk k' h'),
+                    Or.inr trivial,
+                    fun sp_m h_bn =>
+                      KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
+                        closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
+                          sp_end h_tail)⟩
+                | Or.inr _ => Or.inr trivial)
+               (match h_closeFV_old with
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
+                    fun sp_m h_ssl =>
+                      KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
+                        closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
+                          sp_end h_tail)⟩
+                | Or.inr _ => Or.inr trivial)
                -- Item 149: this park carries no cover, so its dedent hop has none to pay.
-               (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) hna hnt h_ska
+               (Or.inr trivial) hna hnt h_ska
                hcorr_prep hcorr_result h_corr h_not_doc h_flow_disp
                h_preprocess h_dispatch (Or.inl ⟨n, h_close_entry_old⟩)
                -- Item 169: the landed twin, as at the root site above.
@@ -32599,10 +32631,30 @@ lemma accum_content_on_pendingBlock_indented
                       closeF sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
                         sp_m (SCompactSeqTail.nil n sp_m)⟩
                 | Or.inr _ => Or.inr trivial)
-               -- Item 115: the sequence entry's own explicit frame is
+               -- ~~Item 115: the sequence entry's own explicit frame is
                -- `h_kslot_old`'s, which is not a stack — item 108's residue,
-               -- shared with the implicit twin.
-               (Or.inr trivial) (Or.inr trivial)
+               -- shared with the implicit twin.~~  **Item 306: paid as at the
+               -- implicit twin** — the entry's level pushed on `h_closeFV_old`'s
+               -- stack, over the node and over the empty entry.
+               (match h_closeFV_old with
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                    fun k' hk' => by
+                      rcases List.mem_cons.mp hk' with rfl | h'
+                      · exact Nat.le_refl _
+                      · exact Nat.le_of_lt (h_ltk k' h'),
+                    Or.inr trivial,
+                    fun sp_m h_bn =>
+                      KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
+                        closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
+                          sp_end h_tail)⟩
+                | Or.inr _ => Or.inr trivial)
+               (match h_closeFV_old with
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
+                    fun sp_m h_ssl =>
+                      KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
+                        closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
+                          sp_end h_tail)⟩
+                | Or.inr _ => Or.inr trivial)
                -- Item 149: this park carries no cover, so its dedent hop has none to pay.
                (Or.inr trivial)
                h_ska (by revert h_flow_disp; split <;> (intro h; exact h))
@@ -32851,11 +32903,37 @@ lemma accum_content_on_pendingBlock_indented
                       closeF sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
                         sp_m (SCompactSeqTail.nil n sp_m)⟩
                 | Or.inr _ => Or.inr trivial)
-               -- Item 108: the sequence entry's own explicit frame is
+               -- ~~Item 108: the sequence entry's own explicit frame is
                -- `h_kslot_old`'s, which is not a stack — the `?`-headed
-               -- sequence key keeps its residue.
+               -- sequence key keeps its residue.~~  **Item 306: the stack is
+               -- `h_closeFV_old`'s (item 198), with the entry's own level PUSHED
+               -- on it.**  The key's mapping is this entry's node, so a dedent
+               -- back to `n` from inside it is this sequence's next entry
+               -- (`?⏎- a: 1⏎- b⏎: w`): `KeyFrames.seqLevel n` over the node with
+               -- the tail kept open, where the stream twin above closes it `nil`.
+               -- The dedent face is the same push over the EMPTY entry.  No
+               -- cover: the entry park carries none on this lane (item 149).
+               (match h_closeFV_old with
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                    fun k' hk' => by
+                      rcases List.mem_cons.mp hk' with rfl | h'
+                      · exact Nat.le_refl _
+                      · exact Nat.le_of_lt (h_ltk k' h'),
+                    Or.inr trivial,
+                    fun sp_m h_bn =>
+                      KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
+                        closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
+                          sp_end h_tail)⟩
+                | Or.inr _ => Or.inr trivial)
+               (match h_closeFV_old with
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
+                    fun sp_m h_ssl =>
+                      KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
+                        closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
+                          sp_end h_tail)⟩
+                | Or.inr _ => Or.inr trivial)
                -- Item 149: this park carries no cover, so its dedent hop has none to pay.
-               (Or.inr trivial) (Or.inr trivial) (Or.inr trivial) hna hnt h_ska
+               (Or.inr trivial) hna hnt h_ska
                hcorr_prep hcorr_result h_corr h_not_doc h_flow_disp
                h_preprocess h_dispatch (Or.inl ⟨n, h_close_entry_old⟩)
                -- Item 169: the landed twin, as at the root site above.

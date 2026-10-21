@@ -537,6 +537,10 @@ def expectedEdges : List String :=
    "accum_block_on_pendingBlock → accum_block_on_closeThenBlock.h_close_pending",
    "accum_block_on_pendingBlockContent → accum_block_on_closeThenBlock.h_close_pending",
    "accum_block_on_pendingContent → accum_block_on_closeThenBlock.h_close_pending"]
+-- 2026-10-20 (item 306): 18 → 21 — the three key-pack calls in
+-- `accum_content_on_pendingBlock_indented` pay `h_dframesV` with the entry's level
+-- pushed over the EMPTY entry (`SBlockIndented.empty n … sp_m`), the value twin of
+-- the stream-lane `h_dframes` relay beside it: three more of the same row.
 def expectedEmpties : List String :=
   ["close_with_ssl SBlockIndented.empty n=n @sp_mid width=none cmp=no",
    "close_with_ssl SBlockNode.emptyNode n=n + 1 @sp_mid width=none cmp=no",
@@ -548,6 +552,9 @@ def expectedEmpties : List String :=
    "accum_block_pending SBlockIndented.empty n=nmv @sp_m width=ind[ind:h_ind] cmp=yes[≡nmv]",
    "accum_block_pending SBlockNode.emptyNode n=nmv + 1 @sp_m width=ind[ind:h_ind] cmp=no",
    "accum_block_pending SBlockIndented.empty n=nmv @sp_m width=ind[ind:h_ind] cmp=no",
+   "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
+   "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
+   "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
@@ -564,12 +571,15 @@ def expectedEmpties : List String :=
     the hand-offs and every width and index column stand. -/
 -- Item 305: `closeThenBlock`'s `h_vslot` is spent at two more nodes (the slot bottoms under
 -- `KeyFrames.bottom` at the landed and compact arms): `spends` 22 → 24, `spendsN` 9 → 11.
+-- 2026-10-20 (item 306): `empties` 18 → 21 — the content lemma's three key-pack calls pay
+-- `h_dframesV` with the entry's level pushed over the EMPTY entry, the value twin of the
+-- stream-lane `h_dframes` relay beside each.
 def expectedLine : String :=
   "closeSites=8 closePairs=6 closePairsD=8 viaClose=6 params=7 spends=24 spendsC=13 \
 spendsE=0 spendsN=11 handoffs=7 carries=0 untyped=0 edges=4 paramsWalked=8 widthInd=12 \
 widthWs=1 widthNone=0 idxDirect=8 idxPacked=1 idxNone=4 cmp=0 cmpSame=0 both=8 bothCmp=0 \
 handInd=5 handDirect=5 handCmp=5 sitesBoth=3 sitesWidth=4 sitesNeither=1 sitesBothAll=1 \
-empties=18 emptyLemmas=6 emptyInd=10 emptyCmp=4 emptySame=2 emptyClose=2 sites=23 \
+empties=21 emptyLemmas=6 emptyInd=10 emptyCmp=4 emptySame=2 emptyClose=2 sites=23 \
 pairs=21 pairs21=21 pairs18=18 nonANoDrop=8 reach=38"
 
 /-! ## §5 The reading -/

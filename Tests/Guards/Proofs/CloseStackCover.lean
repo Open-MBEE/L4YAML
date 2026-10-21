@@ -809,6 +809,9 @@ nodes (`nodes` 95157 → 95163).  Item 272 adds 861 more without moving a
 row: the under-run disjunct the three flow-open arms destructure gains a
 sixth component (`nodes` 95163 → 96024). -/
 
+-- 2026-10-20 (item 306): six rows re-read — the two key-pack builders' value-line
+-- stacks at the three entry-park calls are `match`es on `h_closeFV_old` (paid with the
+-- cover punted | punt) where item 108 left bare punts.
 def expectedRows : List String :=
   ["accum_block_on_closeThenBlock #1 fn:accum_block_on_closeThenBlock.h_cov_step := via:IndentStackCover.scanBlockEntry_cover(via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(relay(fnp:accum_block_on_closeThenBlock.h_cov_step.hc))))",
    "accum_block_on_closeThenBlock #1 local:accum_block_on_closeThenBlock.h_seqFrames := cases[ite[paid{cover=step(relay(param:accum_block_on_closeThenBlock.h_valF))}|paid{cover=punt}]|paid{cover=punt}]",
@@ -835,21 +838,21 @@ def expectedRows : List String :=
    "accum_content_on_pendingBlock_indented #1 ctor:pendingBlockContent.h_closeF := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_nodeF := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
-   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_nodeFV := punt",
-   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_dframesV := punt",
+   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
+   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #1 ctor:pendingProps.h_closeFE := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 ctor:pendingProps.h_closeF := punt",
    "accum_content_on_pendingBlock_indented #1 ctor:pendingProps.h_closeFV := punt",
    "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_nodeF := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
-   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_nodeFV := punt",
-   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_dframesV := punt",
+   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
+   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #2 ctor:pendingBlockContent.h_closeF := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #3 ctor:pendingBlockContent.h_closeF := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeF := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
-   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeFV := punt",
-   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframesV := punt",
+   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
+   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #1 fn:accum_content_on_pendingBlock_indented.h_pay_seq := cases[cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingBlock_indented.h_pay_seq.h_cv))))|punt]|punt]",
    "accum_content_on_pendingBlock_indented #1 param:resumectx_of_landing.h_fS := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:resumectx_of_landing.h_fV := punt",
@@ -1102,6 +1105,7 @@ def expectedDoor : List String :=
     moves. -/
 -- Item 305: the sequence fields carry the width bound `∀ k' ∈ ks, k' < n` and the nested arms push the
 -- entry's level (`KeyFrames.seqLevel`): `nodes` 100885 → 101410.
+-- 2026-10-20 (item 306): the six key-pack stack rows are matches on `h_closeFV_old` (paid, cover punted | punt) where item 108 left bare punts: `nodes` 101410 → 101421.
 def expectedLine : String :=
   "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 \
 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 \
@@ -1111,7 +1115,7 @@ valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLem
 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 \
 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 \
 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 \
-doorForgotten=8 doorDropped=23 doorsOther=4 nodes=101410"
+doorForgotten=8 doorDropped=23 doorsOther=4 nodes=101421"
 
 /-! ## §6 The reading -/
 

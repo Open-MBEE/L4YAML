@@ -470,8 +470,9 @@ def chainKeySet : Std.HashSet String :=
     the pairs and the supply do not move. -/
 -- Item 287: the `h_vslot` row's own numbers — one pair, five splits, eleven
 -- supplies, one `inner` — left with it.
+-- 2026-10-20 (item 306): `splits` 95 → 101, the six on `h_closeFV_old` (a `-` row: neither chain nor inner).
 def expectedWorthTally : String :=
-  "pairs=35 splits=95 sup=101 chainPairs=6 chainSplits=12 innerPairs=8 innerSplits=32"
+  "pairs=35 splits=101 sup=101 chainPairs=6 chainSplits=12 innerPairs=8 innerSplits=32"
 
 /-- The ledger, worth-first.  `chain` is §3's verdict — a narrowing here lands
     on another unconditional inhabitant; `inner` means the face carries a
@@ -486,13 +487,15 @@ def expectedWorthTally : String :=
     binder (`RelaySupplyCensus.expectedTally`), and every row of the three
     lemmas that lost `sp_block_ctx` and `h_stream_fallback` reads its binder two
     places earlier, its label unmoved. -/
+-- 2026-10-20 (item 306): the content lemma's `h_closeFV_old` row reads `splits=10` (4 + the six
+-- key-pack stack matches) and sorts second; a `-` row still — the face is the stack itself.
 def expectedWorthLedger : List String :=
   ["splits=11 sup=1 inner h_closeF_old :: accum_content_on_pendingBlock_indented#14",
+   "splits=10 sup=1 - h_closeFV_old :: accum_content_on_pendingBlock_indented#29",
    "splits=8 sup=1 - h_kslot_old :: accum_content_on_pendingBlock_indented#13",
    "splits=7 sup=1 inner h_closeF99 :: accum_content_on_pendingMapValue_indented#18",
    "splits=5 sup=1 - h_seqF168 :: accum_content_on_pendingMapValue_indented#35",
    "splits=4 sup=1 - h_closeFV_old :: accum_block_on_pendingBlock#29",
-   "splits=4 sup=1 - h_closeFV_old :: accum_content_on_pendingBlock_indented#29",
    "splits=4 sup=1 inner h_closeFV108 :: accum_content_on_pendingMapValue_indented#20",
    "splits=3 sup=4 - h_cov :: indicator_open_map#27",
    "splits=3 sup=1 - h_expl :: accum_content_on_pendingMapValue_indented#15",
@@ -529,7 +532,8 @@ def expectedWorthLedger : List String :=
     99 → 100, the content sibling's second split on `h_closeF_old`; the pairs,
     the state-reachable count and the state splits do not move. -/
 -- Item 287: the `h_vslot` row, again.
-def expectedBranchReach : String := "branchPairs=35 stateReachable=1 splits=95 stateSplits=3"
+-- 2026-10-20 (item 306): `splits` 95 → 101 (the same six); no pair, state face or state split moves.
+def expectedBranchReach : String := "branchPairs=35 stateReachable=1 splits=101 stateSplits=3"
 
 open Meta in
 run_cmd do

@@ -77,7 +77,7 @@ def tester_available(cmd):
     if cmd[0] != 'docker':
         return None if os.access(cmd[0], os.X_OK) else f"{cmd[0]} is not an executable file"
     container, tester = cmd[3], cmd[4]   # cmd = docker exec -i <container> <tester>
-    probe = ['docker', 'exec', container, 'sh', '-c', f'command -v {tester}']
+    probe = ['docker', 'exec', container, 'sh', '-c', 'command -v "$1"', 'sh', tester]
     try:
         p = subprocess.run(probe, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60)
     except (OSError, subprocess.TimeoutExpired) as e:

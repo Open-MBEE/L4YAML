@@ -43381,7 +43381,7 @@ NEXT (item 331): NFR's two decisions — item 320's A/B and item 325's A′/B′
 
 **Row 12's two forks re-read as one question, and that question made a RULE and a GATE — no library change.
 Blueprint Rule 8 (no ghost index on the accumulation invariant) and `Tests/Guards/Proofs/GhostIndexCensus.lean`,
-which pins the invariant's proof-side data: 31 carriers, 9 snapshot indices, 68 ghost binders.  Beside it, a
+which pins the invariant's proof-side data: 52 carriers, 9 snapshot indices, 73 ghost binders.  Beside it, a
 scanner over-refusal the single `?` register causes, found while measuring item 326's input.**
 
 **The re-reading.**  Items 320 and 325 each offered a choice between widening a park's alternative with a
@@ -43422,20 +43422,20 @@ priced as the field of (iii), to be built with the acceptance set checked before
 pipelines and libyaml on item 325's 21 inputs, item 326's seven, these four, and the yaml-test-suite).
 
 **The gate** (`Tests/Guards/Proofs/GhostIndexCensus.lean`, imported from `Tests/Guards.lean`; one targeted build,
-110 jobs, after two pin rounds — the first named `ScannerSurfCorr` without its `CouplingBridge` namespace, the
-second read the three pins from one report).  It walks 31 carriers — `PendingNode`, `FlowStackB`, `FlowOpenStack`,
-`FlowStackK`, `FlowBaseRoutes`, `FlowBaseAnchor`, `GateOf`, the four `Park*` structures and `ParkChoice`, `KmSound`,
-`KeyFloor`, `FlowOpenHeld`, `RestoreLayout`, `InteriorGap`, `SeqFrame`, `MapFrame`, `ResumeFrames`, `KeyFrames`,
-`ExplValueLine`, `SeqEntryTail`, `ImplicitKeyPack`, `PropsKeyPack`, `KeyPackPunt`, `ExplicitValueRefused`, `PackAlt`,
-`PackAltG`, `BareLandingFacts`, `ScannerSurfCorr` — and classifies every binder of each (the type's telescope, each
+110 jobs; pin rounds `guard-r1`–`r10`).  The carriers are READ OFF THE ENVIRONMENT — every `Prop`-valued definition,
+structure or inductive `StreamAccum` declares, less constructors, projections, recursors and the generated
+`below`/`brecOn`/`inj` auxiliaries, plus `CouplingBridge.ScannerSurfCorr`: 52 of them.  A first cut named 31 by hand,
+and Devin Review's one finding on the PR was the reason that is the wrong instrument: `ResumeKeyCtx` binds three
+`List Nat` frame lists and enters the accumulation lemmas through `h_resumectx`, and a hand list would never have
+seen a ghost added to it (`ResumeWidths` was the other omission).  It classifies every binder of each (the type's telescope, each
 constructor's fields past the parameters, a definition's body, and every `∃`/`∀`/matcher-lambda binder nested in a
 field's statement) by its TYPE: `surface` (`SurfPos`, or a predicate on positions), `state` (`ScannerState`), `prop`,
 `scalar`, `snapshot` (`Option ScannerState`), `ghost` (`List Nat`, `Array Bool`, `FrameTail`).  Three pins:
-`expectedSummary = "carriers=31 snapshot=9 ghost=68"`, the per-carrier tally, and the 77-row `snapshot`+`ghost` list.
+`expectedSummary = "carriers=52 snapshot=9 ghost=73"`, the per-carrier tally, and the 82-row `snapshot`+`ghost` list.
 
-**What the list says.**  By type: 41 `List Nat` — `PendingNode`'s 22 (`ns` ×6, the value-line chains of items 93/192;
+**What the list says.**  By type: 46 `List Nat` — `PendingNode`'s 22 (`ns` ×6, the value-line chains of items 93/192;
 `ks` ×16, the resume stacks of items 99/108/148/150), `FlowBaseRoutes.mk` 4, `ImplicitKeyPack` 4, `PropsKeyPack` 3,
-`ResumeFrames` 2, `KeyFrames` 3, and 3 that are NOT ghost by the rule's own reading — `FlowOpenHeld`'s `S`/`T` and
+`ResumeFrames` 2, `KeyFrames` 3, `ResumeKeyCtx` 3 (`ks`, `ksv`, `ksq`), `ResumeWidths` 2, and 3 that are NOT ghost by the rule's own reading — `FlowOpenHeld`'s `S`/`T` and
 `ParkCore.mk`'s `S`, lists of token INDICES, a projection of `tokens` already; 15 `Array Bool` — the kinds `ks`
 (pinned to `sc.flowStack` since 9b(i), so a projection with its lemma already in hand) and the key mask `km`
 (`KmSound`'s, a summary of `simpleKeyStack` entries); 12 `FrameTail` — `tl`, `FrameTail.ofToken` of the last real

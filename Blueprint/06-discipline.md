@@ -266,8 +266,10 @@ the over-refusal that follows, `?⏎  ? y⏎  : z⏎: w: x`).
   binders and pins, per carrier, the binders by class — `surface`, `state`,
   `prop`, `scalar`, `snapshot` (an `Option ScannerState`), `ghost` (a
   `List Nat`, an `Array Bool`, a `FrameTail`) — and the full `ghost` +
-  `snapshot` list. Baseline at item 331: 31 carriers, 9 snapshot indices,
-  68 ghost binders. **The list may only shrink**: a row leaves it when its
+  `snapshot` list. The carriers are read off the environment (every
+  `Prop`-valued declaration of `StreamAccum`, plus `ScannerSurfCorr`), so a
+  new predicate cannot escape it. Baseline at item 331: 52 carriers, 9
+  snapshot indices, 73 ghost binders. **The list may only shrink**: a row leaves it when its
   carrier is re-indexed by a projection or a new field; a re-pin that adds
   a row is a Rule 8 violation and the PR must say which of the three
   classes the new index belongs to instead.

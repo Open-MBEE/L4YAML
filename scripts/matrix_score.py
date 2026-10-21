@@ -15,7 +15,7 @@ A tester the harness cannot start (wrong path, no `docker`, missing container or
 tester) and an unusable `in.json` oracle score `harness-error`, never
 `err-ok`/`reject`/`diff`, and the run exits nonzero.
 """
-import os, sys, glob, json, argparse, subprocess
+import os, sys, glob, json, argparse, subprocess, shutil
 from concurrent.futures import ThreadPoolExecutor
 
 def leaf_dirs(data):
@@ -75,7 +75,7 @@ def tester_available(cmd):
     stopped (rc 1) or the tester is not in the image (rc 127); scored blind
     those would pass for parser rejections, so probe once before scoring."""
     if cmd[0] != 'docker':
-        return None if os.access(cmd[0], os.X_OK) else f"{cmd[0]} is not an executable file"
+        return None if shutil.which(cmd[0]) else f"{cmd[0]} is not an executable file (or not on PATH)"
     container, tester = cmd[3], cmd[4]   # cmd = docker exec -i <container> <tester>
     probe = ['docker', 'exec', container, 'sh', '-c', 'command -v "$1"', 'sh', tester]
     try:

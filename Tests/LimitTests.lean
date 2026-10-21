@@ -16,6 +16,7 @@ Exercises all limit categories from `L4YAML/Limits.lean`:
 4. **Tag security** — core schema whitelist, language tags, custom handles
 5. **Preset configurations** — strict, permissive, unlimited, safeTagsOnly
 6. **Normal YAML** — defaults must not reject well-formed input
+7. **Compose equivalence** — the limited compose agrees with `YamlDocument.compose`
 -/
 
 open L4YAML
@@ -362,6 +363,115 @@ def testSingleSafe (state : IO.Ref TestCollector) : IO Unit := do
     | _ => false
   check state "tag limits applied in single mode" tagResult
 
+/-! ## §8  Compose Equivalence
+
+`composeLimited` resolves aliases, strips anchors, validates tags and
+counts nodes in a single walk.  These checks pin its output to the
+unlimited `YamlDocument.compose` and to the error payloads the earlier
+multi-pass implementation produced. -/
+
+/-- First document of `parseYamlSafe`, if it succeeds. -/
+def safeValue (input : String) (limits : ParserLimits := { tag := { policy := .allowAll } })
+    : Option YamlValue :=
+  match parseYamlSafe input limits with
+  | .ok docs => docs[0]?.map (·.value)
+  | .error _ => none
+
+/-- First document of the unlimited `parseYamlIx`, if it succeeds. -/
+def plainValue (input : String) : Option YamlValue :=
+  match TokenParser.Indexed.parseYamlIx input with
+  | .ok docs => docs[0]?.map (·.value)
+  | .error _ => none
+
+/-- Safe and unlimited compose agree, and both succeed. -/
+def composeAgrees (input : String) : Bool :=
+  match safeValue input, plainValue input with
+  | some a, some b => a == b
+  | _, _ => false
+
+/-- Look up a key in a composed mapping. -/
+def lookup (v : YamlValue) (key : String) : Option YamlValue :=
+  match v with
+  | .mapping _ pairs _ _ =>
+    pairs.findSome? fun (k, val) =>
+      match k with
+      | .scalar s => if s.content == key then some val else none
+      | _ => none
+  | _ => none
+
+def testComposeEquivalence (state : IO.Ref TestCollector) : IO Unit := do
+  setCategory state "Compose Equivalence"
+
+  -- §7.1: an alias binds to the most recent *preceding* definition
+  let rebound := "a: &x 1\nb: *x\nc: &x 2\nd: *x\n"
+  check state "rebound anchor: safe compose matches unlimited compose"
+    (composeAgrees rebound)
+  let dIsTwo := match (safeValue rebound).bind (lookup · "d") with
+    | some (YamlValue.scalar s) => s.content == "2"
+    | _ => false
+  check state "rebound anchor: later alias sees later definition" dIsTwo
+  let bIsOne := match (safeValue rebound).bind (lookup · "b") with
+    | some (YamlValue.scalar s) => s.content == "1"
+    | _ => false
+  check state "rebound anchor: earlier alias sees earlier definition" bIsOne
+
+  -- Plain scalars with flow indicators are quoted in the alias copy
+  let flowAdapt := "a: &x\n  - k,v\n  - {m: n}\nb: *x\n"
+  check state "anchored block collection: safe compose matches unlimited compose"
+    (composeAgrees flowAdapt)
+  let bQuoted := match (safeValue flowAdapt).bind (lookup · "b") with
+    | some (YamlValue.sequence _ items _ _) =>
+      match items[0]? with
+      | some (YamlValue.scalar s) => s.style == .doubleQuoted && s.content == "k,v"
+      | _ => false
+    | _ => false
+  check state "anchored block collection: alias copy is flow-adapted" bQuoted
+
+  -- Anchors nested inside anchored collections, aliased from inside and out
+  let nested := "a: &outer\n  b: &inner [1, 2]\n  c: *inner\n  d: &s v,w\nd: *outer\ne: *inner\nf: *s\n"
+  check state "nested anchors: safe compose matches unlimited compose"
+    (composeAgrees nested)
+  let noAnchors := match safeValue nested with
+    | some (v : YamlValue) => v.anchorAliasFree
+    | none => false
+  check state "nested anchors: composed tree is anchor- and alias-free" noAnchors
+
+  -- Alias to an anchor on a mapping key and inside a flow collection
+  let flowAnchors := "? &k key\n: &v [a, &w b, *w]\n*k : *v\n"
+  check state "flow/key anchors: safe compose matches unlimited compose"
+    (composeAgrees flowAnchors)
+
+  -- Unique tag limit: at the limit accepted, one past it rejected
+  let fewTags : ParserLimits := { tag := { policy := .allowAll, maxUniqueTags := 3 } }
+  let threeTags := "- !a 1\n- !b 2\n- !c 3\n- !a 4\n- !b 5\n"
+  check state "unique tags at limit accepted" (parseOk threeTags fewTags)
+  let fourTags := threeTags ++ "- !d 6\n"
+  check state "unique tags past limit rejected" (parseTagError fourTags fewTags)
+  let fourTagsCount := match parseYamlSafe fourTags fewTags with
+    | .error (.limitError (.tagSecurity (.tooManyUniqueTags n lim))) => n == 4 && lim == 3
+    | _ => false
+  check state "unique tag error reports count and limit" fourTagsCount
+
+  -- Tags are only counted once, however often they repeat
+  let repeated := String.join ((List.range 200).map fun _ => "- !a x\n")
+  check state "repeated tag counts once" (parseOk repeated fewTags)
+
+  -- Structural error carries the same path as before
+  let small : ParserLimits := { structural := { maxScalarBytes := 4 }, tag := { policy := .allowAll } }
+  let pathResult := match parseYamlSafe "a:\n  - 0123456789\n" small with
+    | .error (.limitError (.structuralLimit (.scalarTooLarge n lim path))) =>
+      n == 10 && lim == 4 && path == #[.key "a", .index 0]
+    | _ => false
+  check state "scalar size error reports path" pathResult
+
+  -- Total node count includes alias expansions
+  let countLimits : ParserLimits := { structural := { maxTotalNodes := 8 }, tag := { policy := .allowAll } }
+  check state "total node count over limit rejected"
+    (parseStructuralError "a: &x [1, 2, 3]\nb: *x\n" countLimits)
+  let atLimit : ParserLimits := { structural := { maxTotalNodes := 9 }, tag := { policy := .allowAll } }
+  check state "total node count at limit accepted"
+    (parseOk "a: &x [1, 2]\nb: *x\n" atLimit)
+
 /-! ## Collect and report -/
 
 def collectTests : IO VerifiedSuiteResult := do
@@ -373,6 +483,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testPresets state
   testNormalYaml state
   testSingleSafe state
+  testComposeEquivalence state
   let results ← finish state
   return { name := "limittests", label := "Parser Security Limit Tests",
            sourceFile := "Tests/LimitTests.lean", tests := results }

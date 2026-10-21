@@ -983,11 +983,19 @@ Or.imp⇒SPLIT=3, dite⇒SPLIT=4]"
     run's pack wrote `Or.inr trivial` on its fallback branch, and that branch
     takes the landing's route now (`flowKeyRoute_of_root`): one `DECLINE|PAY`
     split becomes `PAY|VIA` (`DECLINE` 167 → 166, `VIA` 0 → 1, `elsewhere`
-    0 → 1), and no split is added or lost. -/
+    0 → 1), and no split is added or lost.
+
+    **Item 304: the sequence case.**  The value-line stacks are `KeyFrames`, and
+    `KeyFrames.resumeAt` hands a mapping OR a sequence continuation; the three
+    `:`/key consumers that resumed a value-line stack directly
+    (`accum_block_on_closeThenBlock`, `…_pendingBlockContent`, `…_pendingBlock`)
+    split on it and DECLINE the sequence case, which no producer pushes yet —
+    `leaves` 326 → 329, `DECLINE` 166 → 169, three `DECLINE|DECLINE|PAY` splits
+    become `DECLINE|DECLINE|DECLINE|PAY`, and `PAY`, `VIA` and `elsewhere` stand. -/
 def expectedSplitLanding : String :=
-  "survived=154 collapsed=1 leaves=326 elsewhere=1 [DECLINE=166, PAY=159, VIA=1] \
-[DECLINE|DECLINE|DECLINE|PAY=1, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|PAY=8, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=141, \
+  "survived=154 collapsed=1 leaves=329 elsewhere=1 [DECLINE=169, PAY=159, VIA=1] \
+[DECLINE|DECLINE|DECLINE|PAY=4, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
+DECLINE|DECLINE|PAY=5, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=141, \
 DECLINE|PAY|PAY=1, PAY|VIA=1]"
 
 /-- **Which BRANCH is taken (DOCS item 217).**  Item 216 resolved what a split
@@ -1033,10 +1041,13 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
     `relayRooted` 145 → 144, `plainRoot` 50 → 49, the control 100 → 99.
     **Item 295**: the props arm's fallback branch is a producer call, not a
     closed decline (`DECLINE-closed` 163 → 162, one `VIA flowKeyRoute_of_root`
-    leaf); no split or root moves. -/
+    leaf); no split or root moves.  **Item 304**: the three value-line resumes
+    split `KeyFrames.resumeAt`'s sum and decline its sequence case — one more
+    closed decline each (`leaves` 326 → 329, `DECLINE-closed` 162 → 165); no
+    split or root moves. -/
 def expectedSplitBranch : String :=
-  "splits=154 leaves=326 relayRooted=144 siteDecided=10 optionalRoot=95 \
-plainRoot=49 agree=99/99 disagree=0 [DECLINE-closed=162, DECLINE-free=4, PAY-free=159, \
+  "splits=154 leaves=329 relayRooted=144 siteDecided=10 optionalRoot=95 \
+plainRoot=49 agree=99/99 disagree=0 [DECLINE-closed=165, DECLINE-free=4, PAY-free=159, \
 VIA L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

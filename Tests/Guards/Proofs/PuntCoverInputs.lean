@@ -633,6 +633,8 @@ def witnessOf (eq : String) (idx : String) : String :=
   | _ => s!"?({body})"
 
 def resumeN : Name := ``L4YAML.Proofs.StreamAccum.ResumeFrames
+-- Item 304: the value-line stacks are `KeyFrames` (item 302's); the same faces.
+def keyN : Name := ``L4YAML.Proofs.StreamAccum.KeyFrames
 def tailN : Name := ``L4YAML.Surface.SCompactMapTail
 
 /-- Inside a hypothesis mentioning `ResumeFrames`: the level of the first
@@ -654,7 +656,7 @@ partial def resumeShape (env : Environment) (st : Stack) (t : Expr) (prev : Opti
       (resumeShape env st ty prev).orElse fun _ => resumeShape env (st.push { name := n, ty := ty, prov := none }) b prev'
   | .lam n ty b _ => resumeShape env (st.push { name := n, ty := ty, prov := none }) b prev
   | .app .. =>
-    if t.isAppOfArity resumeN 3 then some s!"frames({ppc st (t.getArg! 1)})"
+    if t.isAppOfArity resumeN 3 || t.isAppOfArity keyN 3 then some s!"frames({ppc st (t.getArg! 1)})"
     else t.getAppArgs.findSome? fun a => resumeShape env st a prev
   | _ => none
 
@@ -664,7 +666,7 @@ def relaysOf (env : Environment) (stAll : Stack) : Array String := Id.run do
   let mut out : Array String := #[]
   for i in [0:stAll.size] do
     let b := stAll[i]!
-    unless hasHead b.ty resumeN do continue
+    unless hasHead b.ty resumeN || hasHead b.ty keyN do continue
     let st0 := stAll.extract 0 i
     out := out.push s!"{bname b.name}:{(resumeShape env st0 b.ty none).getD "?"}"
   return out

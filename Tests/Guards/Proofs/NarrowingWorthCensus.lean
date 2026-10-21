@@ -281,7 +281,10 @@ def isSurfFace (env : Environment) (lhs : Expr) : MetaM Bool := do
 -- Item 300: two binders join — `content_dispatch_routed.h_markerline`, a new
 -- face (a conjunction of two line facts under the `∨ True`), and
 -- `km_push_at_open.h_marker_new`, the stamp pair's shape.
-def expectedFaceTally : String := "binders=163 faces=61 heads=18"
+-- 2026-10-20 (item 304): `heads` 18 → 19 — nine state-facing conclusions that
+-- read `ResumeFrames (ExplValueLine …)` read `KeyFrames (ExplValueLine …)`, item
+-- 302's stack (`ResumeFrames` 12 → 3, `KeyFrames` 9 in the head census below).
+def expectedFaceTally : String := "binders=163 faces=61 heads=19"
 
 /-- The conclusion head of every left disjunct.  `FVAR 2` is `frameChainUnion`,
     whose face is schematic in `P` — the two rows no census of any kind can
@@ -291,10 +294,11 @@ def expectedFaceTally : String := "binders=163 faces=61 heads=18"
 -- `PendingNode.pendingMapValue.h_vslot`'s face, headed by its `≤`, left too.
 def expectedHeadCensus : List String :=
   -- Item 300: `Eq` 17 → 19, the two new optional binders (`h_markerline`, `h_marker_new`).
+  -- Item 304: `ResumeFrames` 12 → 3 and `KeyFrames` 9 — the value-line stacks' heads.
   ["BareLandingFacts 8", "CompletedTail 4", "Covered 3", "Eq 19", "FVAR 2",
-   "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "MarkerNodeRoute 5",
-   "Mono 4", "PropsNodeRoute 4", "ResumeFrames 12", "SLYamlStream 31",
-   "SeqEntryTail 7", "SuffixRun 6", "le 10", "lt 23"]
+   "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "KeyFrames 9",
+   "MarkerNodeRoute 5", "Mono 4", "PropsNodeRoute 4", "ResumeFrames 3",
+   "SLYamlStream 31", "SeqEntryTail 7", "SuffixRun 6", "le 10", "lt 23"]
 
 /-! ## §3  The rung-1 census: which faces are vacuous on their own
 
@@ -726,7 +730,8 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- 2026-10-20 (item 303): `theorems` 5460 → 5463 — `KeyFrames.close`,
 -- `KeyFrames.ofResumeFrames`, `KeyFrames.resumeAt` (item 302's stack); none is a
 -- no-op conclusion, so the four other counts stand.
-def expectedNoopTally : String := "theorems=5463 byElab=18 byWhnf=18 elabOnly=0 whnfOnly=0"
+-- 2026-10-20 (item 304): 5463 → 5465 — `resumeFrameRouteK`, `resumeMapRouteK`.
+def expectedNoopTally : String := "theorems=5465 byElab=18 byWhnf=18 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

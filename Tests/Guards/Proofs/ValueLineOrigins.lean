@@ -68,10 +68,11 @@ structure PackEnv where
   env : Environment
   packConsts : Std.HashSet Name
 
+-- Item 304: a stack is `ResumeFrames` or `KeyFrames` (item 302's value-line stack); `keyN` is `PuntCoverInputs`'.
 def mkPackEnv (env : Environment) : PackEnv := Id.run do
   let mut s : Std.HashSet Name := {}
   for (c, ci) in env.constants.toList do
-    if c.getRoot != `L4YAML || c == resumeN || c == evlN then continue
+    if c.getRoot != `L4YAML || (c == resumeN || c == keyN) || c == evlN then continue
     match ci with
     | .defnInfo di => if (piConcl di.type).isProp && vcOutside di.value then s := s.insert c
     | _ => pure ()
@@ -114,7 +115,7 @@ def unfoldPack (pe : PackEnv) (e : Expr) : Option Expr :=
 partial def vcDeep (pe : PackEnv) (e : Expr) : Bool :=
   let e := e.consumeMData
   if isValueClosure e || e.isAppOf evlN then true
-  else if e.isAppOf resumeN then false
+  else if (e.isAppOf resumeN || e.isAppOf keyN) then false
   else match e with
     | .const c _ => pe.packConsts.contains c
     | .app f a => vcDeep pe f || vcDeep pe a
@@ -323,7 +324,7 @@ def isTransport (pe : PackEnv) (m : Name) : Bool :=
   match pe.env.find? m with
   | some (.thmInfo ti) =>
     let c := piConcl ti.type
-    hasHead c streamN || hasHead c resumeN || vcDeep pe c || (c.find? fun s => s.isApp && s.getAppFn.isBVar).isSome
+    hasHead c streamN || (hasHead c resumeN || hasHead c keyN) || vcDeep pe c || (c.find? fun s => s.isApp && s.getAppFn.isBVar).isSome
   | _ => false
 
 abbrev BMemo := IO.Ref (Std.HashMap (Expr × Nat × List VStep) (Array Bot))
@@ -404,7 +405,7 @@ where
           let cand := match a' with
             | .lam .. => !isPredLam a'
             | .bvar .. => (match bindOf st a' with
-                | some b => !isDataTy b.ty && (kindOf pe b != "other" || hasHead b.ty streamN || hasHead b.ty resumeN || hasHead b.ty tailN)
+                | some b => !isDataTy b.ty && (kindOf pe b != "other" || hasHead b.ty streamN || (hasHead b.ty resumeN || hasHead b.ty keyN) || hasHead b.ty tailN)
                 | none => false)
             | .app .. => (match a'.getAppFn with
                 | .bvar _ => true
@@ -484,7 +485,7 @@ partial def followBind (cx : FCx) (b : Bind) (depth : Nat) (st : Stack) (args : 
         | some (.inductInfo _) => if h.getRoot == `L4YAML && !(`L4YAML.Surface).isPrefixOf h then some h else none
         | _ => none)
       | _ => none
-    if kind == "other" && !(hasHead b.ty streamN || hasHead b.ty resumeN || hasHead b.ty tailN || vcDeep cx.pe b.ty) then
+    if kind == "other" && !(hasHead b.ty streamN || (hasHead b.ty resumeN || hasHead b.ty keyN) || hasHead b.ty tailN || vcDeep cx.pe b.ty) then
       if let some h := invHead then return #[.origin "invariant" s!"{short h}@{b.prov.getD (bname b.name)}" lvl]
       return #[.none "fact"]
     match b.prov with
@@ -1004,8 +1005,11 @@ def expectedUnborn : List String := []
     cascades, the flow open's second split on the run's punt, the two `:`
     consumers' arms and the close's third reading — in the walked
     declarations; named by cause.  No row, class or origin moves. -/
+-- 2026-10-20 (item 304): `alts` 4454 → 4457, `liteNodes` 520132 → 520404 — the
+-- three value-line resumes split `KeyFrames.resumeAt`'s sum with `rcases`, one
+-- alternative each; every structural count stands (`frames` 24 among them).
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=566 lapps=674 alts=4454 nodes=12510 liteNodes=520132"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=566 lapps=674 alts=4457 nodes=12510 liteNodes=520404"
 
 /-! ## §4 The reading -/
 

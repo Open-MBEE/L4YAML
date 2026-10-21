@@ -106,7 +106,7 @@ example {sc : ScannerState} {sp_start sp_p sp_scan : SurfPos}
       ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
-        ResumeFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True) := by
+        KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True) := by
   obtain ⟨⟨k, _, _, _, h_resF, h_resFV⟩, _⟩ := h
   -- Item 148: the twin carries the scanner's own stack beside the widths;
   -- a reader that wants only the widths projects past it.

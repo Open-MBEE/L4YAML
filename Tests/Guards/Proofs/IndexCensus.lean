@@ -70,12 +70,13 @@ partial def occ (i : Nat) : Expr → Nat
   | .proj _ _ e => occ i e
   | _ => 0
 
-/-- A SATURATED `ResumeFrames P ks sp`; the partial applications are the same
-    site seen again and are not counted. -/
+/-- A SATURATED `ResumeFrames P ks sp` — or, since item 304, `KeyFrames P ks sp`,
+    the value-line stack's own constructor (item 302's stack over mixed levels);
+    the partial applications are the same site seen again and are not counted. -/
 def resumeBottom (e : Expr) : Option Name :=
   match e.getAppFn with
   | .const n _ =>
-      if n != ``ResumeFrames then none else
+      if n != ``ResumeFrames && n != ``KeyFrames then none else
       let args := e.getAppArgs
       if args.size != 3 then none else
         match args[0]!.getAppFn with

@@ -320,8 +320,13 @@ declarations' own binders and not by a rescoring of an existing one.
 -- verdicts — ETA 24, READ 13, RELAY 16 — because none of the new declarations
 -- has an `h_*` binder for the peeled reading to treat differently; no existing
 -- row moves.
+-- 2026-10-20 (item 304): `constants` 1386 → 1388, `decls` 1103 → 1105
+-- (`resumeFrameRouteK`, `resumeMapRouteK`), `FIELD` 180 → 185, `READ` 1176 →
+-- 1182, the rest unchanged — the same binders the plain roster names
+-- (`HypothesisReaderCensus`'s note), read peeled — the same eleven rows with the
+-- same verdicts (`602-rosterP-303.out` → `612-rosterP-304.out`, 4097 → 4108).
 def expectedModuleTallyP : String :=
-  "constants=1386 decls=1103 eta=414 FIELD=180 READ=1176 RELAY=2180 RETURN=138 UNUSED=9"
+  "constants=1388 decls=1105 eta=414 FIELD=185 READ=1182 RELAY=2180 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

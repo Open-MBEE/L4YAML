@@ -284,7 +284,12 @@ partial def scanTerm (e : Expr) (seen : Std.HashSet Expr) (r i : Nat) :
 
 -- Item 300: `flowOpen_marker`, the stamp lemma's twin, is the eighteenth row and
 -- carries the stamp row's three residues.
-def expectedLedgerTally : String := "rows=18 res=57"
+-- 2026-10-20 (item 304): `res` 57 → 59 — `flowKeyRoute_of_root` 11 → 12 and
+-- `resumectx_of_landing` 9 → 10: the value-line stacks are `KeyFrames` (item
+-- 302's), whose `resumeAt` hands a mapping OR a sequence continuation, and each
+-- lemma's value-line resume splits on it; the sequence case is one more
+-- resolved obligation (`imp` 100 → 101, 61 → 63 with it).
+def expectedLedgerTally : String := "rows=18 res=59"
 
 /-- The rows, machine-produced, sorted by `res` then `prem` descending.  Three
     rows are all-zero — the proof never reaches the right arm by any route —
@@ -307,10 +312,11 @@ def expectedLedgerTally : String := "rows=18 res=57"
     was not a stronger proof but a statement that does not invert.  The
     conversion is a `mutual` block of eight lemmas now, and the content one is
     read directly (`Tests.Guards.SurfaceSpanCensus.expectedMotiveExport`). -/
+-- Item 304: `resumectx_of_landing` at `res=10` sorts before `flowKeyRoute_of_open`.
 def expectedLedger : List String :=
-  ["res=11 imp=100 prem=6 proj=0 flowKeyRoute_of_root",
+  ["res=12 imp=101 prem=6 proj=0 flowKeyRoute_of_root",
+   "res=10 imp=63 prem=3 proj=0 resumectx_of_landing",
    "res=10 imp=85 prem=2 proj=0 flowKeyRoute_of_open",
-   "res=9 imp=61 prem=3 proj=0 resumectx_of_landing",
    "res=4 imp=7 prem=1 proj=0 markerctx_of_landing",
    "res=4 imp=7 prem=1 proj=0 suffixctx_of_landing",
    "res=3 imp=10 prem=2 proj=0 dedent_cover_of_landing",

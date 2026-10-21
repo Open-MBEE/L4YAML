@@ -548,8 +548,21 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `resumeAt` ×2; RELAY 16 — `recOn` ×4, `casesOn#…`, `below.casesOn` ×2,
 -- `brecOn#…`, `close#…`, `ofResumeFrames#…`, `resumeAt` ×2 and the three
 -- `match_1` auxiliaries ×1/×1/×2.  No existing row moves or renumbers.
+-- 2026-10-20 (item 304): `constants` 1386 → 1388, `decls` 1103 → 1105 (the
+-- route helpers' `KeyFrames` twins `resumeFrameRouteK`, `resumeMapRouteK`),
+-- `FIELD` 158 → 163, `READ` 1138 → 1144, `eta`/`RELAY` unchanged — the
+-- value-line stacks are `KeyFrames` (item 302's stack).  The roster
+-- (`scratchpad/l4yaml-row12-steps/611-roster-304.out` against
+-- `601-roster-303.out`, 4097 → 4108 rows) gains exactly eleven rows and loses
+-- none: FIELD `resumeFrameRouteK#5 (h_ind)`, `#8 (_)`, `resumeMapRouteK#5
+-- (h_ind)`, `#8 (_)`, `#10 (_)` — the twins' indent premise and conclusion
+-- binders; READ `resumeFrameRouteK#6 (h_frames)`, `resumeMapRouteK#6
+-- (h_frames)`, and the `h_2` binder of the four `match_1` auxiliaries
+-- (`entryKeyPack_of_dispatch.match_1_14/_18`, `entryPropsKeyPack_of_dispatch
+-- .match_1_12/_16`) that split `KeyFrames.resumeAt`'s sum at the two key-pack
+-- lemmas' value-line resumes.  No existing row moves or renumbers.
 def expectedModuleTally : String :=
-  "constants=1386 decls=1103 eta=414 FIELD=158 READ=1138 RELAY=2330 RETURN=48 UNUSED=9"
+  "constants=1388 decls=1105 eta=414 FIELD=163 READ=1144 RELAY=2330 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is

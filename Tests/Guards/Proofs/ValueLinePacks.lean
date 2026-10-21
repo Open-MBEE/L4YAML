@@ -83,10 +83,11 @@ def isValueClosure (t : Expr) : Bool :=
   | _ => false
 
 /-- The value closure occurs in `e` outside any `ResumeFrames`. -/
+-- Item 304: a stack is `ResumeFrames` or `KeyFrames` (item 302's value-line stack); `keyN` is `PuntCoverInputs`'.
 partial def vcOutside (e : Expr) : Bool :=
   let e := e.consumeMData
   if isValueClosure e || e.isAppOf evlN then true
-  else if e.isAppOf resumeN then false
+  else if (e.isAppOf resumeN || e.isAppOf keyN) then false
   else match e with
     | .app f a => vcOutside f || vcOutside a
     | .forallE _ t b _ => vcOutside t || vcOutside b
@@ -97,7 +98,7 @@ partial def vcOutside (e : Expr) : Bool :=
 
 /-- `ResumeFrames` standing on the value closure occurs in `e`. -/
 def framesOnVC (e : Expr) : Bool :=
-  (e.find? fun s => s.isAppOfArity resumeN 3 && vcOutside (s.getArg! 0)).isSome
+  (e.find? fun s => (s.isAppOfArity resumeN 3 || s.isAppOfArity keyN 3) && vcOutside (s.getArg! 0)).isSome
 
 /-- Which arm of a pack's option carries the closure, and whether the other
     arm is `True` (a punt) or a second honest reading (a stamp). -/
@@ -195,7 +196,7 @@ partial def holdShape (env : Environment) (st : Stack) (t : Expr) (prev : Option
       (holdShape env st ty prev).orElse fun _ => holdShape env (st.push { name := n, ty := ty, prov := none }) b prev'
   | .lam n ty b _ => holdShape env (st.push { name := n, ty := ty, prov := none }) b prev
   | .app .. =>
-    if t.isAppOfArity resumeN 3 then
+    if (t.isAppOfArity resumeN 3 || t.isAppOfArity keyN 3) then
       let p := (t.getArg! 0).consumeMData
       let tag := if p.isAppOf evlN && p.getAppNumArgs ≥ 2 then s!"@ExplValueLine({ppc st (p.getArg! 1)})" else ""
       some s!"frames({ppc st (t.getArg! 1)}){tag}←{prev.getD "landing"}"
@@ -208,7 +209,7 @@ def holdsOf (env : Environment) (stAll : Stack) : Array String := Id.run do
   let mut out : Array String := #[]
   for i in [0:stAll.size] do
     let b := stAll[i]!
-    unless hasHead b.ty resumeN || hasHead b.ty tailN do continue
+    unless (hasHead b.ty resumeN || hasHead b.ty keyN) || hasHead b.ty tailN do continue
     let st0 := stAll.extract 0 i
     out := out.push s!"{bname b.name}:{(holdShape env st0 b.ty none).getD "?"}"
   return out
@@ -496,7 +497,7 @@ def bindKind (b : Option Bind) : String :=
   | none => "other"
   | some b =>
     if vcOutside b.ty then "chain"
-    else if hasHead b.ty resumeN then "frames"
+    else if (hasHead b.ty resumeN || hasHead b.ty keyN) then "frames"
     else if hasHead b.ty tailN then "tail"
     else if (piConcl b.ty).isAppOf streamN then "route"
     else "other"
@@ -783,6 +784,8 @@ def expectedParams : List String := [
 -- which this census labels `stamp`, and the value park's split reads both.
 -- Item 288: and the three producers that declined `pendingMapValue.h_vslot`
 -- with `True` write the stamp.
+-- Item 304: the value-line writers spend the route helpers' `KeyFrames` twins
+-- (`resumeFrameRouteK`, `resumeMapRouteK`); the rows name the spend.
 def expectedWriters : List String := [
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslot idx=k := paid:chain ns=nv spend=hkv←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ held(h_valF)",
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp idx=k := paid:chain ns=nsU spend=hkvU←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ level-var",
@@ -906,7 +909,7 @@ def expectedWriters : List String := [
   "colon_fires_props_key #1 param:colon_open_map_props.h_kslot idx=— := relay:chain(param:colon_fires_props_key.h_key) ns=— spend=— holds=[left✝:tail(k)←SBlockMapEntry(k); h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_kslot_pk:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_resF_pk:tail(k)←SBlockMapEntry(k); h_resFV_pk:tail(k)←SBlockMapEntry(k)] ⊢ —",
   "colon_open_map #1 ctor:pendingMapValue.h_ivl idx=k := stamp ns=— spend=— holds=[h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_routeF:tail(k)←SBlockMapEntry(k)] ⊢ —",
   "colon_open_map #1 ctor:pendingMapValue.h_vslot idx=k := stamp ns=— spend=— holds=[h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_routeF:tail(k)←SBlockMapEntry(k)] ⊢ —",
-  "colon_open_map #1 ctor:pendingMapValue.h_kslot idx=k := paid:frames ns=nv :: [] spend=frameChainOne(resumeFrameRoute(contV←param:colon_open_map.h_resV_land))⊣tail holds=[h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_routeF:tail(k)←SBlockMapEntry(k)] ⊢ none",
+  "colon_open_map #1 ctor:pendingMapValue.h_kslot idx=k := paid:frames ns=nv :: [] spend=frameChainOne(resumeFrameRouteK(contV←param:colon_open_map.h_resV_land))⊣tail holds=[h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_routeF:tail(k)←SBlockMapEntry(k)] ⊢ none",
   "colon_open_map #1 ctor:pendingMapValue.h_explUp idx=k := punt ns=— spend=— holds=[h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_routeF:tail(k)←SBlockMapEntry(k)] ⊢ —",
   "colon_open_map_explicit #1 ctor:pendingMapValue.h_ivl idx=nv := paid:chain ns=— spend=h_slot←let:h_slot holds=[] ⊢ none",
   "colon_open_map_explicit #1 ctor:pendingMapValue.h_vslot idx=nv := paid:chain ns=— spend=h_slot←let:h_slot holds=[] ⊢ none",

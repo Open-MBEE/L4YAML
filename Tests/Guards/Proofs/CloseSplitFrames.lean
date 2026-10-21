@@ -155,10 +155,12 @@ def faceOf (t : Expr) : Option String :=
     | some d => #[s!"cover@{d}"] | none => #[]
   let floorFlag := match depthTo t (·.isAppOf ``L4YAML.Proofs.IndentStackCover.Floor) with
     | some d => #[s!"floor@{d}"] | none => #[]
-  let wb := if hasHead t ``Membership.mem && hasHead t ``LT.lt && hasHead t ``ResumeFrames then #["wb"] else #[]
+  -- Item 304: the value-line stacks are `KeyFrames` (item 302's); the face is the same.
+  let isStack (t : Expr) : Bool := hasHead t ``ResumeFrames || hasHead t ``KeyFrames
+  let wb := if hasHead t ``Membership.mem && hasHead t ``LT.lt && isStack t then #["wb"] else #[]
   let face : Option String :=
-    if hasHead t ``ResumeFrames then
-      match t.find? (·.isAppOf ``ResumeFrames) with
+    if isStack t then
+      match t.find? (fun e => e.isAppOf ``ResumeFrames || e.isAppOf ``KeyFrames) with
       | some r => if (r.getArg! 0).consumeMData.isAppOf ``SLYamlStream then some "closeF"
                   else if (r.getArg! 0).consumeMData.isAppOf ``ExplValueLine then some "closeFV" else some "closeF?"
       | none => none

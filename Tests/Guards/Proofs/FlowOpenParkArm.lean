@@ -99,7 +99,7 @@ example {sc s_prep : ScannerState} {c : Char} {sp_start sp_scan sp_prep : SurfPo
       ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
-        ResumeFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=
+        KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=
   -- Item 136: the head face rides beside the suffix one; this pin is about the
   -- park's flag, so both punt here — and so do item 176's resume face and item
   -- 201's value-line twin beside it.
@@ -139,7 +139,7 @@ example {n : Nat} {sc s_prep : ScannerState} {c : Char}
       ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
-        ResumeFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=
+        KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=
   flowKeyRoute_of_open (m := 0) h_node (Or.inl ⟨h_compact, h_col⟩) (Or.inr trivial) h_noflow
     (Or.inl h_sk) h_corr hcorr_prep h_preprocess
 

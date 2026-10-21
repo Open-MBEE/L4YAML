@@ -109,7 +109,7 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
     (tw108 : ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < kc) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry kc sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail kc sp_v sp_e →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_e)
+      KeyFrames (ExplValueLine sp_start nv) ks sp_e)
     (h_kc : sc.simpleKey.pos.col = kc)
     (h_park : StalePark sc)
     (h_content : SFlowContent 0 .flowOut sp_br sp_tok) :
@@ -137,7 +137,7 @@ example {sp_start sp_br sp_key : SurfPos} {kc : Nat}
     (tw108 : ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < kc) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry kc sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail kc sp_v sp_e →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_e) :
+      KeyFrames (ExplValueLine sp_start nv) ks sp_e) :
     FlowBaseRoutes sp_start 0 sp_br kc none :=
   ⟨fun _ => value,
    Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,

@@ -258,7 +258,13 @@ def attribControl : CommandElabM (Array String) := do
     un=1,1`, the same case split), and a second optional conclusion to
     `back_col` and `close_col_of_base` — the base slot's marker reading beside
     its stamp — paid and declined nowhere in their bodies (`inl=0,inr=0`), as
-    the stamp's is. -/
+    the stamp's is.
+
+    Item 304 moves `flowKeyRoute_of_root`'s `un` from 3,5 to 3,6: the value-line
+    stacks are `KeyFrames`, whose `resumeAt` hands its consumer a mapping OR a
+    sequence continuation, and the value-line resume `h_resV_land` splits on it
+    — the sequence case is one more `Or.inr` site the key does not attribute,
+    as item 201's second `cases` was. -/
 def expected : List String :=
   ["back_col inl=0,inr=0 inl=0,inr=0 | un=0,0",
    "close_col_of_base inl=0,inr=0 inl=0,inr=0 | un=0,0",
@@ -266,7 +272,7 @@ def expected : List String :=
    "explFrameValueLine inl=1,inr=1 | un=0,0",
    "flowKeyHead inl=0,inr=0 | un=0,0",
    "flowKeyRoute_of_open inl=2,inr=4 inl=0,inr=0 inl=1,inr=2 inl=2,inr=0 inl=1,inr=2 | un=3,3",
-   "flowKeyRoute_of_root inl=2,inr=2 inl=0,inr=0 inl=1,inr=2 inl=5,inr=0 inl=1,inr=2 | un=3,5",
+   "flowKeyRoute_of_root inl=2,inr=2 inl=0,inr=0 inl=1,inr=2 inl=5,inr=0 inl=1,inr=2 | un=3,6",
    "flowOpen_floor_at_prep inl=1,inr=1 | un=0,0",
    "flowOpen_marker inl=1,inr=2 | un=1,1",
    "flowOpen_stamp inl=1,inr=2 | un=1,1",

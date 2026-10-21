@@ -121,8 +121,11 @@ namespace L4YAML.Tests.Guards.RelaySupplyCensus
 
 open Lean Elab Command
 
+/-- Item 311: the family's alternative is NAMED — `PackAlt sc` (and `PackAltG g` over a flow gate),
+    `True` by definition until the lanes pay it; an optional binder is one whose right disjunct is
+    `True` or that name. -/
 def isOptTy (e : Expr) : Bool :=
-  e.isAppOfArity ``Or 2 && (e.getArg! 1).isConstOf ``True
+  e.isAppOfArity ``Or 2 && ((e.getArg! 1).isConstOf ``True || (e.getArg! 1).isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || (e.getArg! 1).isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG)
 
 /-- `(index, name)` of every optional binder of a type, with the arity: `_ ∨ True`, or
     (item 309) `_ ∨ alt` where `alt` is an earlier binder of the same type NAMED `alt` —
@@ -977,9 +980,13 @@ def expectedProducers : List String :=
     total is still 43 with still no producer among them. -/
 -- 2026-10-20 (item 307): unchanged in the end — `accum_block_on_pendingContent`'s `h_vpack` was an
 -- `h_mapFV108.imp …` for one chain and is a `match` (the family's form) now.
+-- 2026-10-21 (item 311): `piped` 43 → 45, `producers` 0 → 2, a new row `Or.imp⇒VIA=2` — the two flow closes
+-- (`accum_step_flow`) hand `flowVPack_of_close resume.vslot` into the content park's `h_vpack` through
+-- `.imp id PackAlt.ofGateClose`: the frame's alternative (`PackAltG g`) becomes the park's (`PackAlt s'`) through a
+-- named conversion, which the census rightly reads as a producer — it is lane (d)'s stub.
 def expectedPipeLanding : String :=
-  "piped=43 producers=0 [Or.imp⇒FIELD=21, Or.imp⇒LOCAL=5, Or.imp⇒RELAY=10, \
-Or.imp⇒SPLIT=3, dite⇒SPLIT=4]"
+  "piped=45 producers=2 [Or.imp⇒FIELD=21, Or.imp⇒LOCAL=5, Or.imp⇒RELAY=10, \
+Or.imp⇒SPLIT=3, Or.imp⇒VIA=2, dite⇒SPLIT=4]"
 
 /-- What the SPLITs decide (DOCS item 216), and the row that matters is
     `elsewhere=0`: **not one leaf of any case split in this module is decided
@@ -1217,6 +1224,9 @@ declineWriters=19 parkHop=22"
     Item 287: `h_vslot :: accum_block_on_closeThenBlock#12 :: splits=5 sup=11`
     left with its binder, and every other row of the three lemmas that lost
     `sp_block_ctx` and `h_stream_fallback` reads its binder two places earlier. -/
+-- 2026-10-21 (item 311): `colon_open_map_implicit`'s binders shift by one (`{alt : Prop}` is its first binder:
+-- the lemma states the family's alternative generically, as the three helpers of item 309 do) — #11/#12/#13/#27
+-- → #12/#13/#14/#28, the rows otherwise verbatim.
 def expectedBranchSupply : List String :=
    -- 2026-10-20 (item 307): one pair more — the content route's `h_vpack` splits `h_mapFV108` (a `match`).
    -- 2026-10-20 (item 309): `explFrameValueLine`'s `h_expl` is binder #4 — `{alt : Prop}` precedes it now.
@@ -1237,7 +1247,7 @@ def expectedBranchSupply : List String :=
    "h_kslot :: accum_block_on_pendingBlock#13 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
    "h_kslot :: accum_block_on_pendingBlockContent#14 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslot ⇒ brDECLINE+brPAY",
    "h_kslot :: accum_content_on_pendingMapValue_indented#17 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
-   "h_kslot :: colon_open_map_implicit#11 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.left ⇒ ORPHAN",
+   "h_kslot :: colon_open_map_implicit#12 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.left ⇒ ORPHAN",
    "h_kslot :: colon_open_map_props#11 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.left ⇒ ORPHAN",
    "h_kslotUp :: accum_block_on_pendingBlock#28 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
    "h_kslotUp :: accum_block_on_pendingBlockContent#33 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslotUp ⇒ DECLINE+brDECLINE+brPAY",
@@ -1250,11 +1260,11 @@ def expectedBranchSupply : List String :=
    "h_pr :: accum_block_on_closeThenBlock#29 :: splits=1 sup=11 [DECLINE=9,SPLIT=2] ⇐ - ⇒ DECLINE+brDECLINE+brPAY",
    "h_resV_land :: colon_open_map#26 :: splits=3 sup=1 [RELAY=1] ⇐ h_resV_land@indicator_open_map ⇒ DECLINE+brDECLINE+brPAY",
    "h_resV_land :: question_open_map#27 :: splits=1 sup=1 [RELAY=1] ⇐ h_resV_land@indicator_open_map ⇒ DECLINE+brDECLINE+brPAY",
-   "h_routeF :: colon_open_map_implicit#12 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
+   "h_routeF :: colon_open_map_implicit#13 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
    "h_routeF :: colon_open_map_props#12 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
-   "h_routeFV :: colon_open_map_implicit#13 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
+   "h_routeFV :: colon_open_map_implicit#14 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
    "h_routeFV :: colon_open_map_props#13 :: splits=2 sup=1 [SPLIT=1] ⇐ - ⇒ brDECLINE+brPAY",
-   "h_routeS :: colon_open_map_implicit#27 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.right ⇒ ORPHAN",
+   "h_routeS :: colon_open_map_implicit#28 :: splits=1 sup=1 [FIELD=1] ⇐ And.intro.right ⇒ ORPHAN",
    "h_seqF168 :: accum_content_on_pendingMapValue_indented#35 :: splits=5 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_seqF ⇒ DECLINE+brDECLINE+brPAY",
    "h_seqF_old :: accum_content_on_pendingBlock_indented#15 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_seqF ⇒ DECLINE+PAY",
    "h_sfx :: accum_block_on_closeThenBlock#18 :: splits=1 sup=11 [DECLINE=10,PAY=1] ⇐ - ⇒ DECLINE+PAY",

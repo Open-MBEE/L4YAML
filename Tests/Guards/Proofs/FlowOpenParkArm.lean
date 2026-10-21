@@ -60,6 +60,7 @@ Both arms of each lemma now measure.  The ROOT needs no premise beyond the
 datum: its landed arm has the walk's re-arm and its no-break arm IS the park at
 column 0, where the datum's other disjunct is refuted by arithmetic. -/
 
+-- Item 311: the flow frame's alternative is the gate's (`PackAltG g`); these probes name an ungated frame.
 example {sc s_prep : ScannerState} {c : Char} {sp_start sp_scan sp_prep : SurfPos}
     (h_noflow : s_prep.inFlow = false)
     (h_park : sc.simpleKeyAllowed = true ∨ 0 < sp_scan.col)
@@ -103,7 +104,7 @@ example {sc s_prep : ScannerState} {c : Char} {sp_start sp_scan sp_prep : SurfPo
   -- Item 136: the head face rides beside the suffix one; this pin is about the
   -- park's flag, so both punt here — and so do item 176's resume face and item
   -- 201's value-line twin beside it.
-  flowKeyRoute_of_root (m := 0) (Or.inr trivial) h_noflow h_park h_close h_dn h_fv h_corr
+  flowKeyRoute_of_root (g := none) (m := 0) (Or.inr trivial) h_noflow h_park h_close h_dn h_fv h_corr
     hcorr_prep h_preprocess (Or.inr trivial) (Or.inr trivial) h_bare h_base
     (Or.inr trivial) (Or.inr trivial) (Or.inr trivial)
 
@@ -140,7 +141,7 @@ example {n : Nat} {sc s_prep : ScannerState} {c : Char}
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=
-  flowKeyRoute_of_open (m := 0) h_node (Or.inl ⟨h_compact, h_col⟩) (Or.inr trivial) h_noflow
+  flowKeyRoute_of_open (g := none) (m := 0) h_node (Or.inl ⟨h_compact, h_col⟩) (Or.inr trivial) h_noflow
     (Or.inl h_sk) h_corr hcorr_prep h_preprocess
 
 /-! ## §3  …and the close's pack carries its column
@@ -161,7 +162,7 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
     (h_content : SFlowContent 0 .flowOut sp_br sp_tok) :
     sc.simpleKey.possible = true → sc.simpleKey.pos.line = sc.line →
       ImplicitKeyPack sc sp_start sp_tok ∨ KeyPackPunt sc :=
-  flowKeyPack_of_close (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
+  flowKeyPack_of_close (g := none) (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
       Or.inr trivial, Or.inr trivial⟩)
     -- Item 300: the base slot's third reading, the marker's line, declined here.
     ⟨h_kc, Or.inr trivial, Or.inr trivial⟩ h_park h_content

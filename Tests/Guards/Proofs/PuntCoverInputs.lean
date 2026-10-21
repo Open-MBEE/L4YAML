@@ -777,6 +777,8 @@ def expectedNamed : String :=
 -- 2026-10-20 (item 306): the content lemma's six key-pack stack arguments are matches on `h_closeFV_old` (the same walk as CloseStackCover): `nodes` 101410 → 101421.
 -- 2026-10-20 (item 307): `nodes` 101421 → 101427 (the same walk as CloseStackCover).
 -- 2026-10-20 (item 309): `nodes` 101427 → 101432 (CloseStackCover's walk, the generic helpers' `Or.inr h` terms).
+-- 2026-10-21 (item 311): `nodes` 101432 → 101924 (CloseStackCover's walk: the named alternative's definitions and stubs, the
+-- four frame-crossing conversions, the two `.imp id PackAlt.ofGateClose` wrappers at the closes).
 def expectedLine : String :=
   "sites=5 pb=1 pmv=1 props=3 idx0=2 mono=2 monoOpt=0 base=2 baseOpt=0 prep=2 dispB=2 \
 dispC=3 hc=2 chr=3 dash=1 corr=5 noflow=5 save=1 fl=0 top=2 larm=1 floor=2 nic=5 \
@@ -785,7 +787,7 @@ missMono=3 missBase=3 missPrep=3 missFloorSrc=3 own=2 empty=0 relay=1 relayEntri
 bounds=2 below=0 belowSyn=0 belowArm=0 at=2 atSyn=1 atArm=1 undecided=0 bOwn=1 \
 bOld=1 landedBelow=0 inlineBelow=0 payable=0 lack=3 lackCallers=19 lackSupplied=0 \
 lackSuppliedB=3 lackLow=0 lackPayable=0 vacuous=2 bottomBelow=0 paidRows=14 \
-bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=101432"
+bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=101924"
 
 /-! ## §3 The reading -/
 

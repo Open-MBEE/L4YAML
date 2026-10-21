@@ -1,33 +1,35 @@
 #!/usr/bin/env python3
-"""The value-line PACK's punt surface, measured by ONE flip over the whole family (item 301).
+"""The value-line PACK's punt surface, measured by ONE flip of the family's NAMED alternative
+(item 311; item 301's instrument, retargeted from the tails to the body).
 
-`block_dispatch_deferred_stamp_nopack` is applied where a class-A `:` (the
-explicit value of a `?` frame, at the frame's column) lands on a park whose
-value-line pack is `Or.inr`.  The pack is one obligation carried through nine
-`PendingNode` fields, the premises that restate it and the conclusions that
-hand it on — every one with the same type tail, `… SLYamlStream sp_start sp_v)
-∨ True` — and `frameChainUnion`, item 192's combinator, which stated the same
-alternative generically until item 309 made it generic in the alternative (its flip is
-kept and finds nothing: a generic union follows its callers' alternative).  A one-field flip (§7, §9 of `BlockDeferralClasses`)
-reads the field's own producers; the family's price is every producer that
-hands ANY of them `Or.inr`, which only the whole flip reads.
+`block_dispatch_deferred_stamp_nopack` is applied where a class-A `:` (the explicit value of a
+`?` frame, at the frame's column) lands on a park whose value-line pack is `Or.inr`.  Every
+value-line pack, chain pack and value-line stack in `StreamAccum` — the `PendingNode` fields, the
+premises that restate them, the conclusions that hand them on, the key-pack records and the flow
+frame — is typed `… ∨ PackAlt sc` (`∨ PackAltG g` on the frame, whose alternative is the gate's):
+ONE alternative with one body, `True` until the lanes of 12.3.4.2 pay it (`BlockDeferralClasses`
+§30).  A one-field flip (§7, §9 of `BlockDeferralClasses`) reads the field's own producers; the
+family's price is every producer that hands ANY of them `Or.inr`, which only the whole flip reads.
 
-The flip: every tail becomes `∨ False` in one patched tree, and `lake env lean`
-runs to a fixpoint.  Each round, an error at `trivial`/`True.intro`/`⟨⟩` is a
-DECLINE (the site is sorried and the round continues); an error at a
-parenthesized group or a lone identifier is a RELAY from an unflipped source
-(wrapped in `ofTrue_probe`, a probe lemma spliced in front of the first
-declaration); any other shape stops the census, since a wrong wrap cascades.
-`StreamAccum.lean` is restored byte-identical whatever happens.
+The flip: both bodies become `False` in one patched tree, so every `Or.inr trivial` on the family
+fails and every `Or.inr h` relays, and `lake env lean` runs to a fixpoint.  Each round, an error at
+`trivial`/`True.intro`/`⟨⟩` is a DECLINE (the site is sorried and the round continues); an error at
+a parenthesized group or a lone identifier is a RELAY from an unflipped `∨ True` source (wrapped in
+`ofTrue_probe`, a probe lemma spliced in front of the first declaration); any other shape stops the
+census, since a wrong wrap cascades.  The three conversion stubs — `PackAlt.ofRefused` (the
+payment), `PackAltG.ofPark` (a park's alternative into the frame it opens), `PackAlt.ofGateClose`
+(the frame's into the park its close builds) — are the lanes' obligations, not sites: their
+bodies are sorried before the first round and reported as `stubs=`.  `StreamAccum.lean` is
+restored byte-identical whatever happens.
 
 Reads one line, pinned in `BlockDeferralClasses.expectedPackFlip`:
 
-    PACK-FLIP sites=… decls=… rounds=… decline=… relay=… leaf=… uncond=…
+    PACK-FLIP sites=… decls=… rounds=… decline=… relay=… leaf=… uncond=… stubs=…
 
-`leaf` counts the declines of the shape `| Or.inr _ => Or.inr trivial` /
-`else Or.inr trivial` — conditional on an INCOMING optional declining — and
-`uncond` the bare ones; the two are the census's reading of transport versus
-root.  `--tsv PATH` writes the per-site rows (round, line, column, kind,
+`leaf` counts the declines inside a match arm or an `else` — `| … => Or.inr trivial`,
+`| … => exact Or.inr trivial`, `else Or.inr trivial`, `· exact Or.inr trivial` — conditional on
+an INCOMING optional declining — and `uncond` the bare ones; the two are the census's reading of
+transport versus root.  `--tsv PATH` writes the per-site rows (round, line, column, kind,
 declaration, message head, source line)."""
 import argparse
 import hashlib
@@ -42,10 +44,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 T = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 PIN = ROOT / "Tests/Guards/Proofs/BlockDeferralClasses.lean"
-TAIL = "SLYamlStream sp_start sp_v) ∨ True"
-FCU = "(∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ True"
+BODIES = {
+    "abbrev PackAlt (_sc : ScannerState) : Prop := True": "abbrev PackAlt (_sc : ScannerState) : Prop := False",
+    "abbrev PackAltG (_g : Option ScannerState) : Prop := True": "abbrev PackAltG (_g : Option ScannerState) : Prop := False",
+}
+STUBS = ("theorem PackAlt.ofRefused ", "theorem PackAltG.ofPark ", "theorem PackAlt.ofGateClose ")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
-LEAF = re.compile(r"^(\| .*=> Or\.inr trivial|else Or\.inr trivial|· exact Or\.inr trivial)")
+LEAF = re.compile(r"^(\| .*=> (exact )?Or\.inr trivial|else Or\.inr trivial|· exact Or\.inr trivial)")
 ERR = re.compile(r"^L4YAML/Proofs/Production/StreamAccum\.lean:(\d+):(\d+): error: (.*)")
 
 
@@ -93,13 +98,17 @@ def main():
     orig = T.read_text()
     orig_lines = orig.split("\n")
     L = orig.split("\n")
-    flipped = [i for i, l in enumerate(L) if TAIL in l]
-    for i in flipped:
-        L[i] = L[i].replace(TAIL, "SLYamlStream sp_start sp_v) ∨ False")
-    fcu = [i for i, l in enumerate(L) if FCU in l]
-    for i in fcu:
-        L[i] = L[i].replace(FCU, "(∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ False")
-    print(f"flipped {len(flipped)} tails + {len(fcu)} frameChainUnion lines")
+    for old, new in BODIES.items():
+        hits = [i for i, l in enumerate(L) if l == old]
+        assert len(hits) == 1, (old, hits)
+        L[hits[0]] = new
+    stubs = 0
+    for head in STUBS:
+        i = next(i for i, l in enumerate(L) if l.startswith(head))
+        j = next(k for k in range(i, i + 3) if L[k].endswith(":= trivial"))
+        L[j] = L[j][: -len("trivial")] + "sorry"
+        stubs += 1
+    print(f"flipped {len(BODIES)} bodies, sorried {stubs} stubs")
     i0 = next(i for i, l in enumerate(L) if re.match(r"^(private )?(lemma|theorem|def|abbrev|structure|inductive) ", l))
     while L[i0 - 1].strip() != "":
         i0 -= 1
@@ -177,7 +186,7 @@ def main():
     leaf = sum(1 for c in census if c[3] == "DECLINE" and LEAF.match(c[6]))
     uncond = kinds["DECLINE"] - leaf
     line = (f"sites={len(census)} decls={len(by)} rounds={rounds} decline={kinds['DECLINE']} "
-            f"relay={kinds['RELAY']} leaf={leaf} uncond={uncond}")
+            f"relay={kinds['RELAY']} leaf={leaf} uncond={uncond} stubs={stubs}")
     if kinds["UNHANDLED"]:
         line += f" unhandled={kinds['UNHANDLED']}"
     print("PACK-FLIP " + line)

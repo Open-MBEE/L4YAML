@@ -96,6 +96,7 @@ example {sc : ScannerState} {sp_start sp_p sp_scan : SurfPos}
     the key ROUTE — a fact about the enclosing construct — and, beside the
     column, the open's stamp reading, which is a fact about the input (item
     103) and is what names the punt where the route is absent. -/
+-- Item 311: the flow frame's alternative is the gate's (`PackAltG g`); these probes name an ungated frame.
 example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
     (route : ∀ sp_v, SBlockMapEntry kc sp_key sp_v → SLYamlStream sp_start sp_v)
     (head : ∀ sp_end, SFlowContent 0 .flowOut sp_br sp_end →
@@ -105,7 +106,7 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
     (h_content : SFlowContent 0 .flowOut sp_br sp_tok) :
     sc.simpleKey.possible = true → sc.simpleKey.pos.line = sc.line →
       ImplicitKeyPack sc sp_start sp_tok ∨ KeyPackPunt sc :=
-  flowKeyPack_of_close (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
+  flowKeyPack_of_close (g := none) (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
       Or.inr trivial, Or.inr trivial⟩)
     -- Item 300: the base slot's third reading, the marker's line, declined here.
     ⟨h_kc, Or.inr trivial, Or.inr trivial⟩ h_park h_content

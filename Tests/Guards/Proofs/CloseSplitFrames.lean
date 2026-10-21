@@ -129,7 +129,7 @@ def Ctx.retrack (cx : Ctx) (tc : Tracked) (tp : Std.HashSet FVarId) : Ctx :=
 
 def isOptTrue (t : Expr) : Bool :=
   let t := t.consumeMData
-  t.isAppOfArity ``Or 2 && (t.getArg! 1).consumeMData.isConstOf ``True
+  t.isAppOfArity ``Or 2 && ((t.getArg! 1).consumeMData.isConstOf ``True || (t.getArg! 1).consumeMData.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || (t.getArg! 1).consumeMData.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG)  -- item 311: or the named alternative
 
 /-- The depth, in `∨ True` options, of the first subterm satisfying `p`. -/
 partial def depthTo (t : Expr) (p : Expr → Bool) (d : Nat := 0) : Option Nat :=

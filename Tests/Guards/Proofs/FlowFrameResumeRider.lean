@@ -115,7 +115,8 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
     (h_content : SFlowContent 0 .flowOut sp_br sp_tok) :
     sc.simpleKey.possible = true → sc.simpleKey.pos.line = sc.line →
       ImplicitKeyPack sc sp_start sp_tok ∨ KeyPackPunt sc :=
-  flowKeyPack_of_close
+  -- Item 311: the frame's alternative is the gate's (`PackAltG g`); an ungated frame here.
+  flowKeyPack_of_close (g := none)
     (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
       Or.inl tw99, Or.inl tw108⟩)
     -- Item 300: the base slot's third reading, the marker's line, declined here.

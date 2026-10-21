@@ -186,14 +186,17 @@ def armEdges (anchor : Name) : CommandElabM (Array Edge × Nat) := do
     `preprocess_possible_of_live0`.  The census reads every
     `simpleKeyAllowed = true ∨ …` binder as a loose arm — the shape, not the
     role. -/
+-- 2026-10-21 (item 311): `flowKeyRoute_of_open` #14 → #15 and `flowKeyRoute_of_root` #9 → #10 — both take the flow
+-- frame's gate `{g : Option ScannerState}` as an implicit binder now (their conclusions carry the frame's named
+-- alternative `PackAltG g`); `h_park` is the same binder one index later.
 def expectedBinders : List String :=
   [ "loose accum_block_on_noPending#13 (h_arm)",
     "loose block_dispatch_deferred#9 (h_live0)",
     "loose block_dispatch_deferred_stamp_nopack#14 (h_live0)",
     "loose block_dispatch_deferred_stamp_offcol#15 (h_live0)",
     "loose content_live0#4 (h_live0)",
-    "loose flowKeyRoute_of_open#14 (h_park)",
-    "loose flowKeyRoute_of_root#9 (h_park)",
+    "loose flowKeyRoute_of_open#15 (h_park)",
+    "loose flowKeyRoute_of_root#10 (h_park)",
     "loose keyctx_of_preprocess#12 (h_park)",
     "loose landing_or_park_save#6 (h_park)",
     "loose landing_or_park_ska#6 (h_park)",

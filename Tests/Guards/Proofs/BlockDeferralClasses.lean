@@ -4431,12 +4431,13 @@ seq-spaces alternative at `accum_block_on_closeThenBlock`'s dash arm — and ite
 stand under was not re-measured after it.  Two instruments do that here.
 
 **The flip, over the whole pack family at once.**  `scripts/pack_flip_census.py`
-turns every `… SLYamlStream sp_start sp_v) ∨ True` type tail in `StreamAccum`
-— the nine constructor fields, the premises that restate the pack, the
-conclusions that hand it on — and `frameChainUnion`'s generic statement into
-`∨ False` in ONE patched tree, and iterates `lake env lean` to a fixpoint: each
+flips the family's NAMED alternative — since item 311 every value-line pack,
+chain pack and value-line stack in `StreamAccum` is typed `… ∨ PackAlt sc`
+(`∨ PackAltG g` on the flow frame), and the script rewrites the two bodies to
+`False` in ONE patched tree, sorries the three conversion stubs (the lanes'
+obligations, counted as `stubs`), and iterates `lake env lean` to a fixpoint: each
 `Or.inr trivial` it breaks is sorried (a DECLINE), each relay from an unflipped
-source is wrapped (a RELAY), and the tree is restored byte-identical.  Item 186
+`∨ True` source is wrapped (a RELAY), and the tree is restored byte-identical.  Item 186
 ran a one-field flip and read 23 payments; item 187 counted 31 alternatives in
 16 declarations by grep; §7 and §9 ran one-field flips at four fields and found
 each one's surface SMALLER than the family's.  The whole-family flip reads
@@ -4452,8 +4453,14 @@ script, as `expectedInlineArms` is. -/
 -- `explFrameValueLine` are generic in the alternative (item 309): the flip reaches them through their callers, so
 -- the one RELAY (`question_open_map`'s union of the frame above) and the two helpers' own leaves (`Or.inr h` relays
 -- now) are no longer sites of the family's textual surface; the roots stand at 29.
+-- 2026-10-21 (item 311): the flip is the family's NAMED alternative — `PackAlt`'s and `PackAltG`'s one body each
+-- → `False` — so it reads the whole component item 310 found: the 99 pack sites stand (70 leaves, 29 roots, matched
+-- by declaration and source line) and the chain-pack and value-stack families add 165 (91 leaves, 74 roots) in 24
+-- declarations, 6 new to the surface; `rounds` 2 → 4; the three conversion stubs (`ofRefused`, `ofPark`,
+-- `ofGateClose`) are sorried up front and counted as `stubs`, not as sites; the leaf reading also accepts
+-- `| … => exact Or.inr trivial`.
 def expectedPackFlip : String :=
-  "sites=99 decls=18 rounds=2 decline=99 relay=0 leaf=70 uncond=29"
+  "sites=264 decls=24 rounds=4 decline=264 relay=0 leaf=161 uncond=103 stubs=3"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

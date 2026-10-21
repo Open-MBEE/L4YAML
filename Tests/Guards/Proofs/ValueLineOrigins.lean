@@ -184,7 +184,7 @@ def sideOfD (pe : PackEnv) (t : Expr) : Bool × Bool :=
   if t.isAppOfArity ``Or 2 then
     let vcLeft := vcDeep pe (t.getArg! 0)
     let other := (if vcLeft then t.getArg! 1 else t.getArg! 0).consumeMData
-    (vcLeft, other.isConstOf ``True)
+    (vcLeft, (other.isConstOf ``True || other.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || other.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG))  -- item 311: the named alternative reads as `True`
   else (true, true)
 
 structure Position where
@@ -594,7 +594,9 @@ def expectedPositions : List String := [
   "param:colon_fires_implicit_key.h_key packaged arm=l path=→→∨Lδ∃∃∃∧R∧R∧R∧R∧L∨L∃→→→→→→→→→→ lvl=(possible(…)=true)→(line(…)=line(…))→δImplicitKeyPack∃k∃sp_key∃sp_gram(?)(ImplicitKeyHead)(GStar)(col(…)=k)(And)∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
   "param:colon_fires_props_key.h_key packaged arm=l/stamp path=∨Lδ∧L∃∧R∧R∧L∨L∃→→→→→→→→→→ lvl=δPropsKeyPack(And)∃k(?)(col(…)=k)(And)∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
   "param:colon_open_map_explicit.hvp arm=l path=→→→→→→ lvl= premises=[SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
-  "param:colon_open_map_implicit.h_kslot arm=l path=∨L∃→→→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
+  -- item 311: `colon_open_map_implicit` states the alternative generically (`{alt : Prop}`), so its premise reads
+  -- `arm=l/stamp` (a right disjunct other than `True`), as the three generic helpers do since item 309.
+  "param:colon_open_map_implicit.h_kslot arm=l/stamp path=∨L∃→→→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
   "param:colon_open_map_props.h_kslot arm=l path=∨L∃→→→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
   "param:entryChainMap.up arm=l path=→→→→→→ lvl=∀nvX∈ns premises=[SBlockIndented(n),SCompactSeqTail(n)] ⊢ ExplValueLine(nvX) tail=no",
   "param:entryKeyPack_of_dispatch.h_compact arm=l path=∨L∧R∧R∨L∃→→→→→→→→ lvl=(?)(sp_scan.col=n + 1)∃ns∀nv∈ns premises=[SBlockIndented(n),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
@@ -841,11 +843,13 @@ def expectedRows : List String := [
   "accum_flow_open_depth0 #2 param:flowKeyRoute_of_open.h_compact_pair := paid:chain/built pos=[ctor:pendingBlock.h_kslot] origins=[O75] none=[punt] ⊢ none-held 0/1",
   "accum_flow_open_depth0 #3 param:flowKeyRoute_of_open.h_compact_pair := paid:route/built pos=[] origins=[O48] none=[punt] ⊢ all-held 1/1",
   "accum_step_flow #1 ctor:pendingContent.h_key := via/built pos=[] origins=[O49] ⊢ none-held 0/1",
-  "accum_step_flow #1 ctor:pendingContent.h_vpack := via/built pos=[] origins=[O50] ⊢ none-held 0/1",
+  -- item 311: the two closes hand `flowVPack_of_close resume.vslot` on through `.imp id PackAlt.ofGateClose`, so the
+  -- writer reads `step` where it read `via`; the origin it carries is the same.
+  "accum_step_flow #1 ctor:pendingContent.h_vpack := step/built pos=[] origins=[O50] ⊢ none-held 0/1",
   "accum_step_flow #1 param:flowKeyPack_of_close.h_key := relay/built pos=[] origins=[O51] ⊢ none-held 0/1",
   "accum_step_flow #1 param:flowVPack_of_close.h_vslot := relay/built pos=[] origins=[O52] ⊢ none-held 0/1",
   "accum_step_flow #2 ctor:pendingContent.h_key := via/built pos=[] origins=[O53] ⊢ none-held 0/1",
-  "accum_step_flow #2 ctor:pendingContent.h_vpack := via/built pos=[] origins=[O54] ⊢ none-held 0/1",
+  "accum_step_flow #2 ctor:pendingContent.h_vpack := step/built pos=[] origins=[O54] ⊢ none-held 0/1",
   "accum_step_flow #2 param:flowKeyPack_of_close.h_key := relay/built pos=[] origins=[O55] ⊢ none-held 0/1",
   "accum_step_flow #2 param:flowVPack_of_close.h_vslot := relay/built pos=[] origins=[O56] ⊢ none-held 0/1",
   "colon_fires_implicit_key #1 param:colon_open_map_implicit.h_kslot := relay/built pos=[param:colon_fires_implicit_key.h_key] origins=[O4,O5,O6,O7,O8,O9,O10,O11,O12,O13,O14,O15,O16,O17,O18,O19,O20,O21,O26,O27,O28,O29,O30,O31,O37,O38,O39,O40,O41,O42,O43,O49,O53,O57,O60,O61,O74,O75] ⊢ some-held 17/38",
@@ -1037,13 +1041,16 @@ def expectedUnborn : List String := []
 -- 2026-10-20 (item 307): `punt` 29 → 26, `built` 135 → 138, `origins` 73 → 76, `originRows` 38 → 41, `frames` 27 → 30, `noneHeld` 73 → 76, `follows` 315 → 317, `lets` 567 → 570, `lapps` 688 → 696, `alts` 4475 → 4489, `nodes` 12512 → 12518, `liteNodes` 524996 → 526179.
 -- 2026-10-20 (item 307, second chain): `follows` 317 → 318, `liteNodes` 526179 → 526154.
 -- 2026-10-20 (item 309): `nodes` 12518 → 12524, `liteNodes` 526154 → 526163.
+-- 2026-10-21 (item 311): `alts` 4489 → 4495, `nodes` 12524 → 12547, `liteNodes` 526163 → 527740 — the named alternative's
+-- definitions and stubs, the frame-crossing conversions and the two `.imp id PackAlt.ofGateClose` wrappers at the closes;
+-- every row and position stands (180, 47), two close writers reading `step` where they read `via`.
 def expectedLine : String :=
   "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 \
 paramRows=82 packagedRows=29 punt=26 stamp=16 built=138 origins=76 originRows=41 \
 route=23 frames=30 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
 someHeld=39 noneHeld=76 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
-relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=318 lets=570 lapps=696 alts=4489 \
-nodes=12524 liteNodes=526163"
+relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=318 lets=570 lapps=696 alts=4495 \
+nodes=12547 liteNodes=527740"
 
 /-! ## §4 The reading -/
 

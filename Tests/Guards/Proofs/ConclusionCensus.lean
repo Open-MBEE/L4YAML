@@ -132,9 +132,18 @@ namespace L4YAML.Tests.Guards.ConclusionCensus
 
 open Lean Elab Command
 
+/-- Item 311: the optional's right disjunct — a literal `True`, or the family's NAMED alternative,
+    `PackAlt sc` / `PackAltG g`, `True` by definition until the lanes pay it. -/
+def isAltTrue (b : Expr) : Bool :=
+  b.isConstOf ``True || b.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt ||
+    b.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG
+
 /-- The left-hand sides of every `_ ∨ True`, in traversal order. -/
 partial def lefts : Expr → Array Expr → Array Expr
   | .app (.app (.const ``Or _) x) (.const ``True _), acc => lefts x (acc.push x)
+  -- item 311: the named alternative `PackAlt sc` / `PackAltG g` reads as `True`
+  | .app (.app (.const ``Or _) x) (.app (.const ``L4YAML.Proofs.StreamAccum.PackAlt _) _), acc => lefts x (acc.push x)
+  | .app (.app (.const ``Or _) x) (.app (.const ``L4YAML.Proofs.StreamAccum.PackAltG _) _), acc => lefts x (acc.push x)
   | .app f a, acc => lefts a (lefts f acc)
   | .lam _ t b _, acc => lefts b (lefts t acc)
   | .forallE _ t b _, acc => lefts b (lefts t acc)
@@ -146,11 +155,12 @@ partial def lefts : Expr → Array Expr → Array Expr
 /-- Every `α` of an `Or.inl`/`Or.inr` at `(α := α) (β := True)`, for one side.
     Both sides are read: see the blind spots above. -/
 partial def sides (side : Name) : Expr → Array Expr → Array Expr
-  | e@(.app (.app (.app (.const s _) a) (.const ``True _)) _), acc =>
+  -- Item 311: `β` is `True` or the family's named alternative (`PackAlt sc` / `PackAltG g`).
+  | e@(.app (.app (.app (.const s _) a) b) _), acc =>
       let rest := match e with
         | .app f x => sides side x (sides side f acc)
         | _ => acc
-      if s == side then rest.push a else rest
+      if s == side && isAltTrue b then rest.push a else rest
   | .app f a, acc => sides side a (sides side f acc)
   | .lam _ t b _, acc => sides side b (sides side t acc)
   | .forallE _ t b _, acc => sides side b (sides side t acc)

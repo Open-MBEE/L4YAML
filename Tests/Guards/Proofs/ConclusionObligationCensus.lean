@@ -224,7 +224,7 @@ run_cmd do
         -- own and reports their components instead.
         if !cod.isAppOfArity ``Or 2 then return none
         let r := cod.getArg! 1
-        if r.isConstOf ``True then return none
+        if (r.isConstOf ``True || r.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || r.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG) then return none  -- item 311: or the named alternative
         return r.getAppFn.constName?
     -- …and named by this file: `KeyPair.tc_key` concludes in a disjunction of
     -- two equations, which is a case split and not a residue.
@@ -268,7 +268,7 @@ partial def scanTerm (e : Expr) (seen : Std.HashSet Expr) (r i : Nat) :
     Std.HashSet Expr × Nat × Nat :=
   if seen.contains e then (seen, r, i) else
   let seen := seen.insert e
-  let r := if e.isAppOfArity ``Or.inr 3 && (e.getArg! 1).isConstOf ``True then r + 1 else r
+  let r := if e.isAppOfArity ``Or.inr 3 && ((e.getArg! 1).isConstOf ``True || (e.getArg! 1).isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || (e.getArg! 1).isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG) then r + 1 else r
   let i := if isOptTy e then i + 1 else i
   match e with
   | .app f a => let (s, r, i) := scanTerm f seen r i; scanTerm a s r i

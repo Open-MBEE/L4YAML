@@ -332,7 +332,7 @@ def expectedChainFaces : List String :=
    "accum_block_on_pendingContent#13 (h_vpack)",
    "accum_content_on_pendingBlock_indented#28 (h_kslotUp_old)",
    "accum_content_on_pendingMapValue_indented#17 (h_kslot)",
-   "colon_open_map_implicit#11 (h_kslot)",
+   "colon_open_map_implicit#12 (h_kslot)",  -- item 311: `{alt : Prop}` precedes it
    "colon_open_map_props#11 (h_kslot)",
    "entryKeyPack_of_dispatch#10 (h_nodeV)",
    "entryPropsKeyPack_of_dispatch#10 (h_nodeV)",
@@ -374,7 +374,7 @@ def expectedStateFaces : List String :=
    "dedent_cover_of_landing#9",
    "entryKeyPack_of_dispatch#17",
    "entryPropsKeyPack_of_dispatch#16",
-   "flowKeyRoute_of_root#20",
+   "flowKeyRoute_of_root#21",  -- item 311: `{g}` precedes it
    "flowOpen_floor_at_prep#10",
    "flowOpen_marker#4",
    "flowOpen_stamp#4",
@@ -512,6 +512,8 @@ def expectedWorthTally : String :=
 -- route's `h_mapFV108` (its `h_vpack`).
 -- 2026-10-20 (item 309): re-read — `explFrameValueLine`'s binder index moved (`{alt}` precedes `h_expl`).
 -- 2026-10-20 (item 309): `h_expl :: explFrameValueLine#4` reads `chain` and its binder index moved (`{alt}` precedes it).
+-- 2026-10-21 (item 311): `colon_open_map_implicit`'s four rows re-indexed by one (`{alt : Prop}` is its first binder); the
+-- faces and splits stand, and the list is re-laid in the census's own order.
 def expectedWorthLedger : List String :=
   ["splits=11 sup=1 inner h_closeF_old :: accum_content_on_pendingBlock_indented#14",
    "splits=10 sup=1 - h_closeFV_old :: accum_content_on_pendingBlock_indented#29",
@@ -531,9 +533,9 @@ def expectedWorthLedger : List String :=
    "splits=3 sup=1 chain h_kslotUp :: accum_block_on_pendingBlock#28",
    "splits=3 sup=1 chain h_kslotUp_old :: accum_content_on_pendingBlock_indented#28",
    "splits=2 sup=1 inner h_closeF_old :: accum_block_on_pendingBlockContent#34",
-   "splits=2 sup=1 inner h_routeF :: colon_open_map_implicit#12",
+   "splits=2 sup=1 inner h_routeF :: colon_open_map_implicit#13",
    "splits=2 sup=1 inner h_routeF :: colon_open_map_props#12",
-   "splits=2 sup=1 inner h_routeFV :: colon_open_map_implicit#13",
+   "splits=2 sup=1 inner h_routeFV :: colon_open_map_implicit#14",
    "splits=2 sup=1 inner h_routeFV :: colon_open_map_props#13",
    "splits=1 sup=11 - h_mapF :: accum_block_on_closeThenBlock#28",
    "splits=1 sup=11 - h_mapFV :: accum_block_on_closeThenBlock#30",
@@ -545,8 +547,8 @@ def expectedWorthLedger : List String :=
    "splits=1 sup=1 - h_kslot :: accum_block_on_pendingBlockContent#14",
    "splits=1 sup=1 - h_mapFV108 :: accum_block_on_pendingContent#32",
    "splits=1 sup=1 - h_resV_land :: question_open_map#27",
-   "splits=1 sup=1 - h_routeS :: colon_open_map_implicit#27",
-   "splits=1 sup=1 chain h_kslot :: colon_open_map_implicit#11",
+   "splits=1 sup=1 - h_routeS :: colon_open_map_implicit#28",
+   "splits=1 sup=1 chain h_kslot :: colon_open_map_implicit#12",
    "splits=1 sup=1 chain h_kslot :: colon_open_map_props#11",
    "splits=1 sup=1 chain h_kslotUp :: accum_block_on_pendingBlockContent#33"]
 
@@ -624,7 +626,9 @@ rather than as a count. -/
 -- Item 287: the same binder, read syntactically.  Item 288: and the field.
 -- Item 300: the two new binders, read both ways.
 -- 2026-10-20 (item 309): `syntactic` 163 → 158, `population` 165 → 160 — the generic helpers' five `∨ alt` binders are no `∨ True` to the syntactic count.
-def expectedHiddenTally : String := "hiddenDefs=1 syntactic=158 hiddenOnly=2 population=160"
+-- 2026-10-21 (item 311): `syntactic` 158 → 156, `population` 160 → 158 — `colon_open_map_implicit`'s two `∨ alt` premises are no
+-- `∨ True` to the syntactic count (the lemma states the family's alternative generically).
+def expectedHiddenTally : String := "hiddenDefs=1 syntactic=156 hiddenOnly=2 population=158"
 
 def expectedHiddenDefs : List String := ["ResumeKeyCtx"]
 
@@ -765,7 +769,10 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- no-op conclusion, so the four other counts stand.
 -- 2026-10-20 (item 304): 5463 → 5465 — `resumeFrameRouteK`, `resumeMapRouteK`.
 -- 2026-10-20 (item 309): `theorems` 5465 → 5469, `byElab` 18 → 15, `byWhnf` 18 → 15 — four lemmas more; the three generic helpers' `∨ alt` conclusions are no `∨ True` no-ops.
-def expectedNoopTally : String := "theorems=5469 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
+-- 2026-10-21 (item 311): `theorems` 5469 → 5472 — the named alternative's three conversion stubs (`PackAlt.ofRefused`,
+-- `PackAltG.ofPark`, `PackAlt.ofGateClose`); the no-op counts stand: `∨ PackAltG g` on the frame's conclusions is `True` by
+-- definition, so `FlowBaseRoutes.key`/`vslot` and the two key-route lemmas read as they did.
+def expectedNoopTally : String := "theorems=5472 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

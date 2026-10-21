@@ -193,7 +193,7 @@ run_cmd do
       (``accum_block_on_closeThenBlock, 17), (``colon_fires_implicit_key, 11),
       (``accum_block_on_pendingContent, 23), (``accum_block_on_pendingBlockContent, 25),
       (``accum_block_on_noPending, 13), (``accum_content_on_noPending, 14),
-      (``flowKeyRoute_of_open, 14), (``flowKeyRoute_of_root, 9),
+      (``flowKeyRoute_of_open, 15), (``flowKeyRoute_of_root, 10),
       (``keyctx_of_preprocess, 11), (``landing_or_park_save, 6),
       (``landing_or_park_ska, 6), (``preprocess_flow_thread, 9) ]
   if rows.length != got then
@@ -328,8 +328,10 @@ declarations' own binders and not by a rescoring of an existing one.
 -- 2026-10-20 (item 307): `constants` 1388 → 1393, `decls` 1105 → 1110, `READ` 1182 → 1198, `RELAY` 2180 → 2179 — as `HypothesisReaderCensus`:
 -- `closeThenBlock`'s three new haves and their match auxiliaries, and the γ roots' reads.
 -- 2026-10-20 (item 309): by `HypothesisReaderCensus`'s deltas (the five new declarations).
+-- 2026-10-21 (item 311): `constants` 1398 → 1403, `decls` 1114 → 1117, `UNUSED` 9 → 12 — the named alternative's two abbrevs
+-- and three stubs, whose `_h` is unused until its lane proves it (HypothesisReaderCensus's tally moves the same way).
 def expectedModuleTallyP : String :=
-  "constants=1398 decls=1114 eta=414 FIELD=185 READ=1199 RELAY=2187 RETURN=138 UNUSED=9"
+  "constants=1403 decls=1117 eta=414 FIELD=185 READ=1199 RELAY=2187 RETURN=138 UNUSED=12"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
@@ -438,7 +440,7 @@ def expectedNineResolved : List String :=
     "accum_block_on_pendingContent#30 (h_seqF168) => RETURN@L4YAML.Proofs.StreamAccum.accum_block_on_pendingContent#30",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old) => FIELD@L4YAML.Proofs.StreamAccum.PendingNode.pendingProps#19",
     "colon_open_map#24 (h_cov_in) => FIELD@And.intro#2",
-    "flowKeyRoute_of_root#20 (h_tail143) => RETURN@L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root#20",
+    "flowKeyRoute_of_root#21 (h_tail143) => RETURN@L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root#21",  -- item 311: `{g}` precedes it
     "indicator_open_map#26 (h_ref_land) => ELIM@L4YAML.Proofs.StreamAccum.rootMapRouteF_or_refused#7>L4YAML.Proofs.StreamAccum.rootMapRouteF_or_refused.match_1_1#4, ELIM@L4YAML.Proofs.StreamAccum.rootMapRoute_or_refused#7>L4YAML.Proofs.StreamAccum.rootMapRoute_or_refused.match_1_1#4",
     "question_open_map#23 (h_cov_in) => FIELD@And.intro#2",
     "question_open_map#24 (h_cov_nil) => FIELD@And.intro#2" ]
@@ -454,7 +456,7 @@ run_cmd do
   let nine : List (Name × Nat) :=
     [ (``accum_block_on_pendingBlock, 27), (``accum_block_on_pendingBlockContent, 32),
       (``accum_block_on_pendingContent, 30), (``accum_content_on_pendingMapValue_indented, 14),
-      (``colon_open_map, 24), (``flowKeyRoute_of_root, 20), (``indicator_open_map, 26),
+      (``colon_open_map, 24), (``flowKeyRoute_of_root, 21), (``indicator_open_map, 26),
       (``question_open_map, 23), (``question_open_map, 24) ]
   if nine.length != expectedCoreTerminal.length then
     throwError "item 225's shortlist is no longer nine rows"
@@ -587,20 +589,26 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
         queue := queue.push s
   return alive
 
-/-- Ten dead binders in the whole explored closure, and every one is `UNUSED`.
-    Nine are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
-    does not move — and the tenth is one module over. -/
+/-- Thirteen dead binders in the whole explored closure, and every one is `UNUSED`.
+    Twelve are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
+    does not move, three of them the named alternative's conversion stubs (item 311:
+    `PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`, each `trivial` until its
+    lane proves it, so its `_h` is dead by construction) — and the thirteenth is one
+    module over. -/
 -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is its
 -- thirteenth binder.
 def expectedDead : List String :=
-  [ "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
+  [ "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#10 (_h_src) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#11 (_h_indent) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#12 (_h_park) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#11 (_h_src) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#12 (_h_indent) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#13 (_h_ne) [class marker]",
-    "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#10 (_) [conclusion binder]",
+    "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#11 (_) [conclusion binder]",
     "L4YAML.Proofs.StreamAccum.question_open_map#15 (_h_noflow_disp) [family uniformity]",
     "L4YAML.Proofs.StructureCoupling.scanTagDirective_corr#2 (_hcorr) [family uniformity]" ]
 
@@ -615,10 +623,13 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#11"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#12"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#13" => "class marker"
-  | "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#10" => "conclusion binder"
+  | "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#11" => "conclusion binder"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1"
+  | "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2" => "lane stub"
   | _ => "family uniformity"
 
-def expectedDeadTally : String := "dead=10 UNUSED=10 RELAY=0"
+def expectedDeadTally : String := "dead=13 UNUSED=13 RELAY=0"
 
 run_cmd do
   let env ← getEnv
@@ -723,8 +734,11 @@ lemma opt_premise_is_no_premise {A P : Prop} : (A ∨ True → P) ↔ P :=
 -- population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`, a field.
 -- 2026-10-20 (item 309): `optTy` 163 → 158 — the three generic helpers' five `∨ alt` binders are no `∨ True`
 -- to this census (their callers instantiate the alternative).
+-- 2026-10-21 (item 311): `optTy` 158 → 156 — `colon_open_map_implicit` states the family's alternative generically
+-- (`{alt : Prop}`), so its two `∨ alt` premises leave the literal-optional population, as the three generic helpers'
+-- did at item 309; `total` stands at 163.
 def expectedOptPopulation : String :=
-  "total=163 optTy=158 ctorFields=33"
+  "total=163 optTy=156 ctorFields=33"
 
 run_cmd do
   let env ← getEnv

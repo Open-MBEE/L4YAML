@@ -107,7 +107,7 @@ def sideOf (t : Expr) : Bool × Bool :=
   if t.isAppOfArity ``Or 2 then
     let vcLeft := vcOutside (t.getArg! 0)
     let other := (if vcLeft then t.getArg! 1 else t.getArg! 0).consumeMData
-    (vcLeft, other.isConstOf ``True)
+    (vcLeft, (other.isConstOf ``True || other.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || other.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG))  -- item 311: the named alternative reads as `True`
   else (true, true)
 
 /-- A proposition in one token: a relation as `l sym r`, else its head. -/
@@ -758,7 +758,9 @@ def expectedParams : List String := [
   "accum_content_on_pendingMapValue_indented.h_kslot arm=l lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "accum_content_on_pendingMapValue_indented.h_vslot arm=l lvl=(sp_scan.col=n + 1) premises=[SBlockIndented(n)] ⊢ SLYamlStream tail=no",
   "colon_open_map_explicit.hvp arm=l lvl= premises=[SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
-  "colon_open_map_implicit.h_kslot arm=l lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
+  -- item 311: `colon_open_map_implicit` states the alternative generically (`{alt : Prop}`), so its premise reads
+  -- `arm=l/stamp` (a right disjunct other than `True`), as the three generic helpers do since item 309.
+  "colon_open_map_implicit.h_kslot arm=l/stamp lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "colon_open_map_props.h_kslot arm=l lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "entryChainMap.up arm=l lvl=∀nvX∈ns premises=[SBlockIndented(n),SCompactSeqTail(n)] ⊢ ExplValueLine(nvX) tail=no",
   "entryKeyPack_of_dispatch.h_compact arm=l lvl=(?)(sp_scan.col=n + 1)∃ns∀nv∈ns premises=[SBlockIndented(n),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
@@ -905,10 +907,13 @@ def expectedWriters : List String := [
   "accum_flow_open_depth0 #1 param:flowKeyRoute_of_open.h_compact_pair idx=— := punt ns=— spend=— holds=[main:frames(ks)←landing] ⊢ —",
   "accum_flow_open_depth0 #2 param:flowKeyRoute_of_open.h_compact_pair idx=— := paid:chain ns=nv,[] spend=frameChainOne(kslot←door:pendingBlock.h_kslot) holds=[main:frames(ks)←landing; h_closeF✝:frames(ks)←SCompactSeqTail(n_old); h_closeFV✝:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(n_old)] ⊢ none",
   "accum_flow_open_depth0 #3 param:flowKeyRoute_of_open.h_compact_pair idx=— := paid:route ns=n_old,[] spend=frameChainOne(route←door:pendingMapValue.h_expl) holds=[main:frames(ks)←landing; h_closeF✝:frames(n_old :: ks)←SBlockNode(n_old + 1); h_frames✝:frames(ks)←landing; h_closeFV✝:frames(ks)@ExplValueLine(nv)←SBlockNode(n_old + 1); h_framesV✝:frames(ks)@ExplValueLine(nv)←landing; h_seqF✝:tail(n_old)←SBlockNode(n_old + 1)] ⊢ held(h_closeF✝,h_seqF✝)",
-  "accum_step_flow #1 ctor:pendingContent.h_vpack idx=— := via:flowVPack_of_close[relay:other(let:h_tuple<let:h_gap(tl,h_gap))] ns=— spend=— holds=[] ⊢ level-var",
+  -- item 311: the two closes hand `flowVPack_of_close resume.vslot` on through `.imp id PackAlt.ofGateClose` (the
+  -- frame's named alternative into the park's), so the writer reads as a `step` whose source returns from the
+  -- close lemma; the level variable it carried is one `Or.imp` further in.
+  "accum_step_flow #1 ctor:pendingContent.h_vpack idx=— := step(ret:flowVPack_of_close) ns=— spend=— holds=[] ⊢ —",
   "accum_step_flow #1 param:flowKeyPack_of_close.h_key idx=— := relay:other(let:h_tuple<let:h_gap(tl,h_gap)) ns=— spend=— holds=[] ⊢ —",
   "accum_step_flow #1 param:flowVPack_of_close.h_vslot idx=— := relay:other(let:h_tuple<let:h_gap(tl,h_gap)) ns=— spend=— holds=[] ⊢ —",
-  "accum_step_flow #2 ctor:pendingContent.h_vpack idx=— := via:flowVPack_of_close[relay:other(let:h_tuple<let:h_gap(tl,h_gap))] ns=— spend=— holds=[] ⊢ level-var",
+  "accum_step_flow #2 ctor:pendingContent.h_vpack idx=— := step(ret:flowVPack_of_close) ns=— spend=— holds=[] ⊢ —",
   "accum_step_flow #2 param:flowKeyPack_of_close.h_key idx=— := relay:other(let:h_tuple<let:h_gap(tl,h_gap)) ns=— spend=— holds=[] ⊢ —",
   "accum_step_flow #2 param:flowVPack_of_close.h_vslot idx=— := relay:other(let:h_tuple<let:h_gap(tl,h_gap)) ns=— spend=— holds=[] ⊢ —",
   "colon_fires_implicit_key #1 param:colon_open_map_implicit.h_kslot idx=— := relay:chain(param:colon_fires_implicit_key.h_key) ns=— spend=— holds=[h✝:tail(k)←SBlockMapEntry(k); h✝:tail(k)←SBlockMapEntry(k); h✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_kslot_pk:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_rfr_pk:tail(k)←SBlockMapEntry(k); right✝:tail(k)←SBlockMapEntry(k); h_rfrV_pk:tail(k)←SBlockMapEntry(k); h_rseq_pk:tail(k)←SBlockMapEntry(k)] ⊢ —",
@@ -947,7 +952,9 @@ def expectedWriters : List String := [
 -- 2026-10-20 (item 307): re-read — the three γ roots' `h_vpack` are paid and `closeThenBlock`'s landed arm
 -- resumes the closed park's stack; the rows citing them re-read.
 def expectedPerPos : List String := [
-  "ctor:pendingContent.h_vpack writers=12 punt=2 stamp=0 empty=0 relay=0 step=0 via=5 chain=5 route=0 frames=0 tail=0 other=0 alt=0 held=3 levelVar=7 none=0 touched=10",
+  -- item 311: the two close writers read `step` (their `Or.imp` wrapper, `PackAlt.ofGateClose` on the right) where they
+  -- read `via`, and the level variable they carried sits one step further in: `step` 0 → 2, `via` 5 → 3, `levelVar` 7 → 5.
+  "ctor:pendingContent.h_vpack writers=12 punt=2 stamp=0 empty=0 relay=0 step=2 via=3 chain=5 route=0 frames=0 tail=0 other=0 alt=0 held=3 levelVar=5 none=0 touched=10",
   "ctor:pendingProps.h_kslot writers=6 punt=2 stamp=0 empty=0 relay=2 step=0 via=1 chain=1 route=0 frames=0 tail=0 other=0 alt=0 held=0 levelVar=0 none=2 touched=4",
   "ctor:pendingProps.h_kslotE writers=6 punt=3 stamp=0 empty=0 relay=2 step=0 via=0 chain=1 route=0 frames=0 tail=0 other=0 alt=0 held=0 levelVar=0 none=1 touched=3",
   "ctor:pendingBlockContent.h_kslot writers=6 punt=0 stamp=0 empty=0 relay=0 step=0 via=0 chain=6 route=0 frames=0 tail=0 other=0 alt=0 held=0 levelVar=0 none=6 touched=6",
@@ -1023,12 +1030,15 @@ def expectedPerPos : List String := [
 -- 2026-10-20 (item 307): `punt` 29 → 26, `step` 1 → 2, `chain` 50 → 49, `frames` 1 → 3, `alt` 3 → 4, `none` 21 → 23, `touched` 122 → 125, `nodes` 12481 → 12487.
 -- 2026-10-20 (item 307, second chain): `step` 2 → 1, `frames` 3 → 4, `none` 23 → 24.
 -- 2026-10-20 (item 309): `nodes` 12487 → 12493 — the two generic premises read as stamp arms.
+-- 2026-10-21 (item 311): `step` 1 → 3, `via` 12 → 10, `levelVar` 37 → 35, `flowVPack_of_close` leaves the helper list, `nodes`
+-- 12493 → 12516 — the two closes wrap the helper's result in `.imp id PackAlt.ofGateClose` (the frame's named alternative into
+-- the park's), so the writer is a `step` whose source is the helper, one `Or.imp` further from the level variable it carries.
 def expectedLine : String :=
   "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 \
-paramRows=77 punt=26 stamp=16 empty=0 relay=36 step=1 via=12 chain=49 route=3 \
-frames=4 tail=0 other=0 alt=4 held=11 levelVar=37 none=24 spendTail=3 lemmas=21 \
-helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] \
-touched=125 nodes=12493"
+paramRows=77 punt=26 stamp=16 empty=0 relay=36 step=3 via=10 chain=49 route=3 \
+frames=4 tail=0 other=0 alt=4 held=11 levelVar=35 none=24 spendTail=3 lemmas=21 \
+helpers=[explFrameValueLine,frameChainCons,frameChainOne,frameChainUnion] \
+touched=125 nodes=12516"
 
 /-! ## §4 The reading -/
 

@@ -158,6 +158,7 @@ example {sp_start sp_before sp_br sp_open sp_key : SurfPos}
     an equation and neither arm of the pack can punt on a measurement.  Beside
     it rides the open's stamp reading (item 103), which is optional because it
     is a fact about the INPUT rather than a measurement of the mask. -/
+-- Item 311: the flow frame's alternative is the gate's (`PackAltG g`); these probes name an ungated frame.
 example {sc : ScannerState} {sp_start sp_br sp_tok sp_key : SurfPos}
     (route : ∀ sp_v, SBlockMapEntry 3 sp_key sp_v → SLYamlStream sp_start sp_v)
     (head : ∀ sp_end, SFlowContent 2 .flowOut sp_br sp_end →
@@ -167,7 +168,7 @@ example {sc : ScannerState} {sp_start sp_br sp_tok sp_key : SurfPos}
     (h_content : SFlowContent 2 .flowOut sp_br sp_tok) :
     sc.simpleKey.possible = true → sc.simpleKey.pos.line = sc.line →
       ImplicitKeyPack sc sp_start sp_tok ∨ KeyPackPunt sc :=
-  flowKeyPack_of_close (kc := 3)
+  flowKeyPack_of_close (g := none) (kc := 3)
     (Or.inl ⟨3, sp_key, route, head, rfl, Or.inr trivial, Or.inr trivial,
       Or.inr trivial⟩)
     -- Item 300: the base slot's third reading, the marker's line, declined here.

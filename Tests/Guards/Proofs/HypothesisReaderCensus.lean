@@ -293,6 +293,9 @@ census sees it too: four of them DO eliminate their arm — they read the FLAG,
 which is the loose arm's whole left disjunct — while the conjunct's one reader
 is `colon_fires_implicit_key` alone.  Disjoint readers, from the term. -/
 
+-- 2026-10-21 (item 311): `flowKeyRoute_of_open`'s `h_park` is binder #15 and `flowKeyRoute_of_root`'s #10 — both lemmas
+-- take the flow frame's gate `{g : Option ScannerState}` before it (their conclusions carry the frame's named alternative
+-- `PackAltG g`); the rows are re-indexed, the verdicts stand (the index is fixed in the table below, the name is printed from it).
 def expectedCalibration : List String :=
   [ "FIELD block_dispatch_deferred#5 (h_arm)",
     "RELAY block_dispatch_deferred_stamp_offcol#8 (h_arm)",
@@ -304,8 +307,8 @@ def expectedCalibration : List String :=
     "RELAY accum_block_on_pendingBlockContent#25 (h_park)",
     "RELAY accum_block_on_noPending#13 (h_arm)",
     "RELAY accum_content_on_noPending#14 (h_park)",
-    "READ flowKeyRoute_of_open#14 (h_park)",
-    "RELAY flowKeyRoute_of_root#9 (h_park)",
+    "READ flowKeyRoute_of_open#15 (h_park)",
+    "RELAY flowKeyRoute_of_root#10 (h_park)",
     "RELAY keyctx_of_preprocess#11 (h_park)",
     "READ landing_or_park_save#6 (h_park)",
     "READ landing_or_park_ska#6 (h_park)",
@@ -324,8 +327,8 @@ run_cmd do
       (``accum_block_on_pendingBlockContent, 25, `h_park),
       (``accum_block_on_noPending, 13, `h_arm),
       (``accum_content_on_noPending, 14, `h_park),
-      (``flowKeyRoute_of_open, 14, `h_park),
-      (``flowKeyRoute_of_root, 9, `h_park),
+      (``flowKeyRoute_of_open, 15, `h_park),
+      (``flowKeyRoute_of_root, 10, `h_park),
       (``keyctx_of_preprocess, 11, `h_park),
       (``landing_or_park_save, 6, `h_park),
       (``landing_or_park_ska, 6, `h_park),
@@ -567,9 +570,14 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- (one more auxiliary, one more read each; the `.imp` relay gone).
 -- 2026-10-20 (item 309): `constants` 1393 → 1398, `decls` 1110 → 1114, `READ` 1160 → 1161, `RELAY` 2329 → 2337 — `ExplicitValueRefused`, the three sentinel
 -- lemmas and the refutation; the generic helpers relay their alternative.
+-- 2026-10-21 (item 311): `constants` 1398 → 1403, `decls` 1114 → 1117, `UNUSED` 9 → 12 — the named alternative's two
+-- abbrevs and three stubs (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`), each stub's `_h` unused by
+-- construction until its lane proves it.
 def expectedModuleTally : String :=
-  "constants=1398 decls=1114 eta=414 FIELD=163 READ=1161 RELAY=2337 RETURN=48 UNUSED=9"
+  "constants=1403 decls=1117 eta=414 FIELD=163 READ=1161 RELAY=2337 RETURN=48 UNUSED=12"
 
+-- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
+-- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
   -- its thirteenth binder.
@@ -580,7 +588,10 @@ def expectedUnused : List String :=
     "block_dispatch_deferred_stamp_offcol#11 (_h_src)",
     "block_dispatch_deferred_stamp_offcol#12 (_h_indent)",
     "block_dispatch_deferred_stamp_offcol#13 (_h_ne)",
-    "flowKeyPack_of_close#10 (_)",
+    "flowKeyPack_of_close#11 (_)",
+    "ofGateClose#2 (_h)",
+    "ofPark#2 (_h)",
+    "ofRefused#1 (_h)",
     "question_open_map#15 (_h_noflow_disp)" ]
 
 run_cmd do
@@ -724,7 +735,7 @@ def expectedCoreTerminal : List String :=
     "accum_block_on_pendingContent#30 (h_seqF168)",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old)",
     "colon_open_map#24 (h_cov_in)",
-    "flowKeyRoute_of_root#20 (h_tail143)",
+    "flowKeyRoute_of_root#21 (h_tail143)",  -- item 311: `{g}` precedes it
     "indicator_open_map#26 (h_ref_land)",
     "question_open_map#23 (h_cov_in)",
     "question_open_map#24 (h_cov_nil)" ]

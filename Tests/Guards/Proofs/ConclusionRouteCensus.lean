@@ -473,8 +473,11 @@ def expectedCross : List String :=
     item 212's lists move, its gate fails before this one does. -/
 -- 2026-10-20 (item 307, second chain): back to `landed=43 total=80` — the content route's `h_vpack` was an
 -- `.imp` (a landed producer) for one chain and is a `match` now.
+-- 2026-10-21 (item 311): `landed` 43 → 45, `landed-producers` 0 → 2, `total` 80 → 82 — the two flow closes hand
+-- `flowVPack_of_close resume.vslot` into the content park through `.imp id PackAlt.ofGateClose` (the frame's named
+-- alternative into the park's); a pipe whose right map is a lemma lands as a producer, and that lemma is lane (d)'s stub.
 def expectedPipeSplit : String :=
-  "pipes=0/0 producers=37/11 landed=43 landed-producers=0 total=80"
+  "pipes=0/0 producers=37/11 landed=45 landed-producers=2 total=82"
 
 end L4YAML.Tests.Guards.ConclusionRouteCensus
 

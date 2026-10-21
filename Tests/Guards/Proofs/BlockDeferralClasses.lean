@@ -4488,8 +4488,11 @@ script, as `expectedInlineArms` is. -/
 -- 2026-10-21 (item 321): `sites` 155 → 146 — `accum_block_on_noPending`'s five roots pay from its own
 -- `h_noek` (three through `PackAlt.step_blockEntry`, two directly, item 186's fact), `colon_open_map_props`'s three leaves through
 -- `PackAlt.step_value` and `question_open_map`'s have-block identity: the roots fall by five, the leaves by four.
+-- 2026-10-21 (item 322): `sites` 146 → 140, `leaf` 56 → 50 — the colon openers' six leaves
+-- (`colon_open_map` 3, `colon_open_map_implicit` 3) hand the alternative on through the new step premise `h_alt_step`, which
+-- their one caller each supplies as `PackAlt.step_value …`; the roots stand.
 def expectedPackFlip : String :=
-  "sites=146 decls=23 rounds=2 decline=146 relay=0 leaf=56 uncond=90 stubs=7"
+  "sites=140 decls=23 rounds=2 decline=140 relay=0 leaf=50 uncond=90 stubs=7"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4523,8 +4526,9 @@ def expectedPackFlip : String :=
 -- their inner-alternative arm; what declines in the block lane now is item 319's list less these (item 320's entry).
 -- 2026-10-21 (item 321): `decline` 136 → 127 — the same nine sites; `relayState` stands at 1 (`compact_open_map`'s
 -- `h_expl105`, whose `?` half has no step).
+-- 2026-10-21 (item 322): `decline` 127 → 121 — the same six leaves; `relayState` stands at 1.
 def expectedPackResidue : String :=
-  "sites=128 decls=21 rounds=2 decline=127 relayTrue=0 relayState=1 leaf=46 uncond=81 stubs=1 promised=5"
+  "sites=122 decls=21 rounds=2 decline=121 relayTrue=0 relayState=1 leaf=40 uncond=81 stubs=1 promised=5"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

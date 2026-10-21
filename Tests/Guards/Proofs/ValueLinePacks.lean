@@ -1048,12 +1048,13 @@ def expectedPerPos : List String := [
 -- 2026-10-21 (item 315): `nodes` 12523 → 12525 — the key-pack lemmas' six arms step through the wrapper.
 -- 2026-10-21 (item 320): `nodes` 12525 → 12544 — the marker parks' field, the eight payments, the relay and the
 -- two split arms grow the terms; rows and positions stand.
+-- 2026-10-21 (item 322): `nodes` 12544 → 12547 — the colon openers' step premise and its six spends grow the terms; rows stand.
 def expectedLine : String :=
   "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 \
 paramRows=77 punt=26 stamp=16 empty=0 relay=32 step=8 via=9 chain=49 route=3 \
 frames=4 tail=0 other=0 alt=4 held=11 levelVar=35 none=23 spendTail=3 lemmas=21 \
 helpers=[explFrameValueLine,frameChainCons,frameChainOne,frameChainUnion] \
-touched=125 nodes=12544"
+touched=125 nodes=12547"
 
 /-! ## §4 The reading -/
 

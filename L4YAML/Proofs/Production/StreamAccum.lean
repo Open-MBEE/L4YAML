@@ -21298,7 +21298,11 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
     -- OUTER frame's line is still owed (`?⏎  ?⏎    - a⏎  : b⏎  : c⏎: w`).
     (h_resV_land : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
-        KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc) :
+        KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
+    -- **Item 322 (LAST): the alternative's TRANSPORT across the `:`.**  This lemma states its
+    -- alternatives at the park and builds the new park at `s'` without holding the step facts
+    -- (its caller does), so the step is a premise: the caller passes `PackAlt.step_value …`.
+    (h_alt_step : PackAlt sc → PackAlt s') :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -21409,7 +21413,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
                     (SBlockMapEntry.emptyKeyNode k sp_ind sp_scan' sp_m h_lit
                       (SBlockNode_blockIn_to_blockOut h_node))
                     sp_i sp_c h_iv h_clit sp_v h_sbi)⟩
-            | Or.inr _ => Or.inr trivial)
+            | Or.inr h_alt => Or.inr (h_alt_step h_alt))
            -- Item 99: the resume frames, both faces — level `k` over the
            -- entries-level route, the entry completed by the node or closed
            -- empty on the landing's comments (`k:⏎  :⏎b: 2`).  Item 173: the
@@ -21453,7 +21457,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
                       (resumeMapRouteK h_ind contV sp_v
                         (SBlockMapEntry.emptyKeyNode k sp_ind sp_scan' sp_v h_lit
                           (SBlockNode_blockIn_to_blockOut h_node)))⟩
-            | Or.inr _ => Or.inr trivial)
+            | Or.inr h_alt => Or.inr (h_alt_step h_alt))
            (match h_resV_land with
             | Or.inl ⟨nv, ksV, h_ltV, contV⟩ =>
                 Or.inl ⟨nv, k :: ksV, Or.inr trivial,
@@ -21461,7 +21465,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
                     KeyFrames.mapLevel k ksV sp_m h_ltV
                       (resumeMapRouteK h_ind contV sp_m
                         (SBlockMapEntry.emptyKeyEmpty k sp_ind sp_scan' sp_m h_lit h_ssl))⟩
-            | Or.inr _ => Or.inr trivial)
+            | Or.inr h_alt => Or.inr (h_alt_step h_alt))
            (nodir_of_block_dispatch h_dispatch) (Or.inr trivial)
            -- Item 190: and no `?` literal either, so no entry route to compose
            -- an outer frame's value line against.
@@ -22399,6 +22403,8 @@ lemma indicator_open_map {sc : ScannerState}
       h_mk_land h_res_land h_ref_land
       ((h_cov_in ':' (Or.inl rfl) h_preprocess h_dispatch).imp And.left id)
       h_pr_land h_resV_land
+      -- Item 322: the alternative's transport, from this lemma's own step facts (`c = ':'` here).
+      (PackAlt.step_value h_preprocess h_dispatch (noflow_of_noflow_disp h_noflow_disp))
   | inr h =>
     subst h
     exact question_open_map sp_start sp_land sp_ind k s_prep s' sp_scan' h_stream_land
@@ -22528,7 +22534,10 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
     (h_routeS : (∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
-      ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True) :
+      ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
+    -- Item 322 (LAST): the generic alternative's transport across the `:`, supplied by the caller
+    -- (`colon_fires_implicit_key` passes `PackAlt.step_value …` for `alt := PackAlt sc`).
+    (h_alt_step : alt → PackAlt s') :
     ∃ sp_gram' sp_block' sp_flow' sp_scan',
       SLYamlStream sp_start sp_gram' ∧
       BlockStack sp_gram' sp_block' ∧
@@ -22593,7 +22602,7 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
                       (SBlockNode_blockIn_to_blockOut h_node))
                     sp_m (SCompactMapTail.nil k sp_m)
                     sp_i sp_c h_iv h_lit_v sp_v h_sbi⟩
-            | Or.inr _ => Or.inr trivial)
+            | Or.inr h_alt => Or.inr (h_alt_step h_alt))
              -- Item 99: the pack's resume twin pays both faces — the
              -- completed entry re-opens level `k` for the transport, and the
              -- EMPTY entry (`[189]`'s value that never arrived) does the
@@ -22648,7 +22657,7 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
                           (SBlockMapEntry.implicitKeyNode k sp_key sp_ws sp_scan' sp_mid
                             h_ik h_lit (SBlockNode_blockIn_to_blockOut h_node))
                           sp_end h_tail)⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h_alt => Or.inr (h_alt_step h_alt))
              (match h_routeFV with
               | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, k :: ks,
                   -- Item 150: the value-line chain's own hop — the widths grow by
@@ -22663,7 +22672,7 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
                           (SBlockMapEntry.implicitKeyEmpty k sp_key sp_ws sp_scan' sp_mid
                             h_ik h_lit h_ssl)
                           sp_end h_tail)⟩
-              | Or.inr _ => Or.inr trivial)
+              | Or.inr h_alt => Or.inr (h_alt_step h_alt))
            (nodir_of_block_dispatch h_dispatch)
            -- **Item 168: the sequence face, carried onto the park.**  The
            -- awaited node fills THIS entry; the entry's own `[187]` level stays
@@ -25302,6 +25311,8 @@ lemma colon_fires_implicit_key
             -- Item 168: and the pack's sequence face, unchanged — it names
             -- surface positions only, so preprocessing's pops do not touch it.
             h_rseq_pk
+            -- Item 322: the alternative's transport across this `:`.
+            (PackAlt.step_value h_preprocess h_dispatch h_noflow)
     · -- ═══ Item 104: the key is STALE — saved on an earlier line, which is
       -- what a flow collection closed across a break, a folded plain scalar
       -- and a folded quoted one all leave at the park.  §7.4 refuses that `:`

@@ -586,8 +586,10 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- 2026-10-21 (item 320): `constants` 1408 → 1409, `decls` 1122 → 1123, `eta` 414 → 416, `READ` 1161 → 1166 — the marker
 -- constructors' new field `h_noek` (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split
 -- arms' `h_alt`, and the `h_seqFramesV` relay's wrapper; RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 322): `READ` 1166 → 1168 — the two colon openers' new step premise `h_alt_step` is applied inside each
+-- (a READ); the callers' `PackAlt.step_value …` arguments are terms, not hypotheses, so RELAY stands.
 def expectedModuleTally : String :=
-  "constants=1409 decls=1123 eta=416 FIELD=163 READ=1166 RELAY=2343 RETURN=48 UNUSED=24"
+  "constants=1409 decls=1123 eta=416 FIELD=163 READ=1168 RELAY=2343 RETURN=48 UNUSED=24"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.

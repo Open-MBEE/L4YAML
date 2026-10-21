@@ -342,8 +342,10 @@ declarations' own binders and not by a rescoring of an existing one.
 -- 2026-10-21 (item 320): `  "constants` 1408 decls → 1409 decls — the marker constructors' new field `h_noek`
 -- (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split arms' `h_alt`, and the `h_seqFramesV`
 -- relay's wrapper; RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 322): `  "constants` 1409 decls → 1409 decls — the two colon openers' new step premise `h_alt_step` is applied inside each
+-- (a READ); RELAY, RETURN and UNUSED stand.
 def expectedModuleTallyP : String :=
-  "constants=1409 decls=1123 eta=416 FIELD=185 READ=1204 RELAY=2192 RETURN=139 UNUSED=24"
+  "constants=1409 decls=1123 eta=416 FIELD=185 READ=1206 RELAY=2192 RETURN=139 UNUSED=24"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and

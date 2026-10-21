@@ -31,7 +31,9 @@ from pathlib import Path
 DOCS = Path(__file__).resolve().parent.parent / "DOCS.md"
 
 ITEM_RE = re.compile(r"^### Item (\d+)([a-z]?) \((\d{4}-\d{2}-\d{2})\)\s*$")
-H2_RE = re.compile(r"^## (?!§)(.+?)\s*$")
+H2_RE = re.compile(r"^## (?!§)(.+?)\s*$")      # document sections; `## §n` live inside items
+ANY_H2_RE = re.compile(r"^## (.+?)\s*$")        # every `## `, numbered ones included
+LIST_RE = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s")
 NEXT_RE = re.compile(r"^\*\*NEXT\b")
 MANDATE_RE = re.compile(r"^\*\*The mandate\b")
 REMAINING_HEADING = "### REMAINING, in order"
@@ -106,10 +108,18 @@ def paragraphs(block: list[str]) -> list[list[str]]:
 
 
 def next_paragraph(lines: list[str], item: Item) -> list[str] | None:
-    body = item.body(lines)
-    for para in paragraphs(body):
+    """The `**NEXT` paragraph with the list paragraphs that continue it (a
+    mandate often states itself, then enumerates its tasks as bullets)."""
+    paras = paragraphs(item.body(lines))
+    for k, para in enumerate(paras):
         if NEXT_RE.match(para[0]):
-            return para
+            out = list(para)
+            for cont in paras[k + 1:]:
+                if not LIST_RE.match(cont[0]):
+                    break
+                out.append("")
+                out.extend(cont)
+            return out
     return None
 
 
@@ -231,6 +241,9 @@ def cmd_remaining(lines: list[str], args) -> None:
     if not open_rows:
         print("          (every row is ✅ done)")
     print(f"# latest mandate: `next` (item {items[-1].label}, {items[-1].date})")
+    start, end = heading_block(lines, NEXT_ACTIONS_HEADING, lambda l: l.startswith("#"))
+    print(f"# what blocks what today (DOCS.md:{start}):")
+    emit(lines, start, end, args.lines)
     start, end = heading_block(lines, REMAINING_HEADING, lambda l: ITEM_RE.match(l) or H2_RE.match(l))
     before = [it for it in items if it.start < start]
     after = [it for it in items if it.start > start]
@@ -265,11 +278,11 @@ def cmd_grep(lines: list[str], args) -> None:
 def cmd_section(lines: list[str], args) -> None:
     want = args.prefix.lower()
     for i, line in enumerate(lines, 1):
-        m = H2_RE.match(line)
+        m = ANY_H2_RE.match(line)
         if m and m.group(1).lower().startswith(want):
             end = len(lines) + 1
             for j in range(i, len(lines)):
-                if H2_RE.match(lines[j]):
+                if lines[j].startswith("# ") or lines[j].startswith("## "):
                     end = j + 1
                     break
             emit(lines, i, end, args.lines)

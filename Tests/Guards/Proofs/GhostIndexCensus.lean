@@ -176,13 +176,18 @@ def carriersOf : MetaM (Array Name) := do
   let modIdx := env.getModuleIdxFor? ``PendingNode
   let mut out : Array Name := #[]
   for (nm, ci) in env.constants.toList do
+    -- Filter on the USER name: the module system privatises generated
+    -- auxiliaries, and an authored `private def LocalCtx … : Prop` is mangled
+    -- the same way (`_private.<module>.0.<name>`).  Both keep their user name
+    -- under `StreamAccum`, so the namespace and the generated-name tests read
+    -- `un`; the environment is read at the real `nm`.  (Devin Review's second
+    -- finding on PR #26: a `private` predicate must not escape the gate.)
     let un := Lean.privateToUserName nm
     if un.isInternal || un.isInternalDetail then continue
-    if Lean.isPrivateName nm then continue
     if env.getModuleIdxFor? nm != modIdx then continue
     if env.isProjectionFn nm || isCtorName env nm || isRecCore env nm then continue
-    if isAuxRecursor env nm || isNoConfusion env nm || isGenerated nm then continue
-    if (`L4YAML.Proofs.StreamAccum).isPrefixOf nm == false then continue
+    if isAuxRecursor env nm || isNoConfusion env nm || isGenerated un then continue
+    if (`L4YAML.Proofs.StreamAccum).isPrefixOf un == false then continue
     match ci with
     | .defnInfo _ | .inductInfo _ =>
         if ← endsInProp ci.type then out := out.push nm

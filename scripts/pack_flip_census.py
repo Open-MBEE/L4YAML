@@ -11,20 +11,37 @@ ONE alternative with one body, `True` until the lanes of 12.3.4.2 pay it (`Block
 §30).  A one-field flip (§7, §9 of `BlockDeferralClasses`) reads the field's own producers; the
 family's price is every producer that hands ANY of them `Or.inr`, which only the whole flip reads.
 
-The flip: both bodies become `False` in one patched tree, so every `Or.inr trivial` on the family
-fails and every `Or.inr h` relays, and `lake env lean` runs to a fixpoint.  Each round, an error at
-`trivial`/`True.intro`/`⟨⟩` is a DECLINE (the site is sorried and the round continues); an error at
-a parenthesized group or a lone identifier is a RELAY from an unflipped `∨ True` source (wrapped in
-`ofTrue_probe`, a probe lemma spliced in front of the first declaration); any other shape stops the
-census, since a wrong wrap cascades.  The three conversion stubs — `PackAlt.ofRefused` (the
-payment), `PackAltG.ofPark` (a park's alternative into the frame it opens), `PackAlt.ofGateClose`
-(the frame's into the park its close builds) — are the lanes' obligations, not sites: their
-bodies are sorried before the first round and reported as `stubs=`.  `StreamAccum.lean` is
+Two flips, one instrument (item 312 added the second):
+
+* **`--alt false` (the default)** — both bodies become `False` in one patched tree, so every
+  `Or.inr trivial` on the family fails and every `Or.inr h` relays.  This reads the DECLINES: the
+  sites a lane must replace by a payment.
+* **`--alt refused` (the RESIDUE)** — `PackAlt sc` becomes `ExplicitValueRefused sc`, the predicate
+  the family will carry; `PackAltG g` stays `True` (the frame's carrier is lane (d)'s open
+  question), `PackAlt.ofRefused` becomes the identity it will be, `PackAltG.ofPark` holds as it is
+  and `PackAlt.ofGateClose` is sorried (`stubs=1`).  A bare `trivial` still fails (an unpaid
+  decline), and so does every relay BETWEEN TWO PARK STATES — `Or.inr h` with `h : PackAlt sc`
+  where `PackAlt s'` is owed, `.imp f id` across a step — which `--alt false` cannot see (`False`
+  to `False` is the identity).  Those are the TRANSPORTS a lane must prove (one preservation
+  lemma per dispatch kind, item 308's pricing), and the residue line counts them apart.
+
+`lake env lean` runs to a fixpoint.  Each round, an error at `trivial`/`True.intro`/`⟨⟩` is a
+DECLINE (the site is sorried and the round continues); an error at a parenthesized group or a
+lone identifier whose expected type the message names is a RELAY — from an unflipped `∨ True`
+source (wrapped in `ofTrue_probe`) or, in the residue, from another park state (wrapped in
+`alt_probe`, `PackAlt sc → PackAlt s'` by `sorry`; an `Or` landing gets `.imp id alt_probe`, a
+bare `id` becomes `fun h => alt_probe h`); both probes are spliced in front of the first
+declaration.  Any other shape stops the census, since a wrong wrap cascades.  The three
+conversion stubs — `PackAlt.ofRefused` (the payment), `PackAltG.ofPark` (a park's alternative
+into the frame it opens), `PackAlt.ofGateClose` (the frame's into the park its close builds) —
+are the lanes' obligations, not sites, and are reported as `stubs=`.  `StreamAccum.lean` is
 restored byte-identical whatever happens.
 
-Reads one line, pinned in `BlockDeferralClasses.expectedPackFlip`:
+Reads one line, pinned in `BlockDeferralClasses.expectedPackFlip` (`--alt false`) and
+`expectedPackResidue` (`--alt refused`):
 
-    PACK-FLIP sites=… decls=… rounds=… decline=… relay=… leaf=… uncond=… stubs=…
+    PACK-FLIP    sites=… decls=… rounds=… decline=… relay=… leaf=… uncond=… stubs=…
+    PACK-RESIDUE sites=… decls=… rounds=… decline=… relayTrue=… relayState=… leaf=… uncond=… stubs=…
 
 `leaf` counts the declines inside a match arm or an `else` — `| … => Or.inr trivial`,
 `| … => exact Or.inr trivial`, `else Or.inr trivial`, `· exact Or.inr trivial` — conditional on
@@ -44,14 +61,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 T = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 PIN = ROOT / "Tests/Guards/Proofs/BlockDeferralClasses.lean"
-BODIES = {
-    "abbrev PackAlt (_sc : ScannerState) : Prop := True": "abbrev PackAlt (_sc : ScannerState) : Prop := False",
-    "abbrev PackAltG (_g : Option ScannerState) : Prop := True": "abbrev PackAltG (_g : Option ScannerState) : Prop := False",
+PACKALT = "abbrev PackAlt (_sc : ScannerState) : Prop := True"
+PACKALTG = "abbrev PackAltG (_g : Option ScannerState) : Prop := True"
+MODES = {
+    # body of PackAlt, body of PackAltG, and what each stub's `trivial` becomes (None = left as it is)
+    "false": dict(alt="False", altG="False",
+                  stubs={"theorem PackAlt.ofRefused ": "sorry", "theorem PackAltG.ofPark ": "sorry",
+                         "theorem PackAlt.ofGateClose ": "sorry"}),
+    "refused": dict(alt="ExplicitValueRefused _sc", altG=None,
+                    stubs={"theorem PackAlt.ofRefused ": "_h", "theorem PackAltG.ofPark ": None,
+                           "theorem PackAlt.ofGateClose ": "sorry"}),
 }
-STUBS = ("theorem PackAlt.ofRefused ", "theorem PackAltG.ofPark ", "theorem PackAlt.ofGateClose ")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
 LEAF = re.compile(r"^(\| .*=> (exact )?Or\.inr trivial|else Or\.inr trivial|· exact Or\.inr trivial)")
 ERR = re.compile(r"^L4YAML/Proofs/Production/StreamAccum\.lean:(\d+):(\d+): error: (.*)")
+HEADER = re.compile(r"^\S+\.lean:\d+:\d+: (error|warning|info)")
+# Lean stops at 100 errors by default (`maxErrors`); a round must see every site to converge honestly
+LEAN_ARGS = ["-DmaxErrors=5000"]
 
 
 def check_pin(name, label, line):
@@ -66,6 +92,33 @@ def check_pin(name, label, line):
     else:
         print(f"{label} MOVED\n  got      {line}\n  expected {m.group(1)}")
         sys.exit(1)
+
+
+def relay_types(msg):
+    """From a type-mismatch message, the type the term HAS and the type the position EXPECTS
+    (each flattened to one line), or `None`s when the message has no such pair."""
+    text = "\n".join(msg)
+    m = re.search(r"has type\n(.*?)\nbut is expected to have type\n(.*?)(?:\nin the application|\Z)", text, re.S)
+    if not m:
+        return None, None
+    flat = lambda t: " ".join(t.split())
+    return flat(m.group(1)), flat(m.group(2))
+
+
+def outer_alt(t):
+    """The right disjunct of a flattened type's OUTERMOST `∨`, or `None` when it has none."""
+    depth, last = 0, None
+    i = 0
+    while i < len(t):
+        c = t[i]
+        if c in OPEN:
+            depth += 1
+        elif c in CLOSE:
+            depth -= 1
+        elif depth == 0 and t.startswith(" ∨ ", i):
+            last = i
+        i += 1
+    return None if last is None else t[last + 3:].strip()
 
 
 def balanced_end(lines, ln, col):
@@ -92,28 +145,42 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tsv", type=Path, default=None)
     ap.add_argument("--max-rounds", type=int, default=40)
+    ap.add_argument("--alt", choices=sorted(MODES), default="false",
+                    help="false: the declines (PACK-FLIP); refused: the residue under the predicate (PACK-RESIDUE)")
     args = ap.parse_args()
+    mode = MODES[args.alt]
     md5 = lambda p: hashlib.md5(p.read_bytes()).hexdigest()
     m0 = md5(T)
     orig = T.read_text()
     orig_lines = orig.split("\n")
     L = orig.split("\n")
-    for old, new in BODIES.items():
+    flipped = 0
+    for old, body in ((PACKALT, mode["alt"]), (PACKALTG, mode["altG"])):
         hits = [i for i, l in enumerate(L) if l == old]
         assert len(hits) == 1, (old, hits)
-        L[hits[0]] = new
+        if body is not None:
+            L[hits[0]] = old[: -len("True")] + body
+            flipped += 1
     stubs = 0
-    for head in STUBS:
+    for head, body in mode["stubs"].items():
         i = next(i for i, l in enumerate(L) if l.startswith(head))
         j = next(k for k in range(i, i + 3) if L[k].endswith(":= trivial"))
-        L[j] = L[j][: -len("trivial")] + "sorry"
-        stubs += 1
-    print(f"flipped {len(BODIES)} bodies, sorried {stubs} stubs")
+        if body is None:
+            continue
+        L[j] = L[j][: -len("trivial")] + body
+        if body == "sorry":
+            stubs += 1
+    print(f"--alt {args.alt}: flipped {flipped} bodies, sorried {stubs} stubs")
     i0 = next(i for i, l in enumerate(L) if re.match(r"^(private )?(lemma|theorem|def|abbrev|structure|inductive) ", l))
     while L[i0 - 1].strip() != "":
         i0 -= 1
-    probe = ["theorem ofTrue_probe {P : Prop} (h : P ∨ True) : P ∨ False :=",
-             "  h.elim Or.inl (fun _ => Or.inr sorry)", ""]
+    probe = ["theorem ofTrue_probe {P : Prop} (h : P ∨ True) : P ∨ " + ("False" if args.alt == "false" else "PackAlt sc") + " :=",
+             "  h.elim Or.inl (fun _ => Or.inr sorry)", "",
+             "theorem alt_probe {sc sc' : ScannerState} (_h : PackAlt sc) : PackAlt sc' := sorry", ""]
+    if args.alt == "false":
+        probe = probe[:2] + [""]
+    else:
+        probe[0] = "theorem ofTrue_probe {P : Prop} {sc : ScannerState} (h : P ∨ True) : P ∨ PackAlt sc :="
     L = L[:i0] + probe + L[i0:]
     shift = len(probe)
 
@@ -137,32 +204,86 @@ def main():
         for rnd in range(1, args.max_rounds + 1):
             rounds = rnd
             T.write_text("\n".join(L))
-            r = subprocess.run(["lake", "env", "lean", str(T.relative_to(ROOT))], cwd=ROOT,
+            r = subprocess.run(["lake", "env", "lean", *LEAN_ARGS, str(T.relative_to(ROOT))], cwd=ROOT,
                                capture_output=True, text=True)
-            errs = {}
+            if args.tsv:
+                # item 312: every round's raw output beside the TSV, so a wrap decision can be re-read
+                args.tsv.with_name(f"{args.tsv.stem}-round{rnd}.out").write_text(r.stdout + r.stderr)
+            errs, full, cur = {}, {}, None
             for l in (r.stdout + r.stderr).split("\n"):
                 if (m := ERR.match(l)):
-                    errs.setdefault((int(m.group(1)) - 1, int(m.group(2))), m.group(3)[:100])
+                    cur = (int(m.group(1)) - 1, int(m.group(2)))
+                    errs.setdefault(cur, m.group(3)[:100])
+                    full.setdefault(cur, [m.group(3)])
+                elif HEADER.match(l):
+                    cur = None                       # a warning or an info, not ours
+                elif cur is not None:
+                    full[cur].append(l.strip())      # `has type` / `but is expected to have type` are NOT indented
             print(f"round {rnd}: {len(errs)} errors ({time.time() - t0:.0f}s)")
             if not errs:
                 break
             for (ln, col), msg in sorted(errs.items(), reverse=True):
                 s, o, text = L[ln], oline(ln), L[ln][col:]
+                is_mismatch = msg.startswith(("Application type mismatch", "type mismatch", "Type mismatch"))
+                kw = re.match(r"(fun|by|match|if|let|have|show|do|⟨)\b", text) or text.startswith("⟨")
+                if msg.startswith("maximum number of errors"):
+                    print(f"  cap notice at L{o}:{col} — raise LEAN_ARGS' maxErrors")
+                    continue
                 if (ln, col) in seen:
                     kind, stop = "UNHANDLED", True
                     print(f"  UNHANDLED recurrence at L{o}:{col}: {text[:60]!r} :: {msg}")
+                elif (msg.startswith("Invalid `⟨...⟩` notation") and text.startswith("⟨")
+                      and (k := s.rfind("(fun ", 0, col)) != -1
+                      and (mm := re.match(r"(\s+)id\b", L[(be := balanced_end(L, ln, k))[0]][be[1] + 1:]))):
+                    # item 312: an `Invalid ⟨…⟩` at the pattern of `(X.imp (fun ⟨…⟩ => …) id)` is the state relay
+                    # at that `id` — the unifier gives up on `id : PackAlt sc → PackAlt s'` and the pattern loses
+                    # its expected type — so the probe goes where `id` stands
+                    el, ec = be
+                    tail = L[el][ec + 1:]
+                    L[el] = L[el][:ec + 1] + mm.group(1) + "(fun h => alt_probe h)" + tail[mm.end():]
+                    kind = "RELAY-STATE"
+                    o, col = oline(el), ec + 1 + len(mm.group(1))
+                elif not is_mismatch or kw:
+                    # item 312: a cascade of a sibling's mismatch in the same round (an `omega` that lost a
+                    # hypothesis, an anonymous constructor whose expected type an unsolved mvar left open);
+                    # skipped untouched this round, and an UNHANDLED recurrence if it is still there next round
+                    kind = "CASCADE"
+                    print(f"  cascade at L{o}:{col}: {text[:50]!r} :: {msg[:60]}")
                 elif any(text.startswith(t) for t in ("trivial", "True.intro", "⟨⟩")):
                     tok = next(t for t in ("trivial", "True.intro", "⟨⟩") if text.startswith(t))
                     L[ln] = s[:col] + "sorry" + s[col + len(tok):]
                     kind = "DECLINE"
-                elif text.startswith("("):
-                    el, ec = balanced_end(L, ln, col)
-                    L[el] = L[el][:ec + 1] + ")" + L[el][ec + 1:]
-                    L[ln] = s[:col] + "ofTrue_probe (" + s[col:]
-                    kind = "RELAY"
-                elif (m := re.match(r"[A-Za-z_][A-Za-z0-9_'.₀-₉]*", text)) and re.match(r"\s*($|[),⟩])", text[m.end():]):
-                    L[ln] = s[:col] + "ofTrue_probe (" + m.group(0) + ")" + s[col + m.end():]
-                    kind = "RELAY"
+                elif text.startswith("(") or ((m := re.match(r"[A-Za-z_][A-Za-z0-9_'.₀-₉]*", text))
+                                             and (re.match(r"\s*($|[),⟩])", text[m.end():])
+                                                  or (re.match(r"\s", text[m.end():])
+                                                      and msg.startswith("Application type mismatch")))):
+                    # what the site hands on, and what the position owes; an identifier followed by
+                    # more arguments is an ARGUMENT only when the message says so (item 312)
+                    has, expects = relay_types(full.get((ln, col), []))
+                    alt_has = outer_alt(has) if has is not None else None
+                    # the OUTER alternative decides (an inner `∨ True` — a cover option — says nothing);
+                    # a bare `id` has a function type and no outer `∨`, so its mention of `PackAlt` decides
+                    state_relay = args.alt != "false" and has is not None and (
+                        (alt_has is not None and alt_has != "True") or (alt_has is None and "PackAlt" in has))
+                    if text.startswith("("):
+                        el, ec = balanced_end(L, ln, col)
+                        if state_relay:
+                            L[el] = L[el][:ec + 1] + ".imp id alt_probe)" + L[el][ec + 1:]
+                            L[ln] = s[:col] + "(" + s[col:]
+                        else:
+                            L[el] = L[el][:ec + 1] + ")" + L[el][ec + 1:]
+                            L[ln] = s[:col] + "ofTrue_probe (" + s[col:]
+                    else:
+                        ident = m.group(0)
+                        if state_relay and ident == "id":
+                            L[ln] = s[:col] + "(fun h => alt_probe h)" + s[col + m.end():]
+                        elif state_relay and expects is not None and expects.startswith("PackAlt "):
+                            L[ln] = s[:col] + "alt_probe (" + ident + ")" + s[col + m.end():]
+                        elif state_relay:
+                            L[ln] = s[:col] + "((" + ident + ").imp id alt_probe)" + s[col + m.end():]
+                        else:
+                            L[ln] = s[:col] + "ofTrue_probe (" + ident + ")" + s[col + m.end():]
+                    kind = "RELAY-STATE" if state_relay else "RELAY"
                 else:
                     kind, stop = "UNHANDLED", True
                     print(f"  UNHANDLED shape at L{o}:{col}: {text[:70]!r} :: {msg}")
@@ -179,18 +300,27 @@ def main():
     assert md5(T) == m0, "StreamAccum NOT restored"
     if args.tsv:
         args.tsv.write_text("\n".join("\t".join(str(x) for x in c) for c in census) + "\n")
-    by = Counter(c[4] for c in census)
+    by = Counter(c[4] for c in census if c[3] != "CASCADE")
     for d, n in sorted(by.items()):
         print(f"  {n:3d}  {d}")
     kinds = Counter(c[3] for c in census)
     leaf = sum(1 for c in census if c[3] == "DECLINE" and LEAF.match(c[6]))
     uncond = kinds["DECLINE"] - leaf
-    line = (f"sites={len(census)} decls={len(by)} rounds={rounds} decline={kinds['DECLINE']} "
-            f"relay={kinds['RELAY']} leaf={leaf} uncond={uncond} stubs={stubs}")
+    if args.alt == "false":
+        line = (f"sites={len(census)} decls={len(by)} rounds={rounds} decline={kinds['DECLINE']} "
+                f"relay={kinds['RELAY']} leaf={leaf} uncond={uncond} stubs={stubs}")
+        label, pin = "PACK-FLIP", "expectedPackFlip"
+    else:
+        sites = len(census) - kinds["CASCADE"]
+        line = (f"sites={sites} decls={len(by)} rounds={rounds} decline={kinds['DECLINE']} "
+                f"relayTrue={kinds['RELAY']} relayState={kinds['RELAY-STATE']} leaf={leaf} uncond={uncond} stubs={stubs}")
+        label, pin = "PACK-RESIDUE", "expectedPackResidue"
+    if kinds["CASCADE"]:
+        line += f" cascade={kinds['CASCADE']}"
     if kinds["UNHANDLED"]:
         line += f" unhandled={kinds['UNHANDLED']}"
-    print("PACK-FLIP " + line)
-    check_pin("expectedPackFlip", "PACK-FLIP-PIN", line)
+    print(f"{label} {line}")
+    check_pin(pin, f"{label}-PIN", line)
 
 
 if __name__ == "__main__":

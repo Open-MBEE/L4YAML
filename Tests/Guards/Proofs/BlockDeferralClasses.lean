@@ -4437,7 +4437,11 @@ chain pack and value-line stack in `StreamAccum` is typed `… ∨ PackAlt sc`
 `False` in ONE patched tree, sorries the three conversion stubs (the lanes'
 obligations, counted as `stubs`), and iterates `lake env lean` to a fixpoint: each
 `Or.inr trivial` it breaks is sorried (a DECLINE), each relay from an unflipped
-`∨ True` source is wrapped (a RELAY), and the tree is restored byte-identical.  Item 186
+`∨ True` source is wrapped (a RELAY), and the tree is restored byte-identical.
+Item 312 gave it a second flip, `--alt refused`: `PackAlt sc` becomes the predicate
+itself, so a relay between two park states is a type error the census wraps in a
+probe and counts as `relayState` — the transports the lanes owe, which the `False`
+flip reads as the identity.  Item 186
 ran a one-field flip and read 23 payments; item 187 counted 31 alternatives in
 16 declarations by grep; §7 and §9 ran one-field flips at four fields and found
 each one's surface SMALLER than the family's.  The whole-family flip reads
@@ -4456,11 +4460,24 @@ script, as `expectedInlineArms` is. -/
 -- 2026-10-21 (item 311): the flip is the family's NAMED alternative — `PackAlt`'s and `PackAltG`'s one body each
 -- → `False` — so it reads the whole component item 310 found: the 99 pack sites stand (70 leaves, 29 roots, matched
 -- by declaration and source line) and the chain-pack and value-stack families add 165 (91 leaves, 74 roots) in 24
--- declarations, 6 new to the surface; `rounds` 2 → 4; the three conversion stubs (`ofRefused`, `ofPark`,
+-- declarations, 6 new to the surface; `rounds` 2 → 4 (item 312: the cap — see below); the three conversion stubs (`ofRefused`, `ofPark`,
 -- `ofGateClose`) are sorried up front and counted as `stubs`, not as sites; the leaf reading also accepts
 -- `| … => exact Or.inr trivial`.
+-- 2026-10-21 (item 312): `rounds` 4 → 2 — the four rounds were Lean's 100-error cap (`maxErrors`), not the component's
+-- depth: the census raises the cap, and the same 264 sites are read at once.
 def expectedPackFlip : String :=
-  "sites=264 decls=24 rounds=4 decline=264 relay=0 leaf=161 uncond=103 stubs=3"
+  "sites=264 decls=24 rounds=2 decline=264 relay=0 leaf=161 uncond=103 stubs=3"
+
+/-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
+    predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
+    decline); a relay between two park states (`Or.inr h` with `h : PackAlt sc` where `PackAlt s'` is
+    owed, `.imp f id` across a step) fails too, and `False` could not see it.  `relayState` is the
+    count of those transports, `decline` the unpaid sites; a lane pays the first with a preservation
+    lemma and the second with `PackAlt.ofRefused`, and this line is what each lane drives down.
+    `PackAltG g` stays `True` in this mode (the frame's carrier is lane (d)'s), so `stubs=1` is
+    `PackAlt.ofGateClose` alone.  Read from the script's side, as `expectedPackFlip` is. -/
+def expectedPackResidue : String :=
+  "sites=265 decls=22 rounds=2 decline=245 relayTrue=0 relayState=20 leaf=151 uncond=94 stubs=1"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

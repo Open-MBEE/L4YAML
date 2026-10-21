@@ -11328,14 +11328,14 @@ lemma flowKeyRoute_of_root {m : Nat} {g : Option ScannerState} {sp_start sp_scan
       have h_resV_land : (∃ (nv : Nat) (ks' : List Nat), (∀ k' ∈ ks', k' < w) ∧
           ∀ sp_end : SurfPos, SCompactMapTail w sp_mid sp_end →
             KeyFrames (ExplValueLine sp_start nv) ks' sp_end) ∨ PackAlt sc := by
-        rcases h_mapFV with ⟨nv, ks, fV⟩ | _
+        rcases h_mapFV with ⟨nv, ks, fV⟩ | h_alt
         · by_cases hmem : w ∈ ks
           · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_land.1).resumeAt hmem
             rcases cont with contM | _
             · exact Or.inl ⟨nv, ks', h_w.lt, contM⟩
             · exact Or.inr trivial
           · exact Or.inr trivial
-        · exact Or.inr trivial
+        · exact Or.inr h_alt
       refine Or.inl ⟨w, sp_prep,
         (match h_res_land, h_sfx, h_nodoc with
          | Or.inl ⟨_, _, cont⟩, _, _ => resumeMapRoute h_ind' cont
@@ -12711,7 +12711,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
            (ntop_of_flowLevel_succ h_fl1), hcorr_open,
          fun _ => ⟨.white (GStar.nil _) h_sync h_colon h_opencol, h_real, h_ad⟩⟩
   cases h_pending with
-  | noPending _ _ h_col h_armN h_nodoc =>
+  | noPending _ _ h_col h_armN h_nodoc h_noekN =>
     -- Nothing to close: the leading separation rides in the fresh bare
     -- document's separator slot directly (any column, break or not).
     -- Item 56: a block-context park with nothing pending IS the column-0 line
@@ -12744,7 +12744,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                h_corr hcorr_prep h_preprocess (Or.inr trivial)
                (Or.inl (fun sp_m h_ssl =>
                  ssl_comments_extend_prefixes (h_nodoc h_scflow) h_ssl))
-               h_bare h_base (Or.inr trivial) (Or.inr trivial) (Or.inr trivial),
+               h_bare h_base (Or.inr trivial) (Or.inr trivial) (Or.inr (PackAlt.ofRefused (h_noekN h_scflow))),
              Or.inr trivial⟩),
            PendingNode.noPending sp_start sp_open (Or.inr (inFlow_of_flowLevel_eq h_fl1))
                (Or.inr (inFlow_of_flowLevel_eq h_fl1))
@@ -12765,7 +12765,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       (Or.inr trivial) (Or.inl h_tail143)
       (h_frS176.imp (fun ⟨ks, _, f⟩ => ⟨ks, f⟩) id)
       (h_frV201.imp (fun ⟨nv, ks, _, f⟩ => ⟨nv, ks, f⟩) id)
-  | pendingDocEnd _ _ _ h_line h_marker _ _ =>
+  | pendingDocEnd _ _ _ h_line h_marker _ _ _ h_noekE =>
     -- Item 36: `[204]`'s suffix set weakens to item 10's at the CONSUMER.
     -- ═══ Item 118: the `...` park pays the flow open's suffix face — the
     -- marker plus the landing's `[79] s-l-comments` is `[205]
@@ -12783,7 +12783,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- Item 176: a `...` park keeps no mapping level open — the suffix
       -- closed the document — so the suffix face above is the honest route.
       -- Item 201: and no `?` frame stands over a closed document either.
-      (Or.inr trivial) (Or.inr trivial)
+      (Or.inr trivial) (Or.inr (PackAlt.ofRefused h_noekE))
   | pendingBlockContent _ _ _ n176 h_line _ _ _ _ _ _ h_closeF176 _ h_tail143 _ _
       h_cFV201 =>
     -- Item 176: the entry-level face read at the EMPTY tail is the
@@ -12971,7 +12971,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       · exact (flowOpen_underRunTab_refuted h_floor_p h_ltsl2
           (fun h => by rw [h] at h_col02; omega) h_col02 hj h_ind h_tab
           h_c h_preprocess).elim
-  | pendingDocStart _ _ _ _ _ _ _ h_armD _ _ h_doclineD _ =>
+  | pendingDocStart _ _ _ _ _ _ _ h_armD _ _ h_doclineD h_noekS =>
     rename_i h_doc_route
     obtain ⟨sp_gap, h_sep0, hcorr_gap⟩ :=
       preprocess_some_separate_0_anyCol sc sp_scan s_prep c h_corr h_preprocess
@@ -12993,7 +12993,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
              -- `--- [1]: b` on the marker's own line is scan-refused ("unexpected
              -- content on document-start line"), so only the landing reading is
              -- owed and the compact half punts.
-             flowKeyRoute_of_open (nc := 0) (cc := .blockIn) h_docnode (Or.inr trivial) (Or.inr trivial)
+             flowKeyRoute_of_open (nc := 0) (cc := .blockIn) h_docnode (Or.inr trivial) (Or.inr (PackAlt.ofRefused h_noekS))
                h_noflow_prep h_park h_corr hcorr_prep h_preprocess,
              Or.inr trivial⟩),
            PendingNode.noPending sp_start sp_open (Or.inr (inFlow_of_flowLevel_eq h_fl1))
@@ -13042,7 +13042,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                       (fun sp h_bi sp_i sp_c h_iv h_lit sp_v h_sbi =>
                         kslot sp h_bi sp (SCompactSeqTail.nil n_old sp)
                           sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
-                  | Or.inr _ => Or.inr trivial)
+                  | Or.inr h_alt => Or.inr h_alt)
                  -- Item 295: the park's own FLAG — the compact arm crosses no
                  -- break and builds from that half alone, and `arm_or_col`
                  -- reads this park's COLUMN (`arm_tight_or_col`).
@@ -13145,7 +13145,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
                         (fun sp h_bo sp_i sp_c h_iv h_lit sp_v h_sbi =>
                           route sp_v (SBlockMapEntry.explicit n_old sp_q sp_scan sp sp_i sp_c sp_v
                             h_qlit h_bo h_iv h_lit h_sbi))⟩
-                  | Or.inr _ => Or.inr trivial)
+                  | Or.inr h_alt => Or.inr h_alt)
                  -- Item 295: the park's own FLAG, as at `pendingBlock`.
                  h_noflow_prep (Or.inl h_sk_mv) h_corr hcorr_prep h_preprocess,
                -- …and under an open `?` the collection is the KEY half of the
@@ -20007,6 +20007,21 @@ lemma PackAlt.step_dispatch {s_prep s' : ScannerState} {c : Char}
     else s_prep) c = .ok s')
     (_h : PackAlt s_prep) : PackAlt s' :=
   trivial  -- refused: ExplicitValueRefused.step_dispatch _h_dispatch _h
+
+/-- **The preprocess step alone** (item 324): a resuming context (`ResumeKeyCtx`) states the
+    alternative at `s_prep`, the preprocessed state, and the landing lemma holds the park's — the
+    skip chain, the unwind and the save write no register field. -/
+lemma ExplicitValueRefused.step_preprocess {sc s_prep : ScannerState} {c : Char}
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h : ExplicitValueRefused sc) : ExplicitValueRefused s_prep :=
+  (ExplicitKeyCoupling.preprocess_preserves_explicitKey sc s_prep c h_preprocess).1.trans h
+
+/-- The preprocess step on the named alternative (`trivial` while `PackAlt` is `True`, its proof
+    promised after `-- refused:`). -/
+lemma PackAlt.step_preprocess {sc s_prep : ScannerState} {c : Char}
+    (_h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (_h : PackAlt sc) : PackAlt s_prep :=
+  trivial  -- refused: ExplicitValueRefused.step_preprocess _h_preprocess _h
 
 /-- The indicator dispatch's own `!inFlow` guard, run back to the flag: shared
     by both floors (items 27/28), which each need the post-update state's
@@ -29699,7 +29714,7 @@ lemma resumectx_of_landing {sc s_prep : ScannerState} {c : Char}
                 · exact Or.inl ⟨nv, ksv', h_wv.lt, h_pay k ksv ksv' h_cvV hmemV h_wv h_scol, contM⟩
                 · exact Or.inr trivial
               · exact Or.inr trivial
-            | Or.inr _ => exact Or.inr trivial
+            | Or.inr h_alt => exact Or.inr (PackAlt.step_preprocess h_preprocess h_alt)
           -- **Item 168: the sequence face, and its own test.**  The park names
           -- one open level `kk`; the landing resumes level `k`.  Where they are
           -- the same the face transfers unchanged — the landing's comments are

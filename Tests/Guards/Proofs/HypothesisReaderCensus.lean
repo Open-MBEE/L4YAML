@@ -588,14 +588,19 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- arms' `h_alt`, and the `h_seqFramesV` relay's wrapper; RELAY, RETURN and UNUSED stand.
 -- 2026-10-21 (item 322): `READ` 1166 → 1168 — the two colon openers' new step premise `h_alt_step` is applied inside each
 -- (a READ); the callers' `PackAlt.step_value …` arguments are terms, not hypotheses, so RELAY stands.
+-- 2026-10-21 (item 324): `constants`/`decls` +2, `RELAY` 2343 → 2345, `UNUSED` 24 → 26 — `ExplicitValueRefused.step_preprocess`
+-- relays its two hypotheses into the preprocess register lemma; its wrapper `PackAlt.step_preprocess` holds the same two unused
+-- (`trivial` while `PackAlt` is `True`, the promise after `-- refused:`), like the family's four other wrappers.
 def expectedModuleTally : String :=
-  "constants=1409 decls=1123 eta=416 FIELD=163 READ=1168 RELAY=2343 RETURN=48 UNUSED=24"
+  "constants=1411 decls=1125 eta=416 FIELD=163 READ=1168 RELAY=2345 RETURN=48 UNUSED=26"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.
 -- 2026-10-21 (item 318): seven rows added — `PackAlt.step_blockEntry`'s `_h_preprocess`/`_h_dispatch`/`_h` (#3–#5: three
 -- implicit states precede them, where `step_content` also has `{c}`) and `PackAlt.step_value`'s four (#3–#6, `_h_noflow` among
 -- them); regenerated from the census's own `got` rows.
+-- 2026-10-21 (item 324): two rows added — `PackAlt.step_preprocess`'s `_h_preprocess`/`_h` (#3–#4: two implicit states and
+-- `{c}` precede them), unused while its promise is not yet its body, like the family's other wrappers; rows from the guard's `got`.
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
   -- its thirteenth binder.
@@ -619,6 +624,8 @@ def expectedUnused : List String :=
     "step_content#6 (_h)",
     "step_dispatch#3 (_h_dispatch)",
     "step_dispatch#4 (_h)",
+    "step_preprocess#3 (_h_preprocess)",
+    "step_preprocess#4 (_h)",
     "step_value#3 (_h_preprocess)",
     "step_value#4 (_h_dispatch)",
     "step_value#5 (_h_noflow)",

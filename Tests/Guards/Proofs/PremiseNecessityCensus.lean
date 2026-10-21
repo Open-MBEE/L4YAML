@@ -339,13 +339,16 @@ declarations' own binders and not by a rescoring of an existing one.
 -- `RETURN` 138 → 139, `UNUSED` 17 → 24 — the block lane's two transports and two wrappers (+4) less item 309's three
 -- indent lemmas (−3); `not_of_classA` reads one premise fewer, the two content transports return their one equation,
 -- and the two wrappers' seven `_`-binders are the new UNUSED.
--- 2026-10-21 (item 320): `  "constants` 1408 decls → 1409 decls — the marker constructors' new field `h_noek`
--- (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split arms' `h_alt`, and the `h_seqFramesV`
--- relay's wrapper; RELAY, RETURN and UNUSED stand.
--- 2026-10-21 (item 322): `  "constants` 1409 decls → 1409 decls — the two colon openers' new step premise `h_alt_step` is applied inside each
+-- 2026-10-21 (item 320): `constants` 1408 → 1409, `decls` 1122 → 1123, `eta` 414 → 416, `READ` 1199 → 1204 — the marker
+-- constructors' new field `h_noek` (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split arms'
+-- `h_alt`, and the `h_seqFramesV` relay's wrapper; RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 322): `READ` 1204 → 1206 — the two colon openers' new step premise `h_alt_step` is applied inside each
 -- (a READ); RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 324): `constants`/`decls` +2, `RELAY` 2192 → 2194, `UNUSED` 24 → 26 — `ExplicitValueRefused.step_preprocess`
+-- relays its two hypotheses and its wrapper `PackAlt.step_preprocess` holds the same two unused; as `HypothesisReaderCensus`.
+-- (The item 320 and 322 notes above are corrected: their scripts garbled the field names.)
 def expectedModuleTallyP : String :=
-  "constants=1409 decls=1123 eta=416 FIELD=185 READ=1206 RELAY=2192 RETURN=139 UNUSED=24"
+  "constants=1411 decls=1125 eta=416 FIELD=185 READ=1206 RELAY=2194 RETURN=139 UNUSED=26"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
@@ -615,6 +618,8 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
 -- thirteenth binder.
 -- 2026-10-21 (item 318): seven rows added — `PackAlt.step_blockEntry`'s three `_`-binders and `PackAlt.step_value`'s four,
 -- `lane stub` like the other promised wrappers; regenerated from the census's own `got` rows.
+-- 2026-10-21 (item 324): two rows added — `PackAlt.step_preprocess`'s `_h_preprocess`/`_h`, `lane stub` like the other promised
+-- wrappers (`deadReason` lists them); rows from the guard's own `got`.
 def expectedDead : List String :=
   [ "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1 (_h) [lane stub]",
@@ -626,6 +631,8 @@ def expectedDead : List String :=
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3 (_h_dispatch) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#3 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#4 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_value#3 (_h_preprocess) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_value#4 (_h_dispatch) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_value#5 (_h_noflow) [lane stub]",
@@ -673,13 +680,17 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#3"
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#4"
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#5"
-  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#6" => "lane stub"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#6"
+  -- Item 324: the preprocess transport's promised wrapper (two implicit states and `{c}` precede its binders).
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#4" => "lane stub"
   | _ => "family uniformity"
 
 -- 2026-10-21 (item 315): `dead` 18 → 19, `RELAY` 0 → 1 — `entryPropsKeyPack_of_dispatch`'s new `h_dispatch` is relayed to
 -- the promised wrapper and chased to its unused step binder.
 -- 2026-10-21 (item 318): `dead` 19 → 26, `UNUSED` 18 → 25 — the seven lane-stub binders above.
-def expectedDeadTally : String := "dead=26 RELAY=1 UNUSED=25 RELAY=1"
+-- 2026-10-21 (item 324): `dead` 26 → 28, `UNUSED` 25 → 27 — `PackAlt.step_preprocess`'s two lane-stub binders above.
+def expectedDeadTally : String := "dead=28 RELAY=1 UNUSED=27 RELAY=1"
 
 run_cmd do
   let env ← getEnv

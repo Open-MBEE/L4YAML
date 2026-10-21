@@ -301,8 +301,10 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
 -- predicate lemmas also the preprocess; item 309's three indent lemmas, deleted, held neither step.
 -- 2026-10-21 (item 320): `stepHolders` 1716 → 1717 — `ExplicitKeyCoupling.scanDocumentEnd_explicitKeyLine` holds the `...`
 -- scan's step (`scanDocumentEnd s = .ok s'`), the marker parks' dead-register fact; the dispatch holders stand.
+-- 2026-10-21 (item 324): `stepHolders` 1717 → 1719 — `ExplicitValueRefused.step_preprocess` and its wrapper
+-- `PackAlt.step_preprocess` (the family's preprocess transport) each hold the preprocess step equation; dispatch holders stand.
 def expectedSteps : String :=
-  "stepHolders=1717 dispHolders=314 dispTwoCorr=29 fns=72 fnsIx=26"
+  "stepHolders=1719 dispHolders=314 dispTwoCorr=29 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -367,9 +369,11 @@ def expectedChainSpec : List Name :=
 -- 2026-10-21 (item 315): the dispatch rung +1 — `entryPropsKeyPack_of_dispatch`.
 -- 2026-10-21 (item 318): `preprocess decls` 214 → 216 — the block lane's two transports and their two wrappers hold the
 -- preprocess (+4), item 309's `preprocess_currentIndent_neg` and `indent_neg_dis_of_park`, deleted, held it too (−2).
+-- 2026-10-21 (item 324): `scanNextToken_preprocess decls` 216 → 218 — the two preprocess-transport lemmas of the alternative
+-- family (`ExplicitValueRefused.step_preprocess`, `PackAlt.step_preprocess`) read the preprocess equation; the content dispatch stands.
 def expectedPerFn : List String :=
   ["scanNextToken_dispatchContent decls=140 chain=1",
-   "scanNextToken_preprocess decls=216 chain=6"]
+   "scanNextToken_preprocess decls=218 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

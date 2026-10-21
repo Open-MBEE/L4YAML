@@ -526,10 +526,12 @@ corrBlock=0 corrScan=1 via="]
 -- 2026-10-21 (item 318): `dispatchBlockIndicators holders` 102 → 106, `preprocess holders` 214 → 216 — the block lane's two
 -- transports (`ExplicitValueRefused.step_blockEntry`, `.step_value`) and their `PackAlt` wrappers hold the block dispatch and
 -- the preprocess (+4 each); item 309's `preprocess_currentIndent_neg` and `indent_neg_dis_of_park`, deleted, held the preprocess (−2).
+-- 2026-10-21 (item 324): `preprocess holders` 216 → 218 — `ExplicitValueRefused.step_preprocess` and its `PackAlt` wrapper
+-- hold the preprocess as a hypothesis; no edge or chain moves.
 def expectedLadder : List String :=
   ["scanNextToken_dispatchBlockIndicators holders=106 edge=0 chain=0",
    "scanNextToken_dispatchContent holders=140 edge=2 chain=1",
-   "scanNextToken_preprocess holders=216 edge=17 chain=6"]
+   "scanNextToken_preprocess holders=218 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

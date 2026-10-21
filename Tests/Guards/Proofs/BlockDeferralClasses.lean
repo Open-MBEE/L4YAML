@@ -4493,8 +4493,12 @@ script, as `expectedInlineArms` is. -/
 -- their one caller each supplies as `PackAlt.step_value …`; the roots stand.
 -- 2026-10-21 (item 323): `sites` 140 → 136, `leaf` 50 → 46 — the key-pack lemmas' four
 -- `h_dframesV` catch arms step through `PackAlt.step_content` as their `h_nodeFV` neighbours did at item 315; the roots stand.
+-- 2026-10-21 (item 324): `sites` 136 → 129 — the flow lane's register-fact payments
+-- (`accum_flow_open_depth0`'s `noPending`, `...` and `---` arms hand their parks' dead register to the flow opener) and its
+-- same-state identities (`pendingBlock`/`pendingMapValue` arms, `flowKeyRoute_of_root`'s have) and `resumectx_of_landing`'s
+-- `PackAlt.step_preprocess` (the one transport the family lacked; `stubs` 7 → 8 is its wrapper); roots and leaves as read.
 def expectedPackFlip : String :=
-  "sites=136 decls=23 rounds=2 decline=136 relay=0 leaf=46 uncond=90 stubs=7"
+  "sites=129 decls=23 rounds=2 decline=129 relay=0 leaf=42 uncond=87 stubs=8"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4530,8 +4534,10 @@ def expectedPackFlip : String :=
 -- `h_expl105`, whose `?` half has no step).
 -- 2026-10-21 (item 322): `decline` 127 → 121 — the same six leaves; `relayState` stands at 1.
 -- 2026-10-21 (item 323): `decline` 121 → 117 — the same four arms; `relayState` stands at 1.
+-- 2026-10-21 (item 324): `decline` 117 → 110 — the same seven sites; `relayState` 1 (the resume-context arm read
+-- RELAY-STATE as an identity and is a transport now); `promised` 5 → 6 for `PackAlt.step_preprocess`.
 def expectedPackResidue : String :=
-  "sites=118 decls=21 rounds=2 decline=117 relayTrue=0 relayState=1 leaf=36 uncond=81 stubs=1 promised=5"
+  "sites=111 decls=21 rounds=2 decline=110 relayTrue=0 relayState=1 leaf=32 uncond=78 stubs=1 promised=6"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

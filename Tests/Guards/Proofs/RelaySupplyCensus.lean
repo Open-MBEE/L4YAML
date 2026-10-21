@@ -1134,9 +1134,12 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- 2026-10-21 (item 322): `DECLINE-closed` 94 → 88, `DECLINE-free` 92 → 98 — the colon openers' six leaves hand their hypothesis
 -- back through the new step premise (`Or.inr (h_alt_step h_alt)`) where they closed with `trivial`; leaves, roots and the
 -- agreement stand.
+-- 2026-10-21 (item 324): `DECLINE-closed` 88 → 86, `DECLINE-free` 98 → 100 — the flow opener's `pendingBlock` and
+-- `pendingMapValue` catch arms hand their hypothesis back (`Or.inr h_alt`) where they closed with `trivial`; leaves, roots and the
+-- agreement stand.
 def expectedSplitBranch : String :=
   "splits=166 leaves=364 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=88, DECLINE-free=98, PAY-free=177, VIA \
+agree=110/110 disagree=0 [DECLINE-closed=86, DECLINE-free=100, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

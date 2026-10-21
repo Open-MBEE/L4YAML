@@ -5543,7 +5543,7 @@ the top of this table is R3.
 
 | # | Action | Blocks | Where |
 |---|---|---|---|
-| 12 | **β.5 — retire `pendingFlow`, delete `scannerDrop`.** Items 11–300 closed it one arm at a time. ~~**ONE proof obligation is left**~~: `accum_flow_open_depth0`'s `drop_ride`, taken by three live arms, where `dropClose` is spent — **PAID** by steps 12.1–12.2 (items 284–285), which put those arms on `slot_ride`, a frame that spends no `dropClose`. ~~Behind it the deletion is mechanical rather than exploratory, because it has already been elaborated to a fixpoint~~ — **corrected at [item 285](#item-285-2026-10-18)**: the fixpoint sorries the escape `block_dispatch_deferred` and keeps its statement, so it never reached the escape's three wrappers, applied **eight** times in three live declarations — [item 264](#item-264-2026-09-25) §3's three STARVED classes. That domain is the second obligation. **The six steps are the six rows below, each with its state and the one instrument that re-derives it.** The per-item record is [Row 12 — β.5 closure log](#row-12--β5-closure-log); the ordered dependencies are [REMAINING, in order](#remaining-in-order); the cell this row carried through item 281 is [archived verbatim](#row-12--the-plan-table-cell-archived-2026-10-18). | Step 5, the converse | ditto |
+| 12 | **β.5 — retire `pendingFlow`, delete `scannerDrop`.** Items 11–301 closed it one arm at a time. ~~**ONE proof obligation is left**~~: `accum_flow_open_depth0`'s `drop_ride`, taken by three live arms, where `dropClose` is spent — **PAID** by steps 12.1–12.2 (items 284–285), which put those arms on `slot_ride`, a frame that spends no `dropClose`. ~~Behind it the deletion is mechanical rather than exploratory, because it has already been elaborated to a fixpoint~~ — **corrected at [item 285](#item-285-2026-10-18)**: the fixpoint sorries the escape `block_dispatch_deferred` and keeps its statement, so it never reached the escape's three wrappers, applied **eight** times in three live declarations — [item 264](#item-264-2026-09-25) §3's three STARVED classes. That domain is the second obligation. **The six steps are the six rows below, each with its state and the one instrument that re-derives it.** The per-item record is [Row 12 — β.5 closure log](#row-12--β5-closure-log); the ordered dependencies are [REMAINING, in order](#remaining-in-order); the cell this row carried through item 281 is [archived verbatim](#row-12--the-plan-table-cell-archived-2026-10-18). | Step 5, the converse | ditto |
 | 19 | **Tighten `implicitContinue`** — the THIRD over-approximation of `[211]`, found 2026-08-13 by item 30, ~~and not yet priced~~ **priced by SHAPE 2026-09-07** (item 108) **and half-paid the same day** (item 109: the landing skeleton carries the frames, so a landed sibling resumes its level instead of re-opening at the root; item 110 then paid `pendingBlockContent` from item 99's entry-level field; item 111 paid the props landing, item 112 the block-scalar value arms, item 113 the sequence-side entry arms the same day, item 114 the props park's own five resume faces and item 115 the entry producers' props-key pack twins, leaving the CONSTRUCTOR, which item 110 measured as **LAST rather than next**: tightening it breaks 16 `StreamAccum` sites including `rootMapRoute`/`rootMapRouteF`, the fallback every punting park uses). It requires no `l-document-suffix+` and takes `SLAnyDocument`, so it admits a BARE document after another with no `...`: `- "a"⏎  - b` satisfies `InYamlLanguage` while `parseYaml` rejects it (`invalidBareDocument`, §9.2). It falsifies the converse exactly as `scannerDrop` does. ~~17 construction sites — one in `DocumentProduction` (`stream_implicit_continue`), already legal because it passes an EXPLICIT document, and 16 in `StreamAccum`, every one passing `SLAnyDocument.bare`.~~ **ELEVEN applications as of 2026-09-09**, measured from the elaborated environment and confirmed by flipping the constructor ([item 135](#item-135-2026-09-09)): one is `GOpt.none` and safe; NINE break in `StreamAccum` — seven passing `SLAnyDocument.bare`, one `.directive`, one `.explicit` — and `stream_implicit_continue` is a tenth, the same `.explicit` wrapper and NOT legal as written. Item 135 took 16 to 9 by deleting two dead sites, turning `pendingDocStart`'s document builder into a route (three sites) and spending `noPending.h_nodoc` at the seed's root sequence (two).  **Item 136 gave the landing face its HEAD arm** (2026-09-10) and paid it at all four of the virgin park's landings; **item 137 gave it the MARKER arm** the same day, at `pendingDocStart`'s two unpaid landings (the other two were routed by items 43 and 56). The count held at NINE through both, because the seven are fallback ARMS of shared lemmas and an arm goes only when its last caller can pay something else; what item 137 removes is a whole caller FAMILY rather than a site. **Item 138 moved the count** (2026-09-10): `[209] l-directive-document` has its own `[211]` arm now — `single`'s slot or `suffixContinue`'s, chosen by the flag `scanDirective` itself reads, which only `noPending` and `pendingDocEnd` can have up — so the surface is **TEN applications in nine holders** and the flip gives **eight** errors, at seven lemmas. One application (`ssl_comments_extend_stream`'s `GOpt.none`) types under either reading and never breaks, which is why the two numbers differ. Nothing DEFERS to it, so it is not an escape site and not row 12's business; it comes after row 12 only because row 12's remaining items still edit those sites. **A FOURTH over-approximation joined it 2026-08-16** (item 40), one level down and ~~also unpriced~~ **PRICED 2026-09-07 by item 107**: `SBlockNode.blockSeq`/`.blockMap` bind `[183]`/`[187]`'s auto-detected `m` as a `Nat` where both productions write `m > 0`, ~~which is harmless at the root (the encoding's `n = 0` is the spec's `n = -1`)~~ and admits a nested collection at its enclosing entry's own width otherwise — `k:⏎  :⏎  b: 2` gets a NESTED derivation where `parseYaml` reads a sibling. The root is where it is NOT harmless: three families reach `m = 0` — the root's own mapping, the seq-spaces key `?⏎- a`, and the equal-width landing — the spec reaches the first two with `m = 1` off an index of `-1`, and `seqSpaces 0 .blockOut = seqSpaces 1 .blockOut` because `Nat` subtraction truncates at exactly that index, so the encoding cannot state the floor that separates them. The repair is a re-indexing of `SBlockNode` to `n_lean = n_spec + 1`, not a side condition on four call sites; machine-checked in `Tests/Guards/Proofs/BlockCollectionWidthFloor.lean` and written up at [Item 107](#item-107-2026-09-07). **Its RUNTIME twin landed 2026-09-15 at item 177**: the props-less scalar/alias landing at an open level's own column refuses at `danglingNodePos?`'s narrowed slot-offered exemption ([Item 177](#item-177-2026-09-15)); **the `[96]` half followed at item 178** ([Item 178](#item-178-2026-09-16)), found by the re-index's own flip instrument (75 sites / 13 `StreamAccum` definitions; the props-headed at-column park is unprovable at the shifted index while the scanner accepts it), so the re-indexing can now follow without orphaning an accepted input; **and the re-indexing itself LANDED at item 179** ([Item 179](#item-179-2026-09-16)) — the FOURTH over-approximation is gone, both pack lemmas' landing splits are strict, and the two root content consumers are deleted.  What this row still owes is the `[210]` narrowing alone, whose prerequisites ~~are the crossed-window arms' root family and the `k: &x⏎a` acceptance~~ **are all LANDED** — the crossed-window arms' family refuses at the scanner as of item 180 and their proofs retired at item 181, and the `k: &x⏎a` family refuses as of [item 182](#item-182-2026-09-16), §9.2's FIFTH reading: `[96]`'s properties and the content they decorate are separated by the same `s-separate(n+1)` the run-start readings spend, so a run may park legally and cross the break BELOW its start. The narrowing's ~~prerequisite list is EMPTY~~ **RUNTIME** prerequisite list is empty, and [item 183](#item-183-2026-09-16) prices what stands after it: the flip's consumer surface is **8 definitions / 15 applications** (pinned in `Tests/Guards/Proofs/FlipConsumerSurface.lean` — not the flip instrument's own five, which count the flip's WORK), decomposing into refutable arms, three missing routes, and **`pendingFlow`**, whose `CompletedTail` is FALSE by construction and whose arms therefore cannot be paid by a field at any price. So R3's `pendingFlow` deletion is a PREREQUISITE of this narrowing, not a parallel row. | Step 5, the converse | [The over-approximation problem](#the-over-approximation-problem) |
 | 13 | **Step 5 — the converse** `grammar_completeness` — blocked on rows 12 AND 19, since the converse is false while either over-approximation stands — then **Step 6** the `parse_iff_grammar` biconditional. ~~Closing rows 12 and 19 unblocks the converse.~~ **A THIRD blocker, recorded 2026-09-27, and rows 12 and 19 do not reach it**: `parseYaml` enforces per-document conditions that are not syntactic — `*x` is refused by `scanFiltered` with `undefinedAlias` and `!h!x` by `parseStream` with `undeclaredTagHandle`, while the surface grammar derives both — and every surface relation is `SurfPos → SurfPos → Prop` with NO environment parameter anywhere in `L4YAML/Surface/`, so `InYamlLanguage` cannot STATE the condition at any tightness. This is a change of LAYER, not a fifth over-approximation: Step 6's right-hand side gains an explicit serialization-well-formedness conjunct (anchor/alias ordering, tag-handle declaration state), not yet specified. Found by an independent audit of `main` at `16562a7` by Heath Sanchez of [Metalogic Labs](https://metalogiclabs.xyz/). The same audit's flow class was already closed on this branch: `[[a][b]]`, `[[a]b]`, `["a""b"]`, `{a: b: c}` and `[[][]]` all scan clean and fail in the token parser at `16562a7`, and all five are refused by the SCANNER here with `invalidFlowEntry` — measured by running one probe against both commits, since `invalidFlowEntry` is present in `Scanner/Scanner.lean` at `16562a7` too and the executable path differs by ~3,600 inserted lines. | capstone 7.7 | [Grammar completeness plan](#grammar-completeness-plan), [The over-approximation problem](#the-over-approximation-problem) |
 
@@ -5569,7 +5569,10 @@ priced by a gate that already exists and is re-run once 12.3 lands.
 | **12.3.1** | **Move the inline class onto its seven arms.** `accum_block_on_closeThenBlock`'s fallback merges into `h_vslot` as the caller's own reading of an inline residue; `colon_fires_implicit_key` and `colon_fires_props_key` take `h_punt` as a builder; the five crossed-break arms refute the residue (`sslComments_refutes_inline_residue`); the escape is applied at each surviving arm; `h_stream_fallback` and `sp_block_ctx` retire from four lemmas. | ✅ done — [item 287](#item-287-2026-10-19) | the escape's inline applications 2 → **8**, one at each of the seven arms and the dead `pendingFlow` one (`inline_class_price.py arms`, pinned at `BlockDeferralClasses.expectedInlineArms`); twenty-three guards moved and every move is named in the entry |
 | **12.3.2** | **The seventh arm: the value park that declines its slot.** `pendingMapValue.h_vslot`'s `True` narrowed to the stamp `h_ivl` already names, and the frameless arm refuted from it. | ✅ done — [item 288](#item-288-2026-10-19) | the escape's inline applications 8 → **7** (`inline_class_price.py arms`); fourteen guards moved and every move is named in the entry |
 | **12.3.3** | **The other six arms.** `dedent` and `noKeyContext` at both `:` consumers, `¬ possible` at the implicit one, `tab` at the props one — each given the fact it stands for and refuted at its consumer. The runtime empties four (`¬ possible`, `tab`, both `dedent`s where the frames cover the stack) — [item 296](#item-296-2026-10-19): `dedent`'s frameless exit is accepted input, and is routed; its `w ∉ ks` exit is accepted where the frames carry no cover — [item 297](#item-297-2026-10-20): that exit keys a fresh document too, and `dedent` is deleted with its two `:` arms; [item 300](#item-300-2026-10-20): the marker-line class has its own reason, `markerLine`, refuted at both consumers; ~~`noKeyContext` is item 211's relay~~ — [item 294](#item-294-2026-10-19) and [item 295](#item-295-2026-10-19): three of its classes are accepted input, and item 295 routes them; the rest is refuted. | ⬜ open — in progress. Refuted: `tab` ([item 289](#item-289-2026-10-19)) and `¬ possible` ([item 293](#item-293-2026-10-19), priced at items [290](#item-290-2026-10-19)–[292](#item-292-2026-10-19)). `noKeyContext` measured at [item 294](#item-294-2026-10-19); its three accepted classes are routed at [item 295](#item-295-2026-10-19). `dedent`'s frameless exit routed at [item 296](#item-296-2026-10-19); `dedent` deleted at [item 297](#item-297-2026-10-20), the escape's inline applications 5 → 3. `noKeyContext`'s refusal half priced at [item 298](#item-298-2026-10-20): one refused class (a key on the `---` line) and `drop_ride`'s frame; the consumer refutation exists; the carrier is priced two ways (a proof-side payload, or a scanner field); the owner picked the field, and [item 299](#item-299-2026-10-20) lands it — `docStartLine` in both scanners, `markerOnLine` at the six checks, the walk deleted, the proofs on the field, every runtime number its baseline's; [item 300](#item-300-2026-10-20) builds the reason, `markerLine`, and both `:` consumers refute it, so `noKeyContext`'s two arms stand on `drop_ride`'s frame and refused input — 12.4's. **12.3.3 is closed to 12.4.** **NEXT** 12.3.4, `_stamp_nopack`, measured first | the escape's inline applications 7 → 6 at item 289, 6 → 5 at item 293 and 5 → **3** at item 297 (`inline_class_price.py arms`); `inline_class_price.py census`: `rows=432 accepted=371 nokey=0 popped=37 onto-map=37 onto-seq=0 off-level=0`, pinned at `BlockDeferralClasses.expectedInlineCensus`; the carriers are named in [item 286](#item-286-2026-10-19), and at item 289 no `:` dispatch at a park without a live key succeeds, over the census's rows and 16 inputs aimed at the shape, refused ones included; at items 294–295, `noKeyContext`'s accepted classes are 20 hand-written inputs and one corpus case (M2N8), all routed; item 295's iterated census finds one site that hands a frame no key route outright, the escape's own `drop_ride`; at item 296, `punt_reason_price.py split` reads `dedent` at 2 productions (the `w ∉ ks` exit) and 3 consumer arms, and 17 hand-written inputs reach the frameless exit, all accepted and routed; at item 297 the `w ∉ ks` exit is routed over 15 inputs (9 accepted at coverless frames, 6 refused as `trailingContent` where the frames cover the stack) and `dedent` has no production; at item 298 `reaches` reads 1 of 8 `content_dispatch_routed` applications declining all five contexts (the `---` park's) and 35 marker-line inputs are all refused at the `:` (`contentOnDocumentStartLine`, `sameLineBlockCollection`, `invalidImplicitKey`), with the nodes and next-line keys among them accepted; at item 299 the field's runtime is re-validated at eventscore 347/358, matrix 402/402 + 282/282 on both pipelines, suiterunner 869/0/151, run-all-tests 4568/4568 — all unchanged; at item 300 `apps=3` is unmoved (the two `noKeyContext` arms and the dead one), and content after a flow node on the marker line is refused before any key (`trailingContent`, 9 inputs) |
-| **12.3.4** | **`_stamp_nopack`** (3 applications) — the park carries no value pack. | ⬜ open — unmeasured | [item 264](#item-264-2026-09-25) §3's carrier, the seq-spaces alternative of `[188]`, re-measured at this class's own item |
+| **12.3.4** | **`_stamp_nopack`** (3 applications) — the park carries no value pack. ~~[Item 264](#item-264-2026-09-25) §3's carrier, the seq-spaces alternative of `[188]`~~ — paid at [item 188](#item-188-2026-09-17), and the class did not move: its domain is a `-` landing on the frame's key sequence from any park that is NOT the `?` park (the dedent, the sibling after a compact mapping, a flow collection, a block scalar or a props-only entry), whose route hands `closeThenBlock` no slot; its price is the pack family's uninformative alternative at **103 sites in 20 declarations** — [item 301](#item-301-2026-10-20). The sub-steps below split it. | ⬜ open — MEASURED at [item 301](#item-301-2026-10-20); unbuilt | `PACK-FLIP sites=103 decls=20 rounds=3 decline=102 relay=1 leaf=70 uncond=32` (`scripts/pack_flip_census.py`, pinned at `BlockDeferralClasses.expectedPackFlip`); the γ family accepted 14/14 and class A at the frame's column (§30) |
+| **12.3.4.1** | **The sequence lane's value-line twin, `h_seqFV`** — `SeqEntryTail` at the `ExplValueLine` bottom on the four `h_seqF` carriers and `closeThenBlock`'s premise; paid at the nested `-` from the outer park's `h_kslot`, relayed where `h_seqF` is, spent at the landed-`-` arm as the new park's `h_kslot` at `ke = k` (`SCompactSeqTail.cons`), passed by the three γ routes. | ⬜ open — NEXT; consumer and producer terms typechecked (`scratchpad/l4yaml-row12-steps/583-consumer-probe.lean`) | the three γ roots pay: `PACK-FLIP`'s `uncond` 32 → **29**; the dedent family's parks carry the pack |
+| **12.3.4.2** | **Narrow the family's alternative to the register** — `∨ True` → `∨ sc.explicitKeyLine = none` on the nine fields and their restatements: the 20 register-dead roots prove it from scanner facts, the 9 face roots are re-read (`h_expl`'s alternative is the stamp beside it), the 70 leaves transport it through one preservation lemma per dispatch kind. Split by lane as the flip's rounds direct. | ⬜ open — behind 12.3.4.1 | `PACK-FLIP` reads no `∨ True` tail on the family; every `Or.inr trivial` on it is gone |
+| **12.3.4.3** | **Refute the three applications and delete `block_dispatch_deferred_stamp_nopack`** — the `inr` branch at each site is `h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h))`, the term the sites already pass as `_h_park`. | ⬜ open — behind 12.3.4.2 | `_stamp_nopack` applications 3 → **0**; `beta5_arms.py` and the guards that count the wrapper re-pinned |
 | **12.3.5** | **`_stamp_offcol`** (3 applications) — the landing is on none of the park's frames. | ⬜ open — unmeasured | [item 264](#item-264-2026-09-25) §3's carrier, the enclosing mapping's still-open tail on the dedent lane, re-measured at this class's own item |
 | **12.4** | **Apply the deletion** — `pendingFlow`, its five dead arms, the escape, `dropClose` with `drop_ride` and `opaque_resume`, and `PendingNode.close_with_ssl`'s `pendingFlow` arm. ~~Mechanical: the edit has been elaborated for real, to a fixpoint, since item 263.~~ The fixpoint sorries the escape's body and so never reached its callers ([item 285](#item-285-2026-10-18)), which is why this row stands behind 12.3. | ⬜ open — behind 12.3 | `scripts/beta5_arms.py`: `control=7 arms=1 dead=6 left=[block_dispatch_deferred]` at item 285, with `drop_ride` deleted as dead; `scripts/flip_beta5.py`: `rounds=23 clean=1 sorried=13 restated=0 deleted=3 pins=37`, item 263's, whose thirteen sorried bodies include the escape's — so its "no statement anywhere must be restated" holds of the sorried tree and not of the deletion |
 | **12.5** | **Re-pin the thirty-seven** — instrument debt, not proof debt: the top-level censuses the deletion re-reads, among them `ParkBill`'s seven pins, `DropDependents`, `FlipConsumerSurface`'s DEFERRAL lane, `DropFalsity` and `ParkGapCensus`. `expectedFixpoint` and `expectedArms` are checked from the OTHER side — the scripts read those literals out of the file — so both move by hand and the scripts must agree afterwards. | ⬜ open — behind 12.4 | the fixpoint's `pins=37` population; `scripts/flip_beta5.py` must print `FIX-PIN agrees` and `scripts/beta5_arms.py` `ARM-PIN agrees` |
@@ -41098,6 +41101,168 @@ deletion.  The next item is 12.3.4: `block_dispatch_deferred_stamp_nopack`'s
 three applications (item 187's `_h_park` class, 31 punt alternatives across 16
 declarations by its own count) — measured first, by the runtime and the
 instruments, before any construction is named.
+
+### Item 301 (2026-10-20)
+
+**Step 12.3.4 MEASURED — `_stamp_nopack`'s domain is a `-` that lands on the
+frame's key sequence from any park that is not the `?` park, and its price is
+the pack family's uninformative alternative at 103 sites.**  [Item 264](#item-264-2026-09-25)
+§3 carried the class as STARVED with a carrier "named and already held" — the
+seq-spaces alternative of `[185]` at `accum_block_on_closeThenBlock`'s dash arm —
+and [item 188](#item-188-2026-09-17) paid exactly that carrier.  The three
+applications did not move because the carrier item 188 paid is the `?` park's
+own slot (`h_vslot`), and the class is fed by the landed `-` that arrives from
+EVERY OTHER park inside the frame: `accum_block_on_closeThenBlock`'s landed-`-`
+arm pays the new park's `h_kslot` from `h_vslot` alone, and the three routes
+that reach it from a non-`?` park pass `h_vslot := Or.inr trivial`.  This item
+measures that and prices it; the library does not change (PRICED — the guard
+module builds, the new instrument's pin agrees, `StreamAccum.lean`'s md5
+`87276c9509c2495516a027654da8d346` before and after every run).
+
+**Instrument 1 — the flip over the whole pack family** (`scripts/pack_flip_census.py`;
+developed as `scratchpad/l4yaml-row12-steps/580-pack-census-iter.py`, pinned at
+`BlockDeferralClasses.expectedPackFlip`, §30).  Item 186's "23 payments" was a
+one-field flip, item 187's "31 alternatives across 16 declarations" a grep, and
+`BlockDeferralClasses` §7/§9 ran one-field flips at four fields, each reading a
+surface smaller than the family's.  This instrument flips every
+`… SLYamlStream sp_start sp_v) ∨ True` tail in `StreamAccum` — **41 lines**: the
+nine constructor fields, the premises that restate the pack, the conclusions that
+hand it on — and `frameChainUnion`'s three generic lines to `∨ False` in ONE
+patched tree, iterates `lake env lean` to a fixpoint (a broken `Or.inr trivial`
+is sorried, a DECLINE; a relay from an unflipped source is wrapped in a probe
+lemma, a RELAY; any other shape stops the run), and restores the tree
+byte-identical.  **103 sites in 20 declarations, three rounds (101 + 2 + 0):
+102 declines and one relay.**  By shape, **70** are split leaves —
+`| Or.inr _ => Or.inr trivial`, a decline conditional on the incoming optional
+declining, i.e. transport — and **32** are unconditional, the roots.
+
+| declaration | sites | roots | leaves |
+|---|---|---|---|
+| `accum_content_on_pendingBlock_indented` | 17 | 0 | 17 |
+| `accum_content_pending` | 13 | 4 | 9 |
+| `accum_flow_open_depth0` | 13 | 5 | 8 |
+| `accum_block_pending` | 11 | 4 | 7 |
+| `accum_content_on_pendingMapValue_indented` | 9 | 1 | 8 |
+| `accum_block_on_pendingBlock` | 7 | 1 | 6 |
+| `accum_block_on_closeThenBlock` | 6 | 0 | 6 |
+| `content_dispatch_routed` | 6 | 6 | 0 |
+| `accum_block_on_pendingBlockContent` | 3 | 1 | 2 |
+| `accum_block_on_noPending` | 2 | 2 | 0 |
+| `colon_open_map`, `colon_open_map_implicit`, `colon_open_map_props` | 2 each | 1 each | 1 each |
+| `colon_open_map_explicit` | 2 | 2 | 0 |
+| `compact_open_map` | 2 | 1 | 1 |
+| `question_open_map` | 2 | 0 | 1 (+ the one relay) |
+| `accum_block_on_pendingContent`, `FlowBaseRoutes.ofValue` | 1 each | 1 each | 0 |
+| `explFrameValueLine`, `flowVPack_of_close` | 1 each | 0 | 1 each |
+
+The instrument's first run misread everything after round 1: its generic wrap
+measured a multi-line `(frameChainUnion …)` argument's extent wrongly and
+swallowed the rest of the enclosing `cases` arm, and eleven rounds of "errors"
+were that one cascade (`580-census.log` of the first run).  The instrument flips
+`frameChainUnion`'s own statement instead of wrapping its uses, wraps only a
+balanced group or a lone identifier, and stops on any other shape; round 1 is
+the same 83 declines either way, and rounds 2–3 add the two sites a first-round
+error had masked, both in `accum_content_pending`.  §1's rule, on the
+instrument itself: the first run's second ring was published nowhere.
+
+**The 32 roots, read** (§30's table — a reading of each site, which the
+construction's own flip prices):
+
+| the register at the site | roots | where |
+|---|---|---|
+| provably DEAD — no `?` frame is open | 20 | `accum_block_on_noPending` ×2 (`h_noek`); `accum_block_pending`'s `pendingDocEnd`/`pendingDocStart` arms ×3 and `accum_flow_open_depth0`'s `noPending`/`pendingDocStart` arms ×5 (a marker scan writes `explicitKeyLine := none`); `FlowBaseRoutes.ofValue` ×1 (a flow open saves the register to `explicitKeyStack` and writes `none`); `content_dispatch_routed` ×6 (bare-document content under a `noPending` park); `colon_open_map_explicit` ×2 (the frame's own `:` fired — `scanValue`'s `explicitValue` branch writes `none`); the `pendingFlow` arm ×1 (12.4 deletes it) |
+| a different FACE — this `∨ True` is not "pack unknown" | 9 | `colon_open_map`/`_implicit`/`_props` ×3 and `compact_open_map` ×1 are `pendingMapValue.h_expl`, the entry's own `?` slot, which an implicit entry does not have — the alternative is the stamp, passed beside it as `h_stamp`; `accum_content_pending` ×3 are `h_kslotUp`, the frame ABOVE, never class A's own (a nested `?` overwrites the register: `classAReg "?⏎  ? a⏎: w" = none`, §30); `accum_content_on_pendingMapValue_indented` ×1 is `h_kslotE` and the node-domain faces; `accum_content_pending` ×1 is `h_vslot51.imp … (fun _ => trivial)`, a relay of the `?` park's slot |
+| LIVE, the pack available upstream, NOT threaded — the γ roots | 3 | `accum_block_on_pendingBlock`'s dedent `-` (`?⏎-⏎  - a⏎- b⏎: w`), `accum_block_on_pendingBlockContent`'s `k ≠ n` `-`, `accum_block_on_pendingContent`'s non-`:` indicator — each calls `accum_block_on_closeThenBlock` with `h_vpack := Or.inr trivial` AND `h_vslot := Or.inr trivial`; the landed-`-` arm pays the new park's `h_kslot` from `h_vslot` alone (`slotLandedSeq`), and `h_vpack` is the `:` arm's (`colon_open_map_explicit`'s `hvp`, the `_stamp_offcol` membership test) |
+
+Every one of the 70 leaves declines only where its incoming optional did, so
+the roots are the 32 and the leaves are the transport the narrowing below pays.
+
+**Instrument 2 — the runtime, by key shape** (`581-classA-shapes.py`: 102 inputs
+in 15 groups, 95 accepted; `582-classA-gamma.py`: 38 inputs in 6 groups, 31
+accepted; both record, at every class-A `:`, the last real token before it —
+the runtime proxy for which `accum_block_on_*` lemma consumes the `:`; which
+ARM it takes is the proof's, read above).  What they say:
+
+* every accepted class-A `:` lands after a `scalar`, a `flow*End`, an `anchor`/`tag`,
+  an `alias`, a `blockEntry`, the `?` itself (`key`) or an empty value (`value`) —
+  `pendingContent`/`pendingBlockContent`, `pendingProps`, `pendingBlock`,
+  `pendingMapValue` — and each of those parks is paid from the `?` slot by item
+  188's chain EXCEPT where a `-` reached it through `closeThenBlock`;
+* **the γ family is accepted in every variant tried (14/14) and class A at the
+  frame's own column**: a `-` back at the frame's column after a nested
+  collection (`?⏎-⏎  - a⏎- b⏎: w`, three deep, inside a `- ?` frame), after a
+  compact mapping (`?⏎- a: 1⏎- b⏎: w`, `?⏎- a:⏎- b⏎: w`), a flow collection,
+  a block scalar, a props-only entry (`?⏎- &p⏎- b⏎: w`), an explicit pair;
+  pinned at §30 — this is the escape's domain;
+* a nested `?` owns the register, so the OUTER `:` is never class A
+  (`classAReg … = none` for `?⏎  ? a⏎: w` and §10's ladder) — those are
+  `_stamp_offcol`'s lane, not this class's, and so are the `h_kslotUp` faces;
+* the scanner refuses a `-` after a content park (`invalidBareDocument`; its `?`
+  twin opens a NEW frame that `question_open_map` pays), a keyless compact entry
+  inside the frame (`misindentedExplicitValue`), and the four frame-column
+  shapes `?⏎a`, `?⏎"a"`, `?⏎[a]`, `?⏎&x a` — **§6's `?⏎a⏎: w` register row is a
+  refused input** (`invalidBareDocument 1 0`), corrected at §6 with the `pins`
+  row beside it;
+* a props-only node as a map value inside the key (`?⏎  k: &p⏎: w`, 5 variants)
+  and a props-only entry (4) are accepted and read PAID — `pendingProps.h_kslot`
+  is `explFrameValueLine h_expl h_kslot` at the indented map-value arm and the
+  entry park's pack at the entry arm; pinned ACCEPTED, the payment left to the
+  construction's flip.
+
+**The consumer side is in hand.**  All three applications pass `_h_park` as
+`fun h => h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h))`; once the
+pack's alternative carries `sc.explicitKeyLine = none` instead of `True`, the
+`inr` branch at each site is that term and the wrapper goes.
+
+**The carrier for the three live roots — `h_seqF`'s value-line twin.**  Item
+167's `h_seqF` is the enclosing sequence's remaining tail at the STREAM bottom
+(`SeqEntryTail sp_start ke`), and the landed-`-` arm spends it at `ke = k`
+through `seqEntryTail_cons` for the new park's closures; the twin is the same
+tail at the `ExplValueLine` bottom — `∀ sp_end, SCompactSeqTail ke sp_mid sp_end →
+ExplValueLine sp_start nv sp_end` — which is `pendingBlock.h_kslot`'s own tail
+after the new entry's node and compact tail, so the spend is `SCompactSeqTail.cons`
+and nothing else.  Consumer and producer probes (`583-consumer-probe.lean`, three
+examples, zero diagnostics): the twin spent at the landed-`-` arm as the new
+park's `h_kslot`; the stream twin beside it for comparison; the twin paid at the
+nested `-` from the OUTER park's `h_kslot` over the crossing `h_seqF` itself is
+paid over.  `h_seqF`'s footprint, which the twin mirrors: 4 fields
+(`pendingContent`, `pendingBlockContent`, `pendingBlock`, `pendingMapValue`),
+1 premise (`accum_block_on_closeThenBlock`), `.imp` relays at the three
+`accum_block_on_*` dedent/non-`:` routes, spends at
+`accum_content_on_pendingBlock_indented` ×3 and `…_on_pendingMapValue_indented`
+×5, passes at `accum_content_pending` ×2 and `accum_block_pending` ×6 — 54
+mentions in 11 declarations — plus one new `match` alternative at the
+landed-`-` arm and the three γ payers.
+
+**The price of 12.3.4, in order** — the rows 12.3.4.1–12.3.4.3 in the table: the
+twin (one item, item 198's shape), then the narrowing `∨ True → ∨ sc.explicitKeyLine
+= none` over the family — 20 register-dead proofs from scanner facts, 9 faces
+re-read (`h_expl`'s alternative is the stamp it is passed beside), 70 transports
+through one preservation lemma per dispatch kind (content, `-`, implicit `:`,
+props run, flow open and close, marker) — split by lane as the flip's rounds
+direct, then the three refutations and the wrapper's deletion.  Item 186 priced
+the narrowing at 23 payments across 8 definitions and item 187 called that the
+first ring; the flip puts the whole at 103 sites across 20 declarations, and the
+twin, which neither item saw, is what the three γ roots cost beyond it.
+
+**What this corrects.**  Item 264 §3's row names item 188's carrier as the
+class's; the class's carrier is the generic landed `-`'s, and the row is
+restated in the 12.3.4 row.  §6's register row on `?⏎a⏎: w` reads a refused
+input; corrected in place.  Item 187's "31 punt alternatives across 16
+declarations" is a grep over type tails (41 tails by the same grep today); the
+flip's 103 sites across 20 declarations is the surface the price is paid at.
+
+**Guards moved**: `BlockDeferralClasses` +§30 (`expectedPackFlip`, 45 runtime
+rows, the §6 note) — the only Lean file touched, and it builds;
+`scripts/pack_flip_census.py` is new and prints `PACK-FLIP-PIN agrees`.
+
+**NEXT — 12.3.4.1, the twin.**  `h_seqFV` on the four `h_seqF` carriers and
+`accum_block_on_closeThenBlock`'s premise; paid at the nested `-` from the outer
+park's `h_kslot` (probe 583's third example), relayed where `h_seqF` is, spent
+at the landed-`-` arm as a third alternative for the new park's `h_kslot` at
+`ke = k` (probe 583's first example), passed by the three γ routes from their
+own field.  The consumer probe is run and pinned; the construction's flip is
+the price, read at the item.
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 

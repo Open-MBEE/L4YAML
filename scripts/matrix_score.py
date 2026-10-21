@@ -231,9 +231,11 @@ def main():
     if args.out:
         json.dump(results, open(args.out, 'w'), indent=1)
         print(f"# wrote {args.out}", file=sys.stderr)
-    if harness_errors:
-        print(f"# {harness_errors} harness-error result(s): the harness, not a "
-              f"processor, failed — these scores are not publishable", file=sys.stderr)
+    if harness_errors or _harness_errors_reported:
+        # a failed preflight counts even when every selected test was skipped
+        print(f"# {harness_errors} harness-error result(s), {len(_harness_errors_reported)} "
+              f"distinct harness failure(s): the harness, not a processor, failed — "
+              f"these scores are not publishable", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

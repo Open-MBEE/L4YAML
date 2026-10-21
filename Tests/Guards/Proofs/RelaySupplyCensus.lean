@@ -882,9 +882,13 @@ def hopName (env : Environment) (e : Edge) : String :=
     `content_dispatch_routed`'s marker premise at its eight applications — the
     `---` arm pays, seven decline — and `km_push_at_open`'s `h_marker_new` at
     its two nested opens, each a refutation of the base-open premise (PAY). -/
+-- 2026-10-20 (item 305): `DECLINE` 280 → 279, `SPLIT` 154 → 155 — `closeThenBlock`'s
+-- compact arm pays the compact entry's value-line stack from the `?` slot's inner
+-- pack (a `match` on `hkv`: PAY when the slot carries it) where item 200 left a
+-- decline it had measured as payable and uninformative.
 def expectedTally : String :=
-  "edges=674 skipped=31 [DECLINE=280, FIELD=58, LOCAL=27, PAY=50, RELAY=68, \
-SPLIT=154, VIA=37]"
+  "edges=674 skipped=31 [DECLINE=279, FIELD=58, LOCAL=27, PAY=50, RELAY=68, \
+SPLIT=155, VIA=37]"
 
 /-- **The row item 211 read off the compiler's error text and got wrong.**  All
     eight of these print `h_keyctx` when the premise is narrowed; six of them
@@ -991,12 +995,19 @@ Or.imp⇒SPLIT=3, dite⇒SPLIT=4]"
     (`accum_block_on_closeThenBlock`, `…_pendingBlockContent`, `…_pendingBlock`)
     split on it and DECLINE the sequence case, which no producer pushes yet —
     `leaves` 326 → 329, `DECLINE` 166 → 169, three `DECLINE|DECLINE|PAY` splits
-    become `DECLINE|DECLINE|DECLINE|PAY`, and `PAY`, `VIA` and `elsewhere` stand. -/
+    become `DECLINE|DECLINE|DECLINE|PAY`, and `PAY`, `VIA` and `elsewhere` stand.
+
+    **Item 305: two splits more.**  `closeThenBlock`'s landed-`-` arm splits the
+    `?` slot for the first entry's stack (`h_slotV`, a leaf under the `h_valFV`
+    split: one `DECLINE|DECLINE|PAY` becomes `DECLINE|DECLINE|DECLINE|DECLINE|PAY|PAY|PAY`)
+    and its compact arm splits `hkv` for the compact entry's (`DECLINE|PAY` 141 →
+    142): `survived` 154 → 155, `leaves` 329 → 335, `DECLINE` 169 → 172, `PAY`
+    159 → 162. -/
 def expectedSplitLanding : String :=
-  "survived=154 collapsed=1 leaves=329 elsewhere=1 [DECLINE=169, PAY=159, VIA=1] \
-[DECLINE|DECLINE|DECLINE|PAY=4, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|PAY=5, DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=141, \
-DECLINE|PAY|PAY=1, PAY|VIA=1]"
+  "survived=155 collapsed=1 leaves=335 elsewhere=1 [DECLINE=172, PAY=162, VIA=1] \
+[DECLINE|DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|DECLINE|DECLINE|PAY=4, \
+DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|DECLINE|PAY=4, \
+DECLINE|DECLINE|PAY|PAY|PAY=1, DECLINE|PAY=142, DECLINE|PAY|PAY=1, PAY|VIA=1]"
 
 /-- **Which BRANCH is taken (DOCS item 217).**  Item 216 resolved what a split
     WRITES — both answers, one per arm.  What it could not say was which arm the
@@ -1044,11 +1055,14 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
     leaf); no split or root moves.  **Item 304**: the three value-line resumes
     split `KeyFrames.resumeAt`'s sum and decline its sequence case — one more
     closed decline each (`leaves` 326 → 329, `DECLINE-closed` 162 → 165); no
-    split or root moves. -/
+    split or root moves.  **Item 305**: two splits more — the landed-`-` arm's
+    `h_slotV` on the `?` slot (relay-rooted: `relayRooted` 144 → 145) and the
+    compact arm's on `hkv` (a plain root: `plainRoot` 49 → 50); `leaves` 329 → 335,
+    `DECLINE-closed` 165 → 168, `PAY-free` 159 → 162. -/
 def expectedSplitBranch : String :=
-  "splits=154 leaves=329 relayRooted=144 siteDecided=10 optionalRoot=95 \
-plainRoot=49 agree=99/99 disagree=0 [DECLINE-closed=165, DECLINE-free=4, PAY-free=159, \
-VIA L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
+  "splits=155 leaves=335 relayRooted=145 siteDecided=10 optionalRoot=95 plainRoot=50 \
+agree=99/99 disagree=0 [DECLINE-closed=168, DECLINE-free=4, PAY-free=162, VIA \
+L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue
     of the branch question after `expectedSplitBranch`.  Four are a `dite` on a

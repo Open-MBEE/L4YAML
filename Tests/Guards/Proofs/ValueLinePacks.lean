@@ -786,9 +786,10 @@ def expectedParams : List String := [
 -- with `True` write the stamp.
 -- Item 304: the value-line writers spend the route helpers' `KeyFrames` twins
 -- (`resumeFrameRouteK`, `resumeMapRouteK`); the rows name the spend.
+-- Item 305: `closeThenBlock`'s writers read the `?` slot's pack behind the first entry's stack and `h_kslot` (`h_slotV`, the compact fill's bottom).
 def expectedWriters : List String := [
-  "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslot idx=k := paid:chain ns=nv spend=hkv←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ held(h_valF)",
-  "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp idx=k := paid:chain ns=nsU spend=hkvU←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ level-var",
+  "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslot idx=k := paid:chain ns=nv spend=hkv←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_slotV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ held(h_valF)",
+  "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp idx=k := paid:chain ns=nsU spend=hkvU←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([])←SCompactSeqTail(k); h_seqFrames:frames(ks)←SCompactSeqTail(k); h_slotV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k); h_seqFramesV:frames(ks)@ExplValueLine(nv)←SCompactSeqTail(k)] ⊢ level-var",
   "accum_block_on_closeThenBlock #1 param:indicator_open_map.h_explUp_chain idx=— := alt[paid:chain|paid:chain|paid:chain] ns=nv :: nsU|nv :: []|nsU spend=slotChainMap(alt[kv←param:accum_block_on_closeThenBlock.h_vslot|kvU←param:accum_block_on_closeThenBlock.h_vslot])|slotChainMap(kv←param:accum_block_on_closeThenBlock.h_vslot)|slotChainMap(kvU←param:accum_block_on_closeThenBlock.h_vslot) holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing] ⊢ held(h_valF)",
   "accum_block_on_closeThenBlock #1 param:slotChainMap.up idx=— := paid:chain ns=— spend=alt[kv←param:accum_block_on_closeThenBlock.h_vslot|kvU←param:accum_block_on_closeThenBlock.h_vslot] holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing] ⊢ level-var",
   "accum_block_on_closeThenBlock #2 param:slotChainMap.up idx=— := paid:chain ns=— spend=kv←param:accum_block_on_closeThenBlock.h_vslot holds=[h_valF:frames(nv :: ks)←SBlockNode(nv + 1); h_mapF:frames(ks)←landing; h_mapFV:frames(ks)@ExplValueLine(nv)←landing; h_valFV:frames(ks)@ExplValueLine(nv)←SBlockNode(nn + 1); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing] ⊢ level-var",
@@ -1011,8 +1012,13 @@ def expectedPerPos : List String := [
 /-- **The pack line.**  `nodes` is the proof-term size of the walked
     declarations.  Lean v4.35.0 moves it alone: 12307 → 12296, with the other
     27 fields byte-identical. -/
+-- 2026-10-20 (item 305): the pushes' and bottoms' terms (item 305): `nodes` 12479 → 12481.
 def expectedLine : String :=
-  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 punt=29 stamp=16 empty=0 relay=36 step=1 via=12 chain=50 route=3 frames=1 tail=0 other=0 alt=3 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=122 nodes=12479"
+  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 \
+punt=29 stamp=16 empty=0 relay=36 step=1 via=12 chain=50 route=3 frames=1 tail=0 other=0 \
+alt=3 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 \
+helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] \
+touched=122 nodes=12481"
 
 /-! ## §4 The reading -/
 

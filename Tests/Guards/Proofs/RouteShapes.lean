@@ -662,6 +662,8 @@ def walk (table : Std.HashMap Name (Array Closure)) (c : Name) :
 
 /-! ## §4 The pins -/
 
+-- Item 305: the two sequence fields and the props E-stack carry the width bound
+-- `∀ k' ∈ ks, k' < n` — one more conjunct in the shape (`[LEE]` → `[LEE2]`, `[LEEE2]` → `[LEEE3]`).
 def expectedClosures : List String :=
   ["pendingContent.h_closable[] req+guard: sp_scan: SSLComments ⇒ Stream",
    "pendingContent.h_key[λλLEEE1] req+guard+pack: [col(pos(simpleKey(sc)))=_; line(pos(simpleKey(sc)))=line(sc)] _: SBlockMapEntry(_) ⇒ Stream",
@@ -684,7 +686,7 @@ def expectedClosures : List String :=
    "pendingProps.h_closeFE[LEE4] opt: [n=_+1] sp_node: SBlockNode(n,blockIn) > SCompactSeqTail(_) ⇒ Resume(_)▹Stream",
    "pendingProps.h_closeF[LE2] opt: sp_node: SBlockNode(n,blockIn) ⇒ Resume(_)▹Stream",
    "pendingProps.h_closeFV[LEE2] opt: sp_node: SBlockNode(n,blockIn) ⇒ Key(_)▹ExplValueLine(_)",
-   "pendingProps.h_closeFEV[LEEE2] opt: [n=_+1] sp_node: SBlockNode(n,blockIn) > SCompactSeqTail(_) ⇒ Key(_)▹ExplValueLine(_)",
+   "pendingProps.h_closeFEV[LEEE3] opt: [n=_+1] sp_node: SBlockNode(n,blockIn) > SCompactSeqTail(_) ⇒ Key(_)▹ExplValueLine(_)",
    "pendingDocStart.h_doc_route[] req: sp_scan: GAlt(SLBareDocument,GSeq(SENode,SSLComments)) ⇒ Stream",
    "pendingDirective.h_dir_route[] req: sp_block: SLDirectiveDocument ⇒ Stream",
    "pendingBlockContent.h_closable[] req+guard: sp_scan: SSLComments ⇒ Stream",
@@ -698,14 +700,14 @@ def expectedClosures : List String :=
    "pendingBlockContent.h_closeF[LE3] opt: sp_scan: SSLComments > SCompactSeqTail(n) ⇒ Resume(_)▹Stream",
    "pendingBlockContent.h_seqF[LE] opt: sp_scan: SSLComments > SCompactSeqTail(n) ⇒ SeqEntryTail(_)",
    "pendingBlockContent.h_kslotUp[LE] opt: sp_scan: SSLComments > SCompactSeqTail(n) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream",
-   "pendingBlockContent.h_closeFV[LEE] opt: sp_scan: SSLComments > SCompactSeqTail(n) ⇒ Key(_)▹ExplValueLine(_)",
+   "pendingBlockContent.h_closeFV[LEE2] opt: sp_scan: SSLComments > SCompactSeqTail(n) ⇒ Key(_)▹ExplValueLine(_)",
    "pendingBlock.h_close[] req: sp_scan: SBlockIndented(n,blockIn) ⇒ Stream",
    "pendingBlock.h_close_entry[] req: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) ⇒ Stream",
    "pendingBlock.h_kslot[LE] opt: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream",
    "pendingBlock.h_closeF[LE3] opt: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) ⇒ Resume(_)▹Stream",
    "pendingBlock.h_seqF[LE] opt: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) ⇒ SeqEntryTail(_)",
    "pendingBlock.h_kslotUp[LE] opt: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream",
-   "pendingBlock.h_closeFV[LEE] opt: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) ⇒ Key(_)▹ExplValueLine(_)",
+   "pendingBlock.h_closeFV[LEE2] opt: sp_scan: SBlockIndented(n,blockIn) > SCompactSeqTail(n) ⇒ Key(_)▹ExplValueLine(_)",
    "pendingMapValue.h_close[] req: sp_scan: SBlockNode(n+1,blockIn) ⇒ Stream",
    "pendingMapValue.h_ivl[R2] req: [col(sp_scan)=n+1] sp_scan: SBlockIndented(n,blockOut) ⇒ Stream",
    "pendingMapValue.h_expl[LE2] opt: _: SBlockMapEntry(n) ⇒ Stream",
@@ -725,6 +727,7 @@ def expectedClosures : List String :=
    "mk.key[LEE6LEE2] opt: [kc=_] _: SBlockMapEntry(_) > SCompactMapTail(_) ⇒ Key(_)▹ExplValueLine(_)",
    "mk.vslot[LE] opt: sp_br: SFlowContent(n,flowOut) > SSLComments > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream"]
 def expectedSpines : List String :=
+  -- Item 305: `pendingBlock.h_closeFV`'s spine — the compact arm pays it (one site fewer punts, one more carried).
   ["  stream=0 carry=16 fwd=0 punt=0 closed=0 SSLComments ⇒ Stream  ← pendingContent.h_closable, pendingBlockContent.h_closable",
    "  stream=0 carry=18 fwd=0 punt=0 closed=4 [col(pos(simpleKey(_)))=_; line(pos(simpleKey(_)))=line(_)] SBlockMapEntry(_) ⇒ Stream  ← pendingContent.h_key, pendingProps.h_key, pendingBlockContent.h_key",
    "  stream=0 carry=18 fwd=0 punt=0 closed=4 [col(pos(simpleKey(_)))=_; line(pos(simpleKey(_)))=line(_)] SBlockMapEntry(_) > SCompactMapTail(_) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingContent.h_key, pendingProps.h_key, pendingBlockContent.h_key",
@@ -755,7 +758,7 @@ def expectedSpines : List String :=
    "  stream=0 carry=12 fwd=0 punt=2 closed=0 SBlockIndented(_,blockIn) > SCompactSeqTail(_) > SIndent(_) > GLit(':') > SBlockIndented(_,blockOut) ⇒ Stream  ← pendingBlock.h_kslot, pendingBlock.h_kslotUp",
    "  stream=0 carry=6 fwd=0 punt=1 closed=0 SBlockIndented(_,blockIn) > SCompactSeqTail(_) ⇒ Resume(_)▹Stream  ← pendingBlock.h_closeF",
    "  stream=0 carry=1 fwd=0 punt=6 closed=0 SBlockIndented(_,blockIn) > SCompactSeqTail(_) ⇒ SeqEntryTail(_)  ← pendingBlock.h_seqF",
-   "  stream=0 carry=5 fwd=0 punt=2 closed=0 SBlockIndented(_,blockIn) > SCompactSeqTail(_) ⇒ Key(_)▹ExplValueLine(_)  ← pendingBlock.h_closeFV",
+   "  stream=0 carry=6 fwd=0 punt=1 closed=0 SBlockIndented(_,blockIn) > SCompactSeqTail(_) ⇒ Key(_)▹ExplValueLine(_)  ← pendingBlock.h_closeFV",
    "  stream=2 carry=4 fwd=0 punt=0 closed=0 SBlockNode(_+1,blockIn) ⇒ Stream  ← pendingMapValue.h_close",
    "  stream=2 carry=4 fwd=0 punt=6 closed=0 [col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream  ← pendingMapValue.h_ivl, pendingMapValue.h_vslot",
    "  stream=1 carry=1 fwd=0 punt=4 closed=0 SBlockMapEntry(_) ⇒ Stream  ← pendingMapValue.h_expl",
@@ -768,8 +771,9 @@ def expectedSpines : List String :=
 -- application gone, the walk reaches `compact_open_map` from it before it
 -- reaches the escape through the stamp wrappers, so those two rows trade places.
 def expectedSites : List String :=
+  -- Item 305: the compact arm's `h_closeFV` hand-off is a carry (the `?` slot's bottom), not a punt.
   ["  accum_block_on_closeThenBlock: nil park=pendingBlock stream=bound:h_stream_new:=param:h_close_pending closedBy=[SSLComments ⇒ Stream] h_close=carry,h_close_entry=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=carry,h_closeFV=carry",
-   "  accum_block_on_closeThenBlock: nil park=pendingBlock stream=bound:h_stream_a closedBy=[obtained] h_close=carry,h_close_entry=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=carry,h_closeFV=punt",
+   "  accum_block_on_closeThenBlock: nil park=pendingBlock stream=bound:h_stream_a closedBy=[obtained] h_close=carry,h_close_entry=carry,h_kslot=carry,h_closeF=carry,h_seqF=punt,h_kslotUp=carry,h_closeFV=carry",
    "  compact_open_map: nil park=pendingMapValue stream=param:h_stream_block closedBy=[] h_close=carry,h_ivl=carry,h_expl=carry,h_vslot=carry,h_kslot=punt,h_closeF=carry,h_frames=punt,h_closeFV=punt,h_framesV=punt,h_seqF=punt,h_explUp=punt",
    "  block_dispatch_deferred: nil park=pendingFlow stream=param:h_stream closedBy=[] ",
    "  colon_open_map_explicit: nil park=pendingMapValue stream=param:h_stream_mid closedBy=[] h_close=carry,h_ivl=carry,h_expl=punt,h_vslot=carry,h_kslot=punt,h_closeF=punt,h_frames=punt,h_closeFV=punt,h_framesV=punt,h_seqF=punt,h_explUp=punt",
@@ -880,8 +884,21 @@ def expectedK : List String :=
     `flowKeyRoute_of_root.h_close`) and one new stream builder
     (`accum_flow_open_depth0`); the route's four conjuncts head the four new
     spines (`buildSpines` 6 → 10, `k` 10 → 14, `expectedK`). -/
+-- Item 305: one hand-off, the compact arm's `h_closeFV`, is a carry where it punted — paid from the `?`
+-- slot (item 200's deliberate punt reversed; the note at the site).  Exactly: carry: 160 → 161; punt: 79 → 78; optional: stream=4 carry=110 fwd=8 punt=73 closed=0 → stream=4 carry=111 fwd=8 punt=72 closed=0; build: stream=17 carry=275 fwd=705 punt=83 closed=21 → stream=17 carry=276 fwd=705 punt=82 closed=21.
 def expectedLine : String :=
-  "closures=54 packed=14 optional=40 guarded=13 facts=3 others=1 byHead=6 byFirst=8 bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 stream=8 carry=160 fwd=8 punt=79 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 closed=0] optional[stream=4 carry=110 fwd=8 punt=73 closed=0] packSlots=104 pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=7 flowSlots=42 flow[stream=8 carry=29 fwd=0 punt=4 closed=1] routeArgs=154 routeStream=21 routeCarry=44 routeFwd=50 routeClosed=39 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 builders=13 builds=170 buildSlots=1101 build[stream=17 carry=275 fwd=705 punt=83 closed=21] buildStreamSlots=17 buildSpines=10 routePairs=9 routeSpines=5 k=14 kHeads=6 streamBuilders=9"
+  "closures=54 packed=14 optional=40 guarded=13 facts=3 others=1 byHead=6 byFirst=8 \
+bySpine=39 flowRoutes=6 flowSpinesNew=6 slots=62 nil=44 parkedCtor=35 closureSlots=255 \
+stream=8 carry=161 fwd=8 punt=78 closed=0 mandatory[stream=4 carry=50 fwd=0 punt=6 \
+closed=0] optional[stream=4 carry=111 fwd=8 punt=72 closed=0] packSlots=104 \
+pack[stream=0 carry=84 fwd=0 punt=0 closed=20] spinesFromStream=5 spinesCarried=32 \
+spinesTouched=37 firstsFromStream=4 headsFromStream=4 streamSites=2 closings=11 \
+closedDistinct=2 closedIn=2 absorbed=4 obtained=2 flowSites=7 flowSlots=42 flow[stream=8 \
+carry=29 fwd=0 punt=4 closed=1] routeArgs=154 routeStream=21 routeCarry=44 routeFwd=50 \
+routeClosed=39 routeToWalked=97 routeStreamToWalked=14 viaObtained=0 viaSites=0 \
+builders=13 builds=170 buildSlots=1101 build[stream=17 carry=276 fwd=705 punt=82 \
+closed=21] buildStreamSlots=17 buildSpines=10 routePairs=9 routeSpines=5 k=14 kHeads=6 \
+streamBuilders=9"
 
 set_option maxHeartbeats 4000000 in
 run_cmd Lean.Elab.Command.liftTermElabM do

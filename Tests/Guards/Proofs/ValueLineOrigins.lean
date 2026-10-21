@@ -1008,8 +1008,14 @@ def expectedUnborn : List String := []
 -- 2026-10-20 (item 304): `alts` 4454 → 4457, `liteNodes` 520132 → 520404 — the
 -- three value-line resumes split `KeyFrames.resumeAt`'s sum with `rcases`, one
 -- alternative each; every structural count stands (`frames` 24 among them).
+-- 2026-10-20 (item 305): the pushes' and bottoms' terms (item 305): `lets` 566 → 567, `lapps` 674 → 679, `alts` 4457 → 4466, `nodes` 12510 → 12512, `liteNodes` 520404 → 522831.
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=566 lapps=674 alts=4457 nodes=12510 liteNodes=520404"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 \
+paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 \
+route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
+someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
+relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=567 lapps=679 alts=4466 \
+nodes=12512 liteNodes=522831"
 
 /-! ## §4 The reading -/
 

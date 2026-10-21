@@ -295,10 +295,13 @@ def expectedFaceTally : String := "binders=163 faces=61 heads=19"
 def expectedHeadCensus : List String :=
   -- Item 300: `Eq` 17 → 19, the two new optional binders (`h_markerline`, `h_marker_new`).
   -- Item 304: `ResumeFrames` 12 → 3 and `KeyFrames` 9 — the value-line stacks' heads.
+  -- Item 305: `KeyFrames` 9 → 3, `lt` 23 → 28, `le` 10 → 11 — the census reads the left
+  -- disjunct's FIRST conjunct, and the width bound (`<` on the two sequence fields and their
+  -- three restating premises, `≤` on `closeThenBlock`'s `h_valFV`) is that conjunct at six sites.
   ["BareLandingFacts 8", "CompletedTail 4", "Covered 3", "Eq 19", "FVAR 2",
-   "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "KeyFrames 9",
+   "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "KeyFrames 3",
    "MarkerNodeRoute 5", "Mono 4", "PropsNodeRoute 4", "ResumeFrames 3",
-   "SLYamlStream 31", "SeqEntryTail 7", "SuffixRun 6", "le 10", "lt 23"]
+   "SLYamlStream 31", "SeqEntryTail 7", "SuffixRun 6", "le 11", "lt 28"]
 
 /-! ## §3  The rung-1 census: which faces are vacuous on their own
 

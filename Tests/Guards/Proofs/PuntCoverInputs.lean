@@ -729,7 +729,8 @@ def expectedBottoms : List String :=
    "content_dispatch_routed #1 ctor:pendingProps.h_closeFE idx=0 bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[]",
    "content_dispatch_routed #2 ctor:pendingProps.h_closeFE idx=0 bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[]"]
 def expectedBottomsPaid : List String :=
-  ["accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_docRoute:SBlockNode(0) undecided(—); h_seqRoute:SBlockSeqEntries(k) at(syn); h_entryTail:SCompactSeqTail(k) at(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([]); h_seqFrames:frames(ks); h_seqFramesV:frames(ks)] relaySrc=[local:accum_block_on_closeThenBlock.h_seqFrames]",
+  -- Item 305: `closeThenBlock`'s first entry park reads the `?` slot's bottom (`h_slotV`) beside the awaited node's frames.
+  ["accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_docRoute:SBlockNode(0) undecided(—); h_seqRoute:SBlockSeqEntries(k) at(syn); h_entryTail:SCompactSeqTail(k) at(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([]); h_seqFrames:frames(ks); h_slotV:frames(ks); h_seqFramesV:frames(ks)] relaySrc=[local:accum_block_on_closeThenBlock.h_seqFrames]",
    "accum_block_on_closeThenBlock #2 ctor:pendingBlock.h_closeF idx=nv + 1 + m bottom=below[hvs:SBlockIndented(nv) below(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks)] relaySrc=[]",
    "accum_block_on_noPending #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_rootTail:SCompactSeqTail(k) at(syn)] resume=[] relaySrc=[]",
    "accum_block_on_pendingBlock #2 ctor:pendingBlock.h_closeF idx=k bottom=below[h_close_entry_old:SCompactSeqTail(n) below(by hlt:n<k); h_close_inner:SBlockSeqEntries(k) at(syn)] resume=[h_closeFV_old:frames(ks)] relaySrc=[]",
@@ -770,8 +771,16 @@ def expectedNamed : String :=
     premise, passed at every walked site; `CloseStackCover` names them), and
     item 300 100339 → 100885 (the marker reason's productions and refutations;
     `CloseStackCover` names them). -/
+-- 2026-10-20 (item 305): the sequence fields carry the width bound and `closeThenBlock`'s first entry park reads the `?` slot's bottom: `nodes` 100885 → 101410.
 def expectedLine : String :=
-  "sites=5 pb=1 pmv=1 props=3 idx0=2 mono=2 monoOpt=0 base=2 baseOpt=0 prep=2 dispB=2 dispC=3 hc=2 chr=3 dash=1 corr=5 noflow=5 save=1 fl=0 top=2 larm=1 floor=2 nic=5 armed=0 col0=3 ids=0 coverSites=1 coverBinders=4 coverFnSites=3 full=1 fullB=1 missMono=3 missBase=3 missPrep=3 missFloorSrc=3 own=2 empty=0 relay=1 relayEntries=4 bounds=2 below=0 belowSyn=0 belowArm=0 at=2 atSyn=1 atArm=1 undecided=0 bOwn=1 bOld=1 landedBelow=0 inlineBelow=0 payable=0 lack=3 lackCallers=19 lackSupplied=0 lackSuppliedB=3 lackLow=0 lackPayable=0 vacuous=2 bottomBelow=0 paidRows=14 bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=100885"
+  "sites=5 pb=1 pmv=1 props=3 idx0=2 mono=2 monoOpt=0 base=2 baseOpt=0 prep=2 dispB=2 \
+dispC=3 hc=2 chr=3 dash=1 corr=5 noflow=5 save=1 fl=0 top=2 larm=1 floor=2 nic=5 armed=0 \
+col0=3 ids=0 coverSites=1 coverBinders=4 coverFnSites=3 full=1 fullB=1 missMono=3 \
+missBase=3 missPrep=3 missFloorSrc=3 own=2 empty=0 relay=1 relayEntries=4 bounds=2 \
+below=0 belowSyn=0 belowArm=0 at=2 atSyn=1 atArm=1 undecided=0 bOwn=1 bOld=1 \
+landedBelow=0 inlineBelow=0 payable=0 lack=3 lackCallers=19 lackSupplied=0 \
+lackSuppliedB=3 lackLow=0 lackPayable=0 vacuous=2 bottomBelow=0 paidRows=14 \
+bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=101410"
 
 /-! ## §3 The reading -/
 

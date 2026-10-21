@@ -1825,7 +1825,8 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- Spent at `accum_content_pending`'s `pendingProps` arm, where item 198
       -- punted `pendingBlockContent.h_closeFV` at all three entry-content
       -- producers for want of exactly this. ═══
-      (h_closeFEV : (∃ (ne nv : Nat) (ks : List Nat), n = ne + 1 ∧
+      -- Item 305: …and the levels above stand strictly left of the entry (`pendingBlock.h_closeFV`'s note).
+      (h_closeFEV : (∃ (ne nv : Nat) (ks : List Nat), n = ne + 1 ∧ (∀ k' ∈ ks, k' < ne) ∧
         ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
         ∀ sp_end : SurfPos, SCompactSeqTail ne sp_m sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
@@ -2163,7 +2164,10 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- carries one; the three off a `pendingProps` punt, because the field
       -- they relay (`h_closeFE`) is the props lane's ENTRY face and has no
       -- value-line twin of its own. ═══
-      (h_closeFV : (∃ (nv : Nat) (ks : List Nat),
+      -- Item 305: the levels above stand strictly LEFT of the entry — the bound
+      -- item 198 left out because nothing read it; `KeyFrames.seqLevel` reads it
+      -- when the nested `-` pushes this entry's own level on the stack.
+      (h_closeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
         ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
@@ -2342,7 +2346,8 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- `accum_block_on_closeThenBlock`'s `h_mapFV` (item 197), which asks for
       -- neither, and a field that asks its payer for more than its consumer
       -- reads is a field nobody can pay. ═══
-      (h_closeFV : (∃ (nv : Nat) (ks : List Nat),
+      -- Item 305: the levels above stand strictly LEFT of the entry (`pendingBlockContent`'s note).
+      (h_closeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
         ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
@@ -12726,7 +12731,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- Item 201: item 197's own field, at the same empty tail — the sequence
       -- lane's value-line resume (`h_closeFV`, built at item 198) reaches the
       -- flow open for the first time here.
-      (h_cFV201.imp (fun ⟨nv, ks, closeFV⟩ =>
+      (h_cFV201.imp (fun ⟨nv, ks, _, closeFV⟩ =>
         ⟨nv, ks, fun sp_m h_ssl => closeFV sp_m h_ssl sp_m (SCompactSeqTail.nil n176 sp_m)⟩) id)
   | pendingFlow _ _ _ _ _ _ _ h_live0F =>
     -- The deferred state: its own closing strategy is the drop, and the flow
@@ -23895,7 +23900,7 @@ lemma accum_block_on_closeThenBlock
     -- none of its own); `nv` is the FRAME's index and is a different number —
     -- `h_closeFV`'s widths already run to the park's own level inclusive, so
     -- nothing is consed on the way across. ═══
-    (h_valFV : (∃ (nn nv : Nat) (ks : List Nat),
+    (h_valFV : (∃ (nn nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ nn) ∧
       ∀ sp_mid : SurfPos, SBlockNode (nn + 1) .blockIn sp_scan sp_mid →
       KeyFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ True)
     -- **Item 208 (LAST): the park's own INDENT CHECK where it stands AT a line
@@ -24059,7 +24064,21 @@ lemma accum_block_on_closeThenBlock
                  -- restatement hides the gap from the census that found it; what
                  -- would pay it for real is a stack-shaped source, and the mid-line
                  -- arm reaches none (`h_mapFV` is `SSLComments`-domained). ═══
-                 (Or.inr trivial)
+                 -- ═══ **Item 305 pays it, and it is informative now.**  The nested `-`
+                 -- inside this entry PUSHES the entry's own level on the stack it finds
+                 -- here (`n :: []`), and that is the level `KeyFrames.resumeAt` hands a
+                 -- dedent back to `n` (`?⏎- - a⏎- b⏎: w`).  Item 200's sentence was
+                 -- about the stack as handed to the two doors; the base of a pushed
+                 -- stack is handed to neither.  The term is `h_kslot`'s, under
+                 -- `KeyFrames.bottom`. ═══
+                 (match hkv with
+                  | Or.inl kv => Or.inl ⟨nv, [], fun _ h => absurd h (List.not_mem_nil),
+                      fun sp_m h_bi sp_e h_tail =>
+                        KeyFrames.bottom sp_e (kv sp_e
+                          (SBlockIndented.compactSeq nv .blockOut m sp_mid _ sp_e h_ind
+                            (SCompactSeq.mk (nv + 1 + m) _ sp_scan' sp_m sp_e
+                              h_dash2 h_gnot2 h_bi h_tail)))⟩
+                  | Or.inr _ => Or.inr trivial)
                  -- ═══ ~~**Item 208: ring 1's SEVENTH producer, and the one this
                  -- item does not pay.**~~  **Item 209 pays it**, and the reading
                  -- item 208 named is the one that pays: the compact fill of an
@@ -24377,17 +24396,37 @@ lemma accum_block_on_closeThenBlock
     -- The fallback is `Or.inr trivial` rather than a bottomed stack: this
     -- face's bottom is an enclosing frame's unpaid line, and a park with no
     -- frame has no such line to stand on. ═══
-    have h_seqFramesV : (∃ (nv : Nat) (ks : List Nat),
+    -- ═══ **Item 305: the slot's own bottom.**  A `-` landing at the frame's column
+    -- opens the frame's KEY sequence (`seq-spaces`, item 188's `slotLandedSeq`);
+    -- the stack above that sequence is EMPTY and its bottom is the frame's own
+    -- `:` line — the same term item 188 pays `h_kslot` with, under
+    -- `KeyFrames.bottom`.  This is the first entry's stack, which the entries
+    -- inside it push onto and the dedent back to this column resumes. ═══
+    have h_slotV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+        ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
+        ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
+        KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True :=
+      match h_vslot with
+      | Or.inl ⟨nv, _, _, _, _, _, _, _, Or.inl hkv, _⟩ =>
+          if hnk : nv ≤ k then
+            Or.inl ⟨nv, [], fun _ h => absurd h (List.not_mem_nil),
+              fun _ h_indented sp_e h_tail =>
+                KeyFrames.bottom sp_e (hkv sp_e (slotLandedSeq hnk h_ssl
+                  (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot h_indented h_tail)))⟩
+          else Or.inr trivial
+      | _ => Or.inr trivial
+    have h_seqFramesV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True := by
-      rcases h_valFV with ⟨nn, nv, ksv, closeFV⟩ | _
+      rcases h_valFV with ⟨nn, nv, ksv, h_lev, closeFV⟩ | _
       · by_cases hnn : nn < k
-        · exact Or.inl ⟨nv, ksv, fun sp_final h_indented sp_end h_tail =>
-            closeFV sp_end (nestedBlockSeq hnn h_ssl
-              (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot h_indented h_tail))⟩
-        · exact Or.inr trivial
-      · exact Or.inr trivial
+        · exact Or.inl ⟨nv, ksv, fun k' hk' => Nat.lt_of_le_of_lt (h_lev k' hk') hnn,
+            fun sp_final h_indented sp_end h_tail =>
+              closeFV sp_end (nestedBlockSeq hnn h_ssl
+                (SBlockSeqEntries_of_compactTail h_ind h_dash h_gnot h_indented h_tail))⟩
+        · exact h_slotV
+      · exact h_slotV
     exact ⟨sp_mid, sp_mid, sp_mid, sp_scan', h_stream_new,
            BlockStack.nil sp_mid, FlowStackB.nil sp_mid .sep,
            PendingNode.pendingBlock (h_offer := dispatchBlock_dash_offerPred h_dispatch) sp_start sp_mid sp_scan' k
@@ -25377,7 +25416,7 @@ lemma accum_block_on_pendingBlockContent
     -- what it stands on, and that is the whole difference between a dedent that
     -- closes the enclosing `?` with an `e-node` and one that leaves its line
     -- owed.  Spent at the `:`/`?` arm's `h_mapFV` (item 197).
-    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat),
+    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
@@ -25530,7 +25569,7 @@ lemma accum_block_on_pendingBlockContent
                  -- new entry onto its tail — `h_kslot`'s relay above, at the
                  -- other bottom (`?⏎  ?⏎    - a⏎    - b⏎  ? c⏎: w`).
                  (match h_closeFV_old with
-                  | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+                  | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
                       fun sp_m h_bi sp_e h_tail =>
                         closeFV sp_mid h_ssl sp_e
                           (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_m sp_e
@@ -25669,7 +25708,7 @@ lemma accum_block_on_pendingBlockContent
             -- hands the opener the level it landed on, with the enclosing
             -- `?`'s line still owed underneath (`?⏎  ?⏎    - a⏎  ? b⏎: w`). ═══
             (by
-              rcases h_closeFV_old with ⟨nv, ks, closeFV⟩ | _
+              rcases h_closeFV_old with ⟨nv, ks, _, closeFV⟩ | _
               · have fV := closeFV sp_mid h_ssl sp_mid (SCompactSeqTail.nil n sp_mid)
                 by_cases hmem : k ∈ ks
                 · obtain ⟨ks', h_w, cont⟩ := fV.resumeAt hmem
@@ -25872,7 +25911,7 @@ lemma accum_block_on_pendingBlock
     -- that opens a sibling entry in an intervening mapping can resume it and
     -- still leave the frame's line owed.  Spent at the `:`/`?` arm's `h_mapFV`,
     -- the door item 197 built and this lane could not reach.
-    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat),
+    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
@@ -25981,7 +26020,7 @@ lemma accum_block_on_pendingBlock
                -- comments and the sibling conses, as `h_kslot` does above
                -- (`?⏎  ?⏎    -⏎    - b⏎  ? c⏎: w`).
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
                     fun sp_m h_bi sp_e h_tail =>
                       closeFV sp_mid h_node_old sp_e
                         (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_m sp_e
@@ -26112,15 +26151,24 @@ lemma accum_block_on_pendingBlock
                  -- Item 198: the nested collection IS the awaited entry's node,
                  -- and the park's own tail is `nil` behind it — `h_kslot`'s
                  -- crossing above, at the other bottom.
+                 -- ═══ **Item 305: the outer entry's own level is PUSHED, its tail kept
+                 -- open.**  Closing it `nil` here is what lost the dedent (`?⏎-⏎  - a⏎- b⏎: w`):
+                 -- the `-` that lands back at `n` conses onto THIS level's tail, and
+                 -- `KeyFrames.resumeAt` finds it only if the stack names it. ═══
                  (match h_closeFV_old with
-                  | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+                  | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                      fun k' hk' => by
+                        rcases List.mem_cons.mp hk' with rfl | h'
+                        · exact hlt
+                        · exact Nat.lt_trans (h_ltk k' h') hlt,
                       fun sp_m h_bi sp_e h_tail =>
-                        closeFV sp_e
-                          (SBlockIndented.node n .blockIn sp_scan sp_e
-                            (nestedBlockSeq hlt h_ssl
-                              (SBlockSeqEntries_of_compactTail h_ind h_dash2 h_gnot2
-                                h_bi h_tail)))
-                          sp_e (SCompactSeqTail.nil n sp_e)⟩
+                        KeyFrames.seqLevel n ks sp_e h_ltk (fun sp_end h_tail' =>
+                          closeFV sp_e
+                            (SBlockIndented.node n .blockIn sp_scan sp_e
+                              (nestedBlockSeq hlt h_ssl
+                                (SBlockSeqEntries_of_compactTail h_ind h_dash2 h_gnot2
+                                  h_bi h_tail)))
+                            sp_end h_tail')⟩
                   | Or.inr _ => Or.inr trivial)
                   -- Item 208: the same, across the sibling's step.
                   (indicator_top_dash hcol_mid h_ind hcorr_prep
@@ -26234,7 +26282,7 @@ lemma accum_block_on_pendingBlock
           -- entry closing EMPTY on the landing's comments where the content
           -- park next door closes on its own node (`?⏎  ?⏎    -⏎  ? b⏎: w`).
           (by
-            rcases h_closeFV_old with ⟨nv, ks, closeFV⟩ | _
+            rcases h_closeFV_old with ⟨nv, ks, _, closeFV⟩ | _
             · have fV := closeFV sp_mid
                 (SBlockIndented.empty n .blockIn sp_scan sp_mid h_ssl)
                 sp_mid (SCompactSeqTail.nil n sp_mid)
@@ -26469,14 +26517,20 @@ lemma accum_block_on_pendingBlock
                -- carries the outer stack's own `ks` — which is what makes this
                -- payment spendable, the empty list being unspendable at
                -- `resumeAt`'s membership gate (item 155). ═══
+               -- Item 305: the outer entry's level PUSHED, as at the landed nested arm.
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                    fun k' hk' => by
+                      rcases List.mem_cons.mp hk' with rfl | h'
+                      · omega
+                      · exact Nat.lt_trans (h_ltk k' h') (by omega),
                     fun sp_m h_bi sp_e h_tail =>
-                      closeFV sp_e
-                        (SBlockIndented.compactSeq n .blockIn m sp_mid sp_sc sp_e h_ind
-                          (SCompactSeq.mk (n + 1 + m) sp_sc sp_scan' sp_m sp_e
-                            h_dash2 h_gnot2 h_bi h_tail))
-                        sp_e (SCompactSeqTail.nil n sp_e)⟩
+                      KeyFrames.seqLevel n ks sp_e h_ltk (fun sp_end h_tail' =>
+                        closeFV sp_e
+                          (SBlockIndented.compactSeq n .blockIn m sp_mid sp_sc sp_e h_ind
+                            (SCompactSeq.mk (n + 1 + m) sp_sc sp_scan' sp_m sp_e
+                              h_dash2 h_gnot2 h_bi h_tail))
+                          sp_end h_tail')⟩
                 | Or.inr _ => Or.inr trivial)
                 -- **Item 208: the INLINE arm's top, from the park's OWN.**  No break was
                 -- crossed, so preprocessing wrote no indents and the stack the `-` pushes
@@ -26872,7 +26926,7 @@ lemma accum_block_pending (sc : ScannerState)
         -- very pattern since item 108, bound to `_` at this very door.  Both
         -- faces now cross together, and the `-` arm builds the new park's two
         -- stacks from one step. ═══
-        (h_closeFV108.imp (fun ⟨nv, ks, _, _, fV⟩ => ⟨nmv, nv, ks, fV⟩) id)
+        (h_closeFV108.imp (fun ⟨nv, ks, h_le, _, fV⟩ => ⟨nmv, nv, ks, h_le, fV⟩) id)
         -- Item 208: refuted from the park's own column, as above.
         (nic0_of_col_pos h_col0_mv)
     · exact accum_block_on_closeThenBlock sc sp_start sp_scan s_prep s' c sp_prep sp_scan'
@@ -26970,7 +27024,7 @@ lemma accum_block_pending (sc : ScannerState)
         -- Item 197: and the same value-line-bottomed face, likewise.
         (h_framesV108.imp (fun ⟨nv, ks, _, fV⟩ => ⟨nv, ks, fV⟩) id)
         -- Item 198: the explicit twin pays the close face too.
-        (h_closeFV108.imp (fun ⟨nv, ks, _, _, fV⟩ => ⟨nmv, nv, ks, fV⟩) id)
+        (h_closeFV108.imp (fun ⟨nv, ks, h_le, _, fV⟩ => ⟨nmv, nv, ks, h_le, fV⟩) id)
         -- Item 208: a value park is never at column 0, so the premise is refuted.
         (nic0_of_col_pos h_col0_mv)
   | pendingBlockContent _ _ _ n_old h_line _h_closable h_entry_old h_key_old h_stale47 h_arm77
@@ -32283,7 +32337,7 @@ lemma accum_content_on_pendingBlock_indented
     -- **Item 198 (LAST): the park's value-line stack** (`pendingBlock.h_closeFV`),
     -- relayed onto whatever this content step parks exactly as `h_closeF_old`
     -- is — the same fold, one bottom over.
-    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat),
+    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True)
@@ -32465,7 +32519,7 @@ lemma accum_content_on_pendingBlock_indented
              -- underneath is the enclosing `?`'s unpaid line instead of the
              -- finished stream.
              (match h_closeFV_old with
-              | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+              | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
                   fun sp_final h_ssl =>
                     closeFV sp_final
                       (SBlockIndented.node n .blockIn sp_scan sp_final
@@ -32623,7 +32677,7 @@ lemma accum_content_on_pendingBlock_indented
              -- rides — with the stack standing on the enclosing `?`'s unpaid line
              -- instead of the finished stream.
              (match h_closeFV_old with
-              | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨n, nv, ks, rfl,
+              | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨n, nv, ks, rfl, h_ltk,
                   fun sp_m h_bn sp_end h_tail =>
                     closeFV sp_m (SBlockIndented.node n .blockIn sp_scan sp_m h_bn)
                       sp_end h_tail⟩
@@ -32708,7 +32762,7 @@ lemma accum_content_on_pendingBlock_indented
               | Or.inr _ => Or.inr trivial)
              -- Item 198: same relay, the re-read node folded in as above.
              (match h_closeFV_old with
-              | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+              | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
                   fun sp_final h_ssl =>
                     closeFV sp_final
                       (SBlockIndented.node n .blockIn sp_scan sp_final
@@ -32867,7 +32921,7 @@ lemma accum_content_on_pendingBlock_indented
               | Or.inr _ => Or.inr trivial)
              -- Item 198: same relay, the multi-line value's node.
              (match h_closeFV_old with
-              | Or.inl ⟨nv, ks, closeFV⟩ => Or.inl ⟨nv, ks,
+              | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, ks, h_ltk,
                   fun sp_final h_ssl =>
                     closeFV sp_final
                       (SBlockIndented.node n .blockIn sp_scan sp_final
@@ -35255,13 +35309,13 @@ lemma accum_content_pending (sc : ScannerState)
               -- The park's `ne` is the enclosing collection's width and the
               -- landing names it; the field carries no cover, so `ne = k` is
               -- the whole step.
-              have h_closeFEV_k : (∃ (nv : Nat) (ks : List Nat),
+              have h_closeFEV_k : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
                   ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
                   ∀ sp_end : SurfPos, SCompactSeqTail k sp_m sp_end →
                   KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ True := by
-                rcases h_closeFEV_p with ⟨ne, nv, ks, hne, r⟩ | _
+                rcases h_closeFEV_p with ⟨ne, nv, ks, hne, h_ltk, r⟩ | _
                 · obtain rfl : ne = k := by omega
-                  exact Or.inl ⟨nv, ks, r⟩
+                  exact Or.inl ⟨nv, ks, h_ltk, r⟩
                 · exact Or.inr trivial
               -- One question, one deferral: is there a reading of this value at
               -- EVERY index?  Both negative answers — a block-scalar header and
@@ -35421,7 +35475,7 @@ lemma accum_content_pending (sc : ScannerState)
                            -- this step exactly as the stream face above does
                            -- (`?⏎  ?⏎    - &p a⏎  ? b⏎: w`). ═══
                            (match h_closeFEV_k with
-                            | Or.inl ⟨nv, ks, closeFEV⟩ => Or.inl ⟨nv, ks,
+                            | Or.inl ⟨nv, ks, h_ltk, closeFEV⟩ => Or.inl ⟨nv, ks, h_ltk,
                                 fun sp_mid h_ssl sp_end h_tail =>
                                   closeFEV sp_mid (h_nodeAt sp_mid h_ssl) sp_end h_tail⟩
                             | Or.inr _ => Or.inr trivial)
@@ -35537,7 +35591,7 @@ lemma accum_content_pending (sc : ScannerState)
                            (Or.inr trivial)
                            -- Item 199: as above — the same fold, the same field.
                            (match h_closeFEV_k with
-                            | Or.inl ⟨nv, ks, closeFEV⟩ => Or.inl ⟨nv, ks,
+                            | Or.inl ⟨nv, ks, h_ltk, closeFEV⟩ => Or.inl ⟨nv, ks, h_ltk,
                                 fun sp_mid h_ssl sp_end h_tail =>
                                   closeFEV sp_mid (h_nodeAt sp_mid h_ssl) sp_end h_tail⟩
                             | Or.inr _ => Or.inr trivial)
@@ -35651,7 +35705,7 @@ lemma accum_content_pending (sc : ScannerState)
                            (Or.inr trivial)
                            -- Item 199: as above — the same fold, the same field.
                            (match h_closeFEV_k with
-                            | Or.inl ⟨nv, ks, closeFEV⟩ => Or.inl ⟨nv, ks,
+                            | Or.inl ⟨nv, ks, h_ltk, closeFEV⟩ => Or.inl ⟨nv, ks, h_ltk,
                                 fun sp_mid h_ssl sp_end h_tail =>
                                   closeFEV sp_mid (h_nodeAt sp_mid h_ssl) sp_end h_tail⟩
                             | Or.inr _ => Or.inr trivial)

@@ -151,7 +151,10 @@ run_single() {
   local result="PASS"
   local detail=""
 
-  # Layer 1: Internal
+  # Layer 1: Internal.  Drop any canonical file an earlier run left for this
+  # stem first: a failed run writes nothing, and Layer 2 must not compare the
+  # current input against stale output.
+  rm -f "${canonical}"
   local rc=0
   run_internal "${input}" "${canonical}" || rc=$?
   case ${rc} in

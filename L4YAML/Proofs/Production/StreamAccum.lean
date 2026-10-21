@@ -30486,7 +30486,7 @@ lemma entryKeyPack_of_dispatch
                                h_ind' h_entry h_tail)).close sp_i sp_c h_iv h_lit sp_w h_sbi)⟩
                        | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                      else Or.inr trivial
-                 | Or.inr _ => Or.inr trivial),
+                 | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
                 Or.inl ⟨ks', h_w'.lt,
                   -- ~~Item 148: the landing's own hop is the one that does not
                   -- come free.~~  **Item 149 pays it.**  The level the landing
@@ -30518,7 +30518,7 @@ lemma entryKeyPack_of_dispatch
                                h_ind' h_entry h_tail)⟩
                        | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                      else Or.inr trivial
-                 | Or.inr _ => Or.inr trivial), Or.inr trivial⟩
+                 | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)), Or.inr trivial⟩
             · -- **Item 297: a width naming no frame keys a fresh document at the
               -- landing too**, with the frameless exit's terms (item 296): the
               -- park's own `h_node` closes the awaited entry empty, so the
@@ -31031,7 +31031,7 @@ lemma entryPropsKeyPack_of_dispatch
                              h_ind' h_entry h_tail)).close sp_i sp_c h_iv h_lit sp_w h_sbi)⟩
                      | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                    else Or.inr trivial
-               | Or.inr _ => Or.inr trivial),
+               | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
               Or.inl ⟨ks', h_w'.lt,
                 -- Item 149: the landing's hop, paid for the reason named at
                 -- `entryKeyPack_of_dispatch`'s own dedent branch.
@@ -31052,7 +31052,7 @@ lemma entryPropsKeyPack_of_dispatch
                              h_ind' h_entry h_tail)⟩
                      | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                    else Or.inr trivial
-               | Or.inr _ => Or.inr trivial)⟩,
+               | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))⟩,
               h_props, h_sk_line,
               by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1⟩
           · -- **Item 297: the run-headed key's width naming no frame keys a

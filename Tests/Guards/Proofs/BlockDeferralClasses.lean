@@ -4472,8 +4472,12 @@ script, as `expectedInlineArms` is. -/
 -- `PackAlt.step_dispatch` is the fifth promised body.
 -- 2026-10-21 (item 315): `sites` 203 → 197, `leaf` 100 → 94 — the two key-pack lemmas' six transport arms
 -- step through `PackAlt.step_content` (`entryPropsKeyPack_of_dispatch` takes the content dispatch as a premise).
+-- 2026-10-21 (item 318): `sites` 197 → 196, `leaf` 94 → 93, `stubs` 5 → 7 — the predicate is the dead register alone
+-- (item 317 ended the register at a marker, so the sentinel disjunct had no producer); the block lane's two transport
+-- wrappers `PackAlt.step_blockEntry`/`step_value` are the sixth and seventh promised bodies, and one dash-arm leaf of
+-- `accum_block_on_pendingBlock` is paid through the first (item 319's consumer probe).
 def expectedPackFlip : String :=
-  "sites=197 decls=24 rounds=2 decline=197 relay=0 leaf=94 uncond=103 stubs=5"
+  "sites=196 decls=24 rounds=2 decline=196 relay=0 leaf=93 uncond=103 stubs=7"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4493,8 +4497,11 @@ def expectedPackFlip : String :=
 -- 2026-10-21 (item 315): `decline` 184 → 178 (`leaf` 90 → 84) — the key-pack lemmas' six arms; what stands in
 -- the content lane is its roots (fresh parks after a landing, resumed sequence levels, the frames without the landing's
 -- width), none with a register fact in scope yet.
+-- 2026-10-21 (item 318): `decline` 178 → 177 (`leaf` 84 → 83), `promised` 3 → 5 — the one paid dash leaf, and the two
+-- block-lane transports' promises (`ExplicitValueRefused.step_blockEntry`, `.step_value`) substituted and elaborating;
+-- `relayState` stands at 3 (`accum_block_on_closeThenBlock`'s `h_resKslot` ×2, `compact_open_map`'s `h_expl105`), item 319's.
 def expectedPackResidue : String :=
-  "sites=181 decls=22 rounds=2 decline=178 relayTrue=0 relayState=3 leaf=84 uncond=94 stubs=1 promised=3"
+  "sites=180 decls=22 rounds=2 decline=177 relayTrue=0 relayState=3 leaf=83 uncond=94 stubs=1 promised=5"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

@@ -335,8 +335,12 @@ declarations' own binders and not by a rescoring of an existing one.
 -- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
 -- dispatch-only transport and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
 -- 2026-10-21 (item 315): `RELAY` 2190 → 2191 — `entryPropsKeyPack_of_dispatch`'s `h_dispatch` (as in the unpeeled tally).
+-- 2026-10-21 (item 318): `constants` 1407 → 1408, `decls` 1121 → 1122, `READ` 1201 → 1199, `RELAY` 2191 → 2192,
+-- `RETURN` 138 → 139, `UNUSED` 17 → 24 — the block lane's two transports and two wrappers (+4) less item 309's three
+-- indent lemmas (−3); `not_of_classA` reads one premise fewer, the two content transports return their one equation,
+-- and the two wrappers' seven `_`-binders are the new UNUSED.
 def expectedModuleTallyP : String :=
-  "constants=1407 decls=1121 eta=414 FIELD=185 READ=1201 RELAY=2191 RETURN=138 UNUSED=17"
+  "constants=1408 decls=1122 eta=414 FIELD=185 READ=1199 RELAY=2192 RETURN=139 UNUSED=24"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
@@ -604,14 +608,23 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
     and the nineteenth is one module over. -/
 -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is its
 -- thirteenth binder.
+-- 2026-10-21 (item 318): seven rows added — `PackAlt.step_blockEntry`'s three `_`-binders and `PackAlt.step_value`'s four,
+-- `lane stub` like the other promised wrappers; regenerated from the census's own `got` rows.
 def expectedDead : List String :=
   [ "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#3 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#4 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#5 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#4 (_h_preprocess) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#5 (_h_dispatch) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3 (_h_dispatch) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#3 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#4 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#5 (_h_noflow) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#6 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2 (_h) [lane stub]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#10 (_h_src) [class marker]",
@@ -647,12 +660,21 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#5"
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6"
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3"
-  | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4" => "lane stub"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4"
+  -- Item 318: the block lane's two promised wrappers (three implicit states precede their binders).
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#4"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#5"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#4"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#5"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#6" => "lane stub"
   | _ => "family uniformity"
 
 -- 2026-10-21 (item 315): `dead` 18 → 19, `RELAY` 0 → 1 — `entryPropsKeyPack_of_dispatch`'s new `h_dispatch` is relayed to
 -- the promised wrapper and chased to its unused step binder.
-def expectedDeadTally : String := "dead=19 RELAY=1 UNUSED=18 RELAY=1"
+-- 2026-10-21 (item 318): `dead` 19 → 26, `UNUSED` 18 → 25 — the seven lane-stub binders above.
+def expectedDeadTally : String := "dead=26 RELAY=1 UNUSED=25 RELAY=1"
 
 run_cmd do
   let env ← getEnv

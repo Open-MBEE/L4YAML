@@ -711,6 +711,9 @@ def expectedOrigins : List String := [
 -- 2026-10-21 (item 314): 39 rows of the content lemmas re-read — the declining arm of each `match` hands the
 -- alternative on (through `PackAlt.step_content`/`step_dispatch` or verbatim), so `none=[punt]` leaves the row and a `via`
 -- reads as a `step`; origins and holdings unchanged.
+-- 2026-10-21 (item 318): one row re-read — `accum_block_on_pendingBlock`'s `h_kslot` at the sibling `-` (`#1`) reads
+-- `none=[stamp]` where it read `none=[punt]`: the declining arm hands the park's alternative through
+-- `PackAlt.step_blockEntry` (the block lane's transport, item 319's consumer probe) instead of punting with `trivial`.
 def expectedRows : List String := [
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslot := alt/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[punt,stamp] ⊢ none-held 0/1",
   "accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_kslotUp := paid:chain/built pos=[param:accum_block_on_closeThenBlock.h_vslot] origins=[O75] none=[punt] ⊢ none-held 0/1",
@@ -724,7 +727,7 @@ def expectedRows : List String := [
   "accum_block_on_noPending #1 ctor:pendingBlock.h_kslot := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
   "accum_block_on_noPending #1 ctor:pendingBlock.h_kslotUp := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
   "accum_block_on_noPending #1 param:indicator_open_map.h_explUp_chain := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
-  "accum_block_on_pendingBlock #1 ctor:pendingBlock.h_kslot := paid:chain/built pos=[param:accum_block_on_pendingBlock.h_kslot] origins=[O75] none=[punt] ⊢ none-held 0/1",
+  "accum_block_on_pendingBlock #1 ctor:pendingBlock.h_kslot := paid:chain/built pos=[param:accum_block_on_pendingBlock.h_kslot] origins=[O75] none=[stamp] ⊢ none-held 0/1",
   "accum_block_on_pendingBlock #1 ctor:pendingBlock.h_kslotUp := paid:chain/built pos=[param:accum_block_on_pendingBlock.h_kslotUp] origins=[O75] none=[punt] ⊢ none-held 0/1",
   "accum_block_on_pendingBlock #2 ctor:pendingBlock.h_kslot := paid:chain/built pos=[param:accum_block_on_pendingBlock.h_kslot] origins=[O75] none=[punt] ⊢ none-held 0/1",
   "accum_block_on_pendingBlock #2 ctor:pendingBlock.h_kslotUp := paid:chain/built pos=[param:accum_block_on_pendingBlock.h_kslotUp] origins=[O75] none=[punt] ⊢ none-held 0/1",
@@ -1054,13 +1057,15 @@ def expectedUnborn : List String := []
 -- 2026-10-21 (item 314): `follows` 318 → 339, `liteNodes` 529047 → 529323 — the content lane's declining arms hand their
 -- hypothesis on, and the walk follows each; every row and position stands (180, 47).
 -- 2026-10-21 (item 315): `nodes` 12554 → 12556 — the key-pack lemmas' six arms step through the wrapper; rows and positions stand.
+-- 2026-10-21 (item 318): `liteNodes` 529323 → 529329 — the one paid dash arm of `accum_block_on_pendingBlock` applies
+-- `PackAlt.step_blockEntry` to its two step facts where it wrote `trivial`; rows and positions stand.
 def expectedLine : String :=
   "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 \
 paramRows=82 packagedRows=29 punt=26 stamp=16 built=138 origins=76 originRows=41 \
 route=23 frames=30 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
 someHeld=39 noneHeld=76 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=339 lets=570 lapps=696 alts=4495 \
-nodes=12556 liteNodes=529323"
+nodes=12556 liteNodes=529329"
 
 /-! ## §4 The reading -/
 

@@ -579,11 +579,18 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
 -- dispatch-only transport and its promised wrapper (two unused binders until the promise is its body).
 -- 2026-10-21 (item 315): `RELAY` 2340 → 2341 — `entryPropsKeyPack_of_dispatch`'s `h_dispatch`, relayed to the step lemma.
+-- 2026-10-21 (item 318): `constants` 1407 → 1408, `decls` 1121 → 1122, `READ` 1163 → 1161, `RELAY` 2341 → 2343,
+-- `UNUSED` 17 → 24 — the block lane's two transports and their two wrappers (+4) less item 309's three indent lemmas (−3);
+-- `not_of_classA` lost its indent premise and the two content transports hand `h` on whole (one register equation each)
+-- where they destructured it; the seven `_`-binders of `PackAlt.step_blockEntry` and `PackAlt.step_value` are the new UNUSED.
 def expectedModuleTally : String :=
-  "constants=1407 decls=1121 eta=414 FIELD=163 READ=1163 RELAY=2341 RETURN=48 UNUSED=17"
+  "constants=1408 decls=1122 eta=414 FIELD=163 READ=1161 RELAY=2343 RETURN=48 UNUSED=24"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.
+-- 2026-10-21 (item 318): seven rows added — `PackAlt.step_blockEntry`'s `_h_preprocess`/`_h_dispatch`/`_h` (#3–#5: three
+-- implicit states precede them, where `step_content` also has `{c}`) and `PackAlt.step_value`'s four (#3–#6, `_h_noflow` among
+-- them); regenerated from the census's own `got` rows.
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
   -- its thirteenth binder.
@@ -599,11 +606,18 @@ def expectedUnused : List String :=
     "ofPark#2 (_h)",
     "ofRefused#1 (_h)",
     "question_open_map#15 (_h_noflow_disp)",
+    "step_blockEntry#3 (_h_preprocess)",
+    "step_blockEntry#4 (_h_dispatch)",
+    "step_blockEntry#5 (_h)",
     "step_content#4 (_h_preprocess)",
     "step_content#5 (_h_dispatch)",
     "step_content#6 (_h)",
     "step_dispatch#3 (_h_dispatch)",
-    "step_dispatch#4 (_h)" ]
+    "step_dispatch#4 (_h)",
+    "step_value#3 (_h_preprocess)",
+    "step_value#4 (_h_dispatch)",
+    "step_value#5 (_h_noflow)",
+    "step_value#6 (_h)" ]
 
 run_cmd do
   let env ← getEnv

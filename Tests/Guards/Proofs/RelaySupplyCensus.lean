@@ -1114,9 +1114,12 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- 2026-10-21 (item 314): `DECLINE-closed` 180 → 132, `DECLINE-free` 5 → 53 — forty-eight split leaves of the content
 -- lane hand back their hypothesis (`Or.inr h => Or.inr (PackAlt.step_content … h)` or `Or.inr h`) where they declined with
 -- a closed `trivial`; the leaf count, the roots and the agreement stand.
+-- 2026-10-21 (item 318): `DECLINE-closed` 132 → 131, `DECLINE-free` 53 → 54 — one dash-arm leaf of
+-- `accum_block_on_pendingBlock` hands back its hypothesis through `PackAlt.step_blockEntry` (the block lane's transport,
+-- item 319's consumer probe) where it declined with a closed `trivial`.
 def expectedSplitBranch : String :=
   "splits=166 leaves=363 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=132, DECLINE-free=53, PAY-free=177, VIA \
+agree=110/110 disagree=0 [DECLINE-closed=131, DECLINE-free=54, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

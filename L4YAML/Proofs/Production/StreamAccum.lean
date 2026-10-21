@@ -527,22 +527,20 @@ inductive ImplicitKeyHead : SurfPos → SurfPos → Prop where
   | json {s s' : SurfPos} : SFlowNode 0 .blockKey s s' → ImplicitKeyHead s s'
 
 /-- **The pack family's alternative — what a park carries INSTEAD of a value-line
-    pack** (item 308).  A class-A `:` — the explicit value of a `?` frame, `[197]`'s
-    `s-indent(n) ':'` — fires only when the dispatch state's register is live
-    (`explicitKeyLine ≠ none`) and the `:` stands at the mapping indent
-    (`col = currentIndent`, `scanValue`'s check).  Either disjunct refutes it at the
-    park: a dead register (preprocessing writes neither explicit-key field,
-    `ekl_dis_eq_park`), or the sentinel indent `-1` a document marker's unwind leaves
-    behind.  The second disjunct has no producer: a document marker ends the register
-    (`scanDocumentStart`, `scanDocumentEnd`, item 317), where item 308's probe 726 had
-    found a `?` frame's register crossing `---`/`...` — a scanner over-acceptance, not a
-    fact to carry — so item 318 narrows the predicate to the register alone.  The
-    alternative's consumers are the three
-    `block_dispatch_deferred_stamp_nopack` applications, which hold both refutations
-    (`ExplicitValueRefused.not_of_classA`); its producers are the family's roots, each
-    paying the disjunct its park can prove (12.3.4.2). -/
+    pack** (item 308): the park's explicit-key register is DEAD.  A class-A `:` — the
+    explicit value of a `?` frame, `[197]`'s `s-indent(n) ':'` — fires only when the
+    dispatch state's register is live (`explicitKeyLine ≠ none`), and preprocessing
+    writes neither explicit-key field (`ekl_dis_eq_park`), so a dead register at the
+    park refutes the landing (`ExplicitValueRefused.not_of_classA`).  The register is
+    the whole predicate: the sentinel indent `-1` a document marker's unwind leaves
+    behind refutes nothing the register does not, because a marker ends the register
+    (`scanDocumentStart`, `scanDocumentEnd`, item 317 — item 308's probe 726 had read a
+    `?` frame's register crossing `---`/`...`, which was the scanner over-acceptance that
+    item fixed).  Producers are the family's roots, each paying the fact its park can
+    prove (12.3.4.2); consumers the three `block_dispatch_deferred_stamp_nopack`
+    applications. -/
 def ExplicitValueRefused (sc : ScannerState) : Prop :=
-  sc.explicitKeyLine = none ∨ sc.currentIndent = -1
+  sc.explicitKeyLine = none
 
 /-- **The pack family's alternative, NAMED** (item 311) — what every value-line pack, chain pack
     and value-line stack carries instead of its payment.  `True` for now: retyping the two
@@ -19940,78 +19938,24 @@ lemma ekl_dis_eq_park {sc s_prep : ScannerState} {c : Char}
     · rfl
   exact h_norm.trans (ExplicitKeyCoupling.preprocess_preserves_explicitKey sc s_prep c h).1
 
-/-- The unwind pops only while `currentIndent > col`, and the sentinel `-1` is never
-    above a column: a state at the sentinel is left as it is (item 309). -/
-lemma unwindIndents_of_currentIndent_neg {s : ScannerState} {col : Int}
-    (h : s.currentIndent = -1) (hcol : 0 ≤ col) : unwindIndents s col = s := by
-  unfold unwindIndents
-  cases hs : s.indents.size with
-  | zero => unfold unwindIndentsLoop; rfl
-  | succ n =>
-    unfold unwindIndentsLoop
-    have hgt : ¬ (s.currentIndent > col) := by rw [h]; omega
-    simp [hgt]
-
-/-- Preprocessing keeps the sentinel indent: `skipToContent` and the key save touch
-    no indent, and the unwind is the identity at `-1` (item 309). -/
-lemma preprocess_currentIndent_neg {sc s_prep : ScannerState} {c : Char}
-    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
-    (hneg : sc.currentIndent = -1) : s_prep.currentIndent = -1 := by
-  obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim h
-  have h_skip : s_skip.currentIndent = -1 :=
-    (currentIndent_of_indents_eq (skipToContent_preserves_indents sc s_skip hsk)).trans hneg
-  rw [h_save, currentIndent_of_indents_eq (saveSimpleKey_preserves_indents s_u)]
-  rcases h_cases with rfl | rfl
-  · exact h_skip
-  · show (unwindIndents s_skip (s_skip.col : Int)).currentIndent = -1
-    rw [unwindIndents_of_currentIndent_neg h_skip (by omega)]
-    exact h_skip
-
-/-- **The sentinel a landing READS is the sentinel its PARK carries** (item 309,
-    `ekl_dis_eq_park`'s indent twin): the directive normalization writes no indent. -/
-lemma indent_neg_dis_of_park {sc s_prep : ScannerState} {c : Char}
-    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
-    (hneg : sc.currentIndent = -1) :
-    (if s_prep.allowDirectives then
-      { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).currentIndent = -1 := by
-  have h_norm : (if s_prep.allowDirectives then
-      { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).currentIndent = s_prep.currentIndent := by
-    split
-    · rfl
-    · rfl
-  exact h_norm.trans (preprocess_currentIndent_neg h hneg)
-
-/-- **The alternative, refuted at a class-A landing** (item 309) — from the two facts
-    the three `block_dispatch_deferred_stamp_nopack` applications already hold: the
-    live register at the dispatch state (`h_src`'s first disjunct, the `_h_park` term)
-    and the `[197]` check that passed (`_h_indent`, `explicit_at_indent_of_dispatch`).
-    No park carrying `ExplicitValueRefused` is the park such a `:` landed on — which is
-    what lets 12.3.4.3 close the wrapper's `inr` branch. -/
+/-- **The alternative, refuted at a class-A landing** (item 309) — from the fact the three
+    `block_dispatch_deferred_stamp_nopack` applications already hold: the live register at
+    the dispatch state (`h_src`'s first disjunct, the `_h_park` term), which `ekl_dis_eq_park`
+    reads back at the park.  No park carrying `ExplicitValueRefused` is the park such a `:`
+    landed on — which is what lets 12.3.4.3 close the wrapper's `inr` branch. -/
 lemma ExplicitValueRefused.not_of_classA {sc s_prep : ScannerState} {c : Char}
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_live : (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).explicitKeyLine ≠ none)
-    (h_indent : ((if s_prep.allowDirectives then
-      { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).col : Int) = (if s_prep.allowDirectives then
-      { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).currentIndent) :
-    ¬ ExplicitValueRefused sc := by
-  rintro (h_ek | h_neg)
-  · exact h_live ((ekl_dis_eq_park h_preprocess).trans h_ek)
-  · rw [indent_neg_dis_of_park h_preprocess h_neg] at h_indent
-    omega
+    else s_prep).explicitKeyLine ≠ none) :
+    ¬ ExplicitValueRefused sc :=
+  fun h_ek => h_live ((ekl_dis_eq_park h_preprocess).trans h_ek)
 
 /-- **Lane (b)'s transport: the alternative survives a CONTENT step** (item 313).  A park at `sc`
-    whose explicit value is refused — a dead register, or the sentinel indent — hands the park the
-    content dispatch builds the same refusal: preprocessing writes neither register field
-    (`ekl_dis_eq_park`) and unwinds no sentinel (`indent_neg_dis_of_park`), and the content dispatch
-    — a scalar, a quoted scalar, a property, an alias, a block scalar — writes no register field
-    (`dispatchContent_preserves_explicitKeyLine`) and no indent
-    (`IndentStackBase.dispatchContent_preserves_indents`).  The fourteen leaves of
+    whose register is dead hands the park the content dispatch builds a dead register: preprocessing
+    writes neither register field (`ekl_dis_eq_park`), and the content dispatch — a scalar, a quoted
+    scalar, a property, an alias, a block scalar — writes none either
+    (`dispatchContent_preserves_explicitKeyLine`).  The fourteen leaves of
     `accum_content_pending` and the one of `accum_content_on_pendingMapValue_indented` that relay a
     park's pack or stack into the park the step builds are this lemma's spends. -/
 lemma ExplicitValueRefused.step_content {sc s_prep s' : ScannerState} {c : Char}
@@ -20019,13 +19963,9 @@ lemma ExplicitValueRefused.step_content {sc s_prep s' : ScannerState} {c : Char}
     (h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep) c = .ok s')
-    (h : ExplicitValueRefused sc) : ExplicitValueRefused s' := by
-  rcases h with h_ek | h_neg
-  · exact Or.inl ((ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans
-      ((ekl_dis_eq_park h_preprocess).trans h_ek))
-  · exact Or.inr ((currentIndent_of_indents_eq
-      (IndentStackBase.dispatchContent_preserves_indents h_dispatch)).trans
-      (indent_neg_dis_of_park h_preprocess h_neg))
+    (h : ExplicitValueRefused sc) : ExplicitValueRefused s' :=
+  (ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans
+    ((ekl_dis_eq_park h_preprocess).trans h)
 
 /-- The same step on the named alternative.  `trivial` while `PackAlt` is `True`; the census's
     residue mode substitutes the proof promised after `-- refused:` (`scripts/pack_flip_census.py`),
@@ -20040,20 +19980,14 @@ lemma PackAlt.step_content {sc s_prep s' : ScannerState} {c : Char}
 
 /-- **The same transport from the LANDING's own state** (item 314): a resuming context states the
     alternative at `s_prep`, the preprocessed state, and the content dispatch carries it to `s'` —
-    the directive normalization writes no register field and no indent. -/
+    the directive normalization writes no register field. -/
 lemma ExplicitValueRefused.step_dispatch {s_prep s' : ScannerState} {c : Char}
     (h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep) c = .ok s')
     (h : ExplicitValueRefused s_prep) : ExplicitValueRefused s' := by
-  rcases h with h_ek | h_neg
-  · refine Or.inl ((ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans ?_)
-    split <;> simpa using h_ek
-  · refine Or.inr ((currentIndent_of_indents_eq
-      (IndentStackBase.dispatchContent_preserves_indents h_dispatch)).trans ?_)
-    split
-    · exact (currentIndent_of_indents_eq rfl).trans h_neg
-    · exact h_neg
+  refine (ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans ?_
+  split <;> exact h
 
 /-- The dispatch-only step on the named alternative (`trivial` while `PackAlt` is `True`, its
     proof promised after `-- refused:`). -/
@@ -20557,6 +20491,57 @@ lemma dispatchBlock_colon_or_question_offerPred {s s' : ScannerState} {c : Char}
   rcases hc with rfl | rfl
   · exact dispatchBlock_colon_offerPred h
   · exact dispatchBlock_question_offerPred h
+
+/-- **The block lane's `-` transport** (item 318; item 316's probe 863 without its invariant,
+    which item 317 made unnecessary): a block entry writes no register field
+    (`scanBlockEntry_preserves_explicitKey`), so a park whose register is dead hands the park
+    the `-` builds a dead register.  The dash arms of the six block-lane lemmas are this
+    lemma's spends. -/
+lemma ExplicitValueRefused.step_blockEntry {sc s_prep s' : ScannerState}
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, '-')))
+    (h_dispatch : scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) '-' = .ok (some s'))
+    (h : ExplicitValueRefused sc) : ExplicitValueRefused s' :=
+  (ExplicitKeyCoupling.scanBlockEntry_preserves_explicitKey
+    (dispatchBlock_dash_scanBlockEntry h_dispatch)).1.trans ((ekl_dis_eq_park h_preprocess).trans h)
+
+/-- The `-` step on the named alternative (`trivial` while `PackAlt` is `True`, its proof promised
+    after `-- refused:`). -/
+lemma PackAlt.step_blockEntry {sc s_prep s' : ScannerState}
+    (_h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, '-')))
+    (_h_dispatch : scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) '-' = .ok (some s'))
+    (_h : PackAlt sc) : PackAlt s' :=
+  trivial  -- refused: ExplicitValueRefused.step_blockEntry _h_preprocess _h_dispatch _h
+
+/-- **The block lane's `:` transport** (item 318): in block context a dead register stays dead
+    through `scanValue` (`scanValue_ok_of_ekl_none`) — the register a class-A value would need is
+    the one this predicate denies, so a block `:` landing on a refused park opens an implicit
+    entry and the park it builds is refused too. -/
+lemma ExplicitValueRefused.step_value {sc s_prep s' : ScannerState}
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, ':')))
+    (h_dispatch : scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) ':' = .ok (some s'))
+    (h_noflow : s_prep.inFlow = false)
+    (h : ExplicitValueRefused sc) : ExplicitValueRefused s' :=
+  (ExplicitKeyCoupling.scanValue_ok_of_ekl_none (dispatchBlock_colon_scanValue h_dispatch)
+    (noflow_disp_of_noflow h_noflow)
+    (by have := preprocess_some_peek h_preprocess; split <;> exact this)
+    ((ekl_dis_eq_park h_preprocess).trans h)).2
+
+/-- The `:` step on the named alternative (`trivial` while `PackAlt` is `True`, its proof promised
+    after `-- refused:`). -/
+lemma PackAlt.step_value {sc s_prep s' : ScannerState}
+    (_h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, ':')))
+    (_h_dispatch : scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep) ':' = .ok (some s'))
+    (_h_noflow : s_prep.inFlow = false)
+    (_h : PackAlt sc) : PackAlt s' :=
+  trivial  -- refused: ExplicitValueRefused.step_value _h_preprocess _h_dispatch _h_noflow _h
 
 /-- The `?` step's park-side facts (item 48): the `.key` push ends the array
     real and the flag rides through — `implicitValueLine` is not stamped
@@ -26253,7 +26238,9 @@ lemma accum_block_on_pendingBlock
                         (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_m sp_e
                           h_ind h_dash2 h_gnot2 h_bi h_tail)
                         sp_i sp_c h_iv h_lit sp_v h_sbi⟩
-                | Or.inr _ => Or.inr trivial)
+                -- Item 318: the sibling `-` carries the park's alternative through `step_blockEntry`
+                -- (the block lane's transport; item 319 pays the other dash and colon arms this way).
+                | Or.inr h_alt => Or.inr (PackAlt.step_blockEntry h_preprocess h_dispatch h_alt))
              (Or.inr trivial)
                (nodir_of_block_dispatch h_dispatch) (Or.inr trivial)
                -- Item 190: the empty sibling carries the second frame too.

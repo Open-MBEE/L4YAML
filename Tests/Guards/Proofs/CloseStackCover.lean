@@ -1127,6 +1127,7 @@ def expectedDoor : List String :=
 -- content lane's twenty-one `.imp id (PackAlt.step_content …)` wrappers; every row stands.
 -- 2026-10-21 (item 314): `nodes` 103174 → 103286 — `ExplicitValueRefused.step_dispatch`, `PackAlt.step_dispatch` and the
 -- content lane's sixty-one leaf payments (each `Or.inr trivial` an application or a hypothesis now); every row stands.
+-- 2026-10-21 (item 315): `nodes` 103286 → 103289 — the key-pack lemmas' six arms step through the wrapper (three a side).
 def expectedLine : String :=
   "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 \
 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 \
@@ -1136,7 +1137,7 @@ valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLem
 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 \
 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 \
 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 \
-doorForgotten=8 doorDropped=23 doorsOther=4 nodes=103286"
+doorForgotten=8 doorDropped=23 doorsOther=4 nodes=103289"
 
 /-! ## §6 The reading -/
 

@@ -30316,7 +30316,7 @@ lemma entryKeyPack_of_dispatch
                                  (nestedBlockMap hnw h_land.1
                                    (SBlockMapEntries_of_compactTail h_ind' h_entry h_tail))
                                  sp_i sp_c h_iv h_lit sp_w h_sbi⟩
-                         | Or.inr _ => Or.inr trivial),
+                         | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
                         -- Item 99: the nested mapping's resume twin — the
                         -- entry and tail close the mapping the caller's node
                         -- awaits, and the caller's own frames (`h_nodeF`)
@@ -30361,7 +30361,7 @@ lemma entryKeyPack_of_dispatch
                               fun sp_v h_entry sp_e h_tail =>
                                 nodeFV sp_e (nestedBlockMap hnw h_land.1
                                   (SBlockMapEntries_of_compactTail h_ind' h_entry h_tail))⟩
-                          | Or.inr _ => Or.inr trivial
+                          | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)
                         else Or.inr trivial,
                         -- **Item 169: the sequence face, on the branch item 168
                         -- could not reach.**  Same composition as the two lanes
@@ -30642,7 +30642,7 @@ lemma entryKeyPack_of_dispatch
                                   h_ind'
                                   (SCompactMap.mk (n + 1 + w) sp_prep sp_v sp_e h_entry h_tail))
                                 sp_i sp_c h_iv h_lit sp_w h_sbi⟩
-                        | Or.inr _ => Or.inr trivial,
+                        | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h),
                         -- Item 99: a compact key's levels are fused into the
                         -- enclosing entry's closure — its dedent is a named
                         -- residue.  Item 108: and so is its value line's.
@@ -30818,7 +30818,12 @@ lemma entryPropsKeyPack_of_dispatch
           SLYamlStream sp_start sp_v) ∨ PackAlt sc)))
     (hcorr_prep : ScannerSurfCorr s_prep sp_prep)
     (h_corr : ScannerSurfCorr sc sp_scan)
-    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    -- Item 315: the content dispatch, LAST so no earlier binder moves — the lemma's three
+    -- declining arms step the park's alternative to the record's state through it.
+    (h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
+          { s_prep with allowDirectives := false, documentEverStarted := true }
+        else s_prep) c = .ok s') :
     PropsKeyPack s' sp_start sp_prep sp_scan' ∨ KeyPackPunt s' := by
   -- Item 90: the save is FRESH (see `entryKeyPack_of_dispatch`).
   have h_shape : s_prep.simpleKey.possible = true ∧
@@ -30909,7 +30914,7 @@ lemma entryPropsKeyPack_of_dispatch
                                (nestedBlockMap hnw h_land.1
                                  (SBlockMapEntries_of_compactTail h_ind' h_entry h_tail))
                                sp_i sp_c h_iv h_lit sp_w h_sbi⟩
-                       | Or.inr _ => Or.inr trivial),
+                       | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
                       -- Item 115: the nested mapping's resume twins, items
                       -- 99/108's terms verbatim — the run-headed entry and its
                       -- tail close the mapping the caller's node awaits, and
@@ -30947,7 +30952,7 @@ lemma entryPropsKeyPack_of_dispatch
                             fun sp_v h_entry sp_e h_tail =>
                               nodeFV sp_e (nestedBlockMap hnw h_land.1
                                 (SBlockMapEntries_of_compactTail h_ind' h_entry h_tail))⟩
-                        | Or.inr _ => Or.inr trivial
+                        | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)
                       else Or.inr trivial⟩,
                       h_props, h_sk_line,
                       by rw [h_sk, allowDirectives_update_simpleKey]; exact h_shape.1⟩
@@ -31148,7 +31153,7 @@ lemma entryPropsKeyPack_of_dispatch
                                 h_ind'
                                 (SCompactMap.mk (n + 1 + w) sp_prep sp_v sp_e h_entry h_tail))
                               sp_i sp_c h_iv h_lit sp_w h_sbi⟩
-                      | Or.inr _ => Or.inr trivial),
+                      | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
                       -- Item 99's compact residue, shared with
                       -- `entryKeyPack_of_dispatch`'s compact branch: the
                       -- frame's levels are fused into the enclosing entry's
@@ -32938,7 +32943,7 @@ lemma accum_content_on_pendingBlock_indented
                        kslot sp h_bi sp (SCompactSeqTail.nil n sp)
                          sp_i sp_c h_iv h_lit sp_v h_sbi)⟩
                  | Or.inr h => Or.inr h⟩)
-               hcorr_prep h_corr h_preprocess)
+               hcorr_prep h_corr h_preprocess h_dispatch)
              ⟨h_nic_s, h_ind_s⟩
              -- Item 68: the entry park sits at `n + 1` (item 59), the run starts
              -- at or past `n` from there, and grows.
@@ -33741,7 +33746,7 @@ lemma accum_content_on_pendingMapValue_indented
                h_ivl_s
                -- Item 148: a `[96]` run writes no indent level.
                (IndentStackBase.dispatchContent_preserves_indents h_dispatch) h_ivl_pack
-               hcorr_prep h_corr h_preprocess)
+               hcorr_prep h_corr h_preprocess h_dispatch)
              ⟨h_nic_s, h_ind_s⟩
              -- Item 68: the run is a character wide whatever the index; the
              -- index itself rides the pending's own measurement.

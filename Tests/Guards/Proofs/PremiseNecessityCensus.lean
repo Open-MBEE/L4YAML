@@ -334,8 +334,9 @@ declarations' own binders and not by a rescoring of an existing one.
 -- content-step lemma and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
 -- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
 -- dispatch-only transport and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
+-- 2026-10-21 (item 315): `RELAY` 2190 → 2191 — `entryPropsKeyPack_of_dispatch`'s `h_dispatch` (as in the unpeeled tally).
 def expectedModuleTallyP : String :=
-  "constants=1407 decls=1121 eta=414 FIELD=185 READ=1201 RELAY=2190 RETURN=138 UNUSED=17"
+  "constants=1407 decls=1121 eta=414 FIELD=185 READ=1201 RELAY=2191 RETURN=138 UNUSED=17"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
@@ -593,13 +594,14 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
         queue := queue.push s
   return alive
 
-/-- Eighteen dead binders in the whole explored closure, and every one is `UNUSED`.
-    Seventeen are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
+/-- Nineteen dead binders in the whole explored closure, eighteen `UNUSED` and one a `RELAY`
+    chased to an unused binder (item 315: `entryPropsKeyPack_of_dispatch`'s content dispatch,
+    relayed to the promised `PackAlt.step_content`).  Eighteen are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
     does not move, eight of them the named alternative's stubs and promised wrappers (item
     311: `PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`; item 313:
     `PackAlt.step_content`'s three; item 314: `PackAlt.step_dispatch`'s two — each `trivial`
     until its promise or its lane is its body, so its binders are dead by construction) —
-    and the eighteenth is one module over. -/
+    and the nineteenth is one module over. -/
 -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is its
 -- thirteenth binder.
 def expectedDead : List String :=
@@ -618,6 +620,7 @@ def expectedDead : List String :=
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#11 (_h_src) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#12 (_h_indent) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#13 (_h_ne) [class marker]",
+    "L4YAML.Proofs.StreamAccum.entryPropsKeyPack_of_dispatch#30 (h_dispatch) [promised step]",
     "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#11 (_) [conclusion binder]",
     "L4YAML.Proofs.StreamAccum.question_open_map#15 (_h_noflow_disp) [family uniformity]",
     "L4YAML.Proofs.StructureCoupling.scanTagDirective_corr#2 (_hcorr) [family uniformity]" ]
@@ -634,6 +637,9 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#12"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#13" => "class marker"
   | "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#11" => "conclusion binder"
+  -- Item 315: relayed to `PackAlt.step_content`, whose own step binder is unused while its promise is not yet
+  -- its body — so the chase ends at a dead binder; alive the moment `PackAlt` is the predicate.
+  | "L4YAML.Proofs.StreamAccum.entryPropsKeyPack_of_dispatch#30" => "promised step"
   | "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1"
   | "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2"
   | "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2"
@@ -644,7 +650,9 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4" => "lane stub"
   | _ => "family uniformity"
 
-def expectedDeadTally : String := "dead=18 UNUSED=18 RELAY=0"
+-- 2026-10-21 (item 315): `dead` 18 → 19, `RELAY` 0 → 1 — `entryPropsKeyPack_of_dispatch`'s new `h_dispatch` is relayed to
+-- the promised wrapper and chased to its unused step binder.
+def expectedDeadTally : String := "dead=19 RELAY=1 UNUSED=18 RELAY=1"
 
 run_cmd do
   let env ← getEnv

@@ -4470,8 +4470,10 @@ script, as `expectedInlineArms` is. -/
 -- 2026-10-21 (item 314): `sites` 264 → 203, `leaf` 161 → 100, `stubs` 4 → 5 — the content lane's sixty-one
 -- leaves hand the alternative on (through `PackAlt.step_content`/`step_dispatch` or verbatim) and are no `trivial` to flip;
 -- `PackAlt.step_dispatch` is the fifth promised body.
+-- 2026-10-21 (item 315): `sites` 203 → 197, `leaf` 100 → 94 — the two key-pack lemmas' six transport arms
+-- step through `PackAlt.step_content` (`entryPropsKeyPack_of_dispatch` takes the content dispatch as a premise).
 def expectedPackFlip : String :=
-  "sites=203 decls=24 rounds=2 decline=203 relay=0 leaf=100 uncond=103 stubs=5"
+  "sites=197 decls=24 rounds=2 decline=197 relay=0 leaf=94 uncond=103 stubs=5"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4488,8 +4490,11 @@ def expectedPackFlip : String :=
 -- 2026-10-21 (item 314): `decline` 245 → 184 (`leaf` 151 → 90), `relayState` 3 → 3, `promised` 2 → 3 — the
 -- content lane's leaves are paid; what stands are its roots (the resumed sequence levels, the fresh parks of
 -- `content_dispatch_routed`), the key-pack lemmas' arms (no step in scope) and the other dispatches' sites.
+-- 2026-10-21 (item 315): `decline` 184 → 178 (`leaf` 90 → 84) — the key-pack lemmas' six arms; what stands in
+-- the content lane is its roots (fresh parks after a landing, resumed sequence levels, the frames without the landing's
+-- width), none with a register fact in scope yet.
 def expectedPackResidue : String :=
-  "sites=187 decls=22 rounds=2 decline=184 relayTrue=0 relayState=3 leaf=90 uncond=94 stubs=1 promised=3"
+  "sites=181 decls=22 rounds=2 decline=178 relayTrue=0 relayState=3 leaf=84 uncond=94 stubs=1 promised=3"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

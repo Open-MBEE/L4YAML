@@ -294,8 +294,10 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
 -- `PackAlt.step_content` state the preprocess and content-dispatch steps as hypotheses.
 -- 2026-10-21 (item 314): `stepHolders` 1712 → 1714, `dispHolders` 307 → 309 — `ExplicitValueRefused.step_dispatch` and
 -- `PackAlt.step_dispatch` hold the content dispatch.
+-- 2026-10-21 (item 315): `dispHolders` 309 → 310, `dispTwoCorr` 28 → 29 — `entryPropsKeyPack_of_dispatch` takes the content
+-- dispatch as a premise beside its two correspondences.
 def expectedSteps : String :=
-  "stepHolders=1714 dispHolders=309 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1714 dispHolders=310 dispTwoCorr=29 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -357,8 +359,9 @@ def expectedChainSpec : List Name :=
 -- 2026-10-21 (item 313): both steps' declaration counts +2 — `ExplicitValueRefused.step_content` and
 -- `PackAlt.step_content` hold the preprocess and the content dispatch as hypotheses.
 -- 2026-10-21 (item 314): the dispatch rung +2 (the two `step_dispatch` declarations); the preprocess rung stands.
+-- 2026-10-21 (item 315): the dispatch rung +1 — `entryPropsKeyPack_of_dispatch`.
 def expectedPerFn : List String :=
-  ["scanNextToken_dispatchContent decls=139 chain=1",
+  ["scanNextToken_dispatchContent decls=140 chain=1",
    "scanNextToken_preprocess decls=214 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's

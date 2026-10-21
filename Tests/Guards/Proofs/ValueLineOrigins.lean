@@ -1053,13 +1053,14 @@ def expectedUnborn : List String := []
 -- props and mapping-value packs step through `PackAlt.step_content`; every row and position stands (180, 47).
 -- 2026-10-21 (item 314): `follows` 318 → 339, `liteNodes` 529047 → 529323 — the content lane's declining arms hand their
 -- hypothesis on, and the walk follows each; every row and position stands (180, 47).
+-- 2026-10-21 (item 315): `nodes` 12554 → 12556 — the key-pack lemmas' six arms step through the wrapper; rows and positions stand.
 def expectedLine : String :=
   "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 \
 paramRows=82 packagedRows=29 punt=26 stamp=16 built=138 origins=76 originRows=41 \
 route=23 frames=30 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
 someHeld=39 noneHeld=76 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=339 lets=570 lapps=696 alts=4495 \
-nodes=12554 liteNodes=529323"
+nodes=12556 liteNodes=529323"
 
 /-! ## §4 The reading -/
 

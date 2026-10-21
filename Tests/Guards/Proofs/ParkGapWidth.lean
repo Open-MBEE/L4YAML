@@ -522,9 +522,10 @@ corrBlock=0 corrScan=1 via="]
 -- 2026-10-21 (item 313): `holders` +2 on both rungs — `ExplicitValueRefused.step_content` and `PackAlt.step_content`
 -- hold the preprocess and the content dispatch as hypotheses; no edge or chain moves.
 -- 2026-10-21 (item 314): the dispatch rung's `holders` 137 → 139 — the two `step_dispatch` declarations.
+-- 2026-10-21 (item 315): the dispatch rung's `holders` 139 → 140 — `entryPropsKeyPack_of_dispatch`'s new premise.
 def expectedLadder : List String :=
   ["scanNextToken_dispatchBlockIndicators holders=102 edge=0 chain=0",
-   "scanNextToken_dispatchContent holders=139 edge=2 chain=1",
+   "scanNextToken_dispatchContent holders=140 edge=2 chain=1",
    "scanNextToken_preprocess holders=214 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check

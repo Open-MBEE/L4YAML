@@ -578,8 +578,9 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- three binders are unused until the promise after `-- refused:` is its body.
 -- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
 -- dispatch-only transport and its promised wrapper (two unused binders until the promise is its body).
+-- 2026-10-21 (item 315): `RELAY` 2340 → 2341 — `entryPropsKeyPack_of_dispatch`'s `h_dispatch`, relayed to the step lemma.
 def expectedModuleTally : String :=
-  "constants=1407 decls=1121 eta=414 FIELD=163 READ=1163 RELAY=2340 RETURN=48 UNUSED=17"
+  "constants=1407 decls=1121 eta=414 FIELD=163 READ=1163 RELAY=2341 RETURN=48 UNUSED=17"
 
 -- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
 -- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.

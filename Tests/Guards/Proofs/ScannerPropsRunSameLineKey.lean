@@ -149,10 +149,12 @@ example {sc s' : ScannerState} (h_punt : KeyPackPunt sc)
     (h_input : s'.input = sc.input)
     (h_line : s'.line = sc.line ∨ s'.simpleKey.pos.line = s'.line)
     (h_ivl : s'.implicitValueLine = sc.implicitValueLine)
+    -- Item 300: and the marker's field, which `markerLine` rides on.
+    (h_dsl : s'.docStartLine = sc.docStartLine)
     (h_st : StalePark s')
     (h_poss : sc.simpleKey.possible = true → s'.simpleKey.possible = true) :
     KeyPackPunt s' :=
-  keyPackPunt_transport h_punt h_skpos h_input h_line h_ivl h_st h_poss
+  keyPackPunt_transport h_punt h_skpos h_input h_line h_ivl h_dsl h_st h_poss
 
 -- §5 The TAB reason, which item 102 also NAMES at the props producer, and
 -- which is paid at one of its two consumers.  The park is genuinely accepted,

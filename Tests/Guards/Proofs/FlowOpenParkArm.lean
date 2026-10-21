@@ -163,7 +163,8 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
       ImplicitKeyPack sc sp_start sp_tok ∨ KeyPackPunt sc :=
   flowKeyPack_of_close (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
       Or.inr trivial, Or.inr trivial⟩)
-    ⟨h_kc, Or.inr trivial⟩ h_park h_content
+    -- Item 300: the base slot's third reading, the marker's line, declined here.
+    ⟨h_kc, Or.inr trivial, Or.inr trivial⟩ h_park h_content
 
 /-! ## §4  The two funders, measured at every depth-0 open
 

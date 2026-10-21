@@ -876,9 +876,14 @@ def hopName (env : Environment) (e : Edge) : String :=
     `h_ref` (a dedenting landing completes no value).
 
     **Item 297 moves `edges` 660 → 664, `DECLINE` 269 → 273**: the same pair
-    at the producers' `w ∉ ks` exit, `h_ref` declined for the same reason. -/
+    at the producers' `w ∉ ks` exit, `h_ref` declined for the same reason.
+
+    **Item 300 moves `edges` 664 → 674, `DECLINE` 273 → 280, `PAY` 47 → 50**:
+    `content_dispatch_routed`'s marker premise at its eight applications — the
+    `---` arm pays, seven decline — and `km_push_at_open`'s `h_marker_new` at
+    its two nested opens, each a refutation of the base-open premise (PAY). -/
 def expectedTally : String :=
-  "edges=664 skipped=31 [DECLINE=273, FIELD=58, LOCAL=27, PAY=47, RELAY=68, \
+  "edges=674 skipped=31 [DECLINE=280, FIELD=58, LOCAL=27, PAY=50, RELAY=68, \
 SPLIT=154, VIA=37]"
 
 /-- **The row item 211 read off the compiler's error text and got wrong.**  All
@@ -1115,9 +1120,14 @@ def expectedBranchPremises : List String :=
 -- Item 296: and again (656 → 660); the four new edges, each a declined
 -- `h_ref`, reach no new pair, orphan or split either.
 -- Item 297: and again (660 → 664), the `w ∉ ks` exit's four `h_ref`s.
+-- Item 300: and again (664 → 674) — the marker premise's seven declines and
+-- one payment at `content_dispatch_routed`, and `h_marker_new`'s two
+-- refutations at the nested opens; `nodes` 159 → 161 are those two binders,
+-- `content_dispatch_routed.h_markerline` and `km_push_at_open.h_marker_new`,
+-- as nodes of the reach graph — each reaching no new pair, orphan or split.
 def expectedDeclineReach : String :=
   "pairs=35 orphan=4 direct=7 closureDecline=31 dead=0 maxDepth=2 liveSplits=89 \
-deadSplits=0 accounted=664/664 nodes=159 fieldEdges=58 fieldResolved=58 withCycle=8 \
+deadSplits=0 accounted=674/674 nodes=161 fieldEdges=58 fieldResolved=58 withCycle=8 \
 declineWriters=19 parkHop=21"
 
 /-- **Every branch premise, with what its own callers supply and where that
@@ -1234,11 +1244,12 @@ Or.casesOn→Exists.casesOn→Exists.casesOn→And.casesOn→And.casesOn→dite"
 
 /-- **Read off the TYPE, not off a list.**  Item 211's falsification script
     enumerated five optional contexts of `content_dispatch_routed` by hand;
-    the lemma states SIX.  A hand-typed knob chooses its own answer, so the
-    census names them itself. -/
+    the lemma states SIX — SEVEN since item 300, whose `h_markerline` is the
+    marker-line reason's payload, paid by the `---` arm alone.  A hand-typed
+    knob chooses its own answer, so the census names them itself. -/
 def expectedOptBinders : List String :=
   ["18 h_keyctx", "20 h_suffixctx", "21 h_nodocctx", "22 h_markerctx",
-   "24 h_ref", "25 h_propsctx"]
+   "24 h_ref", "25 h_propsctx", "26 h_markerline"]
 
 end L4YAML.Tests.Guards.RelaySupplyCensus
 

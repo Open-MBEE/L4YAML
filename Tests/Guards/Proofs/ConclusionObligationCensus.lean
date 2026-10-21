@@ -282,7 +282,9 @@ partial def scanTerm (e : Expr) (seen : Std.HashSet Expr) (r i : Nat) :
   | .proj _ _ b => scanTerm b seen r i
   | _ => (seen, r, i)
 
-def expectedLedgerTally : String := "rows=17 res=54"
+-- Item 300: `flowOpen_marker`, the stamp lemma's twin, is the eighteenth row and
+-- carries the stamp row's three residues.
+def expectedLedgerTally : String := "rows=18 res=57"
 
 /-- The rows, machine-produced, sorted by `res` then `prem` descending.  Three
     rows are all-zero — the proof never reaches the right arm by any route —
@@ -312,6 +314,7 @@ def expectedLedger : List String :=
    "res=4 imp=7 prem=1 proj=0 markerctx_of_landing",
    "res=4 imp=7 prem=1 proj=0 suffixctx_of_landing",
    "res=3 imp=10 prem=2 proj=0 dedent_cover_of_landing",
+   "res=3 imp=5 prem=1 proj=0 flowOpen_marker",
    "res=3 imp=5 prem=1 proj=0 flowOpen_stamp",
    "res=3 imp=12 prem=0 proj=0 keyctx_of_preprocess",
    "res=3 imp=12 prem=0 proj=0 nodocctx_of_preprocess",

@@ -285,9 +285,12 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
     preservation family cloned from `implicitValueLine`'s holds a step
     equation at 25 of its lemmas, two of them a content dispatch
     (`dispatchContent_preserves_docStartLine` and `dispatchContent_docStartLine`); the rest state pure functions.  None holds two
-    correspondences, and `fns` and `fnsIx` hold. -/
+    correspondences, and `fns` and `fnsIx` hold.
+
+    Moved to 1707 / 305 by DOCS item 300 and no new step: `flowOpen_marker`,
+    the stamp lemma's twin, holds preprocessing's equation and no path. -/
 def expectedSteps : String :=
-  "stepHolders=1706 dispHolders=305 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1707 dispHolders=305 dispTwoCorr=28 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -342,10 +345,12 @@ def expectedChainSpec : List Name :=
     DOCS item 299 adds two holders of each, the `docStartLine` field's
     transport: `preprocess_preserves_docStartLine` and `ad_docStartLine` hold
     preprocessing's equation, `dispatchContent_preserves_docStartLine` and
-    `dispatchContent_docStartLine` the content dispatch's, none with a path. -/
+    `dispatchContent_docStartLine` the content dispatch's, none with a path.
+    DOCS item 300 adds one holder of preprocessing's, `flowOpen_marker`, with
+    no path. -/
 def expectedPerFn : List String :=
   ["scanNextToken_dispatchContent decls=135 chain=1",
-   "scanNextToken_preprocess decls=208 chain=6"]
+   "scanNextToken_preprocess decls=209 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

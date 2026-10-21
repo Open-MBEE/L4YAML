@@ -855,9 +855,11 @@ def expectedRows : List String := [
   "content_dispatch_routed #2 ctor:pendingProps.h_key := relay/built pos=[] origins=[] none=[fact,stamp] ⊢ stamp*",
   "content_dispatch_routed #2 ctor:pendingProps.h_kslot := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
   "content_dispatch_routed #2 ctor:pendingProps.h_kslotE := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
-  "content_dispatch_routed #1 ctor:pendingContent.h_key := relay/built pos=[] origins=[O54] none=[punt,stamp] ⊢ none-held 0/1",
+  -- Item 300: the content cascade's marker arm refutes a block-scalar head by
+  -- `absurd` (the guard's `h_poss` against the head's cleared key), a third leaf.
+  "content_dispatch_routed #1 ctor:pendingContent.h_key := relay/built pos=[] origins=[O54] none=[punt,absurd,stamp] ⊢ none-held 0/1",
   "content_dispatch_routed #1 ctor:pendingContent.h_vpack := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
-  "content_dispatch_routed #2 ctor:pendingContent.h_key := relay/built pos=[] origins=[O55] none=[punt,stamp] ⊢ none-held 0/1",
+  "content_dispatch_routed #2 ctor:pendingContent.h_key := relay/built pos=[] origins=[O55] none=[punt,absurd,stamp] ⊢ none-held 0/1",
   "content_dispatch_routed #2 ctor:pendingContent.h_vpack := punt/punt pos=[] origins=[] none=[punt] ⊢ —",
   "indicator_open_map #1 param:question_open_map.h_explUp_chain := relay/built pos=[param:indicator_open_map.h_explUp_chain] origins=[O69] ⊢ none-held 0/1",
   "question_open_map #1 ctor:pendingMapValue.h_ivl := paid:route/built pos=[] origins=[O56,O57,O58,O59,O60,O61] ⊢ all-held 6/6",
@@ -994,9 +996,16 @@ def expectedUnborn : List String := []
     eliminator, an argument at each producer) and `dispatch_refutes_sameLine`'s
     new premise at its callers, and the `docStartLine` field's preservation
     family and transport lemmas entering the lite walk.  No row, class or
-    origin moves. -/
+    origin moves.
+
+    Item 300 moves `lets` 557 → 566, `lapps` 670 → 674, `alts` 4421 → 4454,
+    `nodes` 12501 → 12510 and `liteNodes` 515490 → 520132: the marker reason's
+    arms — the `have`s and `cases` of `content_dispatch_routed`'s two
+    cascades, the flow open's second split on the run's punt, the two `:`
+    consumers' arms and the close's third reading — in the walked
+    declarations; named by cause.  No row, class or origin moves. -/
 def expectedLine : String :=
-  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=557 lapps=670 alts=4421 nodes=12501 liteNodes=515490"
+  "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 paramRows=82 packagedRows=29 punt=29 stamp=16 built=135 origins=70 originRows=38 route=23 frames=24 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 someHeld=39 noneHeld=73 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=309 lets=566 lapps=674 alts=4454 nodes=12510 liteNodes=520132"
 
 /-! ## §4 The reading -/
 

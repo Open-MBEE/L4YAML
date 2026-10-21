@@ -118,7 +118,8 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
   flowKeyPack_of_close
     (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
       Or.inl tw99, Or.inl tw108⟩)
-    ⟨h_kc, Or.inr trivial⟩ h_park h_content
+    -- Item 300: the base slot's third reading, the marker's line, declined here.
+    ⟨h_kc, Or.inr trivial, Or.inr trivial⟩ h_park h_content
 
 -- §3 …and the frame type itself admits the paid key (the structure's field
 -- accepts what the props arm now builds), spent through `ofValue`'s twin

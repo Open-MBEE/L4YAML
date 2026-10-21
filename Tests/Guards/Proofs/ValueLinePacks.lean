@@ -1002,11 +1002,14 @@ def expectedPerPos : List String := [
 -- argument at each of its two producers, and `dispatch_refutes_sameLine`'s
 -- new premise at the walked callers; named by cause, the per-declaration walk
 -- not re-run.
+-- 2026-10-20 (item 300): `nodes` 12470 → 12479 alone — `markerLine`, the pack
+-- punt's new constructor: one more alternative at each walked `cases` on the
+-- reason and the marker's base-slot conjunct; named by cause.
 /-- **The pack line.**  `nodes` is the proof-term size of the walked
     declarations.  Lean v4.35.0 moves it alone: 12307 → 12296, with the other
     27 fields byte-identical. -/
 def expectedLine : String :=
-  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 punt=29 stamp=16 empty=0 relay=36 step=1 via=12 chain=50 route=3 frames=1 tail=0 other=0 alt=3 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=122 nodes=12470"
+  "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 paramRows=77 punt=29 stamp=16 empty=0 relay=36 step=1 via=12 chain=50 route=3 frames=1 tail=0 other=0 alt=3 held=11 levelVar=37 none=21 spendTail=3 lemmas=21 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] touched=122 nodes=12479"
 
 /-! ## §4 The reading -/
 

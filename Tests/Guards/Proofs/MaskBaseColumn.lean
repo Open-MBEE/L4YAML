@@ -65,11 +65,13 @@ example {sp_start : SurfPos} {n kc fl : Nat} {ks km : Array Bool}
 
 /-- `KmSound.back_col`: a mask of exactly one bit discharges the promise's own
     premise, so the slot the close restores comes back with its column — and,
-    since item 103, with the open's stamp reading beside it. -/
+    since item 103, with the open's stamp reading beside it; since item 300,
+    with the marker's line too. -/
 example {sc : ScannerState} {km : Array Bool} {kc : Nat}
     (h : KmSound sc km kc) (h1 : km.size = 1) :
     ∃ key, sc.simpleKeyStack.back? = some key ∧ key.pos.col = kc ∧
-      (sc.implicitValueLine = some key.pos.line ∨ True) :=
+      (sc.implicitValueLine = some key.pos.line ∨ True) ∧
+      (sc.docStartLine = some key.pos.line ∨ True) :=
   h.back_col h1
 
 /-! ## §3  …and both packs carry an equation
@@ -105,7 +107,8 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
       ImplicitKeyPack sc sp_start sp_tok ∨ KeyPackPunt sc :=
   flowKeyPack_of_close (Or.inl ⟨kc, sp_key, route, head, rfl, Or.inr trivial,
       Or.inr trivial, Or.inr trivial⟩)
-    ⟨h_kc, Or.inr trivial⟩ h_park h_content
+    -- Item 300: the base slot's third reading, the marker's line, declined here.
+    ⟨h_kc, Or.inr trivial, Or.inr trivial⟩ h_park h_content
 
 /-! ## §4  The promise, measured on the scanner
 

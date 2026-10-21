@@ -515,11 +515,13 @@ corrBlock=0 corrScan=1 via="]
     `docStartLine` field's transport, `dispatchContent_preserves_docStartLine`
     and `dispatchContent_docStartLine` for the content dispatch,
     `preprocess_preserves_docStartLine` and `ad_docStartLine` for
-    preprocessing — so the rows read 102, 135 and 208. -/
+    preprocessing — so the rows read 102, 135 and 208.  DOCS item 300 adds
+    one preprocessing holder, `flowOpen_marker`, and no crossing — 102, 135
+    and 209. -/
 def expectedLadder : List String :=
   ["scanNextToken_dispatchBlockIndicators holders=102 edge=0 chain=0",
    "scanNextToken_dispatchContent holders=135 edge=2 chain=1",
-   "scanNextToken_preprocess holders=208 edge=17 chain=6"]
+   "scanNextToken_preprocess holders=209 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

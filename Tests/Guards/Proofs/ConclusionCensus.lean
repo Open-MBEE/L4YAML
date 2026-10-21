@@ -252,16 +252,23 @@ def attribControl : CommandElabM (Array String) := do
     arm paying and the landing arm keeping the punt it has no face for.  The
     `un` column moved with it: a second `cases` on an optional PREMISE is two
     more sites the key is not meant to attribute, which is what that column is
-    for. -/
+    for.
+
+    Item 300 adds `flowOpen_marker`, the stamp lemma's twin (`inl=1,inr=2 |
+    un=1,1`, the same case split), and a second optional conclusion to
+    `back_col` and `close_col_of_base` — the base slot's marker reading beside
+    its stamp — paid and declined nowhere in their bodies (`inl=0,inr=0`), as
+    the stamp's is. -/
 def expected : List String :=
-  ["back_col inl=0,inr=0 | un=0,0",
-   "close_col_of_base inl=0,inr=0 | un=0,0",
+  ["back_col inl=0,inr=0 inl=0,inr=0 | un=0,0",
+   "close_col_of_base inl=0,inr=0 inl=0,inr=0 | un=0,0",
    "dedent_cover_of_landing inl=1,inr=3 | un=0,0",
    "explFrameValueLine inl=1,inr=1 | un=0,0",
    "flowKeyHead inl=0,inr=0 | un=0,0",
    "flowKeyRoute_of_open inl=2,inr=4 inl=0,inr=0 inl=1,inr=2 inl=2,inr=0 inl=1,inr=2 | un=3,3",
    "flowKeyRoute_of_root inl=2,inr=2 inl=0,inr=0 inl=1,inr=2 inl=5,inr=0 inl=1,inr=2 | un=3,5",
    "flowOpen_floor_at_prep inl=1,inr=1 | un=0,0",
+   "flowOpen_marker inl=1,inr=2 | un=1,1",
    "flowOpen_stamp inl=1,inr=2 | un=1,1",
    "flowVPack_of_close inl=1,inr=1 | un=0,0",
    "frameChainUnion inl=2,inr=0 | un=0,0",

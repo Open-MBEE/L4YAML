@@ -306,14 +306,20 @@ declarations' own binders and not by a rescoring of an existing one.
 -- arriving transport binders RELAY — so one READ fewer and RELAY unmoved
 -- (`526-rosterP-299.out` against `368-rosterP-293.out`, which also shows
 -- items 296 and 297's rows and nothing else).
+-- 2026-10-20 (item 300): `constants` 1364 → 1366, `decls` +2, `eta` 387 → 390,
+-- `READ` 1159 → 1163, `RELAY` 2151 → 2164 — the sibling's twenty new rows
+-- with the same verdicts under this peel (`557-rosterP-300.out` against
+-- `526-rosterP-299.out`, 4024 → 4044 rows; no other row moves).
 def expectedModuleTallyP : String :=
-  "constants=1364 decls=1082 eta=387 FIELD=180 READ=1159 RELAY=2151 RETURN=138 UNUSED=9"
+  "constants=1366 decls=1084 eta=390 FIELD=180 READ=1163 RELAY=2164 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
 -- `PendingNode.pendingMapValue.h_vslot`, a constructor field read ETA.
+-- Item 300: the two new optional contexts (`h_markerline`, `h_marker_new`)
+-- read READ under this peel too.
 def expectedOptTallyP : String :=
-  "total=161 ETA=33 FIELD=4 READ=84 RELAY=38 RETURN=2"
+  "total=163 ETA=33 FIELD=4 READ=86 RELAY=38 RETURN=2"
 
 run_cmd do
   let env ← getEnv
@@ -695,7 +701,7 @@ lemma opt_premise_is_no_premise {A P : Prop} : (A ∨ True → P) ↔ P :=
     the sentence above true and empty. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` left the `_ ∨ True`
 -- population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`, a field.
-def expectedOptPopulation : String := "total=161 optTy=161 ctorFields=33"
+def expectedOptPopulation : String := "total=163 optTy=163 ctorFields=33"
 
 run_cmd do
   let env ← getEnv

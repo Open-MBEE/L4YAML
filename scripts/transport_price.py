@@ -162,8 +162,10 @@ OPTOK2 = "        p.pos.col = s_prep.col ∧ 0 = 0)"
 KPKG = "      FlowBaseAnchor g s' 0 →"
 KPKG2 = "      FlowBaseAnchor g s' 0 → 0 = 0 →"
 #: Item 293: the package binds the open's saved-key possibility (`h_kp`) too.
-KPKG_FUN = "    fun g n _ _ h_st h_kp hfl h_anch h_b =>"
-KPKG_FUN2 = "    fun g n _ _ h_st h_kp hfl h_anch _ h_b =>"
+# Item 300: the base slot's marker reading (`h_mk`) sits beside the stamp's in the
+# frame builder's lambda.
+KPKG_FUN = "    fun g n _ _ h_st h_mk h_kp hfl h_anch h_b =>"
+KPKG_FUN2 = "    fun g n _ _ h_st h_mk h_kp hfl h_anch _ h_b =>"
 SELF = re.compile(r"^L4YAML/Proofs/Production/StreamAccum\.lean:(\d+):\d+: error")
 
 

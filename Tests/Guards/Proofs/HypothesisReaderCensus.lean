@@ -519,8 +519,22 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- `dispatchContent_docStartLine#3`, `preprocess_preserves_docStartLine#3`.
 -- `dispatch_refutes_sameLine`'s later binders renumber and keep their
 -- verdicts; no other row moves.
+-- 2026-10-20 (item 300): `constants` 1364 → 1366 (`KeyPackPunt.markerLine`,
+-- `flowOpen_marker`), `decls` +2, `eta` 387 → 390, `READ` 1121 → 1125, `RELAY`
+-- 2301 → 2314.  The roster (`scratchpad/l4yaml-row12-steps/556-roster-300.out`
+-- against `525-roster-299.out`, 4024 → 4044 rows) gains exactly twenty: ETA
+-- `KeyPackPunt.markerLine#1 (h_doc)`, `#2 (h_kline)` and `KeyPackPunt.rec#4
+-- (markerLine)`; READ `KeyPackPunt.casesOn#5 (markerLine)`,
+-- `content_dispatch_routed#26 (h_markerline)`, `KmSound.push#17 (h_marker_new)`
+-- and `flowOpen_marker#4 (h_doc)`; RELAY `KeyPackPunt.recOn#5 (markerLine)`,
+-- `flowOpen_marker#5 (h_pre)` and `#6 (h_dsl')`, `km_push_at_open#20 (h_dsl')`
+-- and `#21 (h_marker_new)`, and the field-equality premises `h_dsl`/`h_dsl'`/
+-- `h_dsl_open` of `KmSound.transport`, `colon_transport`, `push`, `pop`,
+-- `close_km_pop`, `close_col_of_base`, `keyPackPunt_transport` and
+-- `accum_flow_open_depth0`.  Later binders renumber and keep their verdicts;
+-- no other row moves.
 def expectedModuleTally : String :=
-  "constants=1364 decls=1082 eta=387 FIELD=158 READ=1121 RELAY=2301 RETURN=48 UNUSED=9"
+  "constants=1366 decls=1084 eta=390 FIELD=158 READ=1125 RELAY=2314 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
@@ -594,18 +608,23 @@ inherit their parents' binders filtered out so the denominator is declarations. 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` is no longer a
 -- `_ ∨ True` (a READ one), so it leaves the population.  Item 288: nor is
 -- `PendingNode.pendingMapValue.h_vslot` (a constructor field, read ETA).
-def expectedOptTally : String := "total=161 ETA=33 READ=84 RELAY=44"
+-- Item 300: two more optional contexts, both READ — `content_dispatch_routed`'s
+-- `h_markerline` (cased in both cascades) and `km_push_at_open`'s
+-- `h_marker_new` (applied to the base-open premise).
+def expectedOptTally : String := "total=163 ETA=33 READ=86 RELAY=44"
 
-/-- The six item 212 enumerated, by verdict.  Five are read in
-    `content_dispatch_routed`'s own term; `h_ref` alone relays, and §5 says
-    where it lands. -/
+/-- The six item 212 enumerated, by verdict — seven since item 300.  Six are
+    read in `content_dispatch_routed`'s own term (`h_markerline`, the marker
+    reason's payload, cased in both cascades); `h_ref` alone relays, and §5
+    says where it lands. -/
 def expectedContentDispatch : List String :=
   [ "READ content_dispatch_routed#18 (h_keyctx)",
     "READ content_dispatch_routed#20 (h_suffixctx)",
     "READ content_dispatch_routed#21 (h_nodocctx)",
     "READ content_dispatch_routed#22 (h_markerctx)",
     "RELAY content_dispatch_routed#24 (h_ref)",
-    "READ content_dispatch_routed#25 (h_propsctx)" ]
+    "READ content_dispatch_routed#25 (h_propsctx)",
+    "READ content_dispatch_routed#26 (h_markerline)" ]
 
 run_cmd do
   let env ← getEnv
@@ -724,12 +743,13 @@ about proofs.** -/
 def expectedPuntFields : String :=
   -- Item 289: `tab` carries the saved key's possibility and line beside the
   -- scan's reading and the park's flags.  Item 297: `dedent` is deleted.
-  "tab=4 implicitValue=3 noKeyContext=0"
+  -- Item 300: `markerLine` carries the field read and the key's line.
+  "tab=4 implicitValue=3 markerLine=2 noKeyContext=0"
 
 run_cmd do
   let env ← getEnv
   let got := String.intercalate " " ([``KeyPackPunt.tab,
-      ``KeyPackPunt.implicitValue, ``KeyPackPunt.noKeyContext].map (fun c =>
+      ``KeyPackPunt.implicitValue, ``KeyPackPunt.markerLine, ``KeyPackPunt.noKeyContext].map (fun c =>
     match env.find? c with
     | some (.ctorInfo cv) => s!"{c.getString!}={cv.numFields}"
     | _ => s!"{c.getString!}=?"))

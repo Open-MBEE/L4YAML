@@ -169,7 +169,9 @@ def deferral : List Name :=
     re-WRITES a reason it was handed rather than spending one. -/
 def packPunt : List Name :=
   -- Item 297 deletes `KeyPackPunt.dedent`: both pack exits key a fresh document.
-  [`KeyPackPunt.tab, `KeyPackPunt.implicitValue, `KeyPackPunt.noKeyContext]
+  -- Item 300 adds `KeyPackPunt.markerLine`, the stamp's twin over the `docStartLine` field.
+  [`KeyPackPunt.tab, `KeyPackPunt.implicitValue, `KeyPackPunt.markerLine,
+   `KeyPackPunt.noKeyContext]
 
 /-- One census: the targets counted, and the definitions where the term is
     WRITTEN rather than spent, excluded. -/
@@ -479,12 +481,16 @@ All three lanes, in one walk of the module. -/
         -- constructor by construction and spend none
         ns ++ `KeyPackPunt.casesOn, ns ++ `KeyPackPunt.recOn]⟩,
       -- Item 297: no `dedent` row anywhere — the constructor is deleted.
-      ["accum_flow_open_depth0: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
-       "colon_fires_implicit_key: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
-       "colon_fires_props_key: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1",
-       "content_dispatch_routed: KeyPackPunt.noKeyContext=2",
+      -- Item 300: `markerLine` — written at its two producers
+      -- (`content_dispatch_routed`'s two cascades, `flowKeyPack_of_close`'s
+      -- base slot), and read at the three consumers' `cases`; the flow open
+      -- cases the run's punt twice now (stamp and marker), so its rows double.
+      ["accum_flow_open_depth0: KeyPackPunt.tab=2 KeyPackPunt.implicitValue=2 KeyPackPunt.markerLine=2 KeyPackPunt.noKeyContext=2",
+       "colon_fires_implicit_key: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.markerLine=1 KeyPackPunt.noKeyContext=1",
+       "colon_fires_props_key: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1 KeyPackPunt.markerLine=1 KeyPackPunt.noKeyContext=1",
+       "content_dispatch_routed: KeyPackPunt.markerLine=2 KeyPackPunt.noKeyContext=2",
        "entryKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1",
        "entryPropsKeyPack_of_dispatch: KeyPackPunt.tab=1 KeyPackPunt.implicitValue=1",
-       "flowKeyPack_of_close: KeyPackPunt.implicitValue=1 KeyPackPunt.noKeyContext=1"]⟩]
+       "flowKeyPack_of_close: KeyPackPunt.implicitValue=1 KeyPackPunt.markerLine=1 KeyPackPunt.noKeyContext=1"]⟩]
 
 end L4YAML.Tests.Guards.FlipConsumerSurface

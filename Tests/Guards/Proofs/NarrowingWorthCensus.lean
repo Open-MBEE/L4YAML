@@ -278,7 +278,10 @@ def isSurfFace (env : Environment) (lhs : Expr) : MetaM Bool := do
     one idiom and not 163 unrelated facts. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a face, left the
 -- `_ ∨ True` population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`.
-def expectedFaceTally : String := "binders=161 faces=60 heads=18"
+-- Item 300: two binders join — `content_dispatch_routed.h_markerline`, a new
+-- face (a conjunction of two line facts under the `∨ True`), and
+-- `km_push_at_open.h_marker_new`, the stamp pair's shape.
+def expectedFaceTally : String := "binders=163 faces=61 heads=18"
 
 /-- The conclusion head of every left disjunct.  `FVAR 2` is `frameChainUnion`,
     whose face is schematic in `P` — the two rows no census of any kind can
@@ -287,7 +290,8 @@ def expectedFaceTally : String := "binders=161 faces=60 heads=18"
 -- headed `SLYamlStream`; it left the population.  Item 288:
 -- `PendingNode.pendingMapValue.h_vslot`'s face, headed by its `≤`, left too.
 def expectedHeadCensus : List String :=
-  ["BareLandingFacts 8", "CompletedTail 4", "Covered 3", "Eq 17", "FVAR 2",
+  -- Item 300: `Eq` 17 → 19, the two new optional binders (`h_markerline`, `h_marker_new`).
+  ["BareLandingFacts 8", "CompletedTail 4", "Covered 3", "Eq 19", "FVAR 2",
    "Floor 15", "GLit 4", "GStar 4", "IndentFloor 2", "MarkerNodeRoute 5",
    "Mono 4", "PropsNodeRoute 4", "ResumeFrames 12", "SLYamlStream 31",
    "SeqEntryTail 7", "SuffixRun 6", "le 10", "lt 23"]
@@ -339,10 +343,12 @@ mentions one.  The four tests are run in that order and the first that fires
 decides, because the question is reachability of the face by an instrument, not
 which of four reasons applies. -/
 -- Item 287: the departed `h_vslot` named the surface grammar; item 288's did too.
-def expectedFidelity : String := "binders=161 surf=136 state=25"
+-- Item 300: the two faces that join (`content_dispatch_routed.h_markerline`,
+-- `flowOpen_marker.h_doc`) name scanner state alone, so `state` 25 → 27.
+def expectedFidelity : String := "binders=163 surf=136 state=27"
 
-/-- The 25 faces a state census COULD evaluate, which is the population the
-    mandate's instrument is actually defined over.  Two of them
+/-- The 25 faces a state census COULD evaluate — 27 since item 300 — which is
+    the population the mandate's instrument is actually defined over.  Two of them
     (`frameChainUnion`) are schematic, so the true reach is smaller than the
     number and never larger. -/
 def expectedStateFaces : List String :=
@@ -350,9 +356,11 @@ def expectedStateFaces : List String :=
    "accum_block_on_closeThenBlock#25", "bareNodeRoute_or_refused#11",
    "bareNodeRoute_or_refused_content#12", "colon_open_map#23", "colon_open_map#24",
    "content_dispatch_after_close#22", "content_dispatch_routed#24",
+   "content_dispatch_routed#26",
    "dedent_cover_of_landing#8", "dedent_cover_of_landing#9",
    "entryKeyPack_of_dispatch#17", "entryPropsKeyPack_of_dispatch#16",
-   "flowKeyRoute_of_root#20", "flowOpen_floor_at_prep#10", "flowOpen_stamp#4",
+   "flowKeyRoute_of_root#20", "flowOpen_floor_at_prep#10", "flowOpen_marker#4",
+   "flowOpen_stamp#4",
    "frameChainUnion#1", "frameChainUnion#2", "indicator_open_map#26",
    "indicator_open_map#27", "question_open_map#22", "question_open_map#23",
    "question_open_map#24", "rootMapRouteF_or_refused#7",
@@ -578,7 +586,8 @@ beside the number.  The gate below is the instrument that would have caught it
 at item 212, which is why it is written as a comparison of the two selectors
 rather than as a count. -/
 -- Item 287: the same binder, read syntactically.  Item 288: and the field.
-def expectedHiddenTally : String := "hiddenDefs=1 syntactic=161 hiddenOnly=2 population=163"
+-- Item 300: the two new binders, read both ways.
+def expectedHiddenTally : String := "hiddenDefs=1 syntactic=163 hiddenOnly=2 population=165"
 
 def expectedHiddenDefs : List String := ["ResumeKeyCtx"]
 
@@ -711,7 +720,10 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- walk — `docStartOnLineLoop.eq_def`, the one the proofs named; inferred
 -- from the remainder, not re-measured on the old tree.  None concludes a
 -- no-op; the four numbers hold.
-def expectedNoopTally : String := "theorems=5459 byElab=17 byWhnf=17 elabOnly=0 whnfOnly=0"
+-- Item 300: 5459 → 5460, `flowOpen_marker` — the stamp lemma's twin, whose
+-- conclusion is an `∨ True` the way `flowOpen_stamp`'s is, so `byElab` and
+-- `byWhnf` read 18 and still agree.
+def expectedNoopTally : String := "theorems=5460 byElab=18 byWhnf=18 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries
@@ -787,7 +799,8 @@ def expectedNoopConclusions : List String :=
    "PreprocessIndentStable.IndentFloor.transport",
    "dedent_cover_of_landing", "explFrameValueLine", "flowKeyHead",
    "flowKeyRoute_of_open", "flowKeyRoute_of_root", "flowOpen_floor_at_prep",
-   "flowOpen_stamp", "flowVPack_of_close", "frameChainUnion",
+   -- Item 300: `flowOpen_marker`, the stamp lemma's twin.
+   "flowOpen_marker", "flowOpen_stamp", "flowVPack_of_close", "frameChainUnion",
    "keyctx_of_preprocess", "markerctx_of_landing", "nodocctx_of_preprocess",
    "resumectx_of_landing", "suffixctx_of_landing"]
 

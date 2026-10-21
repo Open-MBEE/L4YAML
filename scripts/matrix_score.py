@@ -11,8 +11,9 @@ every test and scores it exactly the way http://matrix.yaml.info does:
 All processors — L4YAML's native binary and every docker tester — go through the
 identical code path, so the numbers are apples-to-apples.
 
-A tester the harness cannot start (wrong path, no `docker`) scores
-`harness-error`, never `err-ok`/`reject`, and the run exits nonzero.
+A tester the harness cannot start (wrong path, no `docker`, missing container or
+tester) and an unusable `in.json` oracle score `harness-error`, never
+`err-ok`/`reject`/`diff`, and the run exits nonzero.
 """
 import os, sys, glob, json, argparse, subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -43,13 +44,19 @@ def parse_json_stream(text):
         i = end
     return vals
 
-# Sentinel exit codes the harness itself produces; no tester returns them.
-TIMEOUT_RC = 124
-HARNESS_RC = 125   # the tester could not be started (bad path, no docker, ...)
+TIMEOUT_RC = 124   # sentinel exit code for a tester killed by the harness's timeout
 
 _harness_errors_reported = set()
 
+def harness_error(msg):
+    """Record a harness (not processor) failure once on stderr; returns the category."""
+    if msg not in _harness_errors_reported:
+        _harness_errors_reported.add(msg)
+        print(f"# harness error: {msg}", file=sys.stderr)
+    return 'harness-error'
+
 def run(cmd, stdin_bytes, timeout):
+    """Return (rc, stdout); rc is None when the tester could not be started at all."""
     try:
         p = subprocess.run(cmd, input=stdin_bytes,
                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -58,15 +65,31 @@ def run(cmd, stdin_bytes, timeout):
     except subprocess.TimeoutExpired:
         return TIMEOUT_RC, b''
     except OSError as e:
-        msg = f"# harness error running {cmd[0]}: {e}"
-        if msg not in _harness_errors_reported:
-            _harness_errors_reported.add(msg)
-            print(msg, file=sys.stderr)
-        return HARNESS_RC, b''
+        harness_error(f"cannot run {cmd[0]}: {e}")
+        return None, b''
+
+def tester_available(cmd):
+    """Preflight: None if the tester can be started, else the reason it cannot.
+
+    `docker exec` exits nonzero on its own when the container is missing or
+    stopped (rc 1) or the tester is not in the image (rc 127); scored blind
+    those would pass for parser rejections, so probe once before scoring."""
+    if cmd[0] != 'docker':
+        return None if os.access(cmd[0], os.X_OK) else f"{cmd[0]} is not an executable file"
+    container, tester = cmd[3], cmd[4]   # cmd = docker exec -i <container> <tester>
+    probe = ['docker', 'exec', container, 'sh', '-c', f'command -v {tester}']
+    try:
+        p = subprocess.run(probe, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return f"cannot run docker: {e}"
+    if p.returncode != 0:
+        err = p.stderr.decode('utf-8', 'replace').strip()
+        return f"{tester} not runnable in container {container}: {err or f'rc={p.returncode}'}"
+    return None
 
 def rc_category(rc, is_err):
     """Category decided by the exit code alone; None when the output must be compared."""
-    if rc == HARNESS_RC:
+    if rc is None:
         return 'harness-error'   # checked first so a broken harness never scores err-ok
     if is_err:
         return 'err-ok' if rc != 0 else 'err-miss'
@@ -76,10 +99,13 @@ def rc_category(rc, is_err):
         return 'reject'
     return None
 
+def test_id(d):
+    parts = d.rstrip('/').split(os.sep)
+    return '/'.join(parts[-2:]) if parts[-1].isdigit() else parts[-1]
+
 def score_one(cmd, d, axis, timeout):
     """Return (category, testid). category in the axis vocabulary."""
-    parts = d.rstrip('/').split(os.sep)
-    tid = '/'.join(parts[-2:]) if parts[-1].isdigit() else parts[-1]
+    tid = test_id(d)
     inp = open(d + '/in.yaml', 'rb').read()
     is_err = os.path.exists(d + '/error')
     if axis == 'event':
@@ -99,9 +125,11 @@ def score_one(cmd, d, axis, timeout):
         cat = rc_category(rc, is_err)
         if cat:
             return (cat, tid)
-        # the oracle is the harness's responsibility: an unreadable in.json
-        # is a harness error, not a processor diff
-        exp = parse_json_stream(open(d + '/in.json', encoding='utf-8').read())
+        try:
+            exp = parse_json_stream(open(d + '/in.json', encoding='utf-8').read())
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+            # the oracle is test data, so a bad one is the harness's fault
+            return (harness_error(f"unusable oracle {d}/in.json: {e}"), tid)
         try:
             got = parse_json_stream(out.decode('utf-8', 'replace'))
         except json.JSONDecodeError:
@@ -109,6 +137,10 @@ def score_one(cmd, d, axis, timeout):
         return ('pass' if got == exp else 'diff', tid)
 
 def score(cmd, dirs, axis, timeout, workers):
+    reason = tester_available(cmd)
+    if reason:
+        cat = harness_error(reason)
+        return {cat: len(dirs)}, [(cat, test_id(d)) for d in dirs]
     cats = {}
     fails = []
     def work(d):

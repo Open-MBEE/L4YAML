@@ -558,6 +558,8 @@ end
 /-! ## §3 The pins -/
 
 def pinned : Bool := true
+-- 2026-10-20 (item 309): the two generic premises (`explFrameValueLine.h_kslot`, `flowVPack_of_close.h_vslot`)
+-- read `arm=l/stamp` — a right disjunct other than `True`, here the generic alternative `alt`.
 def expectedPositions : List String := [
   "ctor:pendingContent.h_key packaged arm=l path=→→∨Lδ∃∃∃∧R∧R∧R∧R∧L∨L∃→→→→→→→→→→ lvl=(possible(…)=true)→(line(…)=line(…))→δImplicitKeyPack∃k∃sp_key∃sp_gram(?)(ImplicitKeyHead)(GStar)(col(…)=k)(And)∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
   "ctor:pendingContent.h_vpack arm=l path=∨L∃→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
@@ -601,10 +603,10 @@ def expectedPositions : List String := [
   "param:entryPropsKeyPack_of_dispatch.h_compact arm=l path=∨L∧R∧R∨L∃→→→→→→→→ lvl=(?)(sp_scan.col=n + 1)∃ns∀nv∈ns premises=[SBlockIndented(n),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "param:entryPropsKeyPack_of_dispatch.h_ivl arm=r/stamp path=∨R∧R∧R∨L∃→→→→→→→→ lvl=(?)(sp_scan.col=n + 1)∃ns∀nv∈ns premises=[SBlockIndented(n),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "param:entryPropsKeyPack_of_dispatch.h_nodeV arm=l path=∨L∃→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
-  "param:explFrameValueLine.h_kslot arm=l path=∨L∃→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
+  "param:explFrameValueLine.h_kslot arm=l/stamp path=∨L∃→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "param:flowKeyPack_of_close.h_key arm=l path=∨L∃∃∧R∧R∧R∧L∨L∃→→→→→→→→→→ lvl=∃k∃sp_key(?)(?)(kc=k)(And)∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=before",
   "param:flowKeyRoute_of_open.h_compact_pair arm=l path=∨L∃∃→→→→→→→→ lvl=∃nv0∃ns∀nv∈nv0 :: ns premises=[SBlockIndented(nc),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
-  "param:flowVPack_of_close.h_vslot arm=l path=∨L∃→→→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SFlowContent(n),SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
+  "param:flowVPack_of_close.h_vslot arm=l/stamp path=∨L∃→→→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SFlowContent(n),SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "param:indicator_open_map.h_explUp_chain arm=l path=∨L∃→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "param:question_open_map.h_explUp_chain arm=l path=∨L∃→→→→→→→→ lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "param:slotChainMap.up arm=l path=→→→→ lvl=∀nvX∈ns premises=[SBlockIndented(nv)] ⊢ ExplValueLine(nvX) tail=no"]
@@ -1034,13 +1036,14 @@ def expectedUnborn : List String := []
 -- `frames(h_closeFV_old)` origins (two `h_nodeFV`, one `h_dframesV` route) and their terms.
 -- 2026-10-20 (item 307): `punt` 29 → 26, `built` 135 → 138, `origins` 73 → 76, `originRows` 38 → 41, `frames` 27 → 30, `noneHeld` 73 → 76, `follows` 315 → 317, `lets` 567 → 570, `lapps` 688 → 696, `alts` 4475 → 4489, `nodes` 12512 → 12518, `liteNodes` 524996 → 526179.
 -- 2026-10-20 (item 307, second chain): `follows` 317 → 318, `liteNodes` 526179 → 526154.
+-- 2026-10-20 (item 309): `nodes` 12518 → 12524, `liteNodes` 526154 → 526163.
 def expectedLine : String :=
   "positions=47 packaged=7 packConsts=[ImplicitKeyPack,PropsKeyPack] rows=180 ctorRows=98 \
 paramRows=82 packagedRows=29 punt=26 stamp=16 built=138 origins=76 originRows=41 \
 route=23 frames=30 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
 someHeld=39 noneHeld=76 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=318 lets=570 lapps=696 alts=4489 \
-nodes=12518 liteNodes=526154"
+nodes=12524 liteNodes=526163"
 
 /-! ## §4 The reading -/
 

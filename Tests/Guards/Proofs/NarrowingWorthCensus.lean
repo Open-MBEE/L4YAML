@@ -316,6 +316,7 @@ in DOCS' REMAINING section as FALSE by construction at `pendingFlow`),
 `n ≤ sp_scan.col` and the `implicitValueLine` equation all come back
 UNSETTLED — the two pins below say so together, `expectedHeadCensus` counting
 those heads and `expectedChainFaces` not naming a single one of them. -/
+-- 2026-10-20 (item 309): the generic helpers' binders (`∨ alt`) leave the `∨ True` rung.
 def expectedChainFaces : List String :=
   ["FlowBaseRoutes.mk#7 (vslot)",
    "PendingNode.pendingBlock#14 (h_kslotUp)",
@@ -335,10 +336,10 @@ def expectedChainFaces : List String :=
    "colon_open_map_props#11 (h_kslot)",
    "entryKeyPack_of_dispatch#10 (h_nodeV)",
    "entryPropsKeyPack_of_dispatch#10 (h_nodeV)",
-   "explFrameValueLine#4 (h_kslot)",
-   "flowVPack_of_close#4 (h_vslot)",
-   "frameChainUnion#1 (h₁)",
-   "frameChainUnion#2 (h₂)",
+   "explFrameValueLine#5 (h_kslot)",
+   "flowVPack_of_close#5 (h_vslot)",
+   "frameChainUnion#2 (h₁)",
+   "frameChainUnion#3 (h₂)",
    "indicator_open_map#29 (h_explUp_chain)",
    "question_open_map#26 (h_explUp_chain)"]
 
@@ -358,20 +359,35 @@ def expectedFidelity : String := "binders=163 surf=136 state=27"
     the population the mandate's instrument is actually defined over.  Two of them
     (`frameChainUnion`) are schematic, so the true reach is smaller than the
     number and never larger. -/
+-- 2026-10-20 (item 309): binder indices re-read — `{alt : Prop}` precedes the generic helpers' premises.
 def expectedStateFaces : List String :=
   ["PreprocessIndentStable.IndentFloor.transport#3",
-   "accum_block_on_closeThenBlock#25", "bareNodeRoute_or_refused#11",
-   "bareNodeRoute_or_refused_content#12", "colon_open_map#23", "colon_open_map#24",
-   "content_dispatch_after_close#22", "content_dispatch_routed#24",
+   "accum_block_on_closeThenBlock#25",
+   "bareNodeRoute_or_refused#11",
+   "bareNodeRoute_or_refused_content#12",
+   "colon_open_map#23",
+   "colon_open_map#24",
+   "content_dispatch_after_close#22",
+   "content_dispatch_routed#24",
    "content_dispatch_routed#26",
-   "dedent_cover_of_landing#8", "dedent_cover_of_landing#9",
-   "entryKeyPack_of_dispatch#17", "entryPropsKeyPack_of_dispatch#16",
-   "flowKeyRoute_of_root#20", "flowOpen_floor_at_prep#10", "flowOpen_marker#4",
+   "dedent_cover_of_landing#8",
+   "dedent_cover_of_landing#9",
+   "entryKeyPack_of_dispatch#17",
+   "entryPropsKeyPack_of_dispatch#16",
+   "flowKeyRoute_of_root#20",
+   "flowOpen_floor_at_prep#10",
+   "flowOpen_marker#4",
    "flowOpen_stamp#4",
-   "frameChainUnion#1", "frameChainUnion#2", "indicator_open_map#26",
-   "indicator_open_map#27", "question_open_map#22", "question_open_map#23",
-   "question_open_map#24", "rootMapRouteF_or_refused#7",
-   "rootMapRoute_or_refused#7", "topLevelFlowResumeSep_or_refused#6"]
+   "frameChainUnion#2",
+   "frameChainUnion#3",
+   "indicator_open_map#26",
+   "indicator_open_map#27",
+   "question_open_map#22",
+   "question_open_map#23",
+   "question_open_map#24",
+   "rootMapRouteF_or_refused#7",
+   "rootMapRoute_or_refused#7",
+   "topLevelFlowResumeSep_or_refused#6"]
 
 /-! §2, §3 and §4 are gated in ONE walk, because all three read the same 163
 faces and a second walk would be a second chance to disagree with the first. -/
@@ -494,6 +510,8 @@ def expectedWorthTally : String :=
 -- 2026-10-20 (item 307): the two block routes' `h_closeFV_old` rows read `splits=6` and `splits=4`
 -- (`h_vpack` and `h_mapFV` from the stack at each) and sort up; a new `splits=1` row for the content
 -- route's `h_mapFV108` (its `h_vpack`).
+-- 2026-10-20 (item 309): re-read — `explFrameValueLine`'s binder index moved (`{alt}` precedes `h_expl`).
+-- 2026-10-20 (item 309): `h_expl :: explFrameValueLine#4` reads `chain` and its binder index moved (`{alt}` precedes it).
 def expectedWorthLedger : List String :=
   ["splits=11 sup=1 inner h_closeF_old :: accum_content_on_pendingBlock_indented#14",
    "splits=10 sup=1 - h_closeFV_old :: accum_content_on_pendingBlock_indented#29",
@@ -523,7 +541,7 @@ def expectedWorthLedger : List String :=
    "splits=1 sup=11 - h_pr :: accum_block_on_closeThenBlock#29",
    "splits=1 sup=11 - h_sfx :: accum_block_on_closeThenBlock#18",
    "splits=1 sup=11 - h_valFV :: accum_block_on_closeThenBlock#31",
-   "splits=1 sup=4 - h_expl :: explFrameValueLine#3",
+   "splits=1 sup=4 - h_expl :: explFrameValueLine#4",
    "splits=1 sup=1 - h_kslot :: accum_block_on_pendingBlockContent#14",
    "splits=1 sup=1 - h_mapFV108 :: accum_block_on_pendingContent#32",
    "splits=1 sup=1 - h_resV_land :: question_open_map#27",
@@ -605,7 +623,8 @@ at item 212, which is why it is written as a comparison of the two selectors
 rather than as a count. -/
 -- Item 287: the same binder, read syntactically.  Item 288: and the field.
 -- Item 300: the two new binders, read both ways.
-def expectedHiddenTally : String := "hiddenDefs=1 syntactic=163 hiddenOnly=2 population=165"
+-- 2026-10-20 (item 309): `syntactic` 163 → 158, `population` 165 → 160 — the generic helpers' five `∨ alt` binders are no `∨ True` to the syntactic count.
+def expectedHiddenTally : String := "hiddenDefs=1 syntactic=158 hiddenOnly=2 population=160"
 
 def expectedHiddenDefs : List String := ["ResumeKeyCtx"]
 
@@ -745,7 +764,8 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- `KeyFrames.ofResumeFrames`, `KeyFrames.resumeAt` (item 302's stack); none is a
 -- no-op conclusion, so the four other counts stand.
 -- 2026-10-20 (item 304): 5463 → 5465 — `resumeFrameRouteK`, `resumeMapRouteK`.
-def expectedNoopTally : String := "theorems=5465 byElab=18 byWhnf=18 elabOnly=0 whnfOnly=0"
+-- 2026-10-20 (item 309): `theorems` 5465 → 5469, `byElab` 18 → 15, `byWhnf` 18 → 15 — four lemmas more; the three generic helpers' `∨ alt` conclusions are no `∨ True` no-ops.
+def expectedNoopTally : String := "theorems=5469 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries
@@ -816,15 +836,23 @@ def expectedNoopTally : String := "theorems=5465 byElab=18 byWhnf=18 elabOnly=0 
     `flowContent_toKey` is a lemma in its own right now, one of eight the
     `mutual` block exports
     (`Tests.Guards.SurfaceSpanCensus.expectedMotiveExport`). -/
+-- 2026-10-20 (item 309): the three generic helpers conclude in `∨ alt` and are no `∨ True` no-ops.
 def expectedNoopConclusions : List String :=
-  ["FlowBaseRoutes.key", "FlowBaseRoutes.vslot",
+  ["FlowBaseRoutes.key",
+   "FlowBaseRoutes.vslot",
    "PreprocessIndentStable.IndentFloor.transport",
-   "dedent_cover_of_landing", "explFrameValueLine", "flowKeyHead",
-   "flowKeyRoute_of_open", "flowKeyRoute_of_root", "flowOpen_floor_at_prep",
-   -- Item 300: `flowOpen_marker`, the stamp lemma's twin.
-   "flowOpen_marker", "flowOpen_stamp", "flowVPack_of_close", "frameChainUnion",
-   "keyctx_of_preprocess", "markerctx_of_landing", "nodocctx_of_preprocess",
-   "resumectx_of_landing", "suffixctx_of_landing"]
+   "dedent_cover_of_landing",
+   "flowKeyHead",
+   "flowKeyRoute_of_open",
+   "flowKeyRoute_of_root",
+   "flowOpen_floor_at_prep",
+   "flowOpen_marker",
+   "flowOpen_stamp",
+   "keyctx_of_preprocess",
+   "markerctx_of_landing",
+   "nodocctx_of_preprocess",
+   "resumectx_of_landing",
+   "suffixctx_of_landing"]
 
 open Meta in
 run_cmd do

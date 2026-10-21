@@ -565,8 +565,10 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- haves (`h_resSeqV`, `h_resKslot`, `h_slotV'`) and their match auxiliaries; the γ roots read `h_closeFV_old`/`h_mapFV108`.
 -- 2026-10-20 (item 307, second chain): `constants` 1392 → 1393, `decls` 1109 → 1110, `READ` 1154 → 1160, `RELAY` 2330 → 2329 — the three relays are `match`es
 -- (one more auxiliary, one more read each; the `.imp` relay gone).
+-- 2026-10-20 (item 309): `constants` 1393 → 1398, `decls` 1110 → 1114, `READ` 1160 → 1161, `RELAY` 2329 → 2337 — `ExplicitValueRefused`, the three sentinel
+-- lemmas and the refutation; the generic helpers relay their alternative.
 def expectedModuleTally : String :=
-  "constants=1393 decls=1110 eta=414 FIELD=163 READ=1160 RELAY=2329 RETURN=48 UNUSED=9"
+  "constants=1398 decls=1114 eta=414 FIELD=163 READ=1161 RELAY=2337 RETURN=48 UNUSED=9"
 
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is

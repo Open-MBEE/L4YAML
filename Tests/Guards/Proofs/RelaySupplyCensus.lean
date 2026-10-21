@@ -124,12 +124,23 @@ open Lean Elab Command
 def isOptTy (e : Expr) : Bool :=
   e.isAppOfArity ``Or 2 && (e.getArg! 1).isConstOf ``True
 
-/-- `(index, name)` of every `_ ∨ True` binder of a type, with the arity. -/
+/-- `(index, name)` of every optional binder of a type, with the arity: `_ ∨ True`, or
+    (item 309) `_ ∨ alt` where `alt` is an earlier binder of the same type NAMED `alt` —
+    the generic alternative of `frameChainUnion`, `flowVPack_of_close` and
+    `explFrameValueLine`, which their callers instantiate (to `True` today, to
+    `ExplicitValueRefused sc` as 12.3.4.2 narrows the family).  A bare variable alone
+    is not enough: a first cut accepted any variable right disjunct and read 241 edges
+    into binders that are optional in no sense of this census. -/
 def optBinders (ty : Expr) : Array (Nat × Name) × Nat := Id.run do
-  let mut out := #[]; let mut t := ty; let mut i := 0
+  let mut out := #[]; let mut t := ty; let mut i := 0; let mut names : Array Name := #[]
   repeat match t with
     | .forallE n a b _ =>
-        if isOptTy a then out := out.push (i, n)
+        let generic := a.isAppOfArity ``Or 2 &&
+          (match a.getArg! 1 with
+           | .bvar k => k < names.size && names[names.size - 1 - k]! == `alt
+           | _ => false)
+        if isOptTy a || generic then out := out.push (i, n)
+        names := names.push n
         i := i + 1; t := b
     | _ => break
   return (out, i)
@@ -1087,9 +1098,12 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- `h_mapFV108`): `splits` 161 → 166, `leaves` 347 → 363, `relayRooted` 151 → 156, `optionalRoot` 101 → 106,
 -- `agree` 105 → 110, `DECLINE-closed` 174 → 181, `PAY-free` 168 → 177; no `Or.elim` bucket — the landed arm's
 -- fallbacks are `match`es the census walks.
+-- 2026-10-20 (item 309): `DECLINE-closed` 181 → 180, `DECLINE-free` 4 → 5 — `explFrameValueLine`'s
+-- `Or.inr h => Or.inr h` (generic in the alternative) hands back the premise's alternative where
+-- `Or.inr trivial` mentioned nothing.
 def expectedSplitBranch : String :=
   "splits=166 leaves=363 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=181, DECLINE-free=4, PAY-free=177, VIA \
+agree=110/110 disagree=0 [DECLINE-closed=180, DECLINE-free=5, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue
@@ -1205,6 +1219,7 @@ declineWriters=19 parkHop=22"
     `sp_block_ctx` and `h_stream_fallback` reads its binder two places earlier. -/
 def expectedBranchSupply : List String :=
    -- 2026-10-20 (item 307): one pair more — the content route's `h_vpack` splits `h_mapFV108` (a `match`).
+   -- 2026-10-20 (item 309): `explFrameValueLine`'s `h_expl` is binder #4 — `{alt : Prop}` precedes it now.
   ["h_closeF99 :: accum_content_on_pendingMapValue_indented#18 :: splits=7 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_closeF ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_closeFV108 :: accum_content_on_pendingMapValue_indented#20 :: splits=4 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_closeFV ⇒ DECLINE+PAY+brDECLINE+brPAY",
    -- 2026-10-20 (item 307): the two block routes split `h_closeFV_old` twice more each (`h_vpack`, `h_mapFV`): 4 → 6, 2 → 4,
@@ -1218,7 +1233,7 @@ def expectedBranchSupply : List String :=
    "h_closeF_old :: accum_content_on_pendingBlock_indented#14 :: splits=11 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_closeF ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_cov :: indicator_open_map#27 :: splits=3 sup=4 [DECLINE=1,SPLIT=3] ⇐ - ⇒ DECLINE+brDECLINE+brPAY",
    "h_expl :: accum_content_on_pendingMapValue_indented#15 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_expl ⇒ DECLINE+PAY+brDECLINE+brPAY",
-   "h_expl :: explFrameValueLine#3 :: splits=1 sup=4 [RELAY=4] ⇐ h_expl@accum_content_on_pendingMapValue_indented ⇒ DECLINE+PAY+brDECLINE+brPAY",
+   "h_expl :: explFrameValueLine#4 :: splits=1 sup=4 [RELAY=4] ⇐ h_expl@accum_content_on_pendingMapValue_indented ⇒ DECLINE+PAY+brDECLINE+brPAY",
    "h_kslot :: accum_block_on_pendingBlock#13 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlock.h_kslot ⇒ DECLINE+brDECLINE+brPAY",
    "h_kslot :: accum_block_on_pendingBlockContent#14 :: splits=1 sup=1 [FIELD=1] ⇐ PendingNode.pendingBlockContent.h_kslot ⇒ brDECLINE+brPAY",
    "h_kslot :: accum_content_on_pendingMapValue_indented#17 :: splits=3 sup=1 [FIELD=1] ⇐ PendingNode.pendingMapValue.h_kslot ⇒ DECLINE+brDECLINE+brPAY",

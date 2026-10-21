@@ -327,8 +327,9 @@ declarations' own binders and not by a rescoring of an existing one.
 -- same verdicts (`602-rosterP-303.out` → `612-rosterP-304.out`, 4097 → 4108).
 -- 2026-10-20 (item 307): `constants` 1388 → 1393, `decls` 1105 → 1110, `READ` 1182 → 1198, `RELAY` 2180 → 2179 — as `HypothesisReaderCensus`:
 -- `closeThenBlock`'s three new haves and their match auxiliaries, and the γ roots' reads.
+-- 2026-10-20 (item 309): by `HypothesisReaderCensus`'s deltas (the five new declarations).
 def expectedModuleTallyP : String :=
-  "constants=1393 decls=1110 eta=414 FIELD=185 READ=1198 RELAY=2179 RETURN=138 UNUSED=9"
+  "constants=1398 decls=1114 eta=414 FIELD=185 READ=1199 RELAY=2187 RETURN=138 UNUSED=9"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
@@ -720,7 +721,10 @@ lemma opt_premise_is_no_premise {A P : Prop} : (A ∨ True → P) ↔ P :=
     the sentence above true and empty. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` left the `_ ∨ True`
 -- population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`, a field.
-def expectedOptPopulation : String := "total=163 optTy=163 ctorFields=33"
+-- 2026-10-20 (item 309): `optTy` 163 → 158 — the three generic helpers' five `∨ alt` binders are no `∨ True`
+-- to this census (their callers instantiate the alternative).
+def expectedOptPopulation : String :=
+  "total=163 optTy=158 ctorFields=33"
 
 run_cmd do
   let env ← getEnv

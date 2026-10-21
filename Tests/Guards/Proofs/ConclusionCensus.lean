@@ -265,19 +265,18 @@ def attribControl : CommandElabM (Array String) := do
     sequence continuation, and the value-line resume `h_resV_land` splits on it
     — the sequence case is one more `Or.inr` site the key does not attribute,
     as item 201's second `cases` was. -/
+-- 2026-10-20 (item 309): 17 → 14 — `frameChainUnion`, `flowVPack_of_close` and `explFrameValueLine`
+-- conclude in `∨ alt` (generic in the alternative) and leave the `∨ True` survey.
 def expected : List String :=
   ["back_col inl=0,inr=0 inl=0,inr=0 | un=0,0",
    "close_col_of_base inl=0,inr=0 inl=0,inr=0 | un=0,0",
    "dedent_cover_of_landing inl=1,inr=3 | un=0,0",
-   "explFrameValueLine inl=1,inr=1 | un=0,0",
    "flowKeyHead inl=0,inr=0 | un=0,0",
    "flowKeyRoute_of_open inl=2,inr=4 inl=0,inr=0 inl=1,inr=2 inl=2,inr=0 inl=1,inr=2 | un=3,3",
    "flowKeyRoute_of_root inl=2,inr=2 inl=0,inr=0 inl=1,inr=2 inl=5,inr=0 inl=1,inr=2 | un=3,6",
    "flowOpen_floor_at_prep inl=1,inr=1 | un=0,0",
    "flowOpen_marker inl=1,inr=2 | un=1,1",
    "flowOpen_stamp inl=1,inr=2 | un=1,1",
-   "flowVPack_of_close inl=1,inr=1 | un=0,0",
-   "frameChainUnion inl=2,inr=0 | un=0,0",
    "keyctx_of_preprocess inl=2,inr=3 | un=0,0",
    "markerctx_of_landing inl=1,inr=3 | un=1,1",
    "nodocctx_of_preprocess inl=2,inr=3 | un=0,0",

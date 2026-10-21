@@ -289,8 +289,9 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
 
     Moved to 1707 / 305 by DOCS item 300 and no new step: `flowOpen_marker`,
     the stamp lemma's twin, holds preprocessing's equation and no path. -/
+-- 2026-10-20 (item 309): three lemmas more mention the preprocess step (the sentinel transports and the refutation): `stepHolders` 1707 → 1710.
 def expectedSteps : String :=
-  "stepHolders=1707 dispHolders=305 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1710 dispHolders=305 dispTwoCorr=28 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -348,9 +349,10 @@ def expectedChainSpec : List Name :=
     `dispatchContent_docStartLine` the content dispatch's, none with a path.
     DOCS item 300 adds one holder of preprocessing's, `flowOpen_marker`, with
     no path. -/
+-- 2026-10-20 (item 309): `scanNextToken_preprocess` decls 209 → 212 (the sentinel transports and the refutation).
 def expectedPerFn : List String :=
   ["scanNextToken_dispatchContent decls=135 chain=1",
-   "scanNextToken_preprocess decls=209 chain=6"]
+   "scanNextToken_preprocess decls=212 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

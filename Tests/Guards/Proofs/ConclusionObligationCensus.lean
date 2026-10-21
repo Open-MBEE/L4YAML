@@ -289,7 +289,9 @@ partial def scanTerm (e : Expr) (seen : Std.HashSet Expr) (r i : Nat) :
 -- 302's), whose `resumeAt` hands a mapping OR a sequence continuation, and each
 -- lemma's value-line resume splits on it; the sequence case is one more
 -- resolved obligation (`imp` 100 → 101, 61 → 63 with it).
-def expectedLedgerTally : String := "rows=18 res=59"
+-- 2026-10-20 (item 309): `rows` 18 → 15, `res` 59 → 57 — `frameChainUnion`, `flowVPack_of_close` and `explFrameValueLine`
+-- conclude in `∨ alt` (generic in the alternative) and leave the `∨ True` survey.
+def expectedLedgerTally : String := "rows=15 res=57"
 
 /-- The rows, machine-produced, sorted by `res` then `prem` descending.  Three
     rows are all-zero — the proof never reaches the right arm by any route —
@@ -313,6 +315,8 @@ def expectedLedgerTally : String := "rows=18 res=59"
     conversion is a `mutual` block of eight lemmas now, and the content one is
     read directly (`Tests.Guards.SurfaceSpanCensus.expectedMotiveExport`). -/
 -- Item 304: `resumectx_of_landing` at `res=10` sorts before `flowKeyRoute_of_open`.
+-- 2026-10-20 (item 309): 18 → 15 — `frameChainUnion`, `flowVPack_of_close` and `explFrameValueLine` conclude in `∨ alt`
+-- and leave the `∨ True` survey (the census's paste-ready block).
 def expectedLedger : List String :=
   ["res=12 imp=101 prem=6 proj=0 flowKeyRoute_of_root",
    "res=10 imp=63 prem=3 proj=0 resumectx_of_landing",
@@ -324,11 +328,8 @@ def expectedLedger : List String :=
    "res=3 imp=5 prem=1 proj=0 flowOpen_stamp",
    "res=3 imp=12 prem=0 proj=0 keyctx_of_preprocess",
    "res=3 imp=12 prem=0 proj=0 nodocctx_of_preprocess",
-   "res=1 imp=4 prem=2 proj=0 explFrameValueLine",
-   "res=1 imp=3 prem=1 proj=0 flowVPack_of_close",
    "res=1 imp=4 prem=1 proj=0 PreprocessIndentStable.IndentFloor.transport",
    "res=1 imp=4 prem=1 proj=0 flowOpen_floor_at_prep",
-   "res=0 imp=8 prem=2 proj=0 frameChainUnion",
    "res=0 imp=0 prem=0 proj=0 flowKeyHead",
    "res=0 imp=0 prem=0 proj=1 FlowBaseRoutes.key",
    "res=0 imp=0 prem=0 proj=1 FlowBaseRoutes.vslot"]

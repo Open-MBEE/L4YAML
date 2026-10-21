@@ -4441,15 +4441,19 @@ ran a one-field flip and read 23 payments; item 187 counted 31 alternatives in
 16 declarations by grep; §7 and §9 ran one-field flips at four fields and found
 each one's surface SMALLER than the family's.  The whole-family flip reads
 **103 sites in 20 declarations, in 3 rounds** (101 + 2 + 0): 102 declines and
-one relay.  By shape, **70** are split leaves — `| Or.inr _ => Or.inr trivial`,
+one relay (none since item 309: `frameChainUnion` is generic in the alternative).  By shape, **70** are split leaves — `| Or.inr _ => Or.inr trivial`,
 a decline conditional on the incoming optional declining, i.e. TRANSPORT — and
 **32** are unconditional, the ROOTS — **29** since item 307 threaded the three γ roots.  The pin is read from this side by the
 script, as `expectedInlineArms` is. -/
 
 -- 2026-10-20 (item 307): `uncond` 32 → 29, `leaf` 70 → 72 — the three γ roots are threaded
 -- (`h_vpack` from the closed park's stack, closed), so their bare declines are gone.
+-- 2026-10-20 (item 309): `sites` 102 → 99, `decls` 20 → 18, `rounds` 3 → 2, `decline` 101 → 99, `relay` 1 → 0, `leaf` 72 → 70 — `frameChainUnion`, `flowVPack_of_close` and
+-- `explFrameValueLine` are generic in the alternative (item 309): the flip reaches them through their callers, so
+-- the one RELAY (`question_open_map`'s union of the frame above) and the two helpers' own leaves (`Or.inr h` relays
+-- now) are no longer sites of the family's textual surface; the roots stand at 29.
 def expectedPackFlip : String :=
-  "sites=102 decls=20 rounds=3 decline=101 relay=1 leaf=72 uncond=29"
+  "sites=99 decls=18 rounds=2 decline=99 relay=0 leaf=70 uncond=29"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

@@ -740,6 +740,8 @@ def expectedFramesOn : List String := [
   "pendingBlock.h_closeFV frames(ks)@ExplValueLine(nv)←SCompactSeqTail(n)",
   "pendingMapValue.h_closeFV frames(ks)@ExplValueLine(nv)←SBlockNode(n + 1)",
   "pendingMapValue.h_framesV frames(ks)@ExplValueLine(nv)←landing"]
+-- 2026-10-20 (item 309): `explFrameValueLine.h_kslot` and `flowVPack_of_close.h_vslot` read `arm=l/stamp` — the census
+-- reads a right disjunct other than `True` as the stamp face; theirs is the generic alternative `alt`.
 def expectedParams : List String := [
   "accum_block_on_closeThenBlock.h_vpack arm=l lvl=∃ns∀nv∈ns premises=[SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   -- Item 287: `h_vslot`'s other disjunct is the caller's reading of an inline
@@ -765,10 +767,10 @@ def expectedParams : List String := [
   "entryPropsKeyPack_of_dispatch.h_compact arm=l lvl=(?)(sp_scan.col=n + 1)∃ns∀nv∈ns premises=[SBlockIndented(n),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "entryPropsKeyPack_of_dispatch.h_ivl arm=r/stamp lvl=(?)(sp_scan.col=n + 1)∃ns∀nv∈ns premises=[SBlockIndented(n),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "entryPropsKeyPack_of_dispatch.h_nodeV arm=l lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
-  "explFrameValueLine.h_kslot arm=l lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
+  "explFrameValueLine.h_kslot arm=l/stamp lvl=∃ns∀nv∈ns premises=[SBlockNode(n + 1),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "flowKeyPack_of_close.h_key arm=l lvl=∃k∃sp_key(?)(?)(kc=k)(And)∃ns∀nv∈ns premises=[SBlockMapEntry(k),SCompactMapTail(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "flowKeyRoute_of_open.h_compact_pair arm=l lvl=∃nv0∃ns∀nv∈nv0 :: ns premises=[SBlockIndented(nc),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
-  "flowVPack_of_close.h_vslot arm=l lvl=∃ns∀nv∈ns premises=[SFlowContent(n),SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
+  "flowVPack_of_close.h_vslot arm=l/stamp lvl=∃ns∀nv∈ns premises=[SFlowContent(n),SSLComments,SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "indicator_open_map.h_explUp_chain arm=l lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "question_open_map.h_explUp_chain arm=l lvl=∃ns∀nv∈ns premises=[SBlockMapEntry(k),SIndent(nv),GLit(':'),SBlockIndented(nv)] ⊢ SLYamlStream tail=no",
   "slotChainMap.up arm=l lvl=∀nvX∈ns premises=[SBlockIndented(nv)] ⊢ ExplValueLine(nvX) tail=no"]
@@ -1020,12 +1022,13 @@ def expectedPerPos : List String := [
 -- 2026-10-20 (item 305): the pushes' and bottoms' terms (item 305): `nodes` 12479 → 12481.
 -- 2026-10-20 (item 307): `punt` 29 → 26, `step` 1 → 2, `chain` 50 → 49, `frames` 1 → 3, `alt` 3 → 4, `none` 21 → 23, `touched` 122 → 125, `nodes` 12481 → 12487.
 -- 2026-10-20 (item 307, second chain): `step` 2 → 1, `frames` 3 → 4, `none` 23 → 24.
+-- 2026-10-20 (item 309): `nodes` 12487 → 12493 — the two generic premises read as stamp arms.
 def expectedLine : String :=
   "packs=11 framesOn=7 params=29 paramLemmas=19 apps=51 rows=151 ctorRows=74 \
 paramRows=77 punt=26 stamp=16 empty=0 relay=36 step=1 via=12 chain=49 route=3 \
 frames=4 tail=0 other=0 alt=4 held=11 levelVar=37 none=24 spendTail=3 lemmas=21 \
 helpers=[explFrameValueLine,flowVPack_of_close,frameChainCons,frameChainOne,frameChainUnion] \
-touched=125 nodes=12487"
+touched=125 nodes=12493"
 
 /-! ## §4 The reading -/
 

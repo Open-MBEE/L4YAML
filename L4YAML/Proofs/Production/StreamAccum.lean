@@ -741,6 +741,21 @@ def CompletedTail (sc : ScannerState) : Prop :=
 lemma StaleNodeTail.toCompletedTail {sc : ScannerState} (h : StaleNodeTail sc) :
     CompletedTail sc := ⟨h.2.2.1, h.2.2.2⟩
 
+/-- **The pack family's alternative — what a park carries INSTEAD of a value-line
+    pack** (item 308).  A class-A `:` — the explicit value of a `?` frame, `[197]`'s
+    `s-indent(n) ':'` — fires only when the dispatch state's register is live
+    (`explicitKeyLine ≠ none`) and the `:` stands at the mapping indent
+    (`col = currentIndent`, `scanValue`'s check).  Either disjunct refutes it at the
+    park: a dead register (preprocessing writes neither explicit-key field,
+    `ekl_dis_eq_park`), or the sentinel indent `-1` a document marker's unwind leaves
+    behind — the register SURVIVES a marker (item 308's probe) but no column equals
+    `-1` (`indent_neg_dis_of_park`).  The alternative's consumers are the three
+    `block_dispatch_deferred_stamp_nopack` applications, which hold both refutations
+    (`ExplicitValueRefused.not_of_classA`); its producers are the family's roots, each
+    paying the disjunct its park can prove (12.3.4.2). -/
+def ExplicitValueRefused (sc : ScannerState) : Prop :=
+  sc.explicitKeyLine = none ∨ sc.currentIndent = -1
+
 /-- **The face, read off the mid-stream check** — a landing that crossed a
     break has already refused every dangling park behind it, so the check's
     success IS the face at the park's own state. -/
@@ -1101,10 +1116,13 @@ lemma frameChainCons {P : Nat → Prop} {a : Nat} {ns : List Nat}
     189 found shadowed, `explFrameValueLine` answering with one of the two — the
     list carries BOTH and the landing chooses by column.  Each funder stays in
     its own `match`, so neither body is written twice. -/
-lemma frameChainUnion {P : Nat → Prop}
-    (h₁ : (∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ True)
-    (h₂ : (∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ True) :
-    (∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ True := by
+lemma frameChainUnion {P : Nat → Prop} {alt : Prop}
+    (h₁ : (∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ alt)
+    (h₂ : (∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ alt) :
+    (∃ ns : List Nat, ∀ nv ∈ ns, P nv) ∨ alt := by
+  -- Item 309: generic in the alternative `alt` — `True` at every caller until
+  -- 12.3.4.2 narrows the family, `ExplicitValueRefused sc` after; the union keeps an
+  -- `inr` as it finds it and never manufactures one.
   rcases h₁ with ⟨ns₁, f₁⟩ | _
   · rcases h₂ with ⟨ns₂, f₂⟩ | _
     · refine Or.inl ⟨ns₁ ++ ns₂, ?_⟩
@@ -1128,21 +1146,22 @@ lemma frameChainUnion {P : Nat → Prop}
     **Item 192: the frames are a LIST**, and this step is indifferent to how
     long it is — the content it applies is the same for every ancestor, so the
     crossing consumes the whole list in one term. -/
-lemma flowVPack_of_close {n : Nat} {sp_start sp_br sp_tok : SurfPos}
+lemma flowVPack_of_close {n : Nat} {sp_start sp_br sp_tok : SurfPos} {alt : Prop}
     (h_vslot : (∃ ns : List Nat, ∀ nv ∈ ns, ∀ sp_end, SFlowContent n .flowOut sp_br sp_end →
       ∀ sp_mid sp_i sp_c, SSLComments sp_end sp_mid → SIndent nv sp_mid sp_i →
         GLit ':' sp_i sp_c → ∀ sp_v, SBlockIndented nv .blockOut sp_c sp_v →
-        SLYamlStream sp_start sp_v) ∨ True)
+        SLYamlStream sp_start sp_v) ∨ alt)
     (h_content : SFlowContent n .flowOut sp_br sp_tok) :
     (∃ ns : List Nat, ∀ nv ∈ ns,
       ∀ sp_mid sp_i sp_c : SurfPos,
         SSLComments sp_tok sp_mid → SIndent nv sp_mid sp_i →
         GLit ':' sp_i sp_c →
         ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
-        SLYamlStream sp_start sp_v) ∨ True :=
+        SLYamlStream sp_start sp_v) ∨ alt :=
+  -- Item 309: generic in the alternative (`frameChainUnion`'s note).
   match h_vslot with
   | Or.inl ⟨ns, f⟩ => Or.inl ⟨ns, fun nv hmem => f nv hmem sp_tok h_content⟩
-  | Or.inr _ => Or.inr trivial
+  | Or.inr h => Or.inr h
 
 /-- The props-key pack (item 17): what a held `[96] c-ns-properties` run hands
     to the content it is about to decorate, so that the pair can be read as
@@ -7939,20 +7958,22 @@ lemma valueMapRouteF {sp_start sp_scan sp_land sp_key : SurfPos} {n k : Nat}
     with no column to choose by hand the whole list on to a consumer that has
     one.  Where the landing's column IS known — `accum_block_on_closeThenBlock`
     — item 189's two separate faces (`h_vpack`, `h_vpackUp`) are unchanged. -/
-lemma explFrameValueLine {sp_start sp_scan : SurfPos} {n : Nat}
+lemma explFrameValueLine {sp_start sp_scan : SurfPos} {n : Nat} {alt : Prop}
     (h_expl : (∃ sp_q : SurfPos, GLit '?' sp_q sp_scan ∧
       ∀ sp_v : SurfPos, SBlockMapEntry n sp_q sp_v →
-        SLYamlStream sp_start sp_v) ∨ True)
+        SLYamlStream sp_start sp_v) ∨ alt)
     (h_kslot : (∃ ns : List Nat, ∀ nv ∈ ns,
       ∀ sp_m : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_m →
       ∀ sp_i sp_c : SurfPos, SIndent nv sp_m sp_i → GLit ':' sp_i sp_c →
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
-      SLYamlStream sp_start sp_v) ∨ True) :
+      SLYamlStream sp_start sp_v) ∨ alt) :
     (∃ ns : List Nat, ∀ nv ∈ ns,
       ∀ sp_m : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_m →
       ∀ sp_i sp_c : SurfPos, SIndent nv sp_m sp_i → GLit ':' sp_i sp_c →
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
-      SLYamlStream sp_start sp_v) ∨ True :=
+      SLYamlStream sp_start sp_v) ∨ alt :=
+  -- Item 309: generic in the alternative (`frameChainUnion`'s note); the `?` slot
+  -- and the frames above share it here — 12.3.4.2's face lane may give the slot its own.
   frameChainUnion
     -- The park's own `[187]` entry, at its own index — item 106's derivation,
     -- unchanged but for the one-element chain it now rides out on.
@@ -7963,7 +7984,7 @@ lemma explFrameValueLine {sp_start sp_scan : SurfPos} {n : Nat}
              (SBlockIndented.node n .blockOut sp_scan sp_m
                (SBlockNode_blockIn_to_blockOut h_node))
              h_iv h_lit h_sbi))⟩
-     | Or.inr _ => Or.inr trivial)
+     | Or.inr h => Or.inr h)
     -- …and the frames the park stands inside, which used to be dropped here.
     h_kslot
 
@@ -19882,6 +19903,71 @@ lemma ekl_dis_eq_park {sc s_prep : ScannerState} {c : Char}
     · rfl
     · rfl
   exact h_norm.trans (ExplicitKeyCoupling.preprocess_preserves_explicitKey sc s_prep c h).1
+
+/-- The unwind pops only while `currentIndent > col`, and the sentinel `-1` is never
+    above a column: a state at the sentinel is left as it is (item 309). -/
+lemma unwindIndents_of_currentIndent_neg {s : ScannerState} {col : Int}
+    (h : s.currentIndent = -1) (hcol : 0 ≤ col) : unwindIndents s col = s := by
+  unfold unwindIndents
+  cases hs : s.indents.size with
+  | zero => unfold unwindIndentsLoop; rfl
+  | succ n =>
+    unfold unwindIndentsLoop
+    have hgt : ¬ (s.currentIndent > col) := by rw [h]; omega
+    simp [hgt]
+
+/-- Preprocessing keeps the sentinel indent: `skipToContent` and the key save touch
+    no indent, and the unwind is the identity at `-1` (item 309). -/
+lemma preprocess_currentIndent_neg {sc s_prep : ScannerState} {c : Char}
+    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (hneg : sc.currentIndent = -1) : s_prep.currentIndent = -1 := by
+  obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim h
+  have h_skip : s_skip.currentIndent = -1 :=
+    (currentIndent_of_indents_eq (skipToContent_preserves_indents sc s_skip hsk)).trans hneg
+  rw [h_save, currentIndent_of_indents_eq (saveSimpleKey_preserves_indents s_u)]
+  rcases h_cases with rfl | rfl
+  · exact h_skip
+  · show (unwindIndents s_skip (s_skip.col : Int)).currentIndent = -1
+    rw [unwindIndents_of_currentIndent_neg h_skip (by omega)]
+    exact h_skip
+
+/-- **The sentinel a landing READS is the sentinel its PARK carries** (item 309,
+    `ekl_dis_eq_park`'s indent twin): the directive normalization writes no indent. -/
+lemma indent_neg_dis_of_park {sc s_prep : ScannerState} {c : Char}
+    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (hneg : sc.currentIndent = -1) :
+    (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep).currentIndent = -1 := by
+  have h_norm : (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep).currentIndent = s_prep.currentIndent := by
+    split
+    · rfl
+    · rfl
+  exact h_norm.trans (preprocess_currentIndent_neg h hneg)
+
+/-- **The alternative, refuted at a class-A landing** (item 309) — from the two facts
+    the three `block_dispatch_deferred_stamp_nopack` applications already hold: the
+    live register at the dispatch state (`h_src`'s first disjunct, the `_h_park` term)
+    and the `[197]` check that passed (`_h_indent`, `explicit_at_indent_of_dispatch`).
+    No park carrying `ExplicitValueRefused` is the park such a `:` landed on — which is
+    what lets 12.3.4.3 close the wrapper's `inr` branch. -/
+lemma ExplicitValueRefused.not_of_classA {sc s_prep : ScannerState} {c : Char}
+    (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h_live : (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep).explicitKeyLine ≠ none)
+    (h_indent : ((if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep).col : Int) = (if s_prep.allowDirectives then
+      { s_prep with allowDirectives := false, documentEverStarted := true }
+    else s_prep).currentIndent) :
+    ¬ ExplicitValueRefused sc := by
+  rintro (h_ek | h_neg)
+  · exact h_live ((ekl_dis_eq_park h_preprocess).trans h_ek)
+  · rw [indent_neg_dis_of_park h_preprocess h_neg] at h_indent
+    omega
 
 /-- The indicator dispatch's own `!inFlow` guard, run back to the flag: shared
     by both floors (items 27/28), which each need the post-update state's

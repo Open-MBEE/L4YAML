@@ -6,8 +6,9 @@ explicit value of a `?` frame, at the frame's column) lands on a park whose
 value-line pack is `Or.inr`.  The pack is one obligation carried through nine
 `PendingNode` fields, the premises that restate it and the conclusions that
 hand it on — every one with the same type tail, `… SLYamlStream sp_start sp_v)
-∨ True` — and `frameChainUnion`, item 192's combinator, which states the same
-alternative generically.  A one-field flip (§7, §9 of `BlockDeferralClasses`)
+∨ True` — and `frameChainUnion`, item 192's combinator, which stated the same
+alternative generically until item 309 made it generic in the alternative (its flip is
+kept and finds nothing: a generic union follows its callers' alternative).  A one-field flip (§7, §9 of `BlockDeferralClasses`)
 reads the field's own producers; the family's price is every producer that
 hands ANY of them `Or.inr`, which only the whole flip reads.
 

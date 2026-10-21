@@ -103,9 +103,15 @@ def test_id(d):
     parts = d.rstrip('/').split(os.sep)
     return '/'.join(parts[-2:]) if parts[-1].isdigit() else parts[-1]
 
+def no_oracle(d, axis):
+    """A json-axis test without in.json has nothing to compare against: `skip`."""
+    return axis == 'json' and not os.path.exists(d + '/in.json')
+
 def score_one(cmd, d, axis, timeout):
     """Return (category, testid). category in the axis vocabulary."""
     tid = test_id(d)
+    if no_oracle(d, axis):
+        return ('skip', tid)
     inp = open(d + '/in.yaml', 'rb').read()
     is_err = os.path.exists(d + '/error')
     if axis == 'event':
@@ -117,8 +123,6 @@ def score_one(cmd, d, axis, timeout):
         got = out.decode('utf-8', 'replace')
         return ('pass' if norm_events(got) == norm_events(exp) else 'diff', tid)
     else:  # json
-        if not os.path.exists(d + '/in.json'):
-            return ('skip', tid)   # no json oracle for this test
         rc, out = run(cmd, inp, timeout)
         # a few error tests carry a stale in.json (9MQT/01, DK95/01,
         # DK95/06); correct behavior is still to reject the input
@@ -139,11 +143,12 @@ def score_one(cmd, d, axis, timeout):
 def score(cmd, dirs, axis, timeout, workers):
     reason = tester_available(cmd)
     if reason:
-        cat = harness_error(reason)
-        return {cat: len(dirs)}, [(cat, test_id(d)) for d in dirs]
+        harness_error(reason)
     cats = {}
     fails = []
     def work(d):
+        if reason:   # tester cannot start: skip what score_one would skip, fail the rest
+            return ('skip' if no_oracle(d, axis) else 'harness-error', test_id(d))
         return score_one(cmd, d, axis, timeout)
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for cat, tid in ex.map(work, dirs):

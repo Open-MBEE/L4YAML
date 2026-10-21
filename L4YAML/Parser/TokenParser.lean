@@ -152,7 +152,7 @@ def parseNode (ps : ParseState) (fuel : Nat) : Except ScanError (YamlValue × Pa
   match ps.peek? with
   | some (.alias name) =>
     -- §7.1: Reject undefined aliases — every alias must have a preceding anchor
-    if !ps.declaredAnchors.any (fun n => n == name) then
+    if !ps.declaredIndex.contains name then
       throw (.undefinedAlias name nodeStartPos.line nodeStartPos.col)
     let ps := ps.advance
     -- G5c: record alias position (only if tracking enabled)
@@ -585,7 +585,7 @@ def parseSinglePairMapping (ps : ParseState) (fuel : Nat) : Except ScanError (Ya
       .ok (emptyNode, ps)
     | _ => parseNode ps fuel
   -- G5c: set path for value node
-  let keyContent := match key with | .scalar s => s.content | _ => "0"
+  let keyContent := keyPathSegment key
   let savedPath := ps.currentPath
   let ps := { ps with currentPath := savedPath.push (.key keyContent) }
   let (consumed, ps) := ps.tryConsume .value
@@ -809,7 +809,8 @@ def parseStreamLoop (ps : ParseState) (docs : Array YamlDocument)
         | .error e => .error e
         | .ok (doc, ps') =>
           let docs := docs.push doc
-          let ps := { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
+          let ps := { ps' with anchors := #[], anchorIndex := .empty, declaredAnchors := #[], declaredIndex := .empty,
+                               nodePositions := #[], currentPath := #[] }
           let (consumed, ps) := ps.tryConsume .documentEnd
           let streamState := if consumed then .afterDocumentEnd else .afterDocument
           if ps.pos == savedPos then .ok docs

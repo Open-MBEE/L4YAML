@@ -257,8 +257,8 @@ lemma applyNodeFinalization_ag
     -- (ParserNodeProofs.applyNodeFinalization_ag) for the mechanism.
     simp only [applyNodeFinalization]
     refine ⟨⟨i, ?_⟩, ?_⟩
-    · split <;> split <;> (simp [ParseStateIx.addAnchor, Array.size_push]; omega)
-    · split <;> split <;>
+    · split <;> (simp [ParseStateIx.addAnchor, Array.size_push]; omega)
+    · split <;>
         (simp [ParseStateIx.addAnchor, Array.getElem_push, show i < ps.anchors.size from hi])
 
 /-! ## ParseNodeAG induction hypothesis -/
@@ -1961,9 +1961,7 @@ lemma parseNode_aad_all : ∀ n, ParseNodeAAD input n := by
           refine AllAliasesDeclared.alias _ _ (mem_of_any_beq ?_)
           rename_i _ h_any _
           show ps.declaredAnchors.any _ = true
-          cases hb : ps.declaredAnchors.any _ with
-          | true => rfl
-          | false => simp [hb] at h_any)
+          simpa [DeclaredIndex.contains_eq_any] using h_any)
       · -- non-alias: properties → validate → content → finalize
         split at h_ok
         · simp at h_ok

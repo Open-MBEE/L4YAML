@@ -782,7 +782,11 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- no-op counts stand.
 -- 2026-10-21 (item 324): `theorems` 5479 → 5481 — `ExplicitValueRefused.step_preprocess` and its `PackAlt` wrapper;
 -- neither conclusion is a no-op, and both readings stand.
-def expectedNoopTally : String := "theorems=5481 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
+-- 2026-10-21 (anchor hash index): `theorems` 5481 → 5527 — `Parser/AnchorIndex.lean` (`DeclaredIndex`/`AnchorIndex`
+-- structures with their auto-generated theorems, `push_inv`, `contains_eq_any`, `find?_eq`, the
+-- `resolveAliasesWith` equations) plus `addAnchor_anchors`, `applyNodeProps` and `keyPathSegment` equations.
+-- Read off the environment; `byElab`/`byWhnf` hold at 15 and both residual lists stay empty.
+def expectedNoopTally : String := "theorems=5527 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

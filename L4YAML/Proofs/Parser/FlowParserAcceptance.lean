@@ -81,7 +81,7 @@ lemma parseNode_scalar_flow (ps : ParseState) (m : Nat) (h_m : 0 < m)
     unfold parseNode
     simp only [h_peek, bind, Except.bind, h_props, h_val, h_content]
     -- Finalization leaves a scalar value unchanged.
-    simp only [applyNodeFinalization]
+    simp only [applyNodeFinalization, applyNodeProps]
   · rw [applyNodeFinalization_pos]; rfl
   · rw [applyNodeFinalization_tokens]; rfl
   · rw [applyNodeFinalization_trackPositions]; rfl

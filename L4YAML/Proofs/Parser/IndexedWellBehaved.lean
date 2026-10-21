@@ -536,27 +536,24 @@ lemma applyNodeFinalization_tokens_ix
     (val : YamlValue) (ps : ParseStateIx input) (props : NodeProperties)
     (nodeStartPos : YamlPos) :
     (applyNodeFinalization val ps props nodeStartPos).2.tokens = ps.tokens := by
-  simp only [applyNodeFinalization, ParseStateIx.addAnchor]
-  split <;> simp_all
-  all_goals (split <;> simp_all)
+  simp only [applyNodeFinalization]
+  split <;> (try split) <;> simp_all [ParseStateIx.addAnchor]
 
 /-- `applyNodeFinalization` preserves the parse position. -/
 lemma applyNodeFinalization_pos_ix
     (val : YamlValue) (ps : ParseStateIx input) (props : NodeProperties)
     (nodeStartPos : YamlPos) :
     (applyNodeFinalization val ps props nodeStartPos).2.pos = ps.pos := by
-  simp only [applyNodeFinalization, ParseStateIx.addAnchor]
-  split <;> simp_all
-  all_goals (split <;> simp_all)
+  simp only [applyNodeFinalization]
+  split <;> (try split) <;> simp_all [ParseStateIx.addAnchor]
 
 /-- `applyNodeFinalization` preserves `trackPositions`. -/
 lemma applyNodeFinalization_trackPositions_ix
     (val : YamlValue) (ps : ParseStateIx input) (props : NodeProperties)
     (nodeStartPos : YamlPos) :
     (applyNodeFinalization val ps props nodeStartPos).2.trackPositions = ps.trackPositions := by
-  simp only [applyNodeFinalization, ParseStateIx.addAnchor]
-  split <;> simp_all
-  all_goals (split <;> simp_all)
+  simp only [applyNodeFinalization]
+  split <;> (try split) <;> simp_all [ParseStateIx.addAnchor]
 
 /-! ### §5e′  parseNodeProperties preservation lemmas — Indexed
 
@@ -2920,7 +2917,8 @@ lemma parseStreamLoop_docs_from_parseDocument_ix
             (parseDocument_tokens_preserved_ix ps doc_new ps'
               (h_eq ▸ h_fpsv) (h_eq ▸ h_matched) h_pd).trans h_eq
           let ps_reset : ParseStateIx input :=
-            { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
+            { ps' with anchors := #[], anchorIndex := .empty, declaredAnchors := #[],
+                       declaredIndex := .empty, nodePositions := #[], currentPath := #[] }
           have h_next_tok : (ps_reset.tryConsume .documentEnd).2.tokens = tokens :=
             (tryConsume_tokens_ix _ _).trans h_pd_tok
           have h_acc' : ∀ doc ∈ (docs.push doc_new).toList,

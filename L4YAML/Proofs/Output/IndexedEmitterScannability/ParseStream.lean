@@ -116,7 +116,8 @@ lemma parseStreamLoop_single_docIx {input : String}
         rw [h_doc]; dsimp only []
         -- Post-document state: clear anchors/nodePositions/currentPath. The
         -- `peek?` projection depends only on `tokens` and `pos`, both unchanged.
-        have h_peek'_r : ({ ps' with anchors := #[], declaredAnchors := #[],
+        have h_peek'_r : ({ ps' with anchors := #[], anchorIndex := .empty,
+                                     declaredAnchors := #[], declaredIndex := .empty,
                                      nodePositions := #[],
                                      currentPath := #[] } : ParseStateIx input).peek?
             = some .streamEnd := h_peek'
@@ -439,10 +440,12 @@ lemma parseStream_three_tokens_scalarIx {input : String} (content : String)
   have h_pd : parseDirectives ps1 = (#[], ps1) := parseDirectives_skipIx ps1 h_peek_not_dir
   have h_pds : prepareDocumentState ps1 = .ok (#[], ps1) := by
     unfold prepareDocumentState
-    simp only [bind, Except.bind, h_pd, Array.filterMap_empty]
+    rw [h_pd]
+    simp only [bind, Except.bind, Array.filterMap_empty]
     have h_th : { ps1 with tagHandles := #[] } = ps1 := by
       simp [ps1, ParseStateIx.advance]
-    rw [h_th, h_peek1]
+    simp only [h_th]
+    rw [h_peek1]
     unfold ParseStateIx.tryConsume
     rw [h_peek1]; simp
   -- parseNodeProperties skip

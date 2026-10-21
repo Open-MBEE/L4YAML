@@ -7,6 +7,7 @@ module
 
 public import L4YAML.Indexed.TokenStream
 public import L4YAML.Spec.YamlSpec
+public import L4YAML.Parser.AnchorIndex
 
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
@@ -79,6 +80,8 @@ structure ParseStateIx (input : String) where
   pos : Nat := 0
   /-- Accumulated anchor definitions -/
   anchors : Array (String × YamlValue) := #[]
+  /-- Hash index of `anchors` (name → first binding); see `AnchorIndex`. -/
+  anchorIndex : AnchorIndex anchors := by exact AnchorIndex.empty
   /-- Anchor names DECLARED by a `&` node property, whether or not the node the
       property decorates has finished parsing.  §7.1's only error is an anchor
       that does not *previously occur*, and §3.2.2.2 binds an alias to the most
@@ -88,6 +91,8 @@ structure ParseStateIx (input : String) where
       cannot exist before node finalization.  The scanner already keeps this
       set under the name `definedAnchors`. -/
   declaredAnchors : Array String := #[]
+  /-- Hash index of `declaredAnchors`; see `DeclaredIndex`. -/
+  declaredIndex : DeclaredIndex declaredAnchors := by exact DeclaredIndex.empty
   /-- Tag handle → prefix mapping declared via `%TAG` for the current document.
       §6.8.2.2: tag handles are local to the document.
       Each entry is `(handle, tagPrefix)` so `!handle!suffix` resolves to
@@ -184,7 +189,8 @@ def ParseStateIx.tryConsume {input : String} (ps : ParseStateIx input)
     Indexed twin of `L4YAML.ParseState.declareAnchor`. -/
 def ParseStateIx.declareAnchor {input : String} (ps : ParseStateIx input)
     (name : String) : ParseStateIx input :=
-  { ps with declaredAnchors := ps.declaredAnchors.push name }
+  { ps with declaredAnchors := ps.declaredAnchors.push name,
+            declaredIndex := ps.declaredIndex.push name }
 
 /-- `declareAnchor` writes only `declaredAnchors`; every other field, and so
     every reading a positional proof takes, is untouched.  `declareAnchorOpt`
@@ -236,8 +242,16 @@ def ParseStateIx.declareAnchorOpt {input : String} (ps : ParseStateIx input) :
 -/
 def ParseStateIx.addAnchor {input : String} (ps : ParseStateIx input)
     (name : String) (val : YamlValue) : ParseStateIx input :=
-  let cleaned := ((val.resolveAliases ps.anchors).stripAnchors).adaptForFlowContext
-  { ps with anchors := ps.anchors.push (name, cleaned) }
+  let cleaned := ((val.resolveAliasesWith ps.anchorIndex.find?).stripAnchors).adaptForFlowContext
+  { ps with anchors := ps.anchors.push (name, cleaned),
+            anchorIndex := ps.anchorIndex.push name cleaned }
+
+/-- `addAnchor` stores the value `resolveAliases` would compute: the index
+    only changes how the first-match lookup is performed. -/
+@[simp] lemma ParseStateIx.addAnchor_anchors {input : String} (ps : ParseStateIx input) (name : String) (val : YamlValue) :
+    (ps.addAnchor name val).anchors =
+      ps.anchors.push (name, ((val.resolveAliases ps.anchors).stripAnchors).adaptForFlowContext) := by
+  simp [ParseStateIx.addAnchor]
 
 /-! ## Node Properties -/
 
@@ -326,6 +340,22 @@ def emptyNode : YamlValue :=
 
 /-! ## Node Finalization Helper -/
 
+/-- The G5c path segment a mapping key contributes; non-scalar keys read as `"0"`.
+    A named def so parser bodies carry no `match` for proofs to case-split. -/
+@[simp] def keyPathSegment (key : YamlValue) : String :=
+  match key with | .scalar s => s.content | _ => "0"
+
+/-- Attach `props` to a collection node that carries no properties yet.
+    Kept out of `applyNodeFinalization` so that its equation lemmas need no
+    case split on `val`. -/
+@[simp] def applyNodeProps (val : YamlValue) (props : NodeProperties) : YamlValue :=
+  match val with
+  | YamlValue.sequence style items none none =>
+    YamlValue.sequence style items props.tag props.anchor
+  | YamlValue.mapping style pairs none none =>
+    YamlValue.mapping style pairs props.tag props.anchor
+  | other => other
+
 /-- Apply node properties, register anchors, and record G5c positions.
 
     This is the pure tail of `parseNode` after content dispatch.
@@ -334,12 +364,7 @@ def emptyNode : YamlValue :=
 def applyNodeFinalization {input : String}
     (val : YamlValue) (ps : ParseStateIx input) (props : NodeProperties)
     (nodeStartPos : YamlPos) : (YamlValue × ParseStateIx input) :=
-  let val := match val with
-    | YamlValue.sequence style items none none =>
-      YamlValue.sequence style items props.tag props.anchor
-    | YamlValue.mapping style pairs none none =>
-      YamlValue.mapping style pairs props.tag props.anchor
-    | other => other
+  let val := applyNodeProps val props
   let ps := match props.anchor with
     | some name => ps.addAnchor name val
     | none => ps

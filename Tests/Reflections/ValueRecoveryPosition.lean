@@ -180,7 +180,7 @@ theorem mapTokens_first_doc_at_pos_one
 #guard_msgs in
 #print axioms parseStreamLoop_first_doc_from_entry
 
-/-- info: 'L4YAML.Proofs.EmitterScannability.expect_pos_succ' depends on axioms: [propext] -/
+/-- info: 'L4YAML.Proofs.EmitterScannability.expect_pos_succ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms expect_pos_succ
 

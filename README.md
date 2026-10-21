@@ -780,7 +780,9 @@ port must also re-prove the corresponding `Indexed*` lemmas:
   still returns an empty node unconditionally.
 - **B2** — the `protectedLen` boundary parameter of
   `collectDoubleQuotedLoop` (escaped-trailing-tab trimming); the indexed
-  `collectDoubleQuotedLoopIx` has no such parameter.
+  `collectDoubleQuotedLoopIx` carries the same boundary as a `content` /
+  `spaces` split of the accumulator (the buffered trailing `s-white*` run is
+  dropped at a fold without rescanning `content`).
 
 ## Contributing
 

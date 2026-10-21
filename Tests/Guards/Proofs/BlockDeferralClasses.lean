@@ -4557,6 +4557,67 @@ as `h_closeF`/`h_closeFV`): consumer and producer terms typechecked at
 `scratchpad/l4yaml-row12-steps/583-consumer-probe.lean`. -/
 
 
+/-! ## §31  The carrier's SHAPE — a landing two levels out, and a mapping level
+between the sequence levels (item 302)
+
+§30 named the three γ roots' carrier as `h_seqF`'s value-line twin and item 301
+priced it at "one item, item 198's shape".  Item 167 §4 carried `h_seqF` as ONE
+width — "`- - - a⏎- b` names its INNERMOST enclosing collection, so a landing
+two levels out punts to the document reading … A stack would be `ResumeFrames`
+with `SCompactSeqTail` in place of `SCompactMapTail`; nothing in the corpus asks
+for it" — and the stream twin can afford that because the stream has the
+document reading to fall back on.  The frame's value line has no fallback: a
+class-A `:` after a landing two levels out is this escape or it is paid.  So
+the question item 301 did not ask is whether such landings are ACCEPTED inside a
+frame, and they are — two levels out, three levels deep, and with a MAPPING
+level between the sequence levels (`?⏎- k:⏎    - a⏎- b⏎: w`, item 168's shape,
+76 of item 167's corpus): -/
+
+#guard pins "?\n-\n  -\n    - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n    - a\n  - b\n- c\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :c -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n    -\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL : -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n    - a\n  -\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL : -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - a\n  - b\n- c\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL :a =VAL :b -SEQ =VAL :c -SEQ =VAL :w -MAP -DOC -STR")
+-- …with a mapping level between the sequence levels:
+#guard pins "?\n-\n  - k:\n      - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- k:\n    - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  k:\n    - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+-- …all class A at the frame's own column:
+#guard classAReg "?\n-\n  -\n    - a\n- b\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "?\n- - - a\n- b\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "?\n- k:\n    - a\n- b\n: w\n" == some (some 0, 0, 0)
+
+/-! A dedent that lands on an INNER level and then reaches the frame's `:` is the
+same stack read one level higher, and the frame itself may be nested: -/
+
+#guard pins "?\n-\n  -\n    - a\n  - b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - - a\n  - b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  - k:\n      - a\n  - b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP =VAL :b -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "- ?\n  -\n    -\n      - a\n  - b\n  : w\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -SEQ -DOC -STR")
+#guard pins "k:\n  ?\n  -\n    - a\n  - b\n  : w\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :k +MAP +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :w -MAP -MAP -DOC -STR")
+
+/-! The one refusal in the family is the scanner's — a `-` at the map VALUE's
+indentation after that value's own sequence closed: -/
+
+#guard pins "?\n- k:\n    - a\n  - b\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 3 2", "ERR L4YAML.ScanError.invalidBareDocument 3 2")
+
+/-! **So the twin is a STACK over mixed levels, not one width**: `ResumeFrames`
+with a sequence level beside the mapping one, at the `ExplValueLine` bottom —
+`KeyFrames` in `scratchpad/l4yaml-row12-steps/591-keyframes-probe.lean`, where
+the inductive, `close`, the embedding of every mapping-lane stack
+(`ofResumeFrames`), a kind-aware `resumeAt` (the level at the landing's width
+hands back a mapping tail OR a sequence tail), the dedent's spend at
+`closeThenBlock`'s landed-`-` arm (pop to `k`, cons the new entry, close for the
+new park's `h_kslot` and keep the popped stack as its own), the nested-`-` payer
+(the outer entry's sequence level pushed on the outer park's stack over the
+same `compactSeq`/`nestedBlockSeq` crossing the outer `h_kslot` payment
+writes) and the bottom (item 188's park: its own `h_kslot`) all typecheck.
+Item 301's 12.3.4.1 row is restated accordingly; the price is items 149–155's
+shape on the sequence lane (`resumeAt` has 35 spenders today, `ResumeFrames` 200
+mentions in `StreamAccum` and 84 in this file), not item 198's. -/
+
+
 end L4YAML.Tests.Guards.BlockDeferralClasses
 
 end Blanket

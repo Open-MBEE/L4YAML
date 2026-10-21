@@ -950,8 +950,8 @@ lemma foldBlockContentGo_nil_of_ne_start {st : FoldState} (h : st ≠ .start)
   | more => rfl
 
 lemma foldBlockContent_empty :
-    foldBlockContent "" = "" :=
-  rfl
+    foldBlockContent "" = "" := by
+  rw [foldBlockContent_eq_go]; rfl
 
 /-! ## Layer F.3 — Quoted multi-line content correctness (Step 5b.7)
 
@@ -1106,14 +1106,14 @@ another `collectPlainScalarLoopIx` call (Reflection 57). -/
 lemma collectPlainScalarLoopIx_zero {input : String} (c : IxCursor input)
     (content spaces : String) (inFlow : Bool) (contentIndent : Nat) :
     collectPlainScalarLoopIx c content spaces inFlow contentIndent 0 =
-      (content ++ spaces, c) :=
+      (content, c) :=
   rfl
 
 lemma collectPlainScalarLoopIx_eof {input : String} (c : IxCursor input)
     (content spaces : String) (inFlow : Bool) (contentIndent : Nat) (fuel : Nat)
     (hPeek : c.peek? = none) :
     collectPlainScalarLoopIx c content spaces inFlow contentIndent (fuel + 1) =
-      (content ++ spaces, c) := by
+      (content, c) := by
   unfold collectPlainScalarLoopIx
   rw [hPeek]
 
@@ -1351,14 +1351,13 @@ legacy:
    `terminates_preserves_all` / `terminates_none_colon_peekAt_nonblank`
    become direct case-splits via the existing branch lemmas.
 
-2. **EOF returns `(content ++ spaces, c)`, not `(content, c)`**.
-   The indexed loop merges trailing whitespace into the raw output
-   at EOF; the wrapping `scanPlainScalarIx` then trims via
-   `trimTrailingWSIx`. Since the invariant ensures `spaces` is all
-   `isWhiteSpaceBool`-true, `trimTrailingWSIx (content ++ spaces) =
-   trimTrailingWSIx content`. The content's last character (when
-   non-empty) is always non-whitespace by structural invariant, so
-   `trimTrailingWSIx content = content` in that case.
+2. **EOF drops the pending `spaces`** and returns `(content, c)`,
+   like every other terminating arm. Pending whitespace is only
+   committed to `content` when a further content character follows,
+   so the raw loop output never carries trailing whitespace and
+   `scanPlainScalarIx` returns it untrimmed. The invariant's
+   `spaces_whitespace` field is therefore only needed inside the
+   loop (comment-arm and boundary reasoning), never at the exit.
 
 3. **`IxCursor` peek primitives** replace `ScannerState.peek?` /
    `peekAt?`. Boundary conditions threading through
@@ -1600,8 +1599,8 @@ trim. -/
 
 lemma trimTrailingWSIx_eq (s : String) :
     trimTrailingWSIx s =
-      String.ofList ((s.toList.reverse.dropWhile isWhiteSpaceBool).reverse) := by
-  unfold trimTrailingWSIx; rfl
+      String.ofList ((s.toList.reverse.dropWhile isWhiteSpaceBool).reverse) :=
+  trimEndIx_eq _ _
 
 lemma trimTrailingWSIx_noColonSpace (content : String)
     (h : noColonSpaceProp content) :
@@ -1636,7 +1635,7 @@ lemma trimTrailingWSIx_preserves_head (content : String) (c : Char)
     (hne : (trimTrailingWSIx content).toList ≠ [])
     (hhead : content.toList.head? = some c) :
     (trimTrailingWSIx content).toList.head? = some c := by
-  unfold trimTrailingWSIx at hne ⊢
+  rw [trimTrailingWSIx_eq] at hne ⊢
   simp only [String.toList_ofList] at hne ⊢
   have ⟨suf, hsuf⟩ :=
     L4YAML.Proofs.StringProperties.reverse_dropWhile_reverse_isPrefix
@@ -1669,7 +1668,7 @@ lemma dropWhile_append_all (p : Char → Bool) (xs ys : List Char)
 lemma trimTrailingWSIx_append_whitespace (a b : String)
     (hb : ∀ c ∈ b.toList, isWhiteSpaceProp c) :
     trimTrailingWSIx (a ++ b) = trimTrailingWSIx a := by
-  unfold trimTrailingWSIx
+  rw [trimTrailingWSIx_eq, trimTrailingWSIx_eq]
   congr 1
   rw [String.toList_append, List.reverse_append]
   have hb' : ∀ x ∈ b.toList.reverse, isWhiteSpaceBool x = true := by
@@ -1706,11 +1705,11 @@ lemma collectPlainScalarLoopIx_content_isPrefix {input : String}
   induction fuel generalizing c content spaces with
   | zero =>
     unfold collectPlainScalarLoopIx
-    exact prefix_of_append_string content spaces
+    exact List.prefix_rfl
   | succ fuel' ih =>
     unfold collectPlainScalarLoopIx
     split
-    · exact prefix_of_append_string content spaces        -- peek? = none
+    · exact List.prefix_rfl                                -- peek? = none
     · rename_i ch _                                       -- peek? = some ch
       split
       · exact List.prefix_rfl                              -- isComment && spaces > 0
@@ -1718,6 +1717,7 @@ lemma collectPlainScalarLoopIx_content_isPrefix {input : String}
       · exact List.prefix_rfl                              -- ':' terminates
       split
       · -- ':' continues
+        rw [String.push_eq_append]
         exact List.IsPrefix.trans
           (prefix_of_append_string_3 content spaces (String.singleton ch))
           (ih c.advance (content ++ spaces ++ String.singleton ch) "")
@@ -1754,6 +1754,7 @@ lemma collectPlainScalarLoopIx_content_isPrefix {input : String}
       split
       · exact List.prefix_rfl                              -- !isPlainSafe
       · -- plain-safe content
+        rw [String.push_eq_append]
         exact List.IsPrefix.trans
           (prefix_of_append_string_3 content spaces (String.singleton ch))
           (ih c.advance (content ++ spaces ++ String.singleton ch) "")
@@ -1770,27 +1771,26 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
     (contentIndent fuel : Nat)
     (inv : PlainContentInvIx content spaces inFlow c)
     (bh : BoundaryHashIx content spaces c) :
-    ∃ content' spaces',
-      (collectPlainScalarLoopIx c content spaces inFlow contentIndent fuel).1 =
-        content' ++ spaces' ∧
-      PlainContentInvIx content' spaces' inFlow
+    ∃ content',
+      (collectPlainScalarLoopIx c content spaces inFlow contentIndent fuel).1 = content' ∧
+      PlainContentInvIx content' "" inFlow
         (collectPlainScalarLoopIx c content spaces inFlow contentIndent fuel).2 := by
-  -- Helper: termination-arm witness `⟨content, "", _, inv.drop_spaces⟩`.
+  -- Helper: termination-arm witness `⟨content, rfl, inv.drop_spaces⟩`.
   have term : ∀ {input' : String} {c' : IxCursor input'} {content' spaces' : String} {inFlow' : Bool},
       PlainContentInvIx content' spaces' inFlow' c' →
-      ∃ content'' spaces'',
-        ((content', c') : String × IxCursor input').1 = content'' ++ spaces'' ∧
-        PlainContentInvIx content'' spaces'' inFlow' ((content', c') : String × IxCursor input').2 :=
-    fun {_ _ _ _ _} inv' => ⟨_, "", String.append_empty.symm, inv'.drop_spaces⟩
+      ∃ content'',
+        ((content', c') : String × IxCursor input').1 = content'' ∧
+        PlainContentInvIx content'' "" inFlow' ((content', c') : String × IxCursor input').2 :=
+    fun {_ _ _ _ _} inv' => ⟨_, rfl, inv'.drop_spaces⟩
   induction fuel generalizing c content spaces with
   | zero =>
     unfold collectPlainScalarLoopIx
-    exact ⟨content, spaces, rfl, inv⟩
+    exact term inv
   | succ fuel' ih =>
     unfold collectPlainScalarLoopIx
     split
     · -- peek? = none
-      exact ⟨content, spaces, rfl, inv⟩
+      exact term inv
     · rename_i ch hpeek
       have hch_lb_to_prop : isLineBreakBool ch = true → isLineBreakProp ch :=
         fun h => (isLineBreak_iff ch).mp h
@@ -1821,6 +1821,7 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
           have := (isBlank_iff n).mpr hb
           rw [h_n_notblank] at this; exact Bool.noConfusion this
         -- Build next-iter invariant.
+        rw [String.push_eq_append]
         refine ih c.advance (content ++ spaces ++ String.singleton ':') "" ?_ ?_
         · -- PlainContentInvIx
           refine {
@@ -2007,6 +2008,7 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
         have hch_neq_colon : ch ≠ ':' := by
           intro h; rw [h] at hNotMVp
           simp [isMappingValueBool] at hNotMVp
+        rw [String.push_eq_append]
         refine ih c.advance (content ++ spaces ++ String.singleton ch) "" ?_ ?_
         · refine {
             content_noColonSpace := ?_
@@ -2121,9 +2123,7 @@ lemma collectPlainScalarLoopIx_validFirst_and_head {input : String}
       | true => exfalso; exact hnf ((isFlowIndicator_iff c0).mp hfi)
   cases fuel with
   | zero =>
-    exfalso; apply hne
-    show ("" ++ "" : String) = ""
-    rfl
+    exfalso; exact hne rfl
   | succ fuel' =>
     -- Case on c0 = ':' (determines whether we hit the colon-continue or content arm)
     by_cases hcolon : c0 = ':'
@@ -2183,10 +2183,10 @@ lemma collectPlainScalarLoopIx_validFirst_and_head {input : String}
             -- So result.1 = singleton c0, which has toList = [c0]. But hsfx says result.1.toList = c0 :: c1 :: rest. Contradiction.
             exfalso
             have h_inner : (collectPlainScalarLoopIx c.advance (String.singleton c0) "" inFlow contentIndent 0).1
-                = String.singleton c0 ++ "" := by
+                = String.singleton c0 := by
               rfl
             rw [hsfx_cases] at hsfx
-            rw [h_inner, String.append_empty] at hsfx
+            rw [h_inner] at hsfx
             simp [String.toList_singleton] at hsfx
           | succ fuel'' =>
             -- Now inspect c.advance.peek?.
@@ -2322,10 +2322,10 @@ lemma collectPlainScalarLoopIx_validFirst_and_head {input : String}
           | zero =>
             exfalso
             have h_inner : (collectPlainScalarLoopIx c.advance (String.singleton c0) "" inFlow contentIndent 0).1
-                = String.singleton c0 ++ "" := by
+                = String.singleton c0 := by
               rfl
             rw [hsfx_cases] at hsfx
-            rw [h_inner, String.append_empty] at hsfx
+            rw [h_inner] at hsfx
             simp [String.toList_singleton] at hsfx
           | succ fuel'' =>
             have h_adv_peek : c.advance.peek? = some n := by
@@ -2421,10 +2421,12 @@ lemma collectPlainScalarLoopIx_validFirst_and_head {input : String}
 
 /-! ### `scanPlainScalarIx_content_valid` — the culminating theorem -/
 
-set_option maxHeartbeats 1600000 in
 /-- `scanPlainScalarIx` produces a non-empty raw content with
-    `ScalarScannable` semantics for the trimmed result. The precondition
-    is the same shape as the legacy `scanPlainScalar_content_valid`. -/
+    `ScalarScannable` semantics. The loop never emits trailing
+    whitespace (pending `spaces` are dropped at every exit), so the
+    result is exactly the invariant-carrying `content`. The
+    precondition is the same shape as the legacy
+    `scanPlainScalar_content_valid`. -/
 lemma scanPlainScalarIx_content_valid {input : String} (c : IxCursor input)
     (inFlow : Bool) (contentIndent : Nat)
     (h_canStart : ∃ ch, c.peek? = some ch ∧
@@ -2434,89 +2436,24 @@ lemma scanPlainScalarIx_content_valid {input : String} (c : IxCursor input)
       ⟨(scanPlainScalarIx c inFlow contentIndent).1, .plain, none, none, none⟩
       inFlow := by
   obtain ⟨c0, hpeek0, hcs0⟩ := h_canStart
-  -- Raw is the loop's raw output before trimming.
   have h_raw_ne :
-      (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1 ≠ "" := by
-    intro h_emp
-    apply h_ne
-    show trimTrailingWSIx _ = ""
-    rw [h_emp]; simp [trimTrailingWSIx]
-  obtain ⟨content', spaces', h_eq, inv⟩ :=
+      (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1 ≠ "" :=
+    h_ne
+  obtain ⟨content', h_eq, inv⟩ :=
     collectPlainScalarLoopIx_preserves_contentInv c "" "" inFlow contentIndent
       input.utf8ByteSize (PlainContentInvIx.empty inFlow c) (BoundaryHashIx.empty c)
-  obtain ⟨_h_vpf_raw, h_head_c0⟩ :=
+  obtain ⟨h_vpf, _⟩ :=
     collectPlainScalarLoopIx_validFirst_and_head c inFlow contentIndent
       input.utf8ByteSize c0 hpeek0 hcs0 h_raw_ne
-  -- Compute the trim once.
-  have h_trim_eq :
-      trimTrailingWSIx
-        (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1 =
-      trimTrailingWSIx content' := by
-    rw [h_eq]
-    exact trimTrailingWSIx_append_whitespace content' spaces' inv.spaces_whitespace
-  show ScalarScannable ⟨_, _, _, _, _⟩ inFlow
   show ScalarScannable
-    ⟨trimTrailingWSIx
-        (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1,
+    ⟨(collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1,
       .plain, none, none, none⟩ inFlow
-  have h_tne :
-      (trimTrailingWSIx
-        (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1).toList
-        ≠ [] := by
-    intro h_empty
-    apply h_ne
-    show trimTrailingWSIx _ = ""
-    rw [← String.toList_inj]; simpa using h_empty
-  have h_trim_head :
-      (trimTrailingWSIx
-        (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1).toList.head?
-        = some c0 :=
-    trimTrailingWSIx_preserves_head _ c0 h_tne h_head_c0
-  have h_vpf :
-      validPlainFirstProp
-        (trimTrailingWSIx
-          (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1)
-        inFlow := by
-    by_cases hge2 :
-        (trimTrailingWSIx
-          (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1).toList.length
-          ≥ 2
-    · rw [trimTrailingWSIx_eq] at hge2 ⊢
-      simp only [String.toList_ofList] at hge2
-      exact L4YAML.Proofs.StringProperties.trim_preserves_validPlainFirst
-        isWhiteSpaceBool _ inFlow (by rwa [String.ofList_toList]) hge2
-    · obtain ⟨ch, hch⟩ : ∃ ch,
-          (trimTrailingWSIx
-            (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1).toList
-            = [ch] := by
-        cases htl :
-            (trimTrailingWSIx
-              (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1).toList with
-        | nil => exact absurd htl h_tne
-        | cons x rest =>
-          cases rest with
-          | nil => exact ⟨x, rfl⟩
-          | cons y tl => simp [htl] at hge2
-      rw [hch] at h_trim_head; simp at h_trim_head
-      rw [h_trim_head] at hch
-      rw [show
-            trimTrailingWSIx
-              (collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize).1 =
-              String.singleton c0 from by
-        rw [← String.toList_inj]; simpa using hch]
-      by_cases hexc : c0 = '-' ∨ c0 = '?' ∨ c0 = ':'
-      · exact validPlainFirst_singleton_exception c0 inFlow hexc
-      · simp only [validPlainFirstProp, String.toList_singleton, hexc, ↓reduceIte]
-        exact canStart_nonException_to_prop c0 (c.peekAt? 1) inFlow hexc hcs0
   intro _hstyle _hlen
   refine ⟨h_vpf, ?_, ?_, ?_⟩
-  · rw [h_trim_eq]
-    exact trimTrailingWSIx_noColonSpace content' inv.content_noColonSpace
-  · rw [h_trim_eq]
-    exact trimTrailingWSIx_noSpaceHash content' inv.content_noSpaceHash
+  · rw [h_eq]; exact inv.content_noColonSpace
+  · rw [h_eq]; exact inv.content_noSpaceHash
   · intro hflow
-    rw [h_trim_eq]
-    exact trimTrailingWSIx_noFlowIndicators content' (inv.content_noFlowIndicators hflow)
+    rw [h_eq]; exact inv.content_noFlowIndicators hflow
 
 end L4YAML.Scanner.Indexed
 

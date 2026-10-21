@@ -567,9 +567,54 @@ def processEscapeIx {input : String} (c : IxCursor input) :
       else if isNsEsc32BitBool ch then parseHexEscapeIx c.advance 8
       else none
 
+/-- Drop the longest `p`-suffix of `s` by a backward scan from `endPos`.
+    Returns `s` itself (no copy) when the last character fails `p`. -/
+def trimEndIx (p : Char → Bool) (s : String) : String :=
+  if s.endsWith p then (s.dropEndWhile p).copy else s
+
+/-- List-level specification of `trimEndIx`: the reverse/dropWhile/reverse
+    round trip the proofs reason about. -/
+theorem trimEndIx_eq (p : Char → Bool) (s : String) :
+    trimEndIx p s = String.ofList ((s.toList.reverse.dropWhile p).reverse) := by
+  have key : ∀ (a b : List Char), b.all p = true → a.getLast?.any p = false →
+      ((a ++ b).reverse.dropWhile p).reverse = a := by
+    intro a b hb ha
+    rw [List.reverse_append]
+    have hall : ∀ x ∈ b.reverse, p x = true := fun x hx =>
+      List.all_eq_true.mp hb x (List.mem_reverse.mp hx)
+    have hb' : b.reverse.dropWhile p = [] := by
+      generalize b.reverse = l at hall
+      induction l with
+      | nil => rfl
+      | cons y ys ih =>
+        rw [List.dropWhile_cons, hall y List.mem_cons_self]
+        exact ih fun x hx => hall x (List.mem_cons_of_mem _ hx)
+    rw [List.dropWhile_append, hb']
+    simp only [List.isEmpty_nil, ite_true]
+    rcases List.eq_nil_or_concat a with h | ⟨a', x, h⟩
+    · subst h; simp
+    · subst h
+      simp only [List.concat_eq_append, List.getLast?_concat, Option.any_some] at ha
+      simp [ha]
+  unfold trimEndIx
+  split
+  · rw [← String.toList_inj, String.toList_ofList]
+    have hsplit := @String.dropEndWhile_append_takeEndWhile _ p _ _ _ s
+    have hb : ((s.takeEndWhile p).copy).toList.all p = true := by
+      rw [← String.Slice.revAll_bool_eq]; exact String.revAll_takeEndWhile
+    have ha : ((s.dropEndWhile p).copy).toList.getLast?.any p = false := by
+      rw [← String.Slice.endsWith_bool_eq_getLast?]; exact String.endsWith_dropEndWhile
+    conv => rhs; rw [← hsplit]
+    rw [String.toList_append]
+    exact (key _ _ hb ha).symm
+  · rename_i h
+    rw [Bool.not_eq_true, String.endsWith_bool_eq_getLast?] at h
+    rw [← String.toList_inj, String.toList_ofList]
+    simpa using (key s.toList [] rfl h).symm
+
 /-- Trim trailing space/tab from a string. -/
-def trimTrailingWSIx (s : String) : String :=
-  String.ofList ((s.toList.reverse.dropWhile isWhiteSpaceBool).reverse)
+@[inline] def trimTrailingWSIx (s : String) : String :=
+  trimEndIx isWhiteSpaceBool s
 
 /-! ### Layer F1 — multi-line quoted scalar folding helpers
 
@@ -811,7 +856,8 @@ trigger multi-line continuation per Layer F2 below:
 - In **block** context, continuation uses `handleBlockLineBreakIx`
   with a `contentIndent` floor and document-boundary termination.
 
-Trailing whitespace is trimmed by the entry point `scanPlainScalarIx`. -/
+Pending `spaces` are only committed when followed by further content,
+so the loop's result never carries trailing whitespace. -/
 
 /-- Helper: whether `:` at the cursor terminates a plain scalar
     (peeks one past the colon and applies the `inFlow` rule). -/
@@ -1162,10 +1208,10 @@ def handleBlockLineBreakIx {input : String} (c : IxCursor input)
 def collectPlainScalarLoopIx {input : String} (c : IxCursor input)
     (content : String) (spaces : String) (inFlow : Bool)
     (contentIndent : Nat) : Nat → String × IxCursor input
-  | 0          => (content ++ spaces, c)
+  | 0          => (content, c)
   | fuel + 1 =>
     match c.peek? with
-    | none    => (content ++ spaces, c)
+    | none    => (content, c)
     | some ch =>
       if isCommentBool ch && spaces.length > 0 then
         (content, c)
@@ -1173,7 +1219,7 @@ def collectPlainScalarLoopIx {input : String} (c : IxCursor input)
         (content, c)
       else if isMappingValueBool ch then
         collectPlainScalarLoopIx c.advance
-          (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel
+          ((content ++ spaces).push ch) "" inFlow contentIndent fuel
       else if inFlow && isFlowIndicatorBool ch then
         (content, c)
       else if isLineBreakBool ch then
@@ -1199,7 +1245,7 @@ def collectPlainScalarLoopIx {input : String} (c : IxCursor input)
         (content, c)
       else
         collectPlainScalarLoopIx c.advance
-          (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel
+          ((content ++ spaces).push ch) "" inFlow contentIndent fuel
 
 /-- Scan a plain scalar starting at the cursor's current character.
     The caller is responsible for enforcing the
@@ -1209,8 +1255,7 @@ def collectPlainScalarLoopIx {input : String} (c : IxCursor input)
 def scanPlainScalarIx {input : String} (c : IxCursor input)
     (inFlow : Bool) (contentIndent : Nat) :
     String × IxCursor input :=
-  let (raw, c') := collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize
-  (trimTrailingWSIx raw, c')
+  collectPlainScalarLoopIx c "" "" inFlow contentIndent input.utf8ByteSize
 
 /-! ## Layer F3 — block scalars (§8.1, literal + folded)
 
@@ -1244,9 +1289,11 @@ def appendNewlines (acc : String) : Nat → String
   | 0      => acc
   | n + 1 => appendNewlines (acc.push lineFeedChar) n
 
-/-- Inner step of `foldBlockContent`. Walks the raw `List Char`,
-    accumulating into `acc`, tracking `FoldState`, and counting
-    pending newlines. The rules derive from YAML 1.2.2 [170]-[181];
+/-- `List Char` specification of `foldBlockContent` (proof-facing; the
+    runtime path is `foldBlockStep`/`String.foldl`, bridged by
+    `foldBlockContent_eq_go`). Walks the raw `List Char`, accumulating
+    into `acc`, tracking `FoldState`, and counting pending newlines.
+    The rules derive from YAML 1.2.2 [170]-[181];
     see legacy `Scanner/Scalar.lean::foldBlockContent` for the
     long-form table. -/
 def foldBlockContentGo : List Char → String → FoldState → Nat → String
@@ -1292,11 +1339,75 @@ def foldBlockContentGo : List Char → String → FoldState → Nat → String
           | s      => s
         foldBlockContentGo rest (acc.push c) newSt 0
 
+/-- One-character transition of the fold machine over the
+    `(acc, state, pending)` register; `foldBlockContentGo` unrolled. -/
+def foldBlockStep : String × FoldState × Nat → Char → String × FoldState × Nat
+  | (acc, st, pending), c =>
+    if isLineFeedBool c then (acc, st, pending + 1)
+    else
+      match pending with
+      | pending' + 1 =>
+        let isMore := isWhiteSpaceBool c
+        let newSt  := if isMore then FoldState.more else .content
+        let acc' := match st with
+          | .start => appendNewlines acc (pending' + 1)
+          | .content =>
+            if pending' == 0 && !isMore then
+              acc.push spaceChar
+            else if pending' == 0 && isMore then
+              acc.push lineFeedChar
+            else if isMore then
+              appendNewlines acc (pending' + 1)
+            else
+              appendNewlines acc pending'
+          | .more  => appendNewlines acc (pending' + 1)
+          | .empty => appendNewlines acc (pending' + 1)
+        (acc'.push c, newSt, 0)
+      | 0 =>
+        let newSt := match st with
+          | .start => if isWhiteSpaceBool c then FoldState.more else .content
+          | s      => s
+        (acc.push c, newSt, 0)
+
+/-- Flush the fold machine's pending newlines at end of input. -/
+def foldBlockFinish : String × FoldState × Nat → String
+  | (acc, .start, _)      => acc
+  | (acc, _,      pending) => appendNewlines acc pending
+
 /-- Fold a raw block-scalar accumulator per §8.1.3 (the folded
     style; literal style skips this pass and uses the raw string
-    directly). -/
-@[inline] def foldBlockContent (raw : String) : String :=
-  foldBlockContentGo raw.toList "" .start 0
+    directly). Runs the machine with `String.foldl` — a single pass over
+    the bytes, no `List Char` materialisation. -/
+def foldBlockContent (raw : String) : String :=
+  foldBlockFinish (raw.foldl foldBlockStep ("", .start, 0))
+
+theorem foldBlockContentGo_eq_foldl (l : List Char) (acc : String)
+    (st : FoldState) (pending : Nat) :
+    foldBlockContentGo l acc st pending =
+      foldBlockFinish (l.foldl foldBlockStep (acc, st, pending)) := by
+  induction l generalizing acc st pending with
+  | nil => cases st <;> rfl
+  | cons c rest ih =>
+    rw [List.foldl_cons]
+    unfold foldBlockContentGo
+    simp only
+    split
+    · rename_i hlf
+      simp only [foldBlockStep, hlf, ↓reduceIte]
+      exact ih _ _ _
+    · rename_i hlf
+      cases pending with
+      | zero =>
+        simp only [foldBlockStep, hlf, Bool.false_eq_true, ↓reduceIte]
+        exact ih _ _ _
+      | succ p =>
+        simp only [foldBlockStep, hlf, Bool.false_eq_true, ↓reduceIte]
+        exact ih _ _ _
+
+/-- `foldBlockContent` agrees with the `List Char` specification. -/
+theorem foldBlockContent_eq_go (raw : String) :
+    foldBlockContent raw = foldBlockContentGo raw.toList "" .start 0 := by
+  rw [foldBlockContentGo_eq_foldl, foldBlockContent, String.foldl_eq_foldl_toList]
 
 /-- Consume exactly `count` spaces (and not tabs) starting at the
     cursor. Returns the number of spaces actually consumed (≤
@@ -1471,8 +1582,8 @@ def parseBlockHeaderLoopIx {input : String} (c : IxCursor input)
     | none => (chomp, explicitOffset, c)
 
 /-- Strip trailing `\n` characters from `s`. -/
-def stripTrailingNewlines (s : String) : String :=
-  String.ofList ((s.toList.reverse.dropWhile isLineFeedBool).reverse)
+@[inline] def stripTrailingNewlines (s : String) : String :=
+  trimEndIx isLineFeedBool s
 
 /-- Apply chomping per §8.1.1: `strip` removes every trailing `\n`,
     `clip` keeps at most one trailing `\n`, `keep` preserves them. -/

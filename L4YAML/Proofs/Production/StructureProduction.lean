@@ -990,7 +990,9 @@ lemma scanDocumentEnd_prod (sc : ScannerState) (sp : SurfPos)
     have mk_corr : ScannerSurfCorr
         { ({ (unwindIndents sc (-1)) with simpleKey := { possible := false } }.emit .documentEnd).advance.advance.advance with
           simpleKeyAllowed := true, allowDirectives := true,
-          directivesPresent := false, definedAnchors := #[] }
+          directivesPresent := false, definedAnchors := #[],
+          -- Item 317: the marker ends the explicit-key register (`scanDocumentEnd`).
+          explicitKeyLine := none, explicitKeyCol := -1 }
         ⟨rest, 3⟩ := by
       exact ⟨hcorr_adv3.chars_from,
              by have h0 := hcorr_emit.col_eq

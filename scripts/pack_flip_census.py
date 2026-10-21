@@ -68,9 +68,9 @@ PACKALTG = "abbrev PackAltG (_g : Option ScannerState) : Prop := True"
 MODES = {
     # body of PackAlt, body of PackAltG, and what the two frame stubs' `trivial` becomes (None = left as it is)
     "false": dict(alt="False", altG="False",
-                  stubs={"theorem PackAltG.ofPark ": "sorry", "theorem PackAlt.ofGateClose ": "sorry"}),
+                  stubs={"lemma PackAltG.ofPark ": "sorry", "lemma PackAlt.ofGateClose ": "sorry"}),
     "refused": dict(alt="ExplicitValueRefused _sc", altG=None,
-                    stubs={"theorem PackAltG.ofPark ": None, "theorem PackAlt.ofGateClose ": "sorry"}),
+                    stubs={"lemma PackAltG.ofPark ": None, "lemma PackAlt.ofGateClose ": "sorry"}),
 }
 # A `PackAlt`-level lemma whose body is `trivial` while `PackAlt` is `True` names, after `-- refused:`,
 # the predicate-level proof that stands in its place once `PackAlt` is the predicate (item 313):

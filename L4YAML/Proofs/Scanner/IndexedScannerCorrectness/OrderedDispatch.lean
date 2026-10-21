@@ -398,7 +398,9 @@ lemma scanDocumentEndIx_preserves_ScanInvIx {input : String}
         simpleKey := { cursor := IxCursor.start input } }
       : ScannerStateIx input).emit YamlToken.documentEnd).advanceN 3) with
         simpleKeyAllowed := true, allowDirectives := true,
-        directivesPresent := false, definedAnchors := #[] } h_adv rfl rfl
+        directivesPresent := false, definedAnchors := #[],
+        -- Item 317: the marker ends the explicit-key register (`scanDocumentEndIx`).
+        explicitKeyLine := none, explicitKeyCol := -1 } h_adv rfl rfl
   unfold scanDocumentEndIx at h_ok
   simp only [bind, Except.bind] at h_ok
   repeat (any_goals (split at h_ok))

@@ -1037,7 +1037,9 @@ lemma scanDocumentEnd_BoundInv (s s' : ScannerState)
   have h_res : BoundInv s { (unwindIndents s (-1) |> fun s => { s with simpleKey := { possible := false } }
     |>.emit .documentEnd |>.advanceN 3) with
     simpleKeyAllowed := true, allowDirectives := true,
-    directivesPresent := false, definedAnchors := #[] } :=
+    directivesPresent := false, definedAnchors := #[],
+    -- Item 317: the marker ends the explicit-key register.
+    explicitKeyLine := none, explicitKeyCol := -1 } :=
     fieldUpdate_BoundInv _ _ h_adv rfl rfl rfl
   repeat split at hok
   all_goals (try dsimp only [] at hok)

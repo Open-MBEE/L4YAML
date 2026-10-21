@@ -533,8 +533,11 @@ inductive ImplicitKeyHead : SurfPos → SurfPos → Prop where
     (`col = currentIndent`, `scanValue`'s check).  Either disjunct refutes it at the
     park: a dead register (preprocessing writes neither explicit-key field,
     `ekl_dis_eq_park`), or the sentinel indent `-1` a document marker's unwind leaves
-    behind — the register SURVIVES a marker (item 308's probe) but no column equals
-    `-1` (`indent_neg_dis_of_park`).  The alternative's consumers are the three
+    behind.  The second disjunct has no producer: a document marker ends the register
+    (`scanDocumentStart`, `scanDocumentEnd`, item 317), where item 308's probe 726 had
+    found a `?` frame's register crossing `---`/`...` — a scanner over-acceptance, not a
+    fact to carry — so item 318 narrows the predicate to the register alone.  The
+    alternative's consumers are the three
     `block_dispatch_deferred_stamp_nopack` applications, which hold both refutations
     (`ExplicitValueRefused.not_of_classA`); its producers are the family's roots, each
     paying the disjunct its park can prove (12.3.4.2). -/
@@ -553,7 +556,7 @@ def ExplicitValueRefused (sc : ScannerState) : Prop :=
 abbrev PackAlt (_sc : ScannerState) : Prop := True
 
 /-- A payment of the alternative from the predicate (the identity once `PackAlt` is it). -/
-theorem PackAlt.ofRefused {sc : ScannerState} (_h : ExplicitValueRefused sc) : PackAlt sc :=
+lemma PackAlt.ofRefused {sc : ScannerState} (_h : ExplicitValueRefused sc) : PackAlt sc :=
   trivial  -- refused: _h
 
 /-- **A flow frame's alternative.**  `FlowBaseRoutes` carries no park state, so what the open
@@ -565,12 +568,12 @@ theorem PackAlt.ofRefused {sc : ScannerState} (_h : ExplicitValueRefused sc) : P
 abbrev PackAltG (_g : Option ScannerState) : Prop := True
 
 /-- The open: a park's alternative crosses into the frame it opens (lane (c)'s stub). -/
-theorem PackAltG.ofPark {sc : ScannerState} {g : Option ScannerState} (_h : PackAlt sc) :
+lemma PackAltG.ofPark {sc : ScannerState} {g : Option ScannerState} (_h : PackAlt sc) :
     PackAltG g := trivial
 
 /-- The close: the frame's alternative reaches the park the close builds (lane (d)'s stub, which
     proves it from the close's register restore and the indent the interior leaves still). -/
-theorem PackAlt.ofGateClose {g : Option ScannerState} {s' : ScannerState} (_h : PackAltG g) :
+lemma PackAlt.ofGateClose {g : Option ScannerState} {s' : ScannerState} (_h : PackAltG g) :
     PackAlt s' := trivial
 
 /-- The implicit-key pack (item 15): everything a same-line `:` needs to read
@@ -20027,7 +20030,7 @@ lemma ExplicitValueRefused.step_content {sc s_prep s' : ScannerState} {c : Char}
 /-- The same step on the named alternative.  `trivial` while `PackAlt` is `True`; the census's
     residue mode substitutes the proof promised after `-- refused:` (`scripts/pack_flip_census.py`),
     and the final flip makes that proof the body. -/
-theorem PackAlt.step_content {sc s_prep s' : ScannerState} {c : Char}
+lemma PackAlt.step_content {sc s_prep s' : ScannerState} {c : Char}
     (_h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (_h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
@@ -20054,7 +20057,7 @@ lemma ExplicitValueRefused.step_dispatch {s_prep s' : ScannerState} {c : Char}
 
 /-- The dispatch-only step on the named alternative (`trivial` while `PackAlt` is `True`, its
     proof promised after `-- refused:`). -/
-theorem PackAlt.step_dispatch {s_prep s' : ScannerState} {c : Char}
+lemma PackAlt.step_dispatch {s_prep s' : ScannerState} {c : Char}
     (_h_dispatch : scanNextToken_dispatchContent (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep) c = .ok s')

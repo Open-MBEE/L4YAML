@@ -916,7 +916,10 @@ def scanDocumentStartIx {input : String} (s : ScannerStateIx input) :
       documentEverStarted := true,
       definedAnchors := #[],
       -- Item 299: the marker's line, for §9.1.1's three block checks.
-      docStartLine := some s.cursor.pos.line }
+      docStartLine := some s.cursor.pos.line,
+      -- Item 317: the marker ends the `?` frame and its register (see `scanDocumentStart`).
+      explicitKeyLine := none,
+      explicitKeyCol := -1 }
 
 /-- Scan `...` document-end marker. -/
 def scanDocumentEndIx {input : String} (s : ScannerStateIx input) :
@@ -931,7 +934,10 @@ def scanDocumentEndIx {input : String} (s : ScannerStateIx input) :
       simpleKeyAllowed := true,
       allowDirectives := true,
       directivesPresent := false,
-      definedAnchors := #[] }
+      definedAnchors := #[],
+      -- Item 317: as at `scanDocumentStartIx` — the register dies with the frame.
+      explicitKeyLine := none,
+      explicitKeyCol := -1 }
   let probe := skipDocEndWhitespaceIx s.cursor (input.utf8ByteSize + 1)
   match probe.peek? with
   | none => pure ()

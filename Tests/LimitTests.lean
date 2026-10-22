@@ -36,7 +36,7 @@ def parseLimitError (input : String) (limits : ParserLimits := {}) : Bool :=
   match parseYamlSafe input limits with
   | .ok _ => false
   | .error (.limitError _) => true
-  | .error (.scanError _) => false
+  | .error _ => false
 
 /-- Check that `parseYamlSafe` fails with a specific limit error category. -/
 def parseAliasError (input : String) (limits : ParserLimits := {}) : Bool :=
@@ -363,6 +363,60 @@ def testSingleSafe (state : IO.Ref TestCollector) : IO Unit := do
     | _ => false
   check state "tag limits applied in single mode" tagResult
 
+/-! ## §8  YAML-configured FFI entry points -/
+
+def testYamlConfiguredFfi (state : IO.Ref TestCollector) : IO Unit := do
+  setCategory state "YAML-Configured FFI"
+
+  -- A valid config is applied: depth 2 rejects a depth-5 nest
+  let strictCfg := "structural:\n  maxDepth: 2\n"
+  let appliedResult := match FFI.parseWithYamlConfig "[[[[[a]]]]]" strictCfg with
+    | .error (.limitError (.structuralLimit _)) => true
+    | _ => false
+  check state "valid config limits are enforced" appliedResult
+
+  -- A valid config parses well-formed input
+  let okResult := match FFI.parseWithYamlConfig "a: 1\n" strictCfg with
+    | .ok docs => docs.size == 1
+    | .error _ => false
+  check state "valid config parses input" okResult
+
+  -- An unparseable config is a configError, not a default-limits parse
+  let malformedResult := match FFI.parseWithYamlConfig "a: 1\n" "{unclosed" with
+    | .error (.configError _) => true
+    | _ => false
+  check state "malformed config surfaces as configError" malformedResult
+
+  -- A config with a bad field value is a configError too
+  let badFieldResult := match FFI.parseWithYamlConfig "a: 1\n" "structural:\n  maxDepth: banana\n" with
+    | .error (.configError _) => true
+    | _ => false
+  check state "ill-typed config surfaces as configError" badFieldResult
+
+  -- The configError message is the config reader's, under a fixed prefix
+  let messageResult := match FFI.parseWithYamlConfig "a: 1\n" "{unclosed" with
+    | .error e => (toString e).startsWith "config error: "
+    | .ok _ => false
+  check state "configError renders with the config error prefix" messageResult
+
+  -- Dump: a valid config yields output, a bad one the reader's error
+  let val := (parseYamlSingleSafe "a: 1\n").toOption.getD default
+  let dumpOk := match FFI.dumpWithYamlConfig val "indent: 4\n" with
+    | .ok s => s.length > 0 && FFI.dumpResultGetOutput (.ok s) == s
+    | .error _ => false
+  check state "dump with valid config succeeds" dumpOk
+  let dumpBad := match FFI.dumpWithYamlConfig val "indent: banana\n" with
+    | .error msg => msg.length > 0 && FFI.dumpResultIsOk (.error msg) == 0
+    | .ok _ => false
+  check state "dump with bad config is an error" dumpBad
+
+  -- Limits accessor: an error result yields the defaults, and says so via isOk
+  let errResult : Except String ParserLimits := .error "bad"
+  check state "configResultIsOk reports an error result"
+    (FFI.configResultIsOk errResult == 0 && FFI.configResultGetError errResult == "bad")
+  check state "configResultGetLimitsOrDefault defaults on error"
+    ((FFI.configResultGetLimitsOrDefault errResult).structural.maxDepth == ({} : ParserLimits).structural.maxDepth)
+
 /-! ## Collect and report -/
 
 def collectTests : IO VerifiedSuiteResult := do
@@ -374,6 +428,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testPresets state
   testNormalYaml state
   testSingleSafe state
+  testYamlConfiguredFfi state
   let results ← finish state
   return { name := "limittests", label := "Parser Security Limit Tests",
            sourceFile := "Tests/LimitTests.lean", tests := results }

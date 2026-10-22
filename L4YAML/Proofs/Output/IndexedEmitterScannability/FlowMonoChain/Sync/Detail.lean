@@ -12,9 +12,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Main
 
 /-! # `FlowMonoChain.Sync.Detail` — Phase 3 Step 6f.3b3.flowmono.sync.detail
 
-**Sub-session 1 of `.flowmono.sync`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 3793–3843, 4423–4461,
-4711–4745, 4910–4914, 5022–5055, 5085–5117; ~400 LOC contribution
+**Sub-session 1 of `.flowmono.sync`** (~400 legacy LOC contribution
 before substrate elimination).
 
 Per-scanner `_detail` lemmas combining `ScannerSurfCorrIx`
@@ -53,14 +51,14 @@ the field-preservation `@[simp]` lemmas already shipped in
 
 ## Legacy mapping
 
-  | Section | Legacy lines | Indexed counterpart                |
-  | ------- | ------------ | ---------------------------------- |
-  | §1      | n/a (factored from `peek_of_chars_cons` + `advance_non_newline_corr`) | `peek_of_chars_consIx_state`, `advance_non_newline_corrIx_state`, `advance_line_of_peekIx_state` |
-  | §2      | 3817–3842    | `scanFlowSequenceStartIx_detail`   |
-  | §3      | 5032–5055    | `scanFlowMappingStartIx_detail`    |
-  | §4      | 4711–4745, 4910–4914 | `scanFlowSequenceEndIx_detail` + `_lastRealTokenValIx` + `_peek` |
-  | §5      | 5085–5117    | `scanFlowMappingEndIx_detail` + `_lastRealTokenValIx` + `_peek` |
-  | §6      | 4423–4461    | `scanFlowEntryIx_detail`           |
+  | Section | Indexed counterpart |
+  | ------- | ------------------- |
+  | §1      | `peek_of_chars_consIx_state`, `advance_non_newline_corrIx_state`, `advance_line_of_peekIx_state` (factored from `peek_of_chars_cons` + `advance_non_newline_corr`) |
+  | §2      | `scanFlowSequenceStartIx_detail`   |
+  | §3      | `scanFlowMappingStartIx_detail`    |
+  | §4      | `scanFlowSequenceEndIx_detail` + `_lastRealTokenValIx` + `_peek` |
+  | §5      | `scanFlowMappingEndIx_detail` + `_lastRealTokenValIx` + `_peek` |
+  | §6      | `scanFlowEntryIx_detail`           |
 
 ## Deferred to `.sync.scenarios`
 
@@ -146,7 +144,7 @@ preservation simp lemmas from `.maintenance.flowdispatch` §1. -/
 
 /-- `scanFlowSequenceStartIx` advances past `[`, giving specific
     `ScannerSurfCorrIx` at the rest and bundled field preservation.
-    Indexed twin of `scanFlowSequenceStart_detail` (legacy 3817). -/
+    Indexed twin of `scanFlowSequenceStart_detail`. -/
 lemma scanFlowSequenceStartIx_detail (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'[' :: rest, s.cursor.pos.col⟩) :
@@ -173,7 +171,7 @@ lemma scanFlowSequenceStartIx_detail (s : ScannerStateIx input)
 /-! ## §3  `scanFlowMappingStartIx_detail` -/
 
 /-- `scanFlowMappingStartIx` advances past `{`, mirror of §2.
-    Indexed twin of `scanFlowMappingStart_detail` (legacy 5032). -/
+    Indexed twin of `scanFlowMappingStart_detail`. -/
 lemma scanFlowMappingStartIx_detail (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'{' :: rest, s.cursor.pos.col⟩) :
@@ -200,8 +198,7 @@ lemma scanFlowMappingStartIx_detail (s : ScannerStateIx input)
 /-! ## §4  `scanFlowSequenceEndIx_detail` + `_lastRealTokenValIx` + `_peek` -/
 
 /-- `scanFlowSequenceEndIx` advances past `]`, decrementing
-    `flowLevel`. Indexed twin of `scanFlowSequenceEnd_detail`
-    (legacy 4711). -/
+    `flowLevel`. Indexed twin of `scanFlowSequenceEnd_detail`. -/
 lemma scanFlowSequenceEndIx_detail (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨']' :: rest, s.cursor.pos.col⟩) :
@@ -227,7 +224,7 @@ lemma scanFlowSequenceEndIx_detail (s : ScannerStateIx input)
 
 /-- Token property: `scanFlowSequenceEndIx` ends with `.flowSequenceEnd`
     as last real token. Indexed twin of `scanFlowSequenceEnd_
-    lastRealTokenVal` (legacy 4736). -/
+    lastRealTokenVal`. -/
 lemma scanFlowSequenceEndIx_lastRealTokenValIx (s : ScannerStateIx input) :
     lastRealTokenValIx? (scanFlowSequenceEndIx s).tokens = some YamlToken.flowSequenceEnd := by
   unfold scanFlowSequenceEndIx
@@ -237,7 +234,7 @@ lemma scanFlowSequenceEndIx_lastRealTokenValIx (s : ScannerStateIx input) :
   exact lastRealTokenValIx_push_non_ph s.tokens _ nofun
 
 /-- `scanFlowSequenceEndIx` preserves `peek?` from the underlying
-    advance. Indexed twin of `scanFlowSequenceEnd_peek` (legacy 4912). -/
+    advance. Indexed twin of `scanFlowSequenceEnd_peek`. -/
 lemma scanFlowSequenceEndIx_peek (s : ScannerStateIx input) :
     (scanFlowSequenceEndIx s).peek? = (s.emit YamlToken.flowSequenceEnd).advance.peek? := by
   unfold scanFlowSequenceEndIx
@@ -246,7 +243,7 @@ lemma scanFlowSequenceEndIx_peek (s : ScannerStateIx input) :
 /-! ## §5  `scanFlowMappingEndIx_detail` + `_lastRealTokenValIx` + `_peek` -/
 
 /-- `scanFlowMappingEndIx` advances past `}`, decrementing `flowLevel`.
-    Indexed twin of `scanFlowMappingEnd_detail` (legacy 5085). -/
+    Indexed twin of `scanFlowMappingEnd_detail`. -/
 lemma scanFlowMappingEndIx_detail (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'}' :: rest, s.cursor.pos.col⟩) :
@@ -272,7 +269,7 @@ lemma scanFlowMappingEndIx_detail (s : ScannerStateIx input)
 
 /-- Token property: `scanFlowMappingEndIx` ends with `.flowMappingEnd`
     as last real token. Indexed twin of `scanFlowMappingEnd_
-    lastRealTokenVal` (legacy 5107). -/
+    lastRealTokenVal`. -/
 lemma scanFlowMappingEndIx_lastRealTokenValIx (s : ScannerStateIx input) :
     lastRealTokenValIx? (scanFlowMappingEndIx s).tokens = some YamlToken.flowMappingEnd := by
   unfold scanFlowMappingEndIx
@@ -282,7 +279,7 @@ lemma scanFlowMappingEndIx_lastRealTokenValIx (s : ScannerStateIx input) :
   exact lastRealTokenValIx_push_non_ph s.tokens _ nofun
 
 /-- `scanFlowMappingEndIx` preserves `peek?` from the underlying
-    advance. Indexed twin of `scanFlowMappingEnd_peek` (legacy 5115). -/
+    advance. Indexed twin of `scanFlowMappingEnd_peek`. -/
 lemma scanFlowMappingEndIx_peek (s : ScannerStateIx input) :
     (scanFlowMappingEndIx s).peek? = (s.emit YamlToken.flowMappingEnd).advance.peek? := by
   unfold scanFlowMappingEndIx
@@ -295,7 +292,7 @@ delimiter — already in `.maintenance.pipeline` §5) with surface
 correspondence advance past `,`. -/
 
 /-- Field preservation + ScannerSurfCorrIx through `scanFlowEntryIx`.
-    Indexed twin of `scanFlowEntry_detail` (legacy 4424). -/
+    Indexed twin of `scanFlowEntry_detail`. -/
 lemma scanFlowEntryIx_detail (s : ScannerStateIx input) (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨',' :: rest, s.cursor.pos.col⟩)
     (h_last : ∀ t, lastRealTokenValIx? s.tokens = some t →

@@ -12,8 +12,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Pres
 
 /-! # `FlowMonoChain.Preserve.Helpers` — Phase 3 Step 6f.3b3.flowmono.preserve.helpers
 
-**Sub-session 3 of `.flowmono.preserve`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 2747–~3330, ~580 LOC).
+**Sub-session 3 of `.flowmono.preserve`** (~580 legacy LOC).
 The *invariant carriers* that thread through `scanNextTokenIx` and
 the per-flow-dispatch primitives in the forthcoming `.maintenance`
 and `.sync` sub-sessions.
@@ -47,24 +46,24 @@ and `.sync` sub-sessions.
 
 ## Legacy mapping
 
-Mirrors `EmitterScannability.lean` lines 2747–3247 (skipping the
+Mirrors `EmitterScannability.lean` (skipping the
 init-state lemma; see below):
 
-  | Section | Legacy lines     | Indexed counterpart           |
-  | ------- | ---------------- | ----------------------------- |
-  | §1      | 2997–3013        | `AllTokensOnLineIx` family    |
-  | §2      | 2925–2974        | `saveSimpleKeyIx_*`           |
-  | §3      | 2978–2985        | `saveSimpleKeyIx_id_of_flow_…`|
-  | §4      | 2987–3047        | `scanValueValidateIx_ok_*`    |
-  | §5      | 3049–3059        | `saveSimpleKeyIx_filter_*`    |
-  | §6      | 3063–3125        | `AllTokensOnLineIx_{emit,…}`  |
-  | §7      | 3100–3115        | `EndLineOnLineIx_saveSimpleK…`|
-  | §8      | 3132–3239        | Per-dispatcher `…OnLineIx`    |
-  | §9      | 3147–3156        | `…_simpleKey_not_possible`    |
+  | Section | Indexed counterpart |
+  | ------- | ------------------- |
+  | §1      | `AllTokensOnLineIx` family    |
+  | §2      | `saveSimpleKeyIx_*`           |
+  | §3      | `saveSimpleKeyIx_id_of_flow_…` |
+  | §4      | `scanValueValidateIx_ok_*` |
+  | §5      | `saveSimpleKeyIx_filter_*` |
+  | §6      | `AllTokensOnLineIx_{emit,…}` |
+  | §7      | `EndLineOnLineIx_saveSimpleK…` |
+  | §8      | Per-dispatcher `…OnLineIx` |
+  | §9      | `…_simpleKey_not_possible` |
 
 ## Init-state lemma deferral (`.sync`)
 
-The legacy `scanNextToken_preprocess_init_state` (lines 3258–3329)
+The legacy `scanNextToken_preprocess_init_state`
 characterizes the result of `scanNextToken_preprocess` on the initial
 state `(ScannerState.mk' input).emit .streamStart`. The proof relies
 on `ScannerSurfCorr` infrastructure (`initial_corr`,
@@ -78,7 +77,7 @@ reductions from `IxCursor.peek?_of_input_toList_cons` (no such lemma
 exists today).
 
 The lemma is consumed only by the `scanNextTokenIx_emit*_init`
-family in `.sync` (legacy 4116+). Since `.sync` will need a
+family in `.sync`. Since `.sync` will need a
 non-trivial indexed surface-correspondence layer anyway, the init-
 state characterization moves there. This `.helpers` session ships
 the invariant carriers and per-dispatcher transfer lemmas that the

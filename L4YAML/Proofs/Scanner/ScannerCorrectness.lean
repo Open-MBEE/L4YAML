@@ -8,6 +8,7 @@ module
 public import L4YAML.Scanner.Scanner
 public import L4YAML.Spec.Grammar
 public import L4YAML.Proofs.Scanner.ScannerProofs
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 public import L4YAML.Proofs.Scanner.ScannerProgress
 public import L4YAML.Proofs.Scanner.FlowAdjacency
 public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
@@ -75,6 +76,8 @@ Position monotonicity infrastructure:
 -/
 
 namespace L4YAML.Proofs.ScannerCorrectness
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -2431,7 +2434,7 @@ lemma preprocess_tokens_mono (s : ScannerState) (s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨h1, _⟩ := h
-            rw [← h1]
+            rw [← h1, closeStaleExplicitKey_tokens]
             have h_sk := saveSimpleKey_tokens_monotonic
               { unwindIndents v v.col with needIndentCheck := false }
             simp (config := { unfoldPartialApp := true }) at h_sk
@@ -2444,7 +2447,7 @@ lemma preprocess_tokens_mono (s : ScannerState) (s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨h1, _⟩ := h
-            rw [← h1]
+            rw [← h1, closeStaleExplicitKey_tokens]
             have h_sk := saveSimpleKey_tokens_monotonic v
             have := congrArg Array.size h_skip; omega
 
@@ -2478,6 +2481,7 @@ lemma preprocess_preserves_prefix (s : ScannerState) (s1 : ScannerState) (c : Ch
             obtain ⟨rfl, _⟩ := h
             have h_uw_bound : i < (unwindIndents v v.col).tokens.size := by
               have := unwindIndents_adds_tokens v v.col; omega
+            simp only [closeStaleExplicitKey_tokens]
             rw [saveSimpleKey_preserves_prefix _ i
               (by exact h_uw_bound)]
             rw [unwindIndents_preserves_prefix v v.col i h_bound_v]
@@ -2489,6 +2493,7 @@ lemma preprocess_preserves_prefix (s : ScannerState) (s1 : ScannerState) (c : Ch
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            simp only [closeStaleExplicitKey_tokens]
             rw [saveSimpleKey_preserves_prefix v i h_bound_v]
             simp only [h_skip]
 
@@ -6169,7 +6174,7 @@ lemma preprocess_preserves_simpleKeyStack (s : ScannerState) (s1 : ScannerState)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_simpleKeyStack]
+            rw [closeStaleExplicitKey_simpleKeyStack, saveSimpleKey_preserves_simpleKeyStack]
             show (unwindIndents s_skip s_skip.col).simpleKeyStack = s.simpleKeyStack
             rw [unwindIndents_preserves_simpleKeyStack]; exact h_stack_skip
       · split at h
@@ -6178,7 +6183,7 @@ lemma preprocess_preserves_simpleKeyStack (s : ScannerState) (s1 : ScannerState)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_simpleKeyStack]; exact h_stack_skip
+            rw [closeStaleExplicitKey_simpleKeyStack, saveSimpleKey_preserves_simpleKeyStack]; exact h_stack_skip
 
 /-- Preprocessing maintains the simpleKey part of the invariant.
 
@@ -6239,6 +6244,7 @@ lemma preprocess_simpleKey_inv (s : ScannerState) (s1 : ScannerState) (c : Char)
                 { unwindIndents s_skip s_skip.col with needIndentCheck := false }.simpleKey.tokenIndex ≥ n := by
               show (unwindIndents s_skip s_skip.col).simpleKey.possible = true → _
               simp only [h_sk_u, h_sk_skip]; exact h_inv
+            simp only [closeStaleExplicitKey_simpleKey] at h_poss ⊢
             exact h_save _ h_tok_pre h_sk_pre h_poss
       · -- no needIndentCheck path
         split at h
@@ -6251,6 +6257,7 @@ lemma preprocess_simpleKey_inv (s : ScannerState) (s1 : ScannerState) (c : Char)
               have := congrArg Array.size h_tok_skip; omega
             have h_sk_pre : s_skip.simpleKey.possible = true → s_skip.simpleKey.tokenIndex ≥ n := by
               simp only [h_sk_skip]; exact h_inv
+            simp only [closeStaleExplicitKey_simpleKey] at h_poss ⊢
             exact h_save s_skip h_tok_pre h_sk_pre h_poss
 
 lemma preprocess_maintains_simpleKeyAbove (s : ScannerState) (s1 : ScannerState) (c : Char)
@@ -8980,6 +8987,7 @@ lemma preprocess_preserves_ScanInv (s : ScannerState) (s' : ScannerState) (c : C
           · simp at h_ok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
             obtain ⟨h_eq, _⟩ := h_ok; subst h_eq
+            apply field_update_preserves_ScanInv _ _ ?_ (closeStaleExplicitKey_tokens _) (closeStaleExplicitKey_offset _)
             apply saveSimpleKey_preserves_ScanInv
             exact field_update_preserves_ScanInv _ _
               (unwindIndents_preserves_ScanInv s_skip s_skip.col h_sinv) rfl rfl
@@ -8990,7 +8998,8 @@ lemma preprocess_preserves_ScanInv (s : ScannerState) (s' : ScannerState) (c : C
           · simp at h_ok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
             obtain ⟨h_eq, _⟩ := h_ok; subst h_eq
-            exact saveSimpleKey_preserves_ScanInv _ h_sinv
+            exact field_update_preserves_ScanInv _ _ (saveSimpleKey_preserves_ScanInv _ h_sinv)
+              (closeStaleExplicitKey_tokens _) (closeStaleExplicitKey_offset _)
 
 /-!
 ### Phase 2: Per-dispatcher ScanInv theorems
@@ -10652,6 +10661,12 @@ def SimpleKeyValid (s : ScannerState) : Prop :=
     (∀ (h2 : s.simpleKey.tokenIndex + 1 < s.tokens.size),
       s.tokens[s.simpleKey.tokenIndex + 1].pos = s.simpleKey.pos)
 
+/-- Item 333: the register reset after the key save touches neither `simpleKey`
+    nor `tokens`. -/
+lemma closeStaleExplicitKey_preserves_SimpleKeyValid (s : ScannerState)
+    (h : SimpleKeyValid s) : SimpleKeyValid (closeStaleExplicitKey s) := by
+  rcases closeStaleExplicitKey_cases s with h_eq | h_eq <;> rw [h_eq] <;> exact h
+
 -- SimpleKeyValid is vacuously true when possible = false.
 lemma SimpleKeyValid_of_not_possible (s : ScannerState)
     (h : s.simpleKey.possible = false) : SimpleKeyValid s :=
@@ -10733,6 +10748,7 @@ lemma preprocess_preserves_SimpleKeyValid (s : ScannerState) (s' : ScannerState)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            apply closeStaleExplicitKey_preserves_SimpleKeyValid
             apply saveSimpleKey_preserves_SimpleKeyValid
             show SimpleKeyValid { unwindIndents s_skip s_skip.col with needIndentCheck := false }
             exact unwindIndents_preserves_SimpleKeyValid s_skip s_skip.col h_skv_skip
@@ -10743,7 +10759,7 @@ lemma preprocess_preserves_SimpleKeyValid (s : ScannerState) (s' : ScannerState)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            exact saveSimpleKey_preserves_SimpleKeyValid s_skip h_skv_skip
+            exact closeStaleExplicitKey_preserves_SimpleKeyValid _ (saveSimpleKey_preserves_SimpleKeyValid s_skip h_skv_skip)
 
 -- allowDirectives update preserves SimpleKeyValid.
 lemma allowDir_ite_preserves_SimpleKeyValid (s : ScannerState)
@@ -10799,6 +10815,11 @@ def SimpleKeyStackValid (s : ScannerState) : Prop :=
 /-- Combined simple key validity for both current and stacked keys. -/
 def AllKeysValid (s : ScannerState) : Prop :=
   SimpleKeyValid s ∧ SimpleKeyStackValid s
+
+/-- Item 333, the stack half. -/
+lemma closeStaleExplicitKey_preserves_SimpleKeyStackValid (s : ScannerState)
+    (h : SimpleKeyStackValid s) : SimpleKeyStackValid (closeStaleExplicitKey s) := by
+  rcases closeStaleExplicitKey_cases s with h_eq | h_eq <;> rw [h_eq] <;> exact h
 
 -- SimpleKeyStackValid is monotone: preserved when tokens grow and existing entries unchanged.
 lemma SimpleKeyStackValid_mono (s s' : ScannerState)
@@ -10915,6 +10936,7 @@ lemma preprocess_preserves_AllKeysValid (s s' : ScannerState) (c : Char)
               · simp at h
               · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
                 obtain ⟨rfl, _⟩ := h
+                apply closeStaleExplicitKey_preserves_SimpleKeyStackValid
                 apply saveSimpleKey_preserves_SimpleKeyStackValid
                 show SimpleKeyStackValid { unwindIndents s_skip s_skip.col with needIndentCheck := false }
                 exact unwindIndents_preserves_SimpleKeyStackValid s_skip s_skip.col h_ssv_skip
@@ -10924,7 +10946,7 @@ lemma preprocess_preserves_AllKeysValid (s s' : ScannerState) (c : Char)
               · simp at h
               · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
                 obtain ⟨rfl, _⟩ := h
-                exact saveSimpleKey_preserves_SimpleKeyStackValid s_skip h_ssv_skip⟩
+                exact closeStaleExplicitKey_preserves_SimpleKeyStackValid _ (saveSimpleKey_preserves_SimpleKeyStackValid s_skip h_ssv_skip)⟩
 
 -- allowDirectives update preserves AllKeysValid.
 lemma allowDir_ite_preserves_AllKeysValid (s : ScannerState)
@@ -11871,7 +11893,7 @@ lemma preprocess_offset_ge (s s' : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [ScannerProgress.saveSimpleKey_offset]
+            rw [closeStaleExplicitKey_offset, ScannerProgress.saveSimpleKey_offset]
             show ({ unwindIndents s_skip ↑s_skip.col with needIndentCheck := false }).offset ≥ s.offset
             show (unwindIndents s_skip ↑s_skip.col).offset ≥ s.offset
             rw [unwindIndents_offset_eq]; exact h_ge
@@ -11882,7 +11904,7 @@ lemma preprocess_offset_ge (s s' : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [ScannerProgress.saveSimpleKey_offset]; exact h_ge
+            rw [closeStaleExplicitKey_offset, ScannerProgress.saveSimpleKey_offset]; exact h_ge
 
 lemma preprocess_hasMore (s s' : ScannerState) (c : Char)
     (h : scanNextToken_preprocess s = .ok (some (s', c))) :
@@ -12792,6 +12814,7 @@ lemma preprocess_key_shape (s s2 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            simp only [closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_offset]
             rcases saveSimpleKey_key_shape
                 { unwindIndents s_skip ↑s_skip.col with needIndentCheck := false } with heq | hfresh
             · refine Or.inl (heq.trans ?_)
@@ -12806,6 +12829,7 @@ lemma preprocess_key_shape (s s2 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            simp only [closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_offset]
             rcases saveSimpleKey_key_shape s_skip with heq | hfresh
             · exact Or.inl (heq.trans h_key_skip)
             · exact Or.inr hfresh

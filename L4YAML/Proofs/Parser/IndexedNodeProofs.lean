@@ -24,10 +24,7 @@ set_option compiler.relaxedMetaCheck true
 
 @[expose] public section Blanket
 
-/-! # `IndexedNodeProofs` — Phase 3 Step 6c indexed AG + AAR proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedNodeProofs` — Phase 3 Step 6c indexed AG + AAR proofs
 
 ## Role
 

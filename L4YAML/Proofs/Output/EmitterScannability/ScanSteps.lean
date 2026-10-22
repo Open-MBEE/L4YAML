@@ -8,6 +8,8 @@ module
 public import L4YAML.Proofs.Output.EmitterScannability.ScannerAcceptance
 public import L4YAML.Proofs.Scanner.FlowAdjacency
 public import L4YAML.Proofs.Scanner.ScannerFlowCollection
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
+public import L4YAML.Proofs.Scanner.ExplicitKeyCoupling
 
 @[expose] public section Blanket
 
@@ -23,6 +25,8 @@ machinery (state-preservation boilerplate, flow helpers, detailed scan steps).
 -/
 
 namespace L4YAML.Proofs.EmitterScannability
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Emit
@@ -2289,7 +2293,8 @@ lemma scanNextToken_preprocess_init_state (input : String) (c : Char)
   have h_sk_peek : (saveSimpleKey { (ScannerState.mk' input).emit .streamStart
       with needIndentCheck := false }).peek? = some c := by
     rw [saveSimpleKey_preserves_peek]; exact h_pk₀
-  rw [h_sk_peek]
+  rw [closeStaleExplicitKey_of_ek_none _
+    (by rw [ExplicitKeyCoupling.saveSimpleKey_preserves_explicitKeyLine]; rfl), h_sk_peek]
 
 -- The first scanNextToken call on the initial emitScalar state
 -- dispatches to scanDoubleQuoted and succeeds.
@@ -2361,8 +2366,10 @@ lemma scanNextToken_emitScalar_init (content : String) :
           = some '"' := by
         rw [saveSimpleKey_preserves_peek]
         exact h_pk₀
-      -- Rewrite the peek? in the match to resolve it
-      rw [h_sk_peek]
+      -- Rewrite the peek? in the match to resolve it (the stale-key hook is
+      -- the identity on a fresh state's dead register, item 333)
+      rw [closeStaleExplicitKey_of_ek_none _
+        (by rw [ExplicitKeyCoupling.saveSimpleKey_preserves_explicitKeyLine]; rfl), h_sk_peek]
     · -- §9.2 bare-document check (item 132): the only real token behind the
       -- cursor is `streamStart`, which completes nothing.
       refine scanNextToken_checkBareDocument_ok_of_last _ ?_
@@ -2576,8 +2583,11 @@ lemma scanNextToken_preprocess_flow (s : ScannerState) (c : Char)
   -- indents.size < savedIndentSize is s.indents.size < s.indents.size → false
   simp only [show ¬(s.indents.size < s.indents.size) from by omega, decide_false,
              Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-  -- saveSimpleKey preserves peek
-  rw [saveSimpleKey_preserves_peek, h_pk]
+  -- the stale-key hook is the identity in flow (item 333); saveSimpleKey preserves peek
+  rw [closeStaleExplicitKey_of_inFlow _ (by
+      simp only [ScannerState.inFlow, ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
+      simpa [ScannerState.inFlow] using h_flow),
+    saveSimpleKey_preserves_peek, h_pk]
 
 -- Variant with a single leading space: preprocessing of `' ' :: c :: rest`
 -- yields the same result as preprocessing of the post-space state.
@@ -2714,14 +2724,20 @@ lemma scanNextToken_preprocess_flow_ws1 (s : ScannerState) (c : Char)
     simp only [h_hm₁, h_flow₁, Bool.not_true, Bool.false_eq_true, ite_false]
     simp only [show ¬(s₁.indents.size < s₁.indents.size) from by omega, decide_false,
                Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-    rw [saveSimpleKey_preserves_peek, h_pk₁]
+    rw [closeStaleExplicitKey_of_inFlow _ (by
+        simp only [ScannerState.inFlow, ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
+        simpa [ScannerState.inFlow] using h_flow₁),
+      saveSimpleKey_preserves_peek, h_pk₁]
   have h_pp_s₁ : scanNextToken_preprocess s₁ = .ok (some (saveSimpleKey s₁, c)) := by
     unfold scanNextToken_preprocess
     rw [h_stc₁]; simp only [bind, Except.bind, pure, Except.pure]
     simp only [h_hm₁, h_flow₁, Bool.not_true, Bool.false_eq_true, ite_false]
     simp only [show ¬(s₁.indents.size < s₁.indents.size) from by omega, decide_false,
                Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-    rw [saveSimpleKey_preserves_peek, h_pk₁]
+    rw [closeStaleExplicitKey_of_inFlow _ (by
+        simp only [ScannerState.inFlow, ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
+        simpa [ScannerState.inFlow] using h_flow₁),
+      saveSimpleKey_preserves_peek, h_pk₁]
   exact ⟨s₁, h_corr₁, h_flow₁, h_fl₁, h_indent₁, h_col₁, h_dp₁, h_ids₁, h_ek₁, h_line₁,
     by rw [h_pp_s, h_pp_s₁],
     fun h_a => by unfold AllTokensOnLine at h_a ⊢; simp only [h_line₁, h_toks₁]; exact h_a,

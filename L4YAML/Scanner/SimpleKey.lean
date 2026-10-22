@@ -457,6 +457,34 @@ def scanValue (s : ScannerState) : Except ScanError ScannerState := do
 
 /-! ## Simple-Key Tracking and Candidate Predicates -/
 
+/-- Item 333: a SIBLING entry ends the pending explicit key.  In block context a
+    token that starts a line at or left of the `?`'s column and is not `:` (the
+    explicit value, [197]), `-` (a compact sequence continuing the key node,
+    item 320) or `?` (the next explicit key, which `scanKey` re-arms) is the next
+    entry of the ENCLOSING collection — `? a⏎[1]: b` is `{a: null, [1]: b}` —
+    so the register is stale: the `?` already has its empty value.  Until now
+    the register survived to the entry's own `:` (where `scanValue` dropped it
+    for the same reason), so a flow collection opening the sibling parked a
+    live pair on `explicitKeyStack`.  On the reference inputs (items 317/320/325,
+    yaml-test-suite) acceptance is unchanged — the state now says what the
+    readers already decided; the one family that moves is `- ? a⏎- X⏎…` (the
+    `?` inside a sequence entry), where the stale register either admitted
+    `: Y` at column 0 (libyaml refuses) or refused `- : Y` (libyaml's verdict
+    there is the pre-existing `- : a` divergence).  Runs after the simple-key save (whose
+    register read is flow-only, so the order is immaterial to behaviour and lets
+    the proofs peel it off the outside).  Pure state transformation — never
+    modifies the token array. -/
+@[yaml_spec "8.2.2"]
+def closeStaleExplicitKey (s : ScannerState) : ScannerState :=
+  if s.inFlow then s
+  else match s.explicitKeyLine, s.peek? with
+    | some ekLine, some c =>
+      if s.line != ekLine && (s.col : Int) ≤ s.explicitKeyCol
+          && c != ':' && c != '-' && c != '?' then
+        { s with explicitKeyLine := none, explicitKeyCol := -1 }
+      else s
+    | _, _ => s
+
 /-- Record the current position as a potential implicit key.
 
     **Implements**: Part of YAML 1.2.2 §7.4 (implicit key tracking).

@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -31,6 +32,8 @@ in `Proofs/Output/EmitterScannability/FlowStackChain.lean`.
 set_option maxHeartbeats 1000000
 
 namespace L4YAML.Proofs.ScannerEkStack
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -740,7 +743,7 @@ lemma preprocess_preserves_explicitKeyStack (s : ScannerState) (s1 : ScannerStat
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_explicitKeyStack]
+            rw [closeStaleExplicitKey_explicitKeyStack, saveSimpleKey_preserves_explicitKeyStack]
             show (unwindIndents s_skip s_skip.col).explicitKeyStack = s.explicitKeyStack
             rw [unwindIndents_preserves_explicitKeyStack]; exact h_stack_skip
       · split at h
@@ -749,7 +752,7 @@ lemma preprocess_preserves_explicitKeyStack (s : ScannerState) (s1 : ScannerStat
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_explicitKeyStack]; exact h_stack_skip
+            rw [closeStaleExplicitKey_explicitKeyStack, saveSimpleKey_preserves_explicitKeyStack]; exact h_stack_skip
 
 -- Cloned from `ScannerCorrectness` lines 4302-4308 (`_preserves_explicitKeyStack` twin).
 lemma advanceNLoop_preserves_explicitKeyStack (s : ScannerState) (n : Nat) :

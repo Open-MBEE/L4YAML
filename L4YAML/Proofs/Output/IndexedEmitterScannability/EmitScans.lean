@@ -10,9 +10,9 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.EkSt
 
 @[expose] public section Blanket
 
-/-! # `IndexedEmitterScannability.EmitScans` — Phase 3 Step 6f.3b3 staging
+/-! # `IndexedEmitterScannability.EmitScans` — Phase 3 Step 6f.3b3
 
-**Status**: staging file. Populated incrementally as the
+**Status**: populated incrementally as the
 `ScanChainGrewIx` strict-variant track + the `EmitScansInFlowIx` main
 theorem family are ported to the indexed substrate.
 

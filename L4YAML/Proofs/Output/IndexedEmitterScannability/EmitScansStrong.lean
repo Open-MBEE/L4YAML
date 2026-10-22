@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.EmitScans
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -105,6 +106,8 @@ No new axioms introduced.
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.EmitScans
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.CharPredicates
@@ -963,6 +966,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_pointwise_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          rw [closeStaleExplicitKeyIx_simpleKey] at h_poss ⊢
           have h_unwind_sz :=
             unwindIndentsIx_tokens_size_le s.skipToContentS s.skipToContentS.cursor.pos.col
           have h_unwind_sk :=
@@ -989,6 +993,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_pointwise_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          rw [closeStaleExplicitKeyIx_simpleKey] at h_poss ⊢
           have h_tok_post : m < s.skipToContentS.tokens.size := by omega
           have h_sk_post : s.skipToContentS.simpleKey.possible = true →
               m ≠ s.skipToContentS.simpleKey.tokenIndex ∧

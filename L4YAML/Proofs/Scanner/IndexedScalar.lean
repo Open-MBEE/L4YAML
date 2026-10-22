@@ -1190,7 +1190,7 @@ lemma collectPlainScalarLoopIx_colon_continue {input : String} (c : IxCursor inp
         (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel := by
   conv => lhs; unfold collectPlainScalarLoopIx
   rw [hPeek]
-  simp [hNotComment, hMapVal, hColon]
+  simp [hNotComment, hMapVal, hColon, String.append_singleton]
 
 lemma collectPlainScalarLoopIx_flow_indicator {input : String} (c : IxCursor input)
     (content spaces : String) (contentIndent : Nat) (fuel : Nat)
@@ -1344,7 +1344,8 @@ lemma collectPlainScalarLoopIx_content {input : String} (c : IxCursor input)
         (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel := by
   conv => lhs; unfold collectPlainScalarLoopIx
   rw [hPeek]
-  simp [hNotComment, hNotMapVal, hNotFlowInd, hNotLineBreak, hNotWhitespace, hPlainSafe]
+  simp [hNotComment, hNotMapVal, hNotFlowInd, hNotLineBreak, hNotWhitespace, hPlainSafe,
+    String.append_singleton]
 
 /-- Generalized content-arm reduction: allows `ch = '#'` provided
     `spaces.length = 0` (which makes the loop's `isComment ch &&
@@ -1364,7 +1365,8 @@ lemma collectPlainScalarLoopIx_content_gen {input : String} (c : IxCursor input)
         (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel := by
   conv => lhs; unfold collectPlainScalarLoopIx
   rw [hPeek]
-  simp [hNotCommArm, hNotMapVal, hNotFlowInd, hNotLineBreak, hNotWhitespace, hPlainSafe]
+  simp [hNotCommArm, hNotMapVal, hNotFlowInd, hNotLineBreak, hNotWhitespace, hPlainSafe,
+    String.append_singleton]
 
 /-! ## Layer F.5 — Plain-scalar content validity (Step 6d.1e.11)
 
@@ -1780,6 +1782,7 @@ lemma collectPlainScalarLoopIx_content_isPrefix {input : String}
       · exact List.prefix_rfl                              -- ':' terminates
       split
       · -- ':' continues
+        rw [← String.append_singleton]
         exact List.IsPrefix.trans
           (prefix_of_append_string_3 content spaces (String.singleton ch))
           (ih c.advance (content ++ spaces ++ String.singleton ch) "")
@@ -1816,6 +1819,7 @@ lemma collectPlainScalarLoopIx_content_isPrefix {input : String}
       split
       · exact List.prefix_rfl                              -- !isPlainSafe
       · -- plain-safe content
+        rw [← String.append_singleton]
         exact List.IsPrefix.trans
           (prefix_of_append_string_3 content spaces (String.singleton ch))
           (ih c.advance (content ++ spaces ++ String.singleton ch) "")
@@ -1883,6 +1887,7 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
           have := (isBlank_iff n).mpr hb
           rw [h_n_notblank] at this; exact Bool.noConfusion this
         -- Build next-iter invariant.
+        rw [← String.append_singleton]
         refine ih c.advance (content ++ spaces ++ String.singleton ':') "" ?_ ?_
         · -- PlainContentInvIx
           refine {
@@ -2069,6 +2074,7 @@ lemma collectPlainScalarLoopIx_preserves_contentInv {input : String}
         have hch_neq_colon : ch ≠ ':' := by
           intro h; rw [h] at hNotMVp
           simp [isMappingValueBool] at hNotMVp
+        rw [← String.append_singleton]
         refine ih c.advance (content ++ spaces ++ String.singleton ch) "" ?_ ?_
         · refine {
             content_noColonSpace := ?_

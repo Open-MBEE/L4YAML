@@ -11,8 +11,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Basi
 
 /-! # `FlowMonoChain.Preserve.Step` — Phase 3 Step 6f.3b3.flowmono.preserve.step
 
-**Sub-session 1 of `.flowmono.preserve`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 1806–2165, ~360 LOC
+**Sub-session 1 of `.flowmono.preserve`** (~360 legacy LOC
 originally; ~140 LOC after the `.sync.invariant` retroactive move).
 Per-step preservation primitives that feed the chain-level sync
 proofs in `Sync/Invariant.lean`.
@@ -45,7 +44,7 @@ namespaces changed — pure relocation.
 ## Legacy mapping
 
 Mirrors the inner-stage and per-dispatcher slices of
-`EmitterScannability.lean` lines 1806–1885 (the per-stage
+`EmitterScannability.lean` (the per-stage
 preservation primitives consumed by chain-level proofs).
 
 The indexed versions are typically shorter than their legacy

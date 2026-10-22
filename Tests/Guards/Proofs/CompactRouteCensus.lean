@@ -36,11 +36,20 @@ This module re-derives it, and reads the wrapper's OWN premise off the scanner
 state instead of guessing it from the text.  The domain is the same shape as
 item 185's: a 33-fragment line alphabet, three lines, 35 937 programs.
 
-**The measurement.**  244 programs reach the premise; ZERO of those are
-accepted; and all 244 are refused by ONE error — §8.2.2 `[197]`'s own
-`s-indent(n)` test, which is the very equation `explicit_at_indent_of_dispatch`
-reads forwards.  The class is empty over this domain because the scanner
-refuses every input that would enter it.
+**The measurement (first reading, item 204).**  244 programs reached the
+premise; ZERO of those were accepted; and all 244 were refused by ONE error —
+§8.2.2 `[197]`'s own `s-indent(n)` test, which is the very equation
+`explicit_at_indent_of_dispatch` reads forwards.  The class was empty over this
+domain because the scanner refused every input that would enter it.
+
+**Current reading (item 337).**  ZERO programs reach the premise and the
+refusal histogram is empty: the stale-key hook (items 333, 335, 337) kills the
+explicit-key register when its level closes — on a `-` strictly left of the
+`?`'s column since item 337 — so no later-line `:` is dispatched with the
+register live.  The zero is now UNREACHABILITY, not refusal, and it is not
+vacuous: the mid-line control (`noMidOk`, the same discriminator without the
+`InlineResidue` conjunct) still fires 934 times on the same corpus, so the
+instrument sees the shapes and the premise is what they no longer satisfy.
 
 **Why the zero is not vacuous, and why the syntactic proxy was not enough.**
 Two controls ride with it.  The domain REACHES the premise 244 times, so the
@@ -177,12 +186,15 @@ def refusalCensus : List (String × Nat) := Id.run do
            else (k, 1) :: m
   return m
 
-/-! **ONE cause.**  Every program that reaches the compact premise is refused by
-    §8.2.2 `[197]`'s `s-indent(n)` test — the equation
-    `explicit_at_indent_of_dispatch` reads forwards out of the same `.ok` path.
-    That single-cause histogram is what makes the emptiness a REFUTATION target
-    rather than an accident of the corpus: the proof and the sweep are the same
-    fact read two ways (`BlockDeferralClasses` §23). -/
+/-! **ONE cause — historically; NONE to classify now.**  Through item 335 every
+    program that reached the compact premise was refused by §8.2.2 `[197]`'s
+    `s-indent(n)` test — the equation `explicit_at_indent_of_dispatch` reads
+    forwards out of the same `.ok` path — and that single-cause histogram
+    (`[(misindentedExplicitValue, 232)]` at item 335) is what made the emptiness
+    a REFUTATION target rather than an accident of the corpus.  Since item 337
+    no program reaches the premise at all (`census` above, third number 0), so
+    the histogram is empty by construction; the proof and the sweep remain the
+    same fact read two ways (`BlockDeferralClasses` §4, §23). -/
 #guard refusalCensus == []
 
 end Tests.Guards.CompactRouteCensus

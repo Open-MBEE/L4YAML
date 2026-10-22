@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.FlowIndentStable
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -50,6 +51,8 @@ step itself.  §6 the seed.
 -/
 
 namespace L4YAML.Proofs.IndentStackBase
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML L4YAML.Scanner
 open L4YAML.Proofs.PreprocessIndentStable
@@ -486,7 +489,7 @@ lemma preprocess_base {s s' : ScannerState} {c : Char}
           · simp at hok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, _⟩ := hok
-            refine SentinelBase.of_indents_eq ?_ (saveSimpleKey_preserves_indents _)
+            refine SentinelBase.of_indents_eq ?_ ((closeStaleExplicitKey_indents _).trans (saveSimpleKey_preserves_indents _))
             show SentinelBase { unwindIndents s_skip (s_skip.col : Int) with
               needIndentCheck := false }
             exact SentinelBase.of_indents_eq
@@ -497,7 +500,7 @@ lemma preprocess_base {s s' : ScannerState} {c : Char}
           · simp at hok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, _⟩ := hok
-            exact SentinelBase.of_indents_eq h_c (saveSimpleKey_preserves_indents _)
+            exact SentinelBase.of_indents_eq h_c ((closeStaleExplicitKey_indents _).trans (saveSimpleKey_preserves_indents _))
 
 lemma dispatchStructural_base {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchStructural s c = .ok (some s')) (h : SentinelBase s) :

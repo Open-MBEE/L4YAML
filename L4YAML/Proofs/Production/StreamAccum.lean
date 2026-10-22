@@ -29,6 +29,7 @@ public import L4YAML.Proofs.Coupling.TabIndentBridge
 public import L4YAML.Proofs.Production.FlowIndexLift
 public import L4YAML.Proofs.Production.ScalarFoldAt
 public import L4YAML.Proofs.Production.FlowKeyLift
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -74,6 +75,8 @@ public import L4YAML.Proofs.Production.FlowKeyLift
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.StreamAccum
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Surface
 open L4YAML.Scanner
@@ -566,7 +569,7 @@ inductive ImplicitKeyHead : SurfPos → SurfPos → Prop where
     pack** (item 308): the park's explicit-key register is DEAD.  A class-A `:` — the
     explicit value of a `?` frame, `[197]`'s `s-indent(n) ':'` — fires only when the
     dispatch state's register is live (`explicitKeyLine ≠ none`), and preprocessing
-    writes neither explicit-key field (`ekl_dis_eq_park`), so a dead register at the
+    ends or carries the register (`ekl_disp_none_of_park_none`), so a dead register at the
     park refutes the landing (`ExplicitValueRefused.not_of_classA`).  The register is
     the whole predicate: the sentinel indent `-1` a document marker's unwind leaves
     behind refutes nothing the register does not, because a marker ends the register
@@ -3373,7 +3376,7 @@ lemma preprocess_none_ssl_comments_col0 (sc : ScannerState) (sp : SurfPos)
         · simp at hok
         · split at hok
           · rename_i h_indent h_no_trailing h_peek_none
-            exfalso; rw [saveSimpleKey_peek] at h_peek_none
+            exfalso; rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at h_peek_none
             unfold ScannerState.peek? at h_peek_none; dsimp only [] at h_peek_none
             unfold unwindIndents at h_peek_none
             simp only [unwindIndentsLoop_offset, unwindIndentsLoop_inputEnd,
@@ -3389,7 +3392,7 @@ lemma preprocess_none_ssl_comments_col0 (sc : ScannerState) (sp : SurfPos)
         · simp at hok
         · split at hok
           · rename_i h_no_indent h_no_trailing h_peek_none
-            exfalso; rw [saveSimpleKey_peek] at h_peek_none
+            exfalso; rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at h_peek_none
             unfold ScannerState.peek? at h_peek_none
             split at h_peek_none
             · cases h_peek_none
@@ -3422,7 +3425,7 @@ lemma preprocess_none_ssl_comments (sc : ScannerState) (sp : SurfPos)
         · simp at hok
         · split at hok
           · rename_i h_indent h_no_trailing h_peek_none
-            exfalso; rw [saveSimpleKey_peek] at h_peek_none
+            exfalso; rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at h_peek_none
             unfold ScannerState.peek? at h_peek_none; dsimp only [] at h_peek_none
             unfold unwindIndents at h_peek_none
             simp only [unwindIndentsLoop_offset, unwindIndentsLoop_inputEnd,
@@ -3438,7 +3441,7 @@ lemma preprocess_none_ssl_comments (sc : ScannerState) (sp : SurfPos)
         · simp at hok
         · split at hok
           · rename_i h_no_indent h_no_trailing h_peek_none
-            exfalso; rw [saveSimpleKey_peek] at h_peek_none
+            exfalso; rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at h_peek_none
             unfold ScannerState.peek? at h_peek_none
             split at h_peek_none
             · cases h_peek_none
@@ -5240,7 +5243,7 @@ lemma slotFace_preprocess {sc s_prep : ScannerState} {c : Char}
       · rw [hq, h_tok_skip]; exact h
       · rw [hp]
         exact slotFace_push_nonprop (by rw [hv]; nofun) (by rw [hv]; rfl)
-  rw [h_save]
+  rw [h_save, closeStaleExplicitKey_tokens]
   rcases saveSimpleKey_tokens_shape s_u with hq | ⟨p, hph, hq⟩
   · rw [hq]; exact h_u
   · rw [hq]
@@ -6217,9 +6220,9 @@ lemma preprocess_some_ssl_comments_col0 (sc : ScannerState) (sp : SurfPos)
                 { (unwindIndents s_content ↑s_content.col) with
                   needIndentCheck := false } sp_sc :=
               ⟨hcorr2.chars_from, hcorr2.col_eq, hcorr2.end_eq, hcorr2.input_prefix, hcorr2.indent_cols_nonneg⟩
-            exact ⟨sp_mid, sp_ws, sp_sc, h_ssl, hcol_mid, hws, hcmt, saveSimpleKey_corr _ sp_sc hcorr3,
+            exact ⟨sp_mid, sp_ws, sp_sc, h_ssl, hcol_mid, hws, hcmt, ScanStrictCoupling.closeStaleExplicitKey_corr _ sp_sc (saveSimpleKey_corr _ sp_sc hcorr3),
                    h_pk.imp_right (fun h => by
-                     rw [saveSimpleKey_peek]; unfold ScannerState.peek? unwindIndents
+                     rw [closeStaleExplicitKey_peek, saveSimpleKey_peek]; unfold ScannerState.peek? unwindIndents
                      simp only [unwindIndentsLoop_offset, unwindIndentsLoop_inputEnd, unwindIndentsLoop_input]
                      unfold ScannerState.peek? at h; exact h)⟩
       · split at hok
@@ -6228,8 +6231,8 @@ lemma preprocess_some_ssl_comments_col0 (sc : ScannerState) (sp : SurfPos)
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
-            exact ⟨sp_mid, sp_ws, sp_sc, h_ssl, hcol_mid, hws, hcmt, saveSimpleKey_corr _ sp_sc hcorr_sc,
-                   h_pk.imp_right (fun h => by rw [saveSimpleKey_peek]; exact h)⟩
+            exact ⟨sp_mid, sp_ws, sp_sc, h_ssl, hcol_mid, hws, hcmt, ScanStrictCoupling.closeStaleExplicitKey_corr _ sp_sc (saveSimpleKey_corr _ sp_sc hcorr_sc),
+                   h_pk.imp_right (fun h => by rw [closeStaleExplicitKey_peek, saveSimpleKey_peek]; exact h)⟩
 
 /-- When `scanNextToken_preprocess` returns `some (s_prep, c)`, the resulting
     scanner state has `s_prep.peek? = some c`. This follows from the definition's
@@ -6249,7 +6252,7 @@ lemma preprocess_some_peek {sc s_prep : ScannerState} {c : Char}
         <;> (try simp at hok)  -- error case
         <;> (split at hok  -- peek? match
           <;> (try simp at hok)  -- none case
-          <;> (obtain ⟨h1, h2⟩ := hok; subst h1; subst h2; assumption)))
+          <;> (obtain ⟨h1, h2⟩ := hok; subst h1; subst h2; (try peel_stale); assumption)))
 
 -- The preprocessing character is never a line break. This follows from
 -- `skipToContentLoop` continuing past breaks and only stopping at non-break chars.
@@ -6276,13 +6279,13 @@ lemma preprocess_some_not_break {sc s_prep : ScannerState} {c : Char}
             <;> (obtain ⟨h1, _⟩ := hok; subst h1
                  first
                  | (-- indent branch: strip saveSimpleKey + unwindIndents
-                    rw [saveSimpleKey_peek] at hpeek
+                    rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at hpeek
                     unfold ScannerState.peek? unwindIndents at hpeek
                     simp only [unwindIndentsLoop_offset, unwindIndentsLoop_inputEnd,
                       unwindIndentsLoop_input] at hpeek
                     exact hpeek)
                  | (-- no-indent branch: strip saveSimpleKey only
-                    rw [saveSimpleKey_peek] at hpeek; exact hpeek))))
+                    rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at hpeek; exact hpeek))))
       exact skipToContent_peek_not_break sc s_content c h_skip h_sc_peek
 
 /-- Preprocessing at col=0 with content character produces `SSeparateLines 0`.
@@ -6417,6 +6420,7 @@ lemma preprocess_preserves_flowLevel (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
             show (unwindIndents s_skip s_skip.col).flowLevel = s.flowLevel
             rw [ScannerCorrectness.unwindIndents_preserves_flowLevel]; exact h_fl_skip
@@ -6426,6 +6430,7 @@ lemma preprocess_preserves_flowLevel (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [ScannerCorrectness.saveSimpleKey_preserves_flowLevel]; exact h_fl_skip
 
 /-- **The fresh save, from the WALK's flag instead of the PARK's** (item 76).
@@ -6453,14 +6458,14 @@ lemma preprocess_saved_key_col_of_walk {sc s_prep s_walk : ScannerState} {c : Ch
     · show (unwindIndents s_w s_w.col).simpleKeyAllowed = true
       rw [unwindIndents_preserves_simpleKeyAllowed]; exact h_a
   have h_fl : s_u.inFlow = false := by
-    rw [← saveSimpleKey_inFlow s_u, ← h_save]; exact h_noflow
+    rw [← saveSimpleKey_inFlow s_u, ← closeStaleExplicitKey_inFlow, ← h_save]; exact h_noflow
   have h_shape : (saveSimpleKey s_u).simpleKey.possible = true ∧
       (saveSimpleKey s_u).simpleKey.pos.col = s_u.col := by
     unfold saveSimpleKey
     rw [ite_eq_right (by simp [h_fl]), ite_eq_left h_al]
     exact ⟨rfl, rfl⟩
-  refine ⟨by rw [h_save]; exact h_shape.1, ?_⟩
-  rw [h_save, saveSimpleKey_col]
+  refine ⟨by rw [h_save, closeStaleExplicitKey_simpleKey]; exact h_shape.1, ?_⟩
+  rw [h_save, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_col, saveSimpleKey_col]
   exact h_shape.2
 
 /-- **The landing's re-arm, read as the FLAG** (item 139).  Every writer
@@ -6481,7 +6486,7 @@ lemma preprocess_simpleKeyAllowed_mono {sc s_prep : ScannerState} {c : Char}
     · exact h_al_skip
     · show (unwindIndents s_skip ↑s_skip.col).simpleKeyAllowed = true
       rw [unwindIndents_preserves_simpleKeyAllowed]; exact h_al_skip
-  rw [h_save, saveSimpleKey_allowed]; exact h_al
+  rw [h_save, closeStaleExplicitKey_simpleKeyAllowed, saveSimpleKey_allowed]; exact h_al
 
 /-- `preprocess_simpleKeyAllowed_mono` read off the WALK instead of the park —
     item 76's own hypothesis, for the landings a park off a line start reaches
@@ -6499,7 +6504,7 @@ lemma preprocess_simpleKeyAllowed_of_walk {sc s_prep s_walk : ScannerState} {c :
     · exact h_a
     · show (unwindIndents s_w ↑s_w.col).simpleKeyAllowed = true
       rw [unwindIndents_preserves_simpleKeyAllowed]; exact h_a
-  rw [h_save, saveSimpleKey_allowed]; exact h_al
+  rw [h_save, closeStaleExplicitKey_simpleKeyAllowed, saveSimpleKey_allowed]; exact h_al
 
 /-- **`unwindIndents` at the sentinel alone is the identity** (item 139): the
     loop's own guard wants `1 < s.indents.size`, and the sentinel is never
@@ -6585,12 +6590,12 @@ lemma preprocess_lastRealTokenVal_of_indents_eq {sc s_prep : ScannerState} {c : 
     rcases h_cases with rfl | rfl
     · exact h_tok_skip
     · have h_pu : (unwindIndents s_skip (s_skip.col : Int)).indents = s_skip.indents := by
-        rw [h_ind_skip, ← h_nopop, h_save, saveSimpleKey_preserves_indents]
+        rw [h_ind_skip, ← h_nopop, h_save, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]
       have h_id : unwindIndents s_skip (s_skip.col : Int) = s_skip :=
         unwindIndents_of_indents_eq h_pu
       show (unwindIndents s_skip ↑s_skip.col).tokens = sc.tokens
       rw [h_id]; exact h_tok_skip
-  rw [h_save, saveSimpleKey_preserves_lastRealTokenVal _ (by rw [h_u]; exact h_real), h_u]
+  rw [h_save, closeStaleExplicitKey_tokens, saveSimpleKey_preserves_lastRealTokenVal _ (by rw [h_u]; exact h_real), h_u]
 
 /-- **The park's §9.2 token reading survives the landing when the stack is the
     sentinel alone** (item 139).  Preprocessing has three writers between the
@@ -6626,9 +6631,9 @@ lemma preprocess_lastRealTokenVal_of_indents_le_one {sc s_prep : ScannerState} {
       · show (unwindIndents s_skip ↑s_skip.col).indents = sc.indents
         rw [h_id]; exact h_ind_skip
   refine ⟨?_, ?_⟩
-  · rw [h_save, saveSimpleKey_preserves_lastRealTokenVal _ (by rw [h_u.1]; exact h_real),
+  · rw [h_save, closeStaleExplicitKey_tokens, saveSimpleKey_preserves_lastRealTokenVal _ (by rw [h_u.1]; exact h_real),
         h_u.1]
-  · rw [h_save, saveSimpleKey_preserves_indents]; exact h_u.2
+  · rw [h_save, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]; exact h_u.2
 
 /-- **The trailing-content check preprocessing runs after its own unwind, read
     as a DISJUNCTION** (item 66).  `scanNextToken_preprocess` refuses a landing
@@ -6659,6 +6664,7 @@ lemma preprocess_indents_or_underIndent {sc s_prep : ScannerState} {c : Char}
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+            try peel_stale
             rcases unwindIndents_shrink_or_eq s_content (s_content.col : Int) with h_sh | h_eq
             · refine Or.inr ?_
               simp only [Bool.and_eq_true, decide_eq_true_eq, not_and, Int.not_lt] at h_nott
@@ -6677,6 +6683,7 @@ lemma preprocess_indents_or_underIndent {sc s_prep : ScannerState} {c : Char}
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+            try peel_stale
             exact Or.inl ((saveSimpleKey_preserves_indents s_content).trans h_ci)
 
 /-- **The landing sits AT the level it lands on** (item 127) — the same step
@@ -6732,6 +6739,7 @@ lemma preprocess_landing_at_level {sc s_prep : ScannerState} {c : Char}
             · simp at hok
             · have h := Except.ok.inj hok; injection h with h
               obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+              try peel_stale
               have hind : (saveSimpleKey { unwindIndents s_content (s_content.col : Int) with
                   needIndentCheck := false }).indents
                   = (unwindIndents s_content (s_content.col : Int)).indents :=
@@ -6753,6 +6761,7 @@ lemma preprocess_landing_at_level {sc s_prep : ScannerState} {c : Char}
             · simp at hok
             · have h := Except.ok.inj hok; injection h with h
               obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+              try peel_stale
               exact absurd ((saveSimpleKey_preserves_indents s_content).trans h_ci) h_pop
   rcases h_ge with ⟨h_ge, h_mem⟩ | h_small
   · have heq : s_prep.currentIndent = (s_prep.col : Int) := Int.le_antisymm h_ge h_le
@@ -7162,6 +7171,7 @@ lemma preprocess_some_ssl_comments_anyCol (sc : ScannerState) (sp : SurfPos)
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+            try peel_stale
             have hcorr2 := unwindIndents_corr_exact s_content sp_sc hcorr_sc (↑s_content.col)
             -- Item 64: the unwind and the key save move the cursor for neither
             -- the disjunct below nor §6.1's fact, so both read one peek.
@@ -7185,7 +7195,7 @@ lemma preprocess_some_ssl_comments_anyCol (sc : ScannerState) (sp : SurfPos)
                      absurd (Bool.and_eq_true_iff.mp h_armed).2
                        (by rw [hmf.2, h_nic]; exact Bool.false_ne_true))⟩),
                    hws, hcmt,
-                   saveSimpleKey_corr _ sp_sc hcorr3,
+                   ScanStrictCoupling.closeStaleExplicitKey_corr _ sp_sc (saveSimpleKey_corr _ sp_sc hcorr3),
                    h_pk.imp_right (fun h => by rw [h_peek_arm]; exact h),
                    h_peek_arm ▸ h_ltsl⟩
       · split at hok
@@ -7194,6 +7204,7 @@ lemma preprocess_some_ssl_comments_anyCol (sc : ScannerState) (sp : SurfPos)
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+            try peel_stale
             exact ⟨sp_mid, sp_ws, sp_sc,
                    h_disj.imp_right (fun hmf => ⟨hmf.1, (fun h_nic h_real => by
                      have h_cflag : s_content.needIndentCheck = false := hmf.2.trans h_nic
@@ -7227,8 +7238,8 @@ lemma preprocess_some_ssl_comments_anyCol (sc : ScannerState) (sp : SurfPos)
                        exact ScannerCorrectness.skipToContent_offset_ge sc s_content h_skip
                      · exact (saveSimpleKey_allowed _).trans h_cal)⟩),
                    hws, hcmt,
-                   saveSimpleKey_corr _ sp_sc hcorr_sc,
-                   h_pk.imp_right (fun h => by rw [saveSimpleKey_peek]; exact h),
+                   ScanStrictCoupling.closeStaleExplicitKey_corr _ sp_sc (saveSimpleKey_corr _ sp_sc hcorr_sc),
+                   h_pk.imp_right (fun h => by first | exact h | (rw [saveSimpleKey_peek]; exact h) | (rw [closeStaleExplicitKey_peek, saveSimpleKey_peek]; exact h)),
                    (saveSimpleKey_peek s_content) ▸ h_ltsl⟩
 
 /-- A position that already stands AT a line start closes an empty
@@ -8105,6 +8116,7 @@ lemma preprocess_some_floor_at_landing {sc s_prep : ScannerState} {c : Char} {n 
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, _⟩ := Prod.mk.inj h
             subst h1
+            try peel_stale
             have h_ind_p : (saveSimpleKey { (unwindIndents s_content ↑s_content.col) with
                 needIndentCheck := false }).indents
                 = (unwindIndents s_content ↑s_content.col).indents :=
@@ -8154,6 +8166,7 @@ lemma preprocess_some_floor_at_landing {sc s_prep : ScannerState} {c : Char} {n 
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, _⟩ := Prod.mk.inj h
             subst h1
+            try peel_stale
             rw [currentIndent_of_indents_eq
               ((saveSimpleKey_preserves_indents s_content).trans h_ind_c)]
             exact h_le
@@ -8492,6 +8505,7 @@ lemma preprocess_some_savedKey_shape {sc s_prep : ScannerState} {c : Char}
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+            try peel_stale
             cases saveSimpleKey_shape
                 { (unwindIndents s_content ↑s_content.col) with needIndentCheck := false } with
             | inl h => exact Or.inl h
@@ -8507,6 +8521,7 @@ lemma preprocess_some_savedKey_shape {sc s_prep : ScannerState} {c : Char}
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
+            try peel_stale
             cases saveSimpleKey_shape s_content with
             | inl h => exact Or.inl h
             | inr h => exact Or.inr (h.trans h_ctokens)
@@ -8808,6 +8823,7 @@ lemma preprocess_preserves_implicitValueLine (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [ScannerCorrectness.saveSimpleKey_preserves_implicitValueLine]
             show (unwindIndents s_skip s_skip.col).implicitValueLine = s.implicitValueLine
             rw [ScannerCorrectness.unwindIndents_preserves_implicitValueLine]; exact h_fl_skip
@@ -8817,6 +8833,7 @@ lemma preprocess_preserves_implicitValueLine (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [ScannerCorrectness.saveSimpleKey_preserves_implicitValueLine]; exact h_fl_skip
 
 /-- `docStartLine` twin of `preprocess_preserves_implicitValueLine` (item 299): the field has one writer, `scanDocumentStart`. -/
@@ -8839,6 +8856,7 @@ lemma preprocess_preserves_docStartLine (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [ScannerCorrectness.saveSimpleKey_preserves_docStartLine]
             show (unwindIndents s_skip s_skip.col).docStartLine = s.docStartLine
             rw [ScannerCorrectness.unwindIndents_preserves_docStartLine]; exact h_fl_skip
@@ -8848,6 +8866,7 @@ lemma preprocess_preserves_docStartLine (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [ScannerCorrectness.saveSimpleKey_preserves_docStartLine]; exact h_fl_skip
 
 /-- In block context preprocessing puts the entry flag DOWN (item 48): the
@@ -8871,6 +8890,7 @@ lemma preprocess_nic_false_of_noflow (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [saveSimpleKey_needIndentCheck]
       · -- unarmed: the guard's failure with `inFlow = false` says the flag
         -- was already down
@@ -8881,6 +8901,7 @@ lemma preprocess_nic_false_of_noflow (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [saveSimpleKey_needIndentCheck]
             have hf_skip : s_skip.inFlow = false := by
               have : (saveSimpleKey s_skip).inFlow = s_skip.inFlow := by
@@ -10880,14 +10901,14 @@ lemma preprocess_saved_key_possible_post {sc s_prep : ScannerState} {c : Char}
     s_prep.simpleKey.possible = true := by
   obtain ⟨s_u, s_skip, _, h_save, _⟩ := preprocess_save_elim h
   have h_fl : s_u.inFlow = false := by
-    rw [← saveSimpleKey_inFlow s_u, ← h_save]; exact h_noflow
+    rw [← saveSimpleKey_inFlow s_u, ← closeStaleExplicitKey_inFlow, ← h_save]; exact h_noflow
   have h_al : s_u.simpleKeyAllowed = true := by
     cases h_s : s_u.simpleKeyAllowed with
     | true => rfl
     | false =>
-      rw [h_save, saveSimpleKey_id_of_not_allowed h_s, h_s] at h_a
+      rw [h_save, closeStaleExplicitKey_simpleKeyAllowed, saveSimpleKey_id_of_not_allowed h_s, h_s] at h_a
       exact absurd h_a (by simp)
-  rw [h_save]; exact (saveSimpleKey_fresh_block h_al h_fl).1
+  rw [h_save, closeStaleExplicitKey_simpleKey]; exact (saveSimpleKey_fresh_block h_al h_fl).1
 
 /-- **The prepared state's key is live, from either half of a park's
     `flag ∨ live` reading** (item 293): with the flag up the save is fresh;
@@ -10903,11 +10924,11 @@ lemma preprocess_possible_of_live0 {sc s_prep : ScannerState} {c : Char}
   · exact (preprocess_saved_key_fresh h_a h_noflow h).1
   · obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim h
     have h_fl : s_u.inFlow = false := by
-      rw [← saveSimpleKey_inFlow s_u, ← h_save]; exact h_noflow
+      rw [← saveSimpleKey_inFlow s_u, ← closeStaleExplicitKey_inFlow, ← h_save]; exact h_noflow
     cases h_al : s_u.simpleKeyAllowed with
-    | true => rw [h_save]; exact (saveSimpleKey_fresh_block h_al h_fl).1
+    | true => rw [h_save, closeStaleExplicitKey_simpleKey]; exact (saveSimpleKey_fresh_block h_al h_fl).1
     | false =>
-      rw [h_save, saveSimpleKey_id_of_not_allowed h_al]
+      rw [h_save, closeStaleExplicitKey_simpleKey, saveSimpleKey_id_of_not_allowed h_al]
       have h_sk := ScannerCorrectness.skipToContent_preserves_simpleKey sc s_skip hsk
       rcases h_cases with rfl | rfl
       · rw [h_sk]; exact h_p
@@ -15841,7 +15862,7 @@ lemma preprocess_danglingPred {sc s_prep : ScannerState} {c : Char}
       · rw [hq, h_tok_skip]; exact h_pred
       · rw [hp]
         exact danglingPred_push_real (by rw [hv]; nofun) (by rw [hv]; rfl) (by rw [hv]; rfl)
-  rw [h_save]
+  rw [h_save, closeStaleExplicitKey_tokens]
   rcases saveSimpleKey_tokens_shape s_u with hq | ⟨p, hph, hq⟩
   · rw [hq]; exact h_u
   · rw [hq]
@@ -16350,6 +16371,7 @@ lemma preprocess_tokens_of_inFlow {sc s_prep : ScannerState} {c : Char}
         · exact absurd h (by simp)
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, -⟩ := h
+          try peel_stale
           rcases saveSimpleKey_tokens_shape s_skip with h1 | ⟨q, hq, h2⟩
           · exact Or.inl (h1.trans h_tok_skip)
           · exact Or.inr ⟨q, hq, by rw [h2, h_tok_skip]⟩
@@ -16559,10 +16581,10 @@ lemma preprocess_tokens_of_indents_eq {sc s_prep : ScannerState} {c : Char}
     rcases h_cases with rfl | rfl
     · exact h_tok_skip
     · have h_pu : (unwindIndents s_skip (s_skip.col : Int)).indents = s_skip.indents := by
-        rw [h_ind_skip, ← hind, h_save, saveSimpleKey_preserves_indents]
+        rw [h_ind_skip, ← hind, h_save, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]
       show (unwindIndents s_skip (s_skip.col : Int)).tokens = sc.tokens
       rw [unwindIndents_of_indents_eq h_pu, h_tok_skip]
-  rw [h_save]
+  rw [h_save, closeStaleExplicitKey_tokens]
   rcases saveSimpleKey_tokens_shape s_u with hq | ⟨q, hqp, hq⟩
   · exact Or.inl (by rw [hq, h_u])
   · exact Or.inr ⟨q, hqp, by rw [hq, h_u]⟩
@@ -16579,16 +16601,16 @@ lemma preprocess_pop_pred_nonprop {sc s_prep : ScannerState} {c : Char}
   obtain ⟨ts, p, hp, hv⟩ : ∃ (ts : Array (Positioned YamlToken)) (p : Positioned YamlToken),
       s_u.tokens = ts.push p ∧ p.val = .blockEnd := by
     rcases h_cases with rfl | rfl
-    · exact absurd (by rw [h_save, saveSimpleKey_preserves_indents, h_ind_skip]) hind
+    · exact absurd (by rw [h_save, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents, h_ind_skip]) hind
     · rcases unwindIndents_eq_or_blockEnd s_skip (s_skip.col : Int) with hid | h
       · exfalso; apply hind
-        rw [h_save, saveSimpleKey_preserves_indents]
+        rw [h_save, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]
         show (unwindIndents s_skip (s_skip.col : Int)).indents = sc.indents
         rw [hid, h_ind_skip]
       · exact h
   have hpne : p.val ≠ .placeholder := by rw [hv]; nofun
   have hpnp : p.val.isNodeProperty = false := by rw [hv]; rfl
-  rw [h_save] at hi ⊢
+  rw [h_save, closeStaleExplicitKey_tokens] at hi ⊢
   rcases saveSimpleKey_tokens_shape s_u with hq | ⟨q, hqp, hq⟩
   · rw [hq, hp, Array.size_push, prevRealIdx?_push_top hpne] at hi
     rw [hq, hp, ← Option.some.inj hi, push_getElem!_top]; exact hpnp
@@ -16686,7 +16708,7 @@ lemma preprocess_indents_of_size_le_one {sc s_prep : ScannerState} {c : Char}
     (hpre : scanNextToken_preprocess sc = .ok (some (s_prep, c))) : s_prep.indents = sc.indents := by
   obtain ⟨s_u, s_skip, hsk, h_save, h_cases⟩ := preprocess_save_elim hpre
   have h_ind_skip : s_skip.indents = sc.indents := skipToContent_preserves_indents sc s_skip hsk
-  rw [h_save, saveSimpleKey_preserves_indents]
+  rw [h_save, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]
   rcases h_cases with rfl | rfl
   · exact h_ind_skip
   · show (unwindIndents s_skip (s_skip.col : Int)).indents = sc.indents
@@ -17348,6 +17370,7 @@ lemma preprocess_preserves_lastRealTokenVal_inFlow (s s1 : ScannerState) (c : Ch
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [saveSimpleKey_preserves_lastRealTokenVal _ (by rw [h_tok_skip]; exact hr),
                 h_tok_skip]
 
@@ -17398,6 +17421,7 @@ lemma preprocess_preserves_frameTokenVal_inFlow (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [saveSimpleKey_preserves_frameTokenVal, h_tok_skip]
 
 /-- Inside a flow, preprocessing leaves the whole trailing property RUN alone —
@@ -17429,6 +17453,7 @@ lemma preprocess_preserves_trailingPropertyRun_inFlow (s s1 : ScannerState) (c :
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
+            try peel_stale
             rw [saveSimpleKey_preserves_trailingPropertyRun _ (by rw [h_tok_skip]; exact hr),
                 h_tok_skip]
 
@@ -19962,29 +19987,30 @@ lemma ekl_disp_of_ekl {s_prep : ScannerState} (h : s_prep.explicitKeyLine = none
   · exact h
   · exact h
 
-/-- **The register a landing READS is the register its PARK carries** (item
-    187).  Preprocessing writes neither explicit-key field and the directive
-    normalization writes neither, so the dispatch state's reading transports
-    back to the park's own state.  `ekl_disp_of_ekl` is this equation's `none`
-    half; the equation itself is what a branch that reads the register LIVE
-    needs, because "the `?` frame is open" is a fact about the PARK and only
-    the dispatch state states it. -/
-lemma ekl_dis_eq_park {sc s_prep : ScannerState} {c : Char}
-    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
+/-- **A dead register at the PARK is dead at the landing** (item 187, narrowed
+    by item 333).  Preprocessing either carries the explicit-key register or
+    ends it (`preprocess_explicitKey_cases`), and the directive normalization
+    writes neither field, so `none` at the park is `none` on the dispatch
+    state.  The equation item 187 stated (`= sc.explicitKeyLine`) no longer
+    holds — a sibling at the `?`'s column now ends the register in
+    preprocessing — and every reader only ever spent its `none` half. -/
+lemma ekl_disp_none_of_park_none {sc s_prep : ScannerState} {c : Char}
+    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h0 : sc.explicitKeyLine = none) :
     (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).explicitKeyLine = sc.explicitKeyLine := by
+    else s_prep).explicitKeyLine = none := by
   have h_norm : (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep).explicitKeyLine = s_prep.explicitKeyLine := by
     split
     · rfl
     · rfl
-  exact h_norm.trans (ExplicitKeyCoupling.preprocess_preserves_explicitKey sc s_prep c h).1
+  exact h_norm.trans (ExplicitKeyCoupling.preprocess_explicitKeyLine_none sc s_prep c h h0)
 
 /-- **The alternative, refuted at a class-A landing** (item 309) — from the fact the three
     `block_dispatch_deferred_stamp_nopack` applications already hold: the live register at
-    the dispatch state (`h_src`'s first disjunct, the `_h_park` term), which `ekl_dis_eq_park`
+    the dispatch state (`h_src`'s first disjunct, the `_h_park` term), which `ekl_disp_none_of_park_none`
     reads back at the park.  No park carrying `ExplicitValueRefused` is the park such a `:`
     landed on — which is what lets 12.3.4.3 close the wrapper's `inr` branch. -/
 lemma ExplicitValueRefused.not_of_classA {sc s_prep : ScannerState} {c : Char}
@@ -19993,11 +20019,11 @@ lemma ExplicitValueRefused.not_of_classA {sc s_prep : ScannerState} {c : Char}
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep).explicitKeyLine ≠ none) :
     ¬ ExplicitValueRefused sc :=
-  fun h_ek => h_live ((ekl_dis_eq_park h_preprocess).trans h_ek)
+  fun h_ek => h_live (ekl_disp_none_of_park_none h_preprocess h_ek)
 
 /-- **Lane (b)'s transport: the alternative survives a CONTENT step** (item 313).  A park at `sc`
     whose register is dead hands the park the content dispatch builds a dead register: preprocessing
-    writes neither register field (`ekl_dis_eq_park`), and the content dispatch — a scalar, a quoted
+    writes neither register field (`ekl_disp_none_of_park_none`), and the content dispatch — a scalar, a quoted
     scalar, a property, an alias, a block scalar — writes none either
     (`dispatchContent_preserves_explicitKeyLine`).  The fourteen leaves of
     `accum_content_pending` and the one of `accum_content_on_pendingMapValue_indented` that relay a
@@ -20009,7 +20035,7 @@ lemma ExplicitValueRefused.step_content {sc s_prep s' : ScannerState} {c : Char}
     else s_prep) c = .ok s')
     (h : ExplicitValueRefused sc) : ExplicitValueRefused s' :=
   (ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine _ _ _ h_dispatch).trans
-    ((ekl_dis_eq_park h_preprocess).trans h)
+    (ekl_disp_none_of_park_none h_preprocess h)
 
 /-- The same step on the named alternative.  `trivial` while `PackAlt` is `True`; the census's
     residue mode substitutes the proof promised after `-- refused:` (`scripts/pack_flip_census.py`),
@@ -20048,7 +20074,7 @@ lemma PackAlt.step_dispatch {s_prep s' : ScannerState} {c : Char}
 lemma ExplicitValueRefused.step_preprocess {sc s_prep : ScannerState} {c : Char}
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h : ExplicitValueRefused sc) : ExplicitValueRefused s_prep :=
-  (ExplicitKeyCoupling.preprocess_preserves_explicitKey sc s_prep c h_preprocess).1.trans h
+  ExplicitKeyCoupling.preprocess_explicitKeyLine_none sc s_prep c h_preprocess h
 
 /-- The preprocess step on the named alternative (`trivial` while `PackAlt` is `True`, its proof
     promised after `-- refused:`). -/
@@ -20563,7 +20589,7 @@ lemma ExplicitValueRefused.step_blockEntry {sc s_prep s' : ScannerState}
     else s_prep) '-' = .ok (some s'))
     (h : ExplicitValueRefused sc) : ExplicitValueRefused s' :=
   (ExplicitKeyCoupling.scanBlockEntry_preserves_explicitKey
-    (dispatchBlock_dash_scanBlockEntry h_dispatch)).1.trans ((ekl_dis_eq_park h_preprocess).trans h)
+    (dispatchBlock_dash_scanBlockEntry h_dispatch)).1.trans (ekl_disp_none_of_park_none h_preprocess h)
 
 /-- The `-` step on the named alternative (`trivial` while `PackAlt` is `True`, its proof promised
     after `-- refused:`). -/
@@ -20589,7 +20615,7 @@ lemma ExplicitValueRefused.step_value {sc s_prep s' : ScannerState}
   (ExplicitKeyCoupling.scanValue_ok_of_ekl_none (dispatchBlock_colon_scanValue h_dispatch)
     (noflow_disp_of_noflow h_noflow)
     (by have := preprocess_some_peek h_preprocess; split <;> exact this)
-    ((ekl_dis_eq_park h_preprocess).trans h)).2
+    (ekl_disp_none_of_park_none h_preprocess h)).2
 
 /-- The `:` step on the named alternative (`trivial` while `PackAlt` is `True`, its proof promised
     after `-- refused:`). -/
@@ -23396,7 +23422,7 @@ lemma block_dispatch_deferred
       `h_noek` says the explicit-key register is dead there, and the landed `:`
       now DECIDES its stamp source instead of splitting on it.  **Item 187 gave
       the three that remain a proposition of their own** (`_h_park`): the
-      branch reads the register LIVE, and `ekl_dis_eq_park` carries that
+      branch reads the register LIVE, and `ekl_disp_none_of_park_none` carries that
       reading back to the park.  That is also what refutes the cheap carrier —
       `… ∨ sc.explicitKeyLine = none` is FALSE wherever this class stands, so
       narrowing the punt relocates the obligation to the producers instead of
@@ -23501,7 +23527,7 @@ lemma block_dispatch_deferred_stamp_offcol
 
     **And the register cannot be the carrier at all**, which `_h_park` below now
     states: at every site in this class the branch reads `explicitKeyLine ≠
-    none` on the dispatch state, `ekl_dis_eq_park` carries that back to the
+    none` on the dispatch state, `ekl_disp_none_of_park_none` carries that back to the
     park, so the punt's register alternative is FALSE wherever this class
     stands.  The narrowing therefore relocates the obligation to the producers
     instead of discharging it, and at the producers it is the PACK that must be
@@ -23901,7 +23927,7 @@ lemma accum_block_on_noPending
       -- a missing carrier.  Measured before it was paid: 1 440 class-A `:`
       -- dispatches over the sweep corpus, ZERO of them behind a virgin park. ═══
       exact h_open (fun _ => Or.inl (ekl_disp_of_ekl
-        ((ExplicitKeyCoupling.preprocess_preserves_explicitKey sc s_prep c h_preprocess).1.trans
+        (ExplicitKeyCoupling.preprocess_explicitKeyLine_none sc s_prep c h_preprocess
           (h_noek (noflow_park_of_noflow h_preprocess h_noflow)))))
     · exact (block_indicator_exhausted h_dispatch hc hcv).elim
 
@@ -24952,7 +24978,7 @@ lemma accum_block_on_closeThenBlock
               (nodir_of_block_dispatch h_dispatch) h_src
               (explicit_at_indent_of_dispatch h_dispatch
                 (noflow_disp_of_noflow h_noflow) h_src)
-              (fun h => h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h)))
+              (fun h => h_src (Or.inl (ekl_disp_none_of_park_none h_preprocess h)))
               (nic0_of_block_dispatch h_preprocess h_dispatch hcorr_result) (Or.inl (block_indicator_arm h_dispatch))
       · exact h_generic (fun h => absurd h hc_colon)
     · exact (block_indicator_exhausted h_dispatch hc hcv).elim
@@ -26130,7 +26156,7 @@ lemma accum_block_on_pendingBlockContent
                 (nodir_of_block_dispatch h_dispatch) h_src
                 (explicit_at_indent_of_dispatch h_dispatch
                   (noflow_disp_of_noflow h_noflow) h_src)
-                (fun h => h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h)))
+                (fun h => h_src (Or.inl (ekl_disp_none_of_park_none h_preprocess h)))
                 (nic0_of_block_dispatch h_preprocess h_dispatch hcorr_result) (Or.inl (block_indicator_arm h_dispatch))
         · exact h_gen (fun h => absurd h hc_colon)
       · exact (block_indicator_exhausted h_dispatch hc hcv).elim
@@ -26718,7 +26744,7 @@ lemma accum_block_on_pendingBlock
               (nodir_of_block_dispatch h_dispatch) h_src
               (explicit_at_indent_of_dispatch h_dispatch
                 (noflow_disp_of_noflow h_noflow) h_src)
-              (fun h => h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h)))
+              (fun h => h_src (Or.inl (ekl_disp_none_of_park_none h_preprocess h)))
               (nic0_of_block_dispatch h_preprocess h_dispatch hcorr_result) (Or.inl (block_indicator_arm h_dispatch))
       · exact h_gen (fun h => absurd h hc_colon)
     · exact (block_indicator_exhausted h_dispatch hc hcv).elim

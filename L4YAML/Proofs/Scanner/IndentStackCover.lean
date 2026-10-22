@@ -7,6 +7,7 @@ module
 
 public import L4YAML.Proofs.Scanner.IndentStackBase
 public import L4YAML.Proofs.Scanner.IndentStackMono
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -40,6 +41,8 @@ top, and the frames gain exactly its column.
 -/
 
 namespace L4YAML.Proofs.IndentStackCover
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML L4YAML.Scanner
 open L4YAML.Proofs.PreprocessIndentStable
@@ -337,7 +340,7 @@ lemma preprocess_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {
           · simp at hok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, _⟩ := hok
-            refine Covered.of_indents_eq ?_ (saveSimpleKey_preserves_indents _)
+            refine Covered.of_indents_eq ?_ ((closeStaleExplicitKey_indents _).trans (saveSimpleKey_preserves_indents _))
             show Covered lo ks { unwindIndents s_skip (s_skip.col : Int) with
               needIndentCheck := false }
             exact Covered.of_indents_eq
@@ -348,7 +351,7 @@ lemma preprocess_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {
           · simp at hok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, _⟩ := hok
-            exact Covered.of_indents_eq h_c (saveSimpleKey_preserves_indents _)
+            exact Covered.of_indents_eq h_c ((closeStaleExplicitKey_indents _).trans (saveSimpleKey_preserves_indents _))
 
 lemma dispatchStructural_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchStructural s c = .ok (some s')) (h : Covered lo ks s) :
@@ -609,7 +612,7 @@ lemma preprocess_top_le_col {s s' : ScannerState} {c : Char}
           · simp at hok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, _⟩ := hok
-            exact Or.inr (by rw [saveSimpleKey_preserves_indents]; exact h_skip_ids)
+            exact Or.inr (by rw [closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]; exact h_skip_ids)
 
 /-- **The landing's own floor** (item 147) — `preprocess_top_le_col`'s escape,
     closed by the walk that produced the landing.
@@ -648,14 +651,14 @@ lemma preprocess_top_le_col_of_armed {s s_walk s' : ScannerState} {c : Char}
           · simp at hok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, _⟩ := hok
-            have hcol : (saveSimpleKey { unwindIndents s_skip (s_skip.col : Int) with
-                needIndentCheck := false }).col = s_skip.col := by
-              rw [saveSimpleKey_col]
+            have hcol : (closeStaleExplicitKey (saveSimpleKey { unwindIndents s_skip (s_skip.col : Int) with
+                needIndentCheck := false })).col = s_skip.col := by
+              rw [closeStaleExplicitKey_col, saveSimpleKey_col]
               exact unwindIndents_col s_skip (s_skip.col : Int)
-            have hind : (saveSimpleKey { unwindIndents s_skip (s_skip.col : Int) with
-                needIndentCheck := false }).indents
+            have hind : (closeStaleExplicitKey (saveSimpleKey { unwindIndents s_skip (s_skip.col : Int) with
+                needIndentCheck := false })).indents
                 = (unwindIndents s_skip (s_skip.col : Int)).indents :=
-              saveSimpleKey_preserves_indents _
+              (closeStaleExplicitKey_indents _).trans (saveSimpleKey_preserves_indents _)
             rcases unwindIndents_terminal s_skip (s_skip.col : Int) with h | h
             · exact Or.inl (by rw [currentIndent_of_indents_eq hind, hcol]; exact h)
             · exact Or.inr (by rw [hind]; exact h)

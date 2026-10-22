@@ -43885,6 +43885,57 @@ Sound sc := SlotsOk sc ∧ RegOk sc ∧ BaseOk sc ∧ StackOk sc
 
 **NEXT — item 339, the floor carried: `ColFloor sc := sc.inFlow = false → sc.needIndentCheck = false → sc.currentIndent ≤ sc.col` as a third per-token invariant beside `Sound`, with `ColFloor sc → PreprocessFloor sc` as its bridge (the unwind arm by `unwindIndents_top_le`, the no-check arm by the cursor only moving right within a line — `skipToContent_line_eq_of_needIndentCheck`, `skipToContent_needIndentCheck_mono`), one preservation lemma per writer (the pushes push at the cursor; `advance` moves right; every newline path sets `needIndentCheck`).  Then `Sound`/`ColFloor` threaded through `StreamAccum.scanNextToken_accum_step` and the four `accum_step_*` lemmas beside `h_mono`/`h_base`, and the flip step (i) — `PackAlt sc := ExplicitValueRefused sc` — with the 23 `content_dispatch_routed` roots paid by `RegOk` + `PendingKeys.innermost_closeAt_of_marked_at`; lane (d) is `BaseOk`, so `PackAltG`/`g` go in the same build (snapshot 9 → 8).**
 
+### Item 339 (2026-10-22)
+
+**The floor carried and item 338's STARVED premise PAID — `ColFloor` proved through every `scanNextToken` arm (`L4YAML/Proofs/Scanner/ColFloor.lean`, new, `sorryAx`-free), `ColFloor sc → PreprocessFloor sc` as the bridge, and `Sound ∧ ColFloor` threaded through `StreamAccum.scanNextToken_accum_step` and `scanLoop_grammar_prod` from `scan`'s own seed, so `scanNextToken_sound` now sits on the capstone path (`scan_content_gives_stream_v2`) with no premise left unpaid.  BUILT; the flip step (i) is deferred to item 340 by its own price.**
+
+**The mandate.**  Item 338: "**NEXT — item 339, the floor carried: `ColFloor sc := sc.inFlow = false → sc.needIndentCheck = false → sc.currentIndent ≤ sc.col` as a third per-token invariant beside `Sound`, with `ColFloor sc → PreprocessFloor sc` as its bridge … one preservation lemma per writer … Then `Sound`/`ColFloor` threaded through `StreamAccum.scanNextToken_accum_step` and the four `accum_step_*` lemmas beside `h_mono`/`h_base`, and the flip step (i) …**"  Two departures, both forced by the build.  (a) The carrier is not the mandated shape: the `inFlow = false` premise is unnecessary — after preprocessing, the structural dispatcher's own `underIndentedFlowContent` check refuses flow content at or left of the enclosing block floor, so a successful dispatch has the floor in flow too (`dispatchStructural_floor`); and two key lanes had to be added, because `scanValuePrepare` pushes the mapping level at the SAVED simple key's column, not the cursor's, so the floor after a `:` is only as good as the saved key being at or behind the cursor.  (b) The threading stops at `scanNextToken_accum_step` and the loop; the four `accum_step_*` dispatch lemmas take the premises when a consumer spends them, and that consumer is the flip — 102 red sites on item 336's reading, its own build (item 340).
+
+**The carrier** (`ColFloor.lean` §1):
+
+```
+Forward s s' := s.line < s'.line ∨ (s'.line = s.line ∧ s.col ≤ s'.col)      -- the cursor never moves back
+Behind p s   := p.line < s.line ∨ (p.line = s.line ∧ p.col ≤ s.col)
+
+structure ColFloor (s : ScannerState) : Prop where
+  floor : s.needIndentCheck = false → s.currentIndent ≤ (s.col : Int)
+  key   : s.simpleKey.possible = true → Behind s.simpleKey.pos s
+  stack : ∀ j (h : j < s.simpleKeyStack.size), s.simpleKeyStack[j].possible = true → Behind s.simpleKeyStack[j].pos s
+```
+
+Bridge: `preprocessFloor : ColFloor s → SentinelBase s → PendingKeySound.PreprocessFloor s` (§3; the unwind arm by `unwindIndents_top_le`, the no-check arm by `skipToContent` only moving right within a line and `preprocess_some_needIndentCheck_false`).  Arms: §4 structural (`---`/`...`/directives: cursor forward on the line, or a reset to `-1` under column 0), §5 flow (`[`/`{` push nothing; `]`/`}` pop the stack into the live key, so `stack` pays `key`; `,`), §6 block (`-` pushes at the cursor; `?` pushes at the cursor; `:` pushes at the saved key's column — `key` pays the floor), §7 content (anchor/alias/tag same-line; the quoted and plain folds by `ScalarWalkColFloor`'s same-line/cross-line lemmas; the flow plain loop by its `[69] s-flow-line-prefix` gate, `collectPlainScalarLoop_flow_inv`; the block scalar by a `Forward` walk through header, comment and body, where either the header's break was consumed and `needIndentCheck` stays set through the body (`collectBlockScalarLoop_nic_mono`), or the header met end-of-input on its own line), §8 `scanNextToken_colfloor`, `scanNextToken_sound_colfloor : Sound s → Mono s → SentinelBase s → ColFloor s → Sound s' ∧ ColFloor s'`, and the seeds (`seed_colfloor`, `seed_bom_colfloor`, `seed_sound`, `seed_bom_sound` for `mk'`/`streamStart`/§5.2's BOM).  No scanner code changed.
+
+**Predictions first** (written before the full build, the exe and the gates ran).
+| # | prediction |
+|---|---|
+| P1 | full `lake build` exit 0 after re-pinning ONLY the three closure censuses for the new module (`modulesSeen`, `DropDependents`, `ParkBill`, each +1) |
+| P2 | no other census pin moves — no scanner code changed, proofs only |
+| P3 | `adversarialinstantiation` all pass, 3125 + 53 (Priority 16) = 3178 |
+| P4 | suiterunner 869/0/151 and eventscore 347/358 unchanged |
+| P5 | axiom profile of `scanNextToken_colfloor`, `scanNextToken_sound_colfloor`, `preprocessFloor`, `dispatchContent_colfloor`, `scanNextToken_accum_step`, `scanLoop_grammar_prod`, `scan_content_gives_stream_v2`: the standard three |
+| P6 | `gate_vocab.py`'s Lean/script disagreement stays pre-existing |
+| P7 | the flip is not in this item |
+
+**The reading.**  The build moved the three closure pins as predicted (`FreeSurfaceCensus` `modulesSeen=248 → 249`, `DropDependents` `254 → 255`, `ParkBill` `255 → 256`) and then NINE more, one build at a time: `HypothesisReaderCensus` `RELAY=2348 → 2352` and `PremiseNecessityCensus` `RELAY=2198 → 2202` (two premises relayed by two lemmas, `scanNextToken_accum_step` and `scanLoop_grammar_prod`); `DispatchPrice` `stepHolders=1765 → 1804 dispHolders=323 → 328` with the per-function reading `scanNextToken_dispatchContent decls=144 → 145`, `scanNextToken_preprocess decls=220 → 222`, and `ParkGapWidth`'s ladder `holders 108/144/220 → 109/145/222` (the new module's lemmas hold `scanNextToken_*` hypotheses, so they are step holders — the census counts lemmas ABOUT the dispatchers, not dispatcher code); `NarrowingWorthCensus` `theorems=5892 → 6002` (110 new declarations); `CloseStackCover`, `PaidLeafDelta`, `PuntCoverInputs` `nodes=104570 → 104572`, `ValueLinePacks` `nodes=12547 → 12549`, `ValueLineOrigins` `alts=4488 → 4490 nodes=12578 → 12580 liteNodes=543163 → 543269` (the loop lemma's two new binders, counted as proof-term nodes and alternatives wherever its signature is walked).  Every move is instrument debt with a named cause; no reading of a refusal, a route or a cover changed.
+
+The adversarial walk (Priority 16, `Tests/AdversarialInstantiation.lean`): `ColFloor` as a Boolean checked at every token boundary beside `soundB`/`monoB`/`sentinelB` (the hypotheses of `scanNextToken_sound_colfloor` on the pre-state, its conclusion on the post-state) over 22 inputs chosen per arm — the block scalar at end-of-input without a newline and with the header at end-of-input, the flow plain continuation, the quoted folds, `? |`, the nested explicit keys of items 335/336, the BOM seed, the empty stream; the seeds with and without a BOM; two hand-built states the Boolean refutes (cursor left of its floor; saved key ahead of the cursor), so the Boolean is known to be able to say no; and `dispatchStructural_floor`'s reading on `scan` (`k:⏎  v: [a,⏎ b]` refused, ` b` at the floor + 1 accepted).  3178/3178.
+
+**Predictions, scored.**
+| # | verdict | what it taught |
+|---|---|---|
+| P1 | REFUTED | the closure censuses were three of twelve pins; the rest are listed above |
+| P2 | REFUTED | "no scanner code changed" is not "no pin moves": the step, relay, holder and node censuses count lemmas and binders, and a 1 500-line proof module about the dispatchers is 110 lemmas and 39 step holders |
+| P3 | HELD | 3178 = 3125 + 53, exactly |
+| P4 | HELD | 869/0/151, 347/358 |
+| P5 | HELD | `propext`, `Classical.choice`, `Quot.sound` for all seven |
+| P6 | HELD | Lean 448 / script 464 (the script side moves with the prose; the Lean side does not — the pre-existing disagreement, unchanged in kind) |
+| P7 | HELD | item 340 |
+
+**Gates.**  Full `lake build` 1279 jobs, exit 0, 11 warnings (all pre-existing, none in the new module); `check-theorem-keyword` 25/25, `check-import-closure` 252 modules reachable, `check-reflection-index`, `check-serialization-proofs`, `check-closure-log` green; `gate_vocab` as P6; suiterunner 869/0/151; eventscore 347/358; `run-all-tests.sh` green; adversarial 3178/3178.  Axiom census: the seven declarations of P5 depend on `propext`, `Classical.choice`, `Quot.sound` only.  Item 338's STARVED record is closed by this item: `scanNextToken_sound`'s `PreprocessFloor` premise is paid at every loop boundary by `preprocessFloor`, and the carrier reaches `scan_content_gives_stream_v2` through `scanLoop_grammar_prod`.
+
+**NEXT — item 340, the flip step (i) on the carried pair: `PackAlt sc := ExplicitValueRefused sc`, with `Sound`/`ColFloor` passed from `scanNextToken_accum_step` into `accum_step_block`/`accum_step_content` (the premises are available at the call sites now; nothing reads them yet) so the 23 `content_dispatch_routed` roots are paid by `RegOk` + `PendingKeys.innermost_closeAt_of_marked_at` instead of `Or.inr trivial`; lane (d) is `BaseOk`, so `PackAltG`/`g` go in the same build (snapshot 9 → 8).  Price it first with the flip script on THIS tree (item 336's `PACK-FLIP decline 119 / PACK-RESIDUE 100` are a prediction, not a fact, until the build repeats them), then steps (iii)/(iv): the 45 `ns` chains read `pendingKeys`, and `Covered` restated as `sc.indents.map FrameLevel.ofEntry`.**
+
+
 
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)

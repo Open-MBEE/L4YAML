@@ -582,6 +582,7 @@ def scanNextToken_preprocess (s : ScannerState) :
   if s.indents.size < savedIndentSize && (s.col : Int) > s.currentIndent then
     return ← .error (.trailingContent s.line s.col)
   let s := saveSimpleKey s
+  let s := closeStaleExplicitKey s
   match s.peek? with
   | none => return none
   | some c => return some (s, c)

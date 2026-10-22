@@ -782,9 +782,9 @@ one unfolding, and §6 is the item where those two disagreed about binders. -/
 -- no-op counts stand.
 -- 2026-10-21 (item 324): `theorems` 5479 → 5481 — `ExplicitValueRefused.step_preprocess` and its `PackAlt` wrapper;
 -- neither conclusion is a no-op, and both readings stand.
--- 2026-10-21 (perf): `theorems` 5481 → 5482 — `scanBlockScalarIx_eq_impl`, the `@[csimp]` equation for the once-bound
--- block-scalar twin; a plain `rfl` equality, not a no-op conclusion.
-def expectedNoopTally : String := "theorems=5482 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
+-- 2026-10-21 (perf): `theorems` +1 after the base merged `scanBlockScalarIx_eq_impl`, the `@[csimp]` equation for the
+-- once-bound block-scalar twin; a plain `rfl` equality, not a no-op conclusion.
+def expectedNoopTally : String := "theorems=5520 byElab=15 byWhnf=15 elabOnly=0 whnfOnly=0"
 -- 5302 → 5344 on 2026-10-18 (plan row 20's close, closure-log item 280): the
 -- parse-side alias obligation moved to §7.1's DECLARATION set, so the carrier
 -- grew and the predicate gained its tools.  What is new in kind: `AG` carries

@@ -7,6 +7,8 @@ public import L4YAML.Proofs.Scanner.PendingKeysStable
 public import L4YAML.Proofs.Scanner.IndentStackMono
 public import L4YAML.Proofs.Scanner.ExplicitKeyCoupling
 public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
+public import L4YAML.Proofs.Scanner.ScannerEkStackPreservation
+public import L4YAML.Proofs.Scanner.IndentStackCover
 @[expose] public section Blanket
 
 /-!
@@ -264,6 +266,35 @@ lemma indentColumns_push (s : ScannerState) (e : IndentEntry) :
       s.indentColumns.push e.column := by
   simp [ScannerState.indentColumns]
 
+lemma SlotsOk.push_none {s s' : ScannerState} (h : SlotsOk s) (e : IndentEntry)
+    (hind : s'.indents = s.indents.push e) (hpk : s'.pendingKeys = s.pendingKeys.push none) :
+    SlotsOk s' := by
+  have hsz := h.1
+  have hcols : s'.indentColumns = s.indentColumns.push e.column := by
+    simp [ScannerState.indentColumns, hind]
+  refine ⟨by simp [hind, hpk, hsz], ?_⟩
+  intro i l hi
+  rw [hpk] at hi
+  rw [hcols]
+  by_cases hlt : i < s.pendingKeys.size
+  · rw [Array.getElem?_push_lt hlt] at hi
+    obtain ⟨c, hc, hc0⟩ := h.2 i l (by rw [Array.getElem?_eq_getElem hlt]; exact hi)
+    refine ⟨c, ?_, hc0⟩
+    rw [Array.getElem?_push_lt (by rw [indentColumns_size]; omega)]
+    rw [Array.getElem?_eq_getElem (by rw [indentColumns_size]; omega)] at hc
+    exact hc
+  · by_cases heq : i = s.pendingKeys.size
+    · subst heq; rw [Array.getElem?_push_size] at hi; cases hi
+    · rw [Array.getElem?_eq_none (by simp [Array.size_push]; omega)] at hi; cases hi
+
+lemma pushMappingIndent_slots (s : ScannerState) (col : Int) (h : SlotsOk s) :
+    SlotsOk (pushMappingIndent s col) := by
+  unfold pushMappingIndent
+  split
+  · exact h.push_none { column := col, isSequence := false } (by simp [ScannerState.emit])
+      (by simp [ScannerState.emit])
+  · exact h
+
 /-- A level pushed with an empty slot: nothing the predicate reads moves except
     the lockstep sizes. -/
 lemma Sound.push_none {s s' : ScannerState} (h : Sound s) (e : IndentEntry)
@@ -437,9 +468,81 @@ lemma unwindIndentsLoop_innermost (s : ScannerState) (col : Int) (fuel : Nat)
       · cases hi
     · rfl
 
+/-- The `?`'s own write, block context: the level under it is marked. -/
+lemma scanKey_pendingKeys {s s' : ScannerState} (h_noflow : s.inFlow = false)
+    (hok : scanKey s = .ok s') :
+    s'.pendingKeys = (pushMappingIndent s (s.col : Int)).pendingKeys.set!
+      ((pushMappingIndent s (s.col : Int)).indents.size - 1) (some s.line) := by
+  unfold scanKey at hok
+  simp only [bind, Except.bind, h_noflow, Bool.not_false, ite_true] at hok
+  repeat (any_goals (split at hok))
+  all_goals (try contradiction)
+  all_goals (simp only [Except.ok.injEq] at hok; subst hok)
+  all_goals simp [h_noflow, advance_preserves_pendingKeys, emit_pendingKeys,
+    L4YAML.Proofs.EmitterScannability.advance_preserves_indents, ScannerState.emit]
+
+lemma inFlow_false_iff (s : ScannerState) : s.inFlow = false ↔ s.flowLevel = 0 := by
+  simp [ScannerState.inFlow]
+
 lemma scanKey_sound {s s' : ScannerState} (hok : scanKey s = .ok s')
-    (hs : SlotsOk s) (hb : BaseOk s) (hst : StackOk s) (hbase : SentinelBase s) : Sound s' := by
-  sorry
+    (hs : SlotsOk s) (hb : BaseOk s) (hst : StackOk s) (hbase : SentinelBase s)
+    (hcol : s.inFlow = false → s.currentIndent ≤ (s.col : Int)) : Sound s' := by
+  have hfl : s'.flowLevel = s.flowLevel :=
+    L4YAML.Proofs.ScannerCorrectness.scanKey_preserves_flowLevel s s' hok
+  have hstk : s'.explicitKeyStack = s.explicitKeyStack :=
+    L4YAML.Proofs.ScannerEkStack.scanKey_preserves_explicitKeyStack s s' hok
+  obtain ⟨hekl, hekc⟩ := L4YAML.Proofs.ExplicitKeyCoupling.scanKey_ok_explicitKey hok
+  by_cases hf : s.inFlow = true
+  · -- flow: slots and stack untouched, the register conjunct is vacuous
+    have hpk := scanKey_pendingKeys_of_inFlow hf hok
+    have hind := L4YAML.Proofs.FlowIndentStable.scanKey_indents_of_inFlow hf hok
+    have hcols : s'.indentColumns = s.indentColumns := by simp [ScannerState.indentColumns, hind]
+    have hinn : s'.innermostPendingKey = s.innermostPendingKey := by
+      rw [innermostPendingKey_eq, innermostPendingKey_eq, hcols, hpk]
+    have hpos : 0 < s.flowLevel := by simpa [ScannerState.inFlow] using hf
+    refine ⟨⟨by rw [hpk, hind]; exact hs.1, ?_⟩, ?_, ?_, ?_⟩
+    · intro i l hi; rw [hcols]; exact hs.2 i l (hpk ▸ hi)
+    · intro h0; rw [hfl] at h0; omega
+    · intro _; rw [hstk, hinn]; exact hb hpos
+    · show s'.explicitKeyStack.size = s'.flowLevel; rw [hstk, hfl]; exact hst
+  · have h_noflow : s.inFlow = false := by simpa using hf
+    have h0 : s.flowLevel = 0 := (inFlow_false_iff s).1 h_noflow
+    have hind := L4YAML.Proofs.PreprocessIndentStable.scanKey_indents h_noflow hok
+    have hpk := scanKey_pendingKeys h_noflow hok
+    obtain ⟨sp, hsp⟩ : ∃ sp, sp = pushMappingIndent s (s.col : Int) := ⟨_, rfl⟩
+    rw [← hsp] at hind hpk
+    have hsl : SlotsOk sp := hsp ▸ pushMappingIndent_slots s _ hs
+    have hsz := hsl.1
+    have hpos : 0 < sp.indents.size :=
+      hsp ▸ (L4YAML.Proofs.IndentStackBase.pushMappingIndent_base s _ hbase).size_pos
+    -- the top of the pushed stack is the `?`'s own column
+    have htop_ci : sp.currentIndent = (s.col : Int) := by
+      rw [hsp]
+      exact Int.le_antisymm (L4YAML.Proofs.IndentStackCover.pushMappingIndent_top_le (hcol h_noflow))
+        (L4YAML.Proofs.PreprocessIndentStable.pushMappingIndent_le s _)
+    have htop : sp.indentColumns[sp.indents.size - 1]? = some (s.col : Int) := by
+      rw [indentColumns_getElem?, Array.getElem?_eq_getElem (by omega)]
+      simp only [Option.map_some]
+      rw [← L4YAML.Proofs.IndentStackMono.currentIndent_eq_last hpos, htop_ci]
+    have hcols' : s'.indentColumns = sp.indentColumns := by
+      simp [ScannerState.indentColumns, hind]
+    have hinn : s'.innermostPendingKey = (some s.line, (s.col : Int)) := by
+      rw [innermostPendingKey_eq, hcols', hpk, ← hsz,
+        innermost_set_top _ _ _ (by rw [indentColumns_size]; exact hsz.symm) (by omega)]
+      rw [hsz, htop]; rfl
+    refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩
+    · rw [hpk, hind, Array.set!_eq_setIfInBounds, Array.size_setIfInBounds]; exact hsz
+    · intro i l hi
+      rw [hpk, Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds] at hi
+      rw [hcols']
+      split at hi
+      · rename_i heq
+        subst heq
+        exact ⟨(s.col : Int), htop, by omega⟩
+      · exact hsl.2 i l hi
+    · intro _; rw [hekl, hekc, hinn]
+    · intro hpos'; rw [hfl] at hpos'; omega
+    · show s'.explicitKeyStack.size = s'.flowLevel; rw [hstk, hfl]; exact hst
 
 lemma scanValue_sound {s s' : ScannerState} (hok : scanValue s = .ok s') (h : Sound s)
     (hbase : SentinelBase s) : Sound s' := by

@@ -1725,8 +1725,7 @@ lemma trimTrailingWSIx_append_spaces (content spaces : String)
     (hsp : ∀ c ∈ spaces.toList, isWhiteSpaceProp c)
     (hct : ∀ c, content.toList.getLast? = some c → isWhiteSpaceBool c = false) :
     trimTrailingWSIx (content ++ spaces) = content := by
-  rw [trimTrailingWSIx_append_whitespace content spaces hsp]
-  unfold trimTrailingWSIx
+  rw [trimTrailingWSIx_append_whitespace content spaces hsp, trimTrailingWSIx_eq]
   cases hrev : content.toList.reverse with
   | nil =>
     have hnil : content.toList = [] := List.reverse_eq_nil_iff.mp hrev

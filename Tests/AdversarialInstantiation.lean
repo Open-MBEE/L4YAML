@@ -2007,21 +2007,21 @@ section ResumeConclusions
 open L4YAML.Surface L4YAML.Proofs.IndentStackCover L4YAML.Proofs.StreamAccum
 
 /-- `[map 2]`: the trivial continuation closes at the bottom. -/
-def kfMap2 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.map 2] sp :=
+lemma kfMap2 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.map 2] sp :=
   .mapLevel 2 [] sp (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial)
 
 /-- `[seq 2]`. -/
-def kfSeq2 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.seq 2] sp :=
+lemma kfSeq2 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.seq 2] sp :=
   .seqLevel 2 [] sp (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial)
 
 /-- `[seq 2, map 0]`: a sequence level opened under a mapping level, innermost first. -/
-def kfSeq2Map0 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.seq 2, FrameLevel.map 0] sp :=
+lemma kfSeq2Map0 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.seq 2, FrameLevel.map 0] sp :=
   .seqLevel 2 [FrameLevel.map 0] sp
     (fun fr h => by simp only [List.mem_singleton] at h; subst h; decide)
     (fun sp' _ => .mapLevel 0 [] sp' (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial))
 
 /-- `[map 4, map 1]`: two mapping levels. -/
-def kfMap4Map1 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.map 4, FrameLevel.map 1] sp :=
+lemma kfMap4Map1 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.map 4, FrameLevel.map 1] sp :=
   .mapLevel 4 [FrameLevel.map 1] sp
     (fun fr h => by simp only [List.mem_singleton] at h; subst h; decide)
     (fun sp' _ => .mapLevel 1 [] sp' (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial))

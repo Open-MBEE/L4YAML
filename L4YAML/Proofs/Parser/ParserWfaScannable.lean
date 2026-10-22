@@ -126,35 +126,34 @@ lemma WFAS_of_push (anchors : Array (String × YamlValue))
     · injection h_find with h_eq; subst h_eq; exact h_new inFlow
     · simp at h_find
 
-/-- compose + `adaptForFlowContext` gives universally-`Scannable` values — the
-    shape `addAnchor` stores.  Stated on the TABLE rather than on a parser
-    state, so the legacy and indexed twins share it; their states differ and
-    their anchor tables do not. -/
+/-- strip + `adaptForFlowContext` + compose gives universally-`Scannable`
+    values after stripping — the shape `addAnchor` stores, as `WFAS_of_push`
+    wants it.  Stated on the TABLE rather than on a parser state, so the legacy
+    and indexed twins share it; their states differ and their anchor tables do
+    not. -/
 lemma cleaned_scannable_forall
     (val : YamlValue) (anchors : Array (String × YamlValue))
     (h_scannable : Scannable val false)
     (h_wfa : WellFormedAnchorsS anchors) :
     ∀ inFlow,
-      Scannable ((val.resolveAliases anchors).stripAnchors.adaptForFlowContext) inFlow :=
-  adaptForFlowContext_scannable_forall _ _
-    (compose_value_scannable val anchors false h_scannable h_wfa)
+      Scannable (((val.stripAnchors.adaptForFlowContext).resolveAliases anchors).stripAnchors)
+        inFlow :=
+  fun inFlow =>
+    compose_value_scannable _ anchors inFlow
+      (adaptForFlowContext_scannable_forall _ _
+        (stripAnchors_preserves_Scannable val false h_scannable) inFlow)
+      h_wfa
 
 /-- `addAnchor` preserves `WellFormedAnchorsS`. -/
 lemma addAnchor_wfaS (ps : ParseState) (name : String) (val : YamlValue)
     (h_wfa : WellFormedAnchorsS ps.anchors)
     (h_scan : ∀ inFlow,
-      Scannable ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext) inFlow) :
+      Scannable (((val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors).stripAnchors)
+        inFlow) :
     WellFormedAnchorsS (ps.addAnchor name val).anchors := by
   unfold ParseState.addAnchor
   dsimp only []
-  apply WFAS_of_push
-  · exact h_wfa
-  · intro inFlow
-    have h_eq : ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext).stripAnchors =
-        (val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext :=
-      stripAnchors_of_cleaned (val.resolveAliases ps.anchors)
-    rw [h_eq]
-    exact h_scan inFlow
+  exact WFAS_of_push _ _ h_wfa h_scan
 
 /-- **The lemma the parse-side clique turns on**, mirrored: node finalization
     preserves `WellFormedAnchorsS` given only that the finalized value is

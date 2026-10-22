@@ -26,18 +26,12 @@ constructor field, or a quantifier inside a field's statement — is one of:
 | `prop` | a `Prop` binder — a continuation, a route, a fact about the state | no — obligations are the induction hypothesis |
 | `scalar` | a `Nat`, `Int`, `Bool`, `Char`, context, token array … | not counted as ghost here: most are grammar parameters (`n`, `c`) or pinned to the state by an inequality |
 | `snapshot` | an `Option ScannerState` — a whole scanner state carried as an index | **yes** |
-<<<<<<< HEAD
 | `ghost` | a `List FrameLevel` (the frame lists — a mirror of `sc.indents` until `Covered` is an equality, item 332), a `List Nat` (the value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
-||||||| 4294e66b
-| `ghost` | a `List Nat` (the frame lists and value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
-=======
-| `ghost` | a `List Nat` (the frame lists and value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
 | `disjunct` | not a binder: an `∨` inside a field's statement, recorded at the field | **the shape Rule 8 forbids** when the alternative restates state (`PackAlt`, item 320's (A)); pinned per field so none can join unnoticed |
 
 Rows are keyed by the FIELD they stand in (`ctor[i].name`), not only by the
 constructor: a binder moving from one field to another, or an `∨` added to a
 field, moves a row even when the counts do not (Devin Review on PR #7).
->>>>>>> origin/fix-a-grammar-completeness
 
 The last two columns are the rule's subject.  A snapshot or a ghost datum
 either (a) is proved equal to a projection `f sc` of the live state — the kinds
@@ -261,122 +255,9 @@ it may only shrink. -/
     2026-10-21 (item 331; rows re-keyed by field and the disjunct list added the
     same day, after Devin Review on PR #7), the day the census was taken — Rule 8's baseline; the
     carriers are every `Prop`-valued declaration of `StreamAccum` (see `carriersOf`). -/
-<<<<<<< HEAD
-def expectedSummary : String := "carriers=52 snapshot=9 ghost=72"
-||||||| 4294e66b
-def expectedSummary : String := "carriers=52 snapshot=9 ghost=73"
-=======
-def expectedSummary : String := "carriers=52 snapshot=9 ghost=73 or=92"
->>>>>>> origin/fix-a-grammar-completeness
+def expectedSummary : String := "carriers=52 snapshot=9 ghost=72 or=92"
 
 def expectedTally : List String :=
-<<<<<<< HEAD
-  [ "BareLandingFacts: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0",
-    "BlockStack: surface=2 state=0 prop=0 scalar=0 snapshot=0 ghost=0",
-    "CommentStop: surface=0 state=0 prop=0 scalar=1 snapshot=0 ghost=0",
-    "CompletedTail: surface=0 state=1 prop=0 scalar=1 snapshot=0 ghost=0",
-    "ContentRouteGate: surface=0 state=1 prop=0 scalar=1 snapshot=0 ghost=0",
-    "DanglingPred: surface=0 state=0 prop=0 scalar=6 snapshot=0 ghost=0",
-    "ExplValueLine: surface=5 state=0 prop=3 scalar=1 snapshot=0 ghost=0",
-    "ExplicitValueRefused: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "FlowBaseAnchor: surface=0 state=5 prop=0 scalar=4 snapshot=2 ghost=0",
-    "FlowBaseRoutes: surface=21 state=0 prop=26 scalar=8 snapshot=1 ghost=4",
-    "FlowOpenHeld: surface=0 state=0 prop=0 scalar=3 snapshot=0 ghost=2",
-    "FlowOpenStack: surface=31 state=0 prop=28 scalar=9 snapshot=1 ghost=11",
-    "FlowStack: surface=2 state=0 prop=0 scalar=0 snapshot=0 ghost=0",
-    "FlowStackB: surface=6 state=0 prop=1 scalar=4 snapshot=1 ghost=7",
-    "FlowStackK: surface=5 state=1 prop=4 scalar=3 snapshot=1 ghost=3",
-    "GateOf: surface=0 state=1 prop=0 scalar=1 snapshot=2 ghost=0",
-    "ImplicitKeyHead: surface=2 state=0 prop=2 scalar=0 snapshot=0 ghost=0",
-    "ImplicitKeyPack: surface=16 state=1 prop=16 scalar=9 snapshot=0 ghost=4",
-    "InlineResidue: surface=2 state=0 prop=0 scalar=1 snapshot=0 ghost=0",
-    "InteriorGap: surface=3 state=1 prop=14 scalar=7 snapshot=0 ghost=1",
-    "KeyFloor: surface=0 state=0 prop=1 scalar=7 snapshot=0 ghost=0",
-    "KeyFrames: surface=4 state=0 prop=5 scalar=3 snapshot=0 ghost=2",
-    "KeyPackPunt: surface=0 state=1 prop=9 scalar=0 snapshot=0 ghost=0",
-    "KmSound: surface=0 state=1 prop=9 scalar=21 snapshot=0 ghost=3",
-    "MapFrame: surface=40 state=0 prop=30 scalar=2 snapshot=0 ghost=1",
-    "MarkerNodeRoute: surface=4 state=0 prop=1 scalar=0 snapshot=0 ghost=0",
-    "OfferPred: surface=0 state=0 prop=0 scalar=4 snapshot=0 ghost=0",
-    "OpenSeqEntry: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "PackAlt: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "PackAltG: surface=0 state=0 prop=0 scalar=0 snapshot=1 ghost=0",
-    "ParkAnchor: surface=0 state=2 prop=3 scalar=4 snapshot=0 ghost=0",
-    "ParkChoice: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0",
-    "ParkCore: surface=0 state=2 prop=5 scalar=6 snapshot=0 ghost=1",
-    "ParkFloor: surface=0 state=2 prop=4 scalar=4 snapshot=0 ghost=0",
-    "ParkSlot: surface=0 state=2 prop=3 scalar=7 snapshot=0 ghost=0",
-    "PendingNode: surface=122 state=1 prop=235 scalar=58 snapshot=0 ghost=22",
-    "PropsKeyPack: surface=13 state=1 prop=13 scalar=7 snapshot=0 ghost=3",
-    "PropsNodeRoute: surface=6 state=0 prop=1 scalar=0 snapshot=0 ghost=0",
-    "PropsRideRoute: surface=7 state=0 prop=1 scalar=0 snapshot=0 ghost=0",
-    "PropsRun: surface=14 state=0 prop=8 scalar=4 snapshot=0 ghost=0",
-    "RestoreLayout: surface=0 state=1 prop=0 scalar=4 snapshot=0 ghost=0",
-    "ResumeFrames: surface=4 state=0 prop=5 scalar=3 snapshot=0 ghost=2",
-    "ResumeKeyCtx: surface=6 state=1 prop=6 scalar=8 snapshot=0 ghost=3",
-    "ResumeWidths: surface=0 state=0 prop=0 scalar=2 snapshot=0 ghost=2",
-    "SeqEntryTail: surface=3 state=0 prop=1 scalar=1 snapshot=0 ghost=0",
-    "SeqFrame: surface=40 state=0 prop=30 scalar=2 snapshot=0 ghost=1",
-    "SlotFace: surface=0 state=0 prop=0 scalar=4 snapshot=0 ghost=0",
-    "SlotGateAt: surface=0 state=2 prop=7 scalar=1 snapshot=0 ghost=0",
-    "StaleNodeTail: surface=0 state=1 prop=0 scalar=1 snapshot=0 ghost=0",
-    "StalePark: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "SuffixRun: surface=4 state=0 prop=0 scalar=0 snapshot=0 ghost=0",
-    "ScannerSurfCorr: surface=1 state=1 prop=7 scalar=4 snapshot=0 ghost=0" ]
-||||||| 4294e66b
-  [ "BareLandingFacts: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0",
-    "BlockStack: surface=2 state=0 prop=0 scalar=0 snapshot=0 ghost=0",
-    "CommentStop: surface=0 state=0 prop=0 scalar=1 snapshot=0 ghost=0",
-    "CompletedTail: surface=0 state=1 prop=0 scalar=1 snapshot=0 ghost=0",
-    "ContentRouteGate: surface=0 state=1 prop=0 scalar=1 snapshot=0 ghost=0",
-    "DanglingPred: surface=0 state=0 prop=0 scalar=6 snapshot=0 ghost=0",
-    "ExplValueLine: surface=5 state=0 prop=3 scalar=1 snapshot=0 ghost=0",
-    "ExplicitValueRefused: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "FlowBaseAnchor: surface=0 state=5 prop=0 scalar=4 snapshot=2 ghost=0",
-    "FlowBaseRoutes: surface=21 state=0 prop=26 scalar=8 snapshot=1 ghost=4",
-    "FlowOpenHeld: surface=0 state=0 prop=0 scalar=3 snapshot=0 ghost=2",
-    "FlowOpenStack: surface=31 state=0 prop=28 scalar=9 snapshot=1 ghost=11",
-    "FlowStack: surface=2 state=0 prop=0 scalar=0 snapshot=0 ghost=0",
-    "FlowStackB: surface=6 state=0 prop=1 scalar=4 snapshot=1 ghost=7",
-    "FlowStackK: surface=5 state=1 prop=4 scalar=3 snapshot=1 ghost=3",
-    "GateOf: surface=0 state=1 prop=0 scalar=1 snapshot=2 ghost=0",
-    "ImplicitKeyHead: surface=2 state=0 prop=2 scalar=0 snapshot=0 ghost=0",
-    "ImplicitKeyPack: surface=16 state=1 prop=16 scalar=9 snapshot=0 ghost=4",
-    "InlineResidue: surface=2 state=0 prop=0 scalar=1 snapshot=0 ghost=0",
-    "InteriorGap: surface=3 state=1 prop=14 scalar=7 snapshot=0 ghost=1",
-    "KeyFloor: surface=0 state=0 prop=1 scalar=7 snapshot=0 ghost=0",
-    "KeyFrames: surface=6 state=0 prop=9 scalar=5 snapshot=0 ghost=3",
-    "KeyPackPunt: surface=0 state=1 prop=9 scalar=0 snapshot=0 ghost=0",
-    "KmSound: surface=0 state=1 prop=9 scalar=21 snapshot=0 ghost=3",
-    "MapFrame: surface=40 state=0 prop=30 scalar=2 snapshot=0 ghost=1",
-    "MarkerNodeRoute: surface=4 state=0 prop=1 scalar=0 snapshot=0 ghost=0",
-    "OfferPred: surface=0 state=0 prop=0 scalar=4 snapshot=0 ghost=0",
-    "OpenSeqEntry: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "PackAlt: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "PackAltG: surface=0 state=0 prop=0 scalar=0 snapshot=1 ghost=0",
-    "ParkAnchor: surface=0 state=2 prop=3 scalar=4 snapshot=0 ghost=0",
-    "ParkChoice: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0",
-    "ParkCore: surface=0 state=2 prop=5 scalar=6 snapshot=0 ghost=1",
-    "ParkFloor: surface=0 state=2 prop=4 scalar=4 snapshot=0 ghost=0",
-    "ParkSlot: surface=0 state=2 prop=3 scalar=7 snapshot=0 ghost=0",
-    "PendingNode: surface=122 state=1 prop=235 scalar=58 snapshot=0 ghost=22",
-    "PropsKeyPack: surface=13 state=1 prop=13 scalar=7 snapshot=0 ghost=3",
-    "PropsNodeRoute: surface=6 state=0 prop=1 scalar=0 snapshot=0 ghost=0",
-    "PropsRideRoute: surface=7 state=0 prop=1 scalar=0 snapshot=0 ghost=0",
-    "PropsRun: surface=14 state=0 prop=8 scalar=4 snapshot=0 ghost=0",
-    "RestoreLayout: surface=0 state=1 prop=0 scalar=4 snapshot=0 ghost=0",
-    "ResumeFrames: surface=4 state=0 prop=5 scalar=3 snapshot=0 ghost=2",
-    "ResumeKeyCtx: surface=6 state=1 prop=6 scalar=8 snapshot=0 ghost=3",
-    "ResumeWidths: surface=0 state=0 prop=0 scalar=2 snapshot=0 ghost=2",
-    "SeqEntryTail: surface=3 state=0 prop=1 scalar=1 snapshot=0 ghost=0",
-    "SeqFrame: surface=40 state=0 prop=30 scalar=2 snapshot=0 ghost=1",
-    "SlotFace: surface=0 state=0 prop=0 scalar=4 snapshot=0 ghost=0",
-    "SlotGateAt: surface=0 state=2 prop=7 scalar=1 snapshot=0 ghost=0",
-    "StaleNodeTail: surface=0 state=1 prop=0 scalar=1 snapshot=0 ghost=0",
-    "StalePark: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0",
-    "SuffixRun: surface=4 state=0 prop=0 scalar=0 snapshot=0 ghost=0",
-    "ScannerSurfCorr: surface=1 state=1 prop=7 scalar=4 snapshot=0 ghost=0" ]
-=======
   [ "BareLandingFacts: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0 or=0",
     "BlockStack: surface=2 state=0 prop=0 scalar=0 snapshot=0 ghost=0 or=0",
     "CommentStop: surface=0 state=0 prop=0 scalar=1 snapshot=0 ghost=0 or=2",
@@ -429,7 +310,6 @@ def expectedTally : List String :=
     "StalePark: surface=0 state=1 prop=0 scalar=0 snapshot=0 ghost=0 or=0",
     "SuffixRun: surface=4 state=0 prop=0 scalar=0 snapshot=0 ghost=0 or=0",
     "ScannerSurfCorr: surface=1 state=1 prop=7 scalar=4 snapshot=0 ghost=0 or=0" ]
->>>>>>> origin/fix-a-grammar-completeness
 
 /-- The list to shrink.  Read with the header's caveat: `FlowOpenHeld`'s `S` (and
     `ParkCore`'s, which holds it) is a list of TOKEN INDICES, a projection of
@@ -439,28 +319,12 @@ def expectedTally : List String :=
 def expectedGhost : List String :=
   [ "FlowBaseAnchor.type[0].a a : Option ScannerState",
     "FlowBaseAnchor.body x : Option ScannerState",
-<<<<<<< HEAD
-    "FlowBaseRoutes.type g : Option ScannerState",
-    "FlowBaseRoutes.mk ns : List Nat",
-    "FlowBaseRoutes.mk ks : List IndentStackCover.FrameLevel",
-    "FlowBaseRoutes.mk ks : List IndentStackCover.FrameLevel",
-    "FlowBaseRoutes.mk ns : List Nat",
-    "FlowOpenHeld.type S : List Nat",
-||||||| 4294e66b
-    "FlowBaseRoutes.type g : Option ScannerState",
-    "FlowBaseRoutes.mk ns : List Nat",
-    "FlowBaseRoutes.mk ks : List Nat",
-    "FlowBaseRoutes.mk ks : List Nat",
-    "FlowBaseRoutes.mk ns : List Nat",
-    "FlowOpenHeld.type S : List Nat",
-=======
     "FlowBaseRoutes.type[4].g g : Option ScannerState",
     "FlowBaseRoutes.mk[6].key ns : List Nat",
     "FlowBaseRoutes.mk[6].key ks : List Nat",
     "FlowBaseRoutes.mk[6].key ks : List Nat",
     "FlowBaseRoutes.mk[7].vslot ns : List Nat",
     "FlowOpenHeld.type[3].S S : List Nat",
->>>>>>> origin/fix-a-grammar-completeness
     "FlowOpenHeld.body T : List Nat",
     "FlowOpenStack.type[3].g g : Option ScannerState",
     "FlowOpenStack.type[5].a a : Array Bool",
@@ -489,24 +353,6 @@ def expectedGhost : List String :=
     "GateOf.type[0].a a : Option ScannerState",
     "GateOf.body x : Option ScannerState",
     "ImplicitKeyPack.body ns : List Nat",
-<<<<<<< HEAD
-    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
-    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
-    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
-    "InteriorGap.type tl : FrameTail",
-    "KeyFrames.type a : List IndentStackCover.FrameLevel",
-    "KeyFrames.level ks : List IndentStackCover.FrameLevel",
-    "KmSound.type km : Array Bool",
-||||||| 4294e66b
-    "ImplicitKeyPack.body ks : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
-    "InteriorGap.type tl : FrameTail",
-    "KeyFrames.type a : List Nat",
-    "KeyFrames.mapLevel ks : List Nat",
-    "KeyFrames.seqLevel ks : List Nat",
-    "KmSound.type km : Array Bool",
-=======
     "ImplicitKeyPack.body ks : List Nat",
     "ImplicitKeyPack.body ks : List Nat",
     "ImplicitKeyPack.body ks : List Nat",
@@ -515,62 +361,8 @@ def expectedGhost : List String :=
     "KeyFrames.mapLevel[2].ks ks : List Nat",
     "KeyFrames.seqLevel[2].ks ks : List Nat",
     "KmSound.type[1].km km : Array Bool",
->>>>>>> origin/fix-a-grammar-completeness
     "KmSound.body xs : Array Bool",
     "KmSound.body xs : Array Bool",
-<<<<<<< HEAD
-    "MapFrame.type a : FrameTail",
-    "PackAltG.type _g : Option ScannerState",
-    "ParkCore.mk S : List Nat",
-    "PendingNode.pendingContent ns : List Nat",
-    "PendingNode.pendingContent ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingContent ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingContent ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingProps ns : List Nat",
-    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingProps ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingBlockContent ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingBlockContent ns : List Nat",
-    "PendingNode.pendingBlockContent ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingBlock ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingBlock ns : List Nat",
-    "PendingNode.pendingBlock ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingMapValue ns : List Nat",
-    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingMapValue ks : List IndentStackCover.FrameLevel",
-    "PendingNode.pendingMapValue ns : List Nat",
-||||||| 4294e66b
-    "MapFrame.type a : FrameTail",
-    "PackAltG.type _g : Option ScannerState",
-    "ParkCore.mk S : List Nat",
-    "PendingNode.pendingContent ns : List Nat",
-    "PendingNode.pendingContent ks : List Nat",
-    "PendingNode.pendingContent ks : List Nat",
-    "PendingNode.pendingContent ks : List Nat",
-    "PendingNode.pendingProps ns : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingProps ks : List Nat",
-    "PendingNode.pendingBlockContent ks : List Nat",
-    "PendingNode.pendingBlockContent ns : List Nat",
-    "PendingNode.pendingBlockContent ks : List Nat",
-    "PendingNode.pendingBlock ks : List Nat",
-    "PendingNode.pendingBlock ns : List Nat",
-    "PendingNode.pendingBlock ks : List Nat",
-    "PendingNode.pendingMapValue ns : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ks : List Nat",
-    "PendingNode.pendingMapValue ns : List Nat",
-=======
     "MapFrame.type[2].a a : FrameTail",
     "PackAltG.type[0]._g _g : Option ScannerState",
     "ParkCore.mk[4].held S : List Nat",
@@ -596,31 +388,7 @@ def expectedGhost : List String :=
     "PendingNode.pendingMapValue[19].h_framesV ks : List Nat",
     "PendingNode.pendingMapValue[21].h_seqF ks : List Nat",
     "PendingNode.pendingMapValue[22].h_explUp ns : List Nat",
->>>>>>> origin/fix-a-grammar-completeness
     "PropsKeyPack.body ns : List Nat",
-<<<<<<< HEAD
-    "PropsKeyPack.body ks : List IndentStackCover.FrameLevel",
-    "PropsKeyPack.body ks : List IndentStackCover.FrameLevel",
-    "ResumeFrames.type a : List IndentStackCover.FrameLevel",
-    "ResumeFrames.level ks : List IndentStackCover.FrameLevel",
-    "ResumeKeyCtx.body ks : List IndentStackCover.FrameLevel",
-    "ResumeKeyCtx.body ksv : List IndentStackCover.FrameLevel",
-    "ResumeKeyCtx.body ksq : List IndentStackCover.FrameLevel",
-    "ResumeWidths.type ks : List IndentStackCover.FrameLevel",
-    "ResumeWidths.type ks' : List IndentStackCover.FrameLevel",
-    "SeqFrame.type a : FrameTail" ]
-||||||| 4294e66b
-    "PropsKeyPack.body ks : List Nat",
-    "PropsKeyPack.body ks : List Nat",
-    "ResumeFrames.type a : List Nat",
-    "ResumeFrames.level ks : List Nat",
-    "ResumeKeyCtx.body ks : List Nat",
-    "ResumeKeyCtx.body ksv : List Nat",
-    "ResumeKeyCtx.body ksq : List Nat",
-    "ResumeWidths.type ks : List Nat",
-    "ResumeWidths.type ks' : List Nat",
-    "SeqFrame.type a : FrameTail" ]
-=======
     "PropsKeyPack.body ks : List Nat",
     "PropsKeyPack.body ks : List Nat",
     "ResumeFrames.type[1].a a : List Nat",
@@ -728,7 +496,6 @@ def expectedDisjuncts : List String :=
     "ResumeKeyCtx.body ∨ True",
     "SlotFace.body ∨ ∃ j, prevRealIdx? ts (propsRunStart ts ts.size) = some j ∧ ts[j]!.val.offersNodeSlot = true",
     "SlotGateAt.body ∨ SlotFace t.tokens" ]
->>>>>>> origin/fix-a-grammar-completeness
 
 run_cmd liftTermElabM do
   let mut tally : Array String := #[]

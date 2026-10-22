@@ -3273,9 +3273,11 @@ coordinate that are accepted (so the refusal belongs to the `:`): -/
 /-! …and one of the 28 the census's own first version mistook for the class.
 The text carries a mid-line `?` and a later mid-line `:` at the same column, so
 the syntactic proxy counted it; the STATE does not reach the premise at any
-step, and the program is accepted. -/
+step.  Since item 335 the column-0 `:` closes the stale `? b` (it stands LEFT of
+the key's column) and `: a` is trailing content — the program is refused, as
+libyaml refuses it; before, the stale register manufactured an acceptance. -/
 
-#guard pins "- ? b\n: a\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :b =VAL : -MAP -SEQ -DOC +DOC =VAL : -DOC -STR")
+#guard pins "- ? b\n: a\n- : b\n" == ("scan-refused L4YAML.ScanError.trailingContent 1 0", "ERR L4YAML.ScanError.trailingContent 1 0")
 
 
 /-! ## §24  The error list is a census of ONE RING (item 205)
@@ -4613,8 +4615,10 @@ accepted one: -/
 #guard pins "?\n- :\n: w\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
 #guard pins "?\n- : v\n- b\n: w\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
 #guard pins "?\n- ? x\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :x =VAL : -MAP -SEQ =VAL :w -MAP -DOC -STR")
-#guard classAReg "?\n  ? a\n: w\n" == none
-#guard classAReg "?\n  ?\n    ? -\n: w\n" == none
+-- Item 335: the outer `?` survives the inner one's entry — the `:` at column 0
+-- reads the OUTER key's register off the pending-key stack (was `none`).
+#guard classAReg "?\n  ? a\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "?\n  ?\n    ? -\n: w\n" == some (some 0, 0, 0)
 #guard classAReg "?\n  ? a\n  : b\n: w\n" == some (some 1, 2, 2)
 #guard pins "?\na\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
 #guard pins "?\n\"a\"\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")

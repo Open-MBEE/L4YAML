@@ -637,7 +637,7 @@ single `.blockEnd` emit + pop step. -/
 /-- After-emit-and-pop state shape used by `unwindIndentsLoopIx`. -/
 abbrev emitBlockEndPop {input : String} (s : ScannerStateIx input) :
     ScannerStateIx input :=
-  { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+  { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
 
 @[simp] private lemma emitBlockEndPop_tokens {input : String}
     (s : ScannerStateIx input) :
@@ -895,7 +895,7 @@ lemma pushSequenceIndentIx_preserves_PlainScalarsValidIx {input : String}
     PlainScalarsValidIx (pushSequenceIndentIx s col).tokens := by
   unfold pushSequenceIndentIx
   split
-  · show PlainScalarsValidIx ({ (s.emit .blockSequenceStart) with indents := _ }.tokens)
+  · show PlainScalarsValidIx ({ (s.emit .blockSequenceStart) with indents := _, pendingKeys := _ }.tokens)
     exact emit_non_plain_preserves_PlainScalarsValidIx s .blockSequenceStart h_old (by trivial)
   · exact h_old
 
@@ -919,7 +919,7 @@ lemma pushSequenceIndentIx_preserves_FlowContextPSVIx {input : String}
     FlowContextPSVIx (pushSequenceIndentIx s col).tokens := by
   unfold pushSequenceIndentIx
   split
-  · show FlowContextPSVIx ({ (s.emit .blockSequenceStart) with indents := _ }.tokens)
+  · show FlowContextPSVIx ({ (s.emit .blockSequenceStart) with indents := _, pendingKeys := _ }.tokens)
     exact emit_non_flow_non_plain_preserves_FlowContextPSVIx s .blockSequenceStart h_old
       (by trivial) (by decide) (by decide) (by decide) (by decide)
   · exact h_old
@@ -945,7 +945,7 @@ lemma pushMappingIndentIx_preserves_PlainScalarsValidIx {input : String}
     PlainScalarsValidIx (pushMappingIndentIx s col).tokens := by
   unfold pushMappingIndentIx
   split
-  · show PlainScalarsValidIx ({ (s.emit .blockMappingStart) with indents := _ }.tokens)
+  · show PlainScalarsValidIx ({ (s.emit .blockMappingStart) with indents := _, pendingKeys := _ }.tokens)
     exact emit_non_plain_preserves_PlainScalarsValidIx s .blockMappingStart h_old (by trivial)
   · exact h_old
 
@@ -968,7 +968,7 @@ lemma pushMappingIndentIx_preserves_FlowContextPSVIx {input : String}
     FlowContextPSVIx (pushMappingIndentIx s col).tokens := by
   unfold pushMappingIndentIx
   split
-  · show FlowContextPSVIx ({ (s.emit .blockMappingStart) with indents := _ }.tokens)
+  · show FlowContextPSVIx ({ (s.emit .blockMappingStart) with indents := _, pendingKeys := _ }.tokens)
     exact emit_non_flow_non_plain_preserves_FlowContextPSVIx s .blockMappingStart h_old
       (by trivial) (by decide) (by decide) (by decide) (by decide)
   · exact h_old

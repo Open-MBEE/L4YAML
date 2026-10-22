@@ -181,7 +181,7 @@ lemma unwindIndentsLoop_preserves_allowDirectives (s : ScannerState) (col : Int)
   | zero => unfold unwindIndentsLoop; rfl
   | succ _ ih =>
     unfold unwindIndentsLoop; split
-    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
       simp [emit_preserves_allowDirectives] at this; exact this
     · rfl
 

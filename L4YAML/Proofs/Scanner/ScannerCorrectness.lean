@@ -217,7 +217,7 @@ lemma unwindIndentsLoop_tokens_monotonic (s : ScannerState) (col : Int) (fuel : 
       have h_emit := emit_tokens_size s .blockEnd
       -- After modifying indents, tokens stay same (only indents field changed)
       let s' := s.emit .blockEnd
-      let s'' := { s' with indents := s'.indents.pop }
+      let s'' := { s' with indents := s'.indents.pop, pendingKeys := s'.pendingKeys.pop }
       -- s''.tokens = s'.tokens (modifying indents doesn't affect tokens)
       have h_tokens_eq : s''.tokens = s'.tokens := by rfl
       -- Apply IH to s''
@@ -248,7 +248,7 @@ lemma unwindIndentsLoop_preserves_prefix (s : ScannerState) (col : Int) (fuel : 
     split
     · -- Condition true: emit and recurse
       let s_emit := s.emit .blockEnd
-      let s_pop := { s_emit with indents := s_emit.indents.pop }
+      let s_pop := { s_emit with indents := s_emit.indents.pop, pendingKeys := s_emit.pendingKeys.pop }
       -- We know emit increases size by 1
       have h_emit_size : s_emit.tokens.size = s.tokens.size + 1 := emit_tokens_size s .blockEnd
       -- So i < s_emit.tokens.size
@@ -510,6 +510,11 @@ lemma pushMappingIndent_tokens_monotonic (s : ScannerState) (col : Int) :
   · simp [ScannerState.emit, Array.size_push]
   · omega
 
+/-! Item 335: the pending-key helpers touch only `pendingKeys` (mark/clear) or the
+    explicit-key register (read); every other projection is definitional. -/
+
+@[simp] lemma markPendingKey_tokens (s : ScannerState) (l : Nat) : (s.markPendingKey l).tokens = s.tokens := rfl
+
 /-- `pushSequenceIndent` preserves or adds tokens. -/
 lemma pushSequenceIndent_tokens_monotonic (s : ScannerState) (col : Int) :
     (pushSequenceIndent s col).tokens.size ≥ s.tokens.size := by
@@ -539,10 +544,10 @@ lemma scanKey_adds_one_token (s : ScannerState) (s' : ScannerState)
     · split at h
       · contradiction
       · injection h with h_eq; subst h_eq
-        simp only [advance_preserves_tokens, emit_tokens_size]
+        simp only [advance_preserves_tokens, emit_tokens_size, markPendingKey_tokens]
         have := pushMappingIndent_tokens_monotonic s s.col; omega
     · injection h with h_eq; subst h_eq
-      simp only [advance_preserves_tokens, emit_tokens_size]
+      simp only [advance_preserves_tokens, emit_tokens_size, markPendingKey_tokens]
       have := pushMappingIndent_tokens_monotonic s s.col; omega
   · -- inFlow → no pushMappingIndent
     split at h
@@ -2516,7 +2521,7 @@ lemma pushMappingIndent_preserves_prefix (s : ScannerState) (col : Int)
       have := pushMappingIndent_tokens_monotonic s col; omega) = s.tokens[i] := by
   unfold pushMappingIndent
   split
-  · exact emit_preserves_tokens_at { s with indents := _ } .blockMappingStart i h
+  · exact emit_preserves_tokens_at { s with indents := _, pendingKeys := _ } .blockMappingStart i h
   · rfl
 
 /-- pushSequenceIndent preserves existing tokens. -/
@@ -2526,7 +2531,7 @@ lemma pushSequenceIndent_preserves_prefix (s : ScannerState) (col : Int)
       have := pushSequenceIndent_tokens_monotonic s col; omega) = s.tokens[i] := by
   unfold pushSequenceIndent
   split
-  · exact emit_preserves_tokens_at { s with indents := _ } .blockSequenceStart i h
+  · exact emit_preserves_tokens_at { s with indents := _, pendingKeys := _ } .blockSequenceStart i h
   · rfl
 
 /-! ### Composition helpers for prefix preservation -/
@@ -3455,7 +3460,7 @@ lemma unwindIndentsLoop_preserves_simpleKey (s : ScannerState) (col : Int) (fuel
   | zero => unfold unwindIndentsLoop; rfl
   | succ _ ih =>
     unfold unwindIndentsLoop; split
-    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
       simp [emit_preserves_simpleKey] at this; exact this
     · rfl
 
@@ -5636,7 +5641,7 @@ lemma unwindIndentsLoop_preserves_simpleKeyStack (s : ScannerState) (col : Int) 
   | zero => unfold unwindIndentsLoop; rfl
   | succ _ ih =>
     unfold unwindIndentsLoop; split
-    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
       simp [emit_preserves_simpleKeyStack] at this; exact this
     · rfl
 
@@ -8598,7 +8603,8 @@ lemma unwindIndentsLoop_preserves_ScanInv (s : ScannerState) (col : Int) (fuel :
     · -- Condition true: emit blockEnd, pop indents, recurse
       have h_emit : ScanInv (s.emit .blockEnd) := emit_preserves_ScanInv s .blockEnd h
       have h_pop : ScanInv ({ s.emit .blockEnd with
-          indents := (s.emit .blockEnd).indents.pop }) :=
+          indents := (s.emit .blockEnd).indents.pop,
+          pendingKeys := (s.emit .blockEnd).pendingKeys.pop }) :=
         field_update_preserves_ScanInv _ _ h_emit rfl rfl
       exact ih _ h_pop
     · exact h
@@ -8801,7 +8807,7 @@ lemma scanValuePrepare_preserves_ScanInv (s : ScannerState) (h : ScanInv s)
         unfold pushMappingIndent
         split
         · -- indent check true: emit blockMappingStart + push indent
-          exact emit_preserves_ScanInv { s with indents := _ } .blockMappingStart
+          exact emit_preserves_ScanInv { s with indents := _, pendingKeys := _ } .blockMappingStart
             (field_update_preserves_ScanInv _ _ h rfl rfl)
         · -- indent check false: no-op
           exact h

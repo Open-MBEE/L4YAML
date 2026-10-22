@@ -856,7 +856,7 @@ lemma unwindIndentsLoop_corr_exact (sc : ScannerState) (sp : SurfPos)
   | zero => simp [unwindIndentsLoop]; exact hcorr
   | succ fuel' ih =>
     unfold unwindIndentsLoop; split
-    · exact ih { (sc.emit .blockEnd) with indents := _ }
+    · exact ih { (sc.emit .blockEnd) with indents := _, pendingKeys := _ }
         ⟨(corr_of_emit .blockEnd hcorr).chars_from,
          (corr_of_emit .blockEnd hcorr).col_eq,
          (corr_of_emit .blockEnd hcorr).end_eq, (corr_of_emit .blockEnd hcorr).input_prefix,

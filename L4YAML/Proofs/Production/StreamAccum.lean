@@ -5114,10 +5114,12 @@ lemma unwindIndentsLoop_tokens_shape (s : ScannerState) (col : Int) (fuel : Nat)
     unfold unwindIndentsLoop
     split
     · have h_step : ({ (s.emit .blockEnd) with
-            indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens
+            indents := (s.emit .blockEnd).indents.pop,
+            pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens
           = s.tokens.push { pos := s.currentPos, val := .blockEnd } := rfl
       rcases ih (s := { (s.emit .blockEnd) with
-            indents := (s.emit .blockEnd).indents.pop }) with h | ⟨ts, p, hp, hv⟩
+            indents := (s.emit .blockEnd).indents.pop,
+            pendingKeys := (s.emit .blockEnd).pendingKeys.pop }) with h | ⟨ts, p, hp, hv⟩
       · exact Or.inr ⟨s.tokens, { pos := s.currentPos, val := .blockEnd },
           by rw [h, h_step], rfl⟩
       · exact Or.inr ⟨ts, p, hp, hv⟩
@@ -6534,7 +6536,7 @@ lemma unwindIndentsLoop_size_le (s : ScannerState) (col : Int) (fuel : Nat) :
   | succ _ ih =>
     unfold unwindIndentsLoop; split
     · exact Nat.le_trans
-        (ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop })
+        (ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop })
         (by show ((s.emit .blockEnd).indents.pop).size ≤ s.indents.size; simp)
     · exact Nat.le_refl _
 
@@ -6549,7 +6551,8 @@ lemma unwindIndentsLoop_eq_or_size_lt (s : ScannerState) (col : Int) (fuel : Nat
       simp only [Bool.and_eq_true, decide_eq_true_eq, gt_iff_lt] at hg
       refine Or.inr (Nat.lt_of_le_of_lt
         (unwindIndentsLoop_size_le { s.emit .blockEnd with
-          indents := (s.emit .blockEnd).indents.pop } col _) ?_)
+          indents := (s.emit .blockEnd).indents.pop,
+          pendingKeys := (s.emit .blockEnd).pendingKeys.pop } col _) ?_)
       show ((s.emit .blockEnd).indents.pop).size < s.indents.size
       have h_ids : (s.emit .blockEnd).indents = s.indents := rfl
       rw [h_ids, Array.size_pop]
@@ -16551,10 +16554,12 @@ lemma unwindIndentsLoop_eq_or_blockEnd (s : ScannerState) (col : Int) (fuel : Na
     unfold unwindIndentsLoop
     split
     · have h_step : ({ (s.emit .blockEnd) with
-            indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens
+            indents := (s.emit .blockEnd).indents.pop,
+            pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens
           = s.tokens.push { pos := s.currentPos, val := .blockEnd } := rfl
       rcases ih (s := { (s.emit .blockEnd) with
-            indents := (s.emit .blockEnd).indents.pop }) with h | ⟨ts, p, hp, hv⟩
+            indents := (s.emit .blockEnd).indents.pop,
+            pendingKeys := (s.emit .blockEnd).pendingKeys.pop }) with h | ⟨ts, p, hp, hv⟩
       · exact Or.inr ⟨s.tokens, { pos := s.currentPos, val := .blockEnd },
           by rw [h, h_step], rfl⟩
       · exact Or.inr ⟨ts, p, hp, hv⟩
@@ -18898,6 +18903,7 @@ lemma scanValuePrepare_corr {s : ScannerState} {sp : SurfPos}
       ScannerSurfCorr { s with
         tokens := tokens
         indents := s.indents.push { column := (col : Int), isSequence := false }
+        pendingKeys := s.pendingKeys.push none
         simpleKey := sk } sp := by
     intro col tokens sk
     refine ⟨h.chars_from, h.col_eq, h.end_eq, h.input_prefix, ?_⟩

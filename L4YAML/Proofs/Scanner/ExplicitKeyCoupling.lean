@@ -1832,7 +1832,8 @@ lemma scanFlowMappingEnd_explicitKeyCol (s : ScannerState) :
 lemma preprocess_explicitKey_cases (s s1 : ScannerState) (c : Char)
     (h : scanNextToken_preprocess s = .ok (some (s1, c))) :
     (s1.explicitKeyLine = s.explicitKeyLine ∧ s1.explicitKeyCol = s.explicitKeyCol) ∨
-    (s1.explicitKeyLine = none ∧ s1.explicitKeyCol = -1) := by
+    (s.explicitKeyLine ≠ none ∧
+      ∃ t : ScannerState, s1 = (t.clearPendingKeyAt t.explicitKeyCol).readPendingKey) := by
   unfold scanNextToken_preprocess at h
   simp only [bind, pure, Pure.pure, Except.pure] at h
   simp only [Except.bind] at h
@@ -1850,28 +1851,50 @@ lemma preprocess_explicitKey_cases (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rcases closeStaleExplicitKey_cases
-                (saveSimpleKey { unwindIndents s_skip s_skip.col with needIndentCheck := false })
-              with h_eq | h_eq <;> rw [h_eq]
-            · left
+            by_cases h_dead : s.explicitKeyLine = none
+            · have h_dead' : (saveSimpleKey
+                  { unwindIndents s_skip s_skip.col with needIndentCheck := false }).explicitKeyLine
+                  = none := by
+                rw [saveSimpleKey_preserves_explicitKeyLine]
+                show (unwindIndents s_skip s_skip.col).explicitKeyLine = none
+                rw [unwindIndents_preserves_explicitKeyLine, h_l_skip, h_dead]
+              rw [closeStaleExplicitKey_of_ek_none _ h_dead']
+              left
               rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
               constructor
               · show (unwindIndents s_skip s_skip.col).explicitKeyLine = s.explicitKeyLine
                 rw [unwindIndents_preserves_explicitKeyLine]; exact h_l_skip
               · show (unwindIndents s_skip s_skip.col).explicitKeyCol = s.explicitKeyCol
                 rw [unwindIndents_preserves_explicitKeyCol]; exact h_c_skip
-            · right; exact ⟨rfl, rfl⟩
+            · rcases closeStaleExplicitKey_cases
+                  (saveSimpleKey { unwindIndents s_skip s_skip.col with needIndentCheck := false })
+                with h_eq | h_eq <;> rw [h_eq]
+              · left
+                rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
+                constructor
+                · show (unwindIndents s_skip s_skip.col).explicitKeyLine = s.explicitKeyLine
+                  rw [unwindIndents_preserves_explicitKeyLine]; exact h_l_skip
+                · show (unwindIndents s_skip s_skip.col).explicitKeyCol = s.explicitKeyCol
+                  rw [unwindIndents_preserves_explicitKeyCol]; exact h_c_skip
+              · right; exact ⟨h_dead, _, rfl⟩
       · split at h
         · contradiction
         · split at h
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rcases closeStaleExplicitKey_cases (saveSimpleKey s_skip) with h_eq | h_eq <;> rw [h_eq]
-            · left
+            by_cases h_dead : s.explicitKeyLine = none
+            · have h_dead' : (saveSimpleKey s_skip).explicitKeyLine = none := by
+                rw [saveSimpleKey_preserves_explicitKeyLine, h_l_skip, h_dead]
+              rw [closeStaleExplicitKey_of_ek_none _ h_dead']
+              left
               rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
               exact ⟨h_l_skip, h_c_skip⟩
-            · right; exact ⟨rfl, rfl⟩
+            · rcases closeStaleExplicitKey_cases (saveSimpleKey s_skip) with h_eq | h_eq <;> rw [h_eq]
+              · left
+                rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
+                exact ⟨h_l_skip, h_c_skip⟩
+              · right; exact ⟨h_dead, _, rfl⟩
 
 /-- A dead register stays dead through preprocessing: both arms of
     `preprocess_explicitKey_cases` end at `none`. -/
@@ -1880,7 +1903,7 @@ lemma preprocess_explicitKeyLine_none (s s1 : ScannerState) (c : Char)
     (h0 : s.explicitKeyLine = none) : s1.explicitKeyLine = none := by
   rcases preprocess_explicitKey_cases s s1 c h with ⟨h1, _⟩ | ⟨h1, _⟩
   · exact h1.trans h0
-  · exact h1
+  · exact absurd h0 h1
 
 /-! ### `scanValueClearKey`: what survives the phantom clear -/
 
@@ -1982,11 +2005,11 @@ lemma scanValue_ok_of_ekl_none {s s' : ScannerState}
           simp only [Option.isSome_none, Bool.false_and, Bool.false_or, ite_eq_right
             (by simp : ¬((false : Bool) = true))]
           rw [scanValue_epilogue_line h_peek]
-        · show (if _ then none else if _ then (scanValueClearKey s).explicitKeyLine
-            else none) = none
-          rw [h_ek_kc]
-          repeat' split
-          all_goals rfl
+        · show (if s.inFlow = true then _
+              else if _ then (_, (scanValueClearKey s).explicitKeyLine, _)
+              else PendingKeys.close _ _ _).2.1 = none
+          rw [if_neg (by rw [h_noflow]; exact Bool.false_ne_true), h_ek_kc]
+          simp [scanValueKeySurvives, h_noflow, h_ek_kc]
 
 /-- **Live `?`, the `:` OFF the frame's column: the `:` STAMPS.**  The third
     conjunct of `explicitValue` is refuted by the two columns alone. -/
@@ -2124,14 +2147,17 @@ lemma scanValue_explicit_at_indent {s s' : ScannerState} {ekLine : Nat}
   rw [hline, hcol, h_ci] at this
   exact this
 
-/-- **The pending `?` is consumed (or absent) at any `:` whose resolved
-    coordinate does not exceed the frame's column** — every arm of the
-    epilogue's `explicitKeyLine` rule lands on `none`. -/
+/-- **The `:` whose coordinate does not exceed the frame's column CLOSES the
+    frame's level** (step 4, item 335): in flow the register dies; in block a dead
+    register stays dead, and a live one is re-read off the pending-key stack with
+    the level at `s.explicitKeyCol` closed — so an outer `?` survives. -/
 lemma scanValue_ekl_none_of_col_le {s s' : ScannerState}
     (h : scanValue s = .ok s')
     (h_kcol : s.simpleKey.possible = true → (s.simpleKey.pos.col : Int) ≤ s.explicitKeyCol)
     (h_col : (s.col : Int) ≤ s.explicitKeyCol) :
-    s'.explicitKeyLine = none := by
+    s'.explicitKeyLine = none ∨
+    ∃ cols pks, s'.explicitKeyLine = (PendingKeys.close cols pks s.explicitKeyCol).2.1 ∧
+      s'.explicitKeyCol = (PendingKeys.close cols pks s.explicitKeyCol).2.2 := by
   have h_kc : (scanValueClearKey s).explicitKeyCol = s.explicitKeyCol :=
     scanValueClearKey_preserves_explicitKeyCol s
   have h_sk := L4YAML.Proofs.PreprocessIndentStable.scanValueClearKey_simpleKey s
@@ -2145,31 +2171,42 @@ lemma scanValue_ekl_none_of_col_le {s s' : ScannerState}
       · cases h
       · have h' := Except.ok.inj h
         subst h'
-        show (if _ then none else if _ then (scanValueClearKey s).explicitKeyLine
-          else none) = none
-        split
-        · rfl
-        · rw [ite_eq_right]
-          intro hgt
-          simp only [Bool.and_eq_true, decide_eq_true_eq] at hgt
-          rw [h_kc] at hgt
-          rcases hgt with ⟨-, hgt⟩
-          split at hgt
-          · rename_i h_poss_kc
-            rcases h_sk with h_eq | h_false
-            · rw [h_eq] at hgt h_poss_kc
-              exact absurd hgt (Int.not_lt.mpr (h_kcol h_poss_kc))
-            · rw [h_false] at h_poss_kc; cases h_poss_kc
-          · exact absurd hgt (Int.not_lt.mpr h_col)
+        show (if s.inFlow = true then _
+            else if _ then (_, (scanValueClearKey s).explicitKeyLine, _)
+            else PendingKeys.close _ _ (scanValueClearKey s).explicitKeyCol).2.1 = none ∨ _
+        by_cases hf : s.inFlow = true
+        · rw [if_pos hf]; exact Or.inl rfl
+        · rw [if_neg hf]
+          by_cases hsv : scanValueKeySurvives s (scanValueClearKey s) = true
+          · rw [if_pos hsv]
+            left
+            unfold scanValueKeySurvives at hsv
+            simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq] at hsv
+            rcases hsv with ⟨-, h0 | ⟨-, hgt⟩⟩
+            · simpa using h0
+            · exfalso
+              rw [h_kc] at hgt
+              split at hgt
+              · rename_i h_poss_kc
+                rcases h_sk with h_eq | h_false
+                · rw [h_eq] at hgt h_poss_kc
+                  exact absurd hgt (Int.not_lt.mpr (h_kcol h_poss_kc))
+                · rw [h_false] at h_poss_kc; cases h_poss_kc
+              · exact absurd hgt (Int.not_lt.mpr h_col)
+          · rw [if_neg hsv, h_kc]
+            exact Or.inr ⟨_, _, rfl, rfl⟩
 
 /-- **When the field survives the `:`, it survived from a live pre-state with
-    the column register unchanged** — what threads a frame's face to the new
-    park. -/
+    the column register unchanged — or it is the re-read of the pending-key
+    stack with the pre-state's level closed** (step 4, item 335): the second arm
+    is the outer `?` an inner one's value uncovers. -/
 lemma scanValue_ekl_some_source {s s' : ScannerState}
     (h : scanValue s = .ok s')
     (h_some : s'.explicitKeyLine.isSome = true) :
-    s'.explicitKeyLine = s.explicitKeyLine ∧ s'.explicitKeyCol = s.explicitKeyCol ∧
-      s.explicitKeyLine.isSome = true := by
+    (s'.explicitKeyLine = s.explicitKeyLine ∧ s'.explicitKeyCol = s.explicitKeyCol ∧
+      s.explicitKeyLine.isSome = true) ∨
+    ∃ cols pks, s'.explicitKeyLine = (PendingKeys.close cols pks s.explicitKeyCol).2.1 ∧
+      s'.explicitKeyCol = (PendingKeys.close cols pks s.explicitKeyCol).2.2 := by
   have h_l : (scanValueClearKey s).explicitKeyLine = s.explicitKeyLine :=
     scanValueClearKey_preserves_explicitKeyLine s
   have h_c : (scanValueClearKey s).explicitKeyCol = s.explicitKeyCol :=
@@ -2185,19 +2222,25 @@ lemma scanValue_ekl_some_source {s s' : ScannerState}
       · have h' := Except.ok.inj h
         subst h'
         revert h_some
-        show ((if _ then none else if _ then (scanValueClearKey s).explicitKeyLine
-            else none) : Option Nat).isSome = true →
-          ((if _ then none else if _ then (scanValueClearKey s).explicitKeyLine
-            else none) : Option Nat) = s.explicitKeyLine ∧
-          (if ((if _ then none else if _ then (scanValueClearKey s).explicitKeyLine
-            else none) : Option Nat).isSome = true then (scanValueClearKey s).explicitKeyCol
-            else -1) = s.explicitKeyCol ∧
-          s.explicitKeyLine.isSome = true
-        repeat' split
-        all_goals first
-          | (intro hh; simp at hh)
-          | (intro hh; exact ⟨h_l, h_c, by rw [← h_l]; exact hh⟩)
-          | (rename_i hns; intro hh; exact absurd hh hns)
+        show ((if s.inFlow = true then _
+            else if _ then (_, (scanValueClearKey s).explicitKeyLine,
+              if (scanValueClearKey s).explicitKeyLine.isSome then (scanValueClearKey s).explicitKeyCol
+              else -1)
+            else PendingKeys.close _ _ (scanValueClearKey s).explicitKeyCol).2.1).isSome = true → _
+        by_cases hf : s.inFlow = true
+        · rw [if_pos hf]; intro hh; simp at hh
+        · rw [if_neg hf]
+          by_cases hsv : scanValueKeySurvives s (scanValueClearKey s) = true
+          · rw [if_pos hsv]
+            intro hh
+            left
+            refine ⟨h_l, ?_, by rw [← h_l]; exact hh⟩
+            show (if (scanValueClearKey s).explicitKeyLine.isSome = true
+                then (scanValueClearKey s).explicitKeyCol else -1) = s.explicitKeyCol
+            rw [if_pos hh]; exact h_c
+          · rw [if_neg hsv, h_c]
+            intro _
+            exact Or.inr ⟨_, _, rfl, rfl⟩
 
 /-! ## §6  The seeds -/
 

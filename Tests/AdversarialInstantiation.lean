@@ -4,6 +4,7 @@ public import L4YAML.Scanner.Scanner
 public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Output.Emitter
 public import L4YAML.Parser.Composition
+public import L4YAML.Parser.IndexedComposition
 public import L4YAML.Proofs.Parser.ParserGrammableBase
 public import L4YAML.Proofs.Production.StreamAccum
 public import Tests.VerifiedResult
@@ -2361,6 +2362,91 @@ example (sp : SurfPos) : True := by
 
 end ResumeConclusions
 
+/-! ## Priority 13 — `PendingKeys` and the re-read register (item 335, row 12 step 4)
+
+`ScannerState.pendingKeys` runs in lockstep with `indents`: one slot per level,
+`some line` while that level's explicit key is open.  The register
+`explicitKeyLine`/`explicitKeyCol` is re-read off the stack whenever a level's
+key closes (`PendingKeys.close`, `closeStaleExplicitKey(Ix)`), so an outer `?`
+survives an inner one's value.
+
+**Risk:** MEDIUM on the array helpers (`findSomeRev?` must pick the DEEPEST
+pending level; `closeAt` must close by COLUMN and leave size alone), HIGH on the
+end-to-end claim — item 333's hook used to reset the register, and the three
+restated `ExplicitKeyCoupling` lemmas only say the result is "a re-read", which
+holds for any re-read.  Only an instantiation sees that the re-read is the
+OUTER key.
+
+**Audit approach:** the helpers on empty / all-dead / one / nested stacks; the
+hook on a two-level stack (legacy and indexed); the parser on the inputs
+item 334 §3 found refused (`?⏎  ? y⏎  : z⏎: w: x` and the `? q` variant) and
+their controls.
+-/
+
+def testPendingKeys (state : IO.Ref TestCollector) : IO Unit := do
+  let cols : Array Int := #[0, 2, 4]
+  let nested : Array (Option Nat) := #[some 0, none, some 3]
+  checkM state "innermost/empty stacks" (PendingKeys.innermost #[] #[] == (none, -1)) ""
+  checkM state "innermost/all dead" (PendingKeys.innermost cols #[none, none, none] == (none, -1)) ""
+  checkM state "innermost/single outer" (PendingKeys.innermost cols #[some 0, none, none] == (some 0, 0)) ""
+  checkM state "innermost/picks the deepest" (PendingKeys.innermost cols nested == (some 3, 4)) ""
+  checkM state "closeAt/absent column is identity" (PendingKeys.closeAt cols nested 7 == nested) ""
+  checkM state "closeAt/keeps the size" ((PendingKeys.closeAt cols nested 0).size == 3) ""
+  checkM state "closeAt/closes by column" (PendingKeys.closeAt cols nested 4 == #[some 0, none, none]) ""
+  checkM state "close/inner closed → outer re-read"
+    (PendingKeys.close cols nested 4 == (#[some 0, none, none], some 0, 0)) ""
+  checkM state "close/outer closed → dead"
+    (PendingKeys.close cols #[some 0, none, none] 0 == (#[none, none, none], none, -1)) ""
+  checkM state "close/lockstep: shorter cols → missing columns never match"
+    (PendingKeys.close #[0] #[some 0, some 1] 2 == (#[some 0, some 1], some 1, -1)) ""
+  -- The stale hook on a two-level stack: `z` at column 0 closes the inner `? a`
+  -- (column 2) and the register becomes the OUTER `?`'s (line 0, column 0).
+  let s0 := staleStateAt "?\n  ? a\nz: v" 8 2 0 (some 1) 2 0
+  let s2 : ScannerState := { s0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := false },
+                 { column := 2, isSequence := false }],
+    pendingKeys := #[none, some 0, some 1] }
+  let s2' := closeStaleExplicitKey s2
+  checkM state "hook/two levels: register re-read to the outer key"
+    ((s2'.explicitKeyLine, s2'.explicitKeyCol) == (some 0, 0))
+    s!"({repr s2'.explicitKeyLine}, {s2'.explicitKeyCol})"
+  checkM state "hook/two levels: inner slot closed, outer kept"
+    (s2'.pendingKeys == #[none, some 0, none]) s!"{repr s2'.pendingKeys}"
+  let s1 : ScannerState := { s2 with pendingKeys := #[none, none, some 1] }
+  let s1' := closeStaleExplicitKey s1
+  checkM state "hook/one level: register dies (item 333's arm)"
+    ((s1'.explicitKeyLine, s1'.explicitKeyCol) == (none, -1)) ""
+  -- `:` strictly LEFT of the stale key closes it; AT the key's column it is the value.
+  let sl := { s2 with offset := 8 }
+  checkM state "hook/`:` left of the key closes it"
+    (((closeStaleExplicitKey { sl with input := "?\n  ? a\n: w" }).explicitKeyLine) == some 0) ""
+  checkM state "hook/`:` at the key's column is its value (identity)"
+    ((closeStaleExplicitKey (staleStateAt "? a\n: b" 4 1 0 (some 0) 0 0)).explicitKeyLine == some 0) ""
+  -- End to end: the inputs item 334 §3 found refused, and their controls.
+  let accepts (input : String) : Bool := match parseYaml input with | .ok _ => true | .error _ => false
+  checkM state "parse/outer ? survives inner value" (accepts "?\n  ? y\n  : z\n: w: x\n") ""
+  checkM state "parse/outer ? survives inner value and a second inner key"
+    (accepts "?\n  ? y\n  : z\n  ? q\n: w: x\n") ""
+  checkM state "parse/control: compact mapping key" (accepts "?\n  y: z\n: w: x\n") ""
+  checkM state "parse/control: spec 8.19" (accepts "? earth: blue\n: moon: white\n") ""
+  checkM state "parse/control: value left of a dead key refused (libyaml)"
+    (!accepts "- a\n- ? a\n: a\n") ""
+  checkM state "parse/control: item 333 main input" (accepts "? a\n[1]: b\n") ""
+  -- Flow collection inside a nested explicit key: the flow `:` must leave the BLOCK
+  -- pending-key slots alone (the flow open saved the register on `explicitKeyStack`
+  -- and the close restores it; a cleared slot would orphan that register).
+  let acceptsIx (input : String) : Bool :=
+    match L4YAML.TokenParser.Indexed.parseYamlIx input with | .ok _ => true | .error _ => false
+  for (label, input) in [
+      ("flow map value", "?\n  ? {a: b}\n  : z\n: w: x\n"),
+      ("flow seq value", "?\n  ? [a, b]\n  : z\n: w: x\n"),
+      ("flow map as the inner value", "?\n  ? y\n  : {a: b}\n: w: x\n"),
+      ("flow map in the outer value", "?\n  ? y\n  : z\n: {a: b}\n"),
+      ("nested flow in flow", "?\n  ? {a: [b, {c: d}]}\n  : z\n: w: x\n"),
+      ("single level, flow key", "? {a: b}\n: z\n")] do
+    checkM state s!"parse/flow inside a nested ? — legacy: {label}" (accepts input) ""
+    checkM state s!"parse/flow inside a nested ? — indexed: {label}" (acceptsIx input) ""
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -2377,6 +2463,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testScalarFinishBridges state
   testAnchorIndex state
   testFrameLevelKinds state
+  testPendingKeys state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

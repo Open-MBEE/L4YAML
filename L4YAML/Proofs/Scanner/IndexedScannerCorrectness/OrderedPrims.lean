@@ -323,7 +323,8 @@ lemma unwindIndentsLoopIx_preserves_ScanInvIx {input : String}
     · -- emit blockEnd + pop indents + recurse
       have h_emit : ScanInvIx (s.emit YamlToken.blockEnd) := emit_preserves_ScanInvIx s _ h
       have h_pop : ScanInvIx { s.emit YamlToken.blockEnd with
-          indents := (s.emit YamlToken.blockEnd).indents.pop } := by
+          indents := (s.emit YamlToken.blockEnd).indents.pop,
+          pendingKeys := (s.emit YamlToken.blockEnd).pendingKeys.pop } := by
         apply ScanInvIx_of_field_update _ _ h_emit rfl rfl
       exact ih _ h_pop
     · exact h

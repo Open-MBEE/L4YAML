@@ -191,17 +191,17 @@ lemma unwindIndentsLoop_new_tokens_not_plain (s : ScannerState) (col : Int) (fue
       by_cases hlt : j < s.tokens.size + 1
       · have hj_eq : j = s.tokens.size := by omega
         subst hj_eq
-        have h_pop_sz : s.tokens.size < ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens.size := by
+        have h_pop_sz : s.tokens.size < ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens.size := by
           show s.tokens.size < (s.emit .blockEnd).tokens.size
           rw [h_emit_size]; omega
         rw [unwindIndentsLoop_preserves_prefix _ col fuel' s.tokens.size h_pop_sz]
-        show match (({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens[s.tokens.size]'h_pop_sz).val with
+        show match (({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens[s.tokens.size]'h_pop_sz).val with
           | .scalar _ .plain => False | _ => True
         show match ((s.emit .blockEnd).tokens[s.tokens.size]'(by rw [h_emit_size]; omega)).val with
           | .scalar _ .plain => False | _ => True
         unfold ScannerState.emit
         simp only [Array.getElem_push_eq]
-      · have hge' : j ≥ ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens.size := by
+      · have hge' : j ≥ ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens.size := by
           show j ≥ (s.emit .blockEnd).tokens.size
           rw [h_emit_size]; omega
         exact ih _ j hj hge'
@@ -1102,7 +1102,7 @@ lemma pushSequenceIndent_preserves_PlainScalarsValid
     PlainScalarsValid (pushSequenceIndent s col).tokens := by
   unfold pushSequenceIndent
   split
-  · show PlainScalarsValid ({ s.emit .blockSequenceStart with indents := _ }.tokens)
+  · show PlainScalarsValid ({ s.emit .blockSequenceStart with indents := _, pendingKeys := _ }.tokens)
     exact PlainScalarsValid_push_non_plain s.tokens h_old
       ⟨s.currentPos, .blockSequenceStart, s.currentPos⟩ (by trivial)
   · exact h_old
@@ -1112,7 +1112,7 @@ lemma pushMappingIndent_preserves_PlainScalarsValid
     PlainScalarsValid (pushMappingIndent s col).tokens := by
   unfold pushMappingIndent
   split
-  · show PlainScalarsValid ({ s.emit .blockMappingStart with indents := _ }.tokens)
+  · show PlainScalarsValid ({ s.emit .blockMappingStart with indents := _, pendingKeys := _ }.tokens)
     exact PlainScalarsValid_push_non_plain s.tokens h_old
       ⟨s.currentPos, .blockMappingStart, s.currentPos⟩ (by trivial)
   · exact h_old
@@ -1922,15 +1922,15 @@ lemma unwindIndentsLoop_new_tokens_not_flow (s : ScannerState) (col : Int) (fuel
       by_cases hlt : j < s.tokens.size + 1
       · have hj_eq : j = s.tokens.size := by omega
         subst hj_eq
-        have h_pop_sz : s.tokens.size < ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens.size := by
+        have h_pop_sz : s.tokens.size < ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens.size := by
           show s.tokens.size < (s.emit .blockEnd).tokens.size
           rw [h_emit_size]; omega
         rw [unwindIndentsLoop_preserves_prefix _ col fuel' s.tokens.size h_pop_sz]
-        have h_val : (({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens[s.tokens.size]'h_pop_sz).val = .blockEnd := by
+        have h_val : (({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens[s.tokens.size]'h_pop_sz).val = .blockEnd := by
           show ((s.emit .blockEnd).tokens[s.tokens.size]'(by rw [h_emit_size]; omega)).val = .blockEnd
           unfold ScannerState.emit; simp [Array.getElem_push_eq]
         simp [h_val]
-      · have hge' : j ≥ ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop } : ScannerState).tokens.size := by
+      · have hge' : j ≥ ({ s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).tokens.size := by
           show j ≥ (s.emit .blockEnd).tokens.size
           rw [h_emit_size]; omega
         exact ih _ j hj hge'

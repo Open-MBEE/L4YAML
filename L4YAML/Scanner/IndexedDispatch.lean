@@ -426,8 +426,8 @@ def closeStaleExplicitKeyIx {input : String} (s : ScannerStateIx input) :
   else match s.explicitKeyLine, s.peek? with
     | some ekLine, some c =>
       if s.cursor.pos.line != ekLine && (s.cursor.pos.col : Int) ≤ s.explicitKeyCol
-          && c != ':' && c != '-' && c != '?' then
-        { s with explicitKeyLine := none, explicitKeyCol := -1 }
+          && c != '-' && c != '?' && !(c == ':' && (s.cursor.pos.col : Int) == s.explicitKeyCol) then
+        (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey
       else s
     | _, _ => s
 
@@ -739,7 +739,9 @@ def scanKeyIx {input : String} (s : ScannerStateIx input) :
   .ok { s with simpleKeyAllowed := true,
                 explicitKeyLine := some line,
                 explicitKeyCol := (col : Int),
-                simpleKey := { cursor := IxCursor.start input } }
+                simpleKey := { cursor := IxCursor.start input },
+                pendingKeys := if s.inFlow then s.pendingKeys
+                  else s.pendingKeys.set! (s.indents.size - 1) (some line) }
 
 /-- Clear a spurious simple-key when an explicit `?` key is pending.
     Pure state transformation — never modifies the token array.
@@ -826,6 +828,7 @@ def scanValuePrepareIx {input : String} (s : ScannerStateIx input) :
         { s with
             indents := s.indents.push { column := (s.simpleKey.cursor.pos.col : Int),
                                          isSequence := false },
+            pendingKeys := s.pendingKeys.push none,
             simpleKey := { cursor := IxCursor.start input } }
       else
         let s := s.overwriteAtCursor (idx + 1) sk YamlToken.key
@@ -874,6 +877,18 @@ def scanValueTabCheckIx {input : String} (origCol : Int) (origIndent : Int)
     else .ok ()
   else .ok ()
 
+/-- Step 4 (item 335): does the pending explicit key survive this `:`?  In flow
+    never; in block a dead register has nothing to close, and a live one
+    survives an implicit `:` deeper than the key's column (the `:` is inside the
+    key's own content).  Named so proofs can split on it by name. -/
+def scanValueKeySurvivesIx {input : String} (s s_kc : ScannerStateIx input) : Bool :=
+  let explicitValue : Bool :=
+    s_kc.explicitKeyLine.isSome && !s_kc.simpleKey.possible
+      && (s.inFlow || (s.cursor.pos.col : Int) == s_kc.explicitKeyCol)
+  !s.inFlow && (!s_kc.explicitKeyLine.isSome || !explicitValue
+    && (if s_kc.simpleKey.possible then (s_kc.simpleKey.cursor.pos.col : Int)
+        else (s.cursor.pos.col : Int)) > s_kc.explicitKeyCol)
+
 /-- Scan `:` value indicator. Mirrors the legacy five-stage chain
     `scanValueClearKey` / `scanValueValidate` / `scanValueIndentTabCheck` /
     `scanValuePrepare` / `scanValueTabCheck` so each stage carries a single
@@ -900,15 +915,19 @@ def scanValueIx {input : String} (s : ScannerStateIx input) :
     if s.inFlow || explicitValue then
       s_after_advance.implicitValueLine
     else some s.cursor.pos.line
-  let ekl : Option Nat :=
-    if explicitValue then none
-    else if !s.inFlow
-        && (if s_kc.simpleKey.possible then (s_kc.simpleKey.cursor.pos.col : Int)
-            else (s.cursor.pos.col : Int)) > s_kc.explicitKeyCol then
-      s_kc.explicitKeyLine
-    else none
-  let ekc : Int := if ekl.isSome then s_kc.explicitKeyCol else -1
-  .ok { s_after_advance with simpleKeyAllowed := true, explicitKeyLine := ekl, explicitKeyCol := ekc, implicitValueLine := ivl }
+  let survives : Bool := scanValueKeySurvivesIx s s_kc
+  let settle : Array (Option Nat) × Option Nat × Int :=
+    if s.inFlow then (s_after_advance.pendingKeys, none, -1)
+    else if survives then
+      (s_after_advance.pendingKeys, s_kc.explicitKeyLine,
+        if s_kc.explicitKeyLine.isSome then s_kc.explicitKeyCol else -1)
+    else PendingKeys.close s_after_advance.indentColumns s_after_advance.pendingKeys s_kc.explicitKeyCol
+  .ok { s_after_advance with
+        simpleKeyAllowed := true
+        explicitKeyLine := settle.2.1
+        explicitKeyCol := settle.2.2
+        pendingKeys := settle.1
+        implicitValueLine := ivl }
 
 /-! ## Document-marker scanners -/
 

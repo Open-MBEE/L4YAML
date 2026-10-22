@@ -327,7 +327,8 @@ lemma unwindIndentsLoop_back_mem (s : ScannerState) (col : Int) (fuel : Nat)
     · intro h
       have hm := ih _ h
       have he : ({ s.emit .blockEnd with
-          indents := (s.emit .blockEnd).indents.pop } : ScannerState).indents
+          indents := (s.emit .blockEnd).indents.pop,
+          pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).indents
           = s.indents.pop := by simp [ScannerState.emit]
       rw [he] at hm
       exact indents_mem_of_mem_pop hm
@@ -847,6 +848,7 @@ lemma scanValuePrepare_col_le {s : ScannerState}
       unfold ScannerState.currentIndent
       rw [show ({ s with
             tokens := _,
+            pendingKeys := _,
             indents := s.indents.push
               { column := (s.simpleKey.pos.col : Int), isSequence := false },
             simpleKey := { possible := false } } : ScannerState).indents
@@ -973,6 +975,7 @@ lemma scanValuePrepare_key_col_le {s : ScannerState} {k : Nat}
       unfold ScannerState.currentIndent
       rw [show ({ s with
             tokens := _,
+            pendingKeys := _,
             indents := s.indents.push
               { column := (s.simpleKey.pos.col : Int), isSequence := false },
             simpleKey := { possible := false } } : ScannerState).indents

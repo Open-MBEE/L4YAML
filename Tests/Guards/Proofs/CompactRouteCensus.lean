@@ -136,7 +136,7 @@ def census : Nat × Nat × Nat × Nat × Nat := Id.run do
     without the mid-line conjunct is accepted 916 times, which is what says the
     zero belongs to `InlineResidue` and not to a discriminator that never
     fires. -/
-#guard census == (35937, 8648, 232, 0, 916)
+#guard census == (35937, 8344, 232, 0, 938)
 
 /-- What refuses a program: the error's constructor name, or `ACCEPTED`. -/
 partial def refusal (input : String) : String :=

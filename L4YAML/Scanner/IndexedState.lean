@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Scanner.IndexedScanner
+public import L4YAML.Scanner.State
 public import L4YAML.Token.Token
 
 public meta import L4YAML.Spec.YamlSpec
@@ -84,6 +85,8 @@ structure ScannerStateIx (input : String) where
   cursor : IxCursor input
   /-- Indent stack. Bottom sentinel `{ column := -1, isSequence := false }`. -/
   indents : Array IndentEntryIx := #[{ column := -1, isSequence := false }]
+  /-- Indexed twin of `ScannerState.pendingKeys`: one slot per `indents` level. -/
+  pendingKeys : Array (Option Nat) := #[none]
   /-- Flow nesting level. 0 = block context. -/
   flowLevel : Nat := 0
   /-- Emitted-token accumulator. -/
@@ -196,6 +199,21 @@ These delegate to the underlying `IxCursor`. -/
   | some e => e.column
   | none => -1
 
+/-- Indexed twin of `ScannerState.markPendingKey`. -/
+def markPendingKey {input : String} (s : ScannerStateIx input) (line : Nat) : ScannerStateIx input :=
+  { s with pendingKeys := s.pendingKeys.set! (s.indents.size - 1) (some line) }
+
+def indentColumns {input : String} (s : ScannerStateIx input) : Array Int := s.indents.map (·.column)
+
+def clearPendingKeyAt {input : String} (s : ScannerStateIx input) (col : Int) : ScannerStateIx input :=
+  { s with pendingKeys := PendingKeys.closeAt s.indentColumns s.pendingKeys col }
+
+def innermostPendingKey {input : String} (s : ScannerStateIx input) : Option Nat × Int :=
+  PendingKeys.innermost s.indentColumns s.pendingKeys
+
+def readPendingKey {input : String} (s : ScannerStateIx input) : ScannerStateIx input :=
+  { s with explicitKeyLine := s.innermostPendingKey.1, explicitKeyCol := s.innermostPendingKey.2 }
+
 /-! ## Navigation -/
 
 /-- Advance the cursor by one character (no state changes elsewhere). -/
@@ -284,7 +302,7 @@ def unwindIndentsLoopIx {input : String} (s : ScannerStateIx input) (col : Int) 
   | fuel + 1 =>
     if s.currentIndent > col && s.indents.size > 1 then
       let s' := s.emit YamlToken.blockEnd
-      let s' := { s' with indents := s'.indents.pop }
+      let s' := { s' with indents := s'.indents.pop, pendingKeys := s'.pendingKeys.pop }
       unwindIndentsLoopIx s' col fuel
     else s
 
@@ -302,7 +320,7 @@ def pushSequenceIndentIx {input : String} (s : ScannerStateIx input) (col : Int)
     ScannerStateIx input :=
   if col > s.currentIndent then
     let s' := s.emit YamlToken.blockSequenceStart
-    { s' with indents := s'.indents.push { column := col, isSequence := true } }
+    { s' with indents := s'.indents.push { column := col, isSequence := true }, pendingKeys := s'.pendingKeys.push none }
   else s
 
 /-- Push a new mapping-indent entry if `col` is deeper than the current
@@ -311,7 +329,7 @@ def pushMappingIndentIx {input : String} (s : ScannerStateIx input) (col : Int) 
     ScannerStateIx input :=
   if col > s.currentIndent then
     let s' := s.emit YamlToken.blockMappingStart
-    { s' with indents := s'.indents.push { column := col, isSequence := false } }
+    { s' with indents := s'.indents.push { column := col, isSequence := false }, pendingKeys := s'.pendingKeys.push none }
   else s
 
 /-! ## Whitespace skips at the state level

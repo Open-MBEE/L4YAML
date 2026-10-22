@@ -4,6 +4,7 @@ public import L4YAML.Scanner.Scanner
 public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Output.Emitter
 public import L4YAML.Parser.Composition
+public import L4YAML.Parser.IndexedComposition
 public import L4YAML.Proofs.Parser.ParserGrammableBase
 public import Tests.VerifiedResult
 

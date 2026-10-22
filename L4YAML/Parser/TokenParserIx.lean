@@ -128,7 +128,7 @@ def parseNode {input : String} (ps : ParseStateIx input) (fuel : Nat) :
   let nodeStartPos := ps.peekPos?.getD { offset := 0, line := 0, col := 0 }
   match ps.peek? with
   | some (.alias name) =>
-    if !ps.declaredAnchors.any (fun n => n == name) then
+    if !ps.declaredIndex.contains name then
       throw (.undefinedAlias name nodeStartPos.line nodeStartPos.col)
     let ps := ps.advance
     let ps := if ps.trackPositions then
@@ -506,7 +506,7 @@ def parseSinglePairMapping {input : String} (ps : ParseStateIx input) (fuel : Na
     | some .value | some .flowEntry | some .flowSequenceEnd =>
       .ok (emptyNode, ps)
     | _ => parseNode ps fuel
-  let keyContent := match key with | .scalar s => s.content | _ => "0"
+  let keyContent := keyPathSegment key
   let savedPath := ps.currentPath
   let ps := { ps with currentPath := savedPath.push (.key keyContent) }
   let (consumed, ps) := ps.tryConsume .value
@@ -672,7 +672,8 @@ def parseStreamLoop {input : String} (ps : ParseStateIx input) (docs : Array Yam
         | .error e => .error e
         | .ok (doc, ps') =>
           let docs := docs.push doc
-          let ps := { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
+          let ps := { ps' with anchors := #[], anchorIndex := .empty, declaredAnchors := #[], declaredIndex := .empty,
+                               nodePositions := #[], currentPath := #[] }
           let (consumed, ps) := ps.tryConsume .documentEnd
           let streamState := if consumed then .afterDocumentEnd else .afterDocument
           if ps.pos == savedPos then .ok docs

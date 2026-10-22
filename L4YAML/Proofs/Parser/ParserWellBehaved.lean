@@ -390,9 +390,8 @@ lemma applyNodeFinalization_tokens
     (val : YamlValue) (ps : ParseState) (props : NodeProperties)
     (nodeStartPos : YamlPos) :
     (applyNodeFinalization val ps props nodeStartPos).2.tokens = ps.tokens := by
-  simp only [applyNodeFinalization, ParseState.addAnchor]
-  split <;> simp_all
-  all_goals (split <;> simp_all)
+  simp only [applyNodeFinalization]
+  split <;> (try split) <;> simp_all [ParseState.addAnchor]
 
 /-- `applyNodeFinalization` preserves the parse position (`.pos`).
     Properties application, anchor registration, and G5c tracking never advance. -/
@@ -400,18 +399,16 @@ lemma applyNodeFinalization_pos
     (val : YamlValue) (ps : ParseState) (props : NodeProperties)
     (nodeStartPos : YamlPos) :
     (applyNodeFinalization val ps props nodeStartPos).2.pos = ps.pos := by
-  simp only [applyNodeFinalization, ParseState.addAnchor]
-  split <;> simp_all
-  all_goals (split <;> simp_all)
+  simp only [applyNodeFinalization]
+  split <;> (try split) <;> simp_all [ParseState.addAnchor]
 
 /-- `applyNodeFinalization` preserves `trackPositions`. -/
 lemma applyNodeFinalization_trackPositions
     (val : YamlValue) (ps : ParseState) (props : NodeProperties)
     (nodeStartPos : YamlPos) :
     (applyNodeFinalization val ps props nodeStartPos).2.trackPositions = ps.trackPositions := by
-  simp only [applyNodeFinalization, ParseState.addAnchor]
-  split <;> simp_all
-  all_goals (split <;> simp_all)
+  simp only [applyNodeFinalization]
+  split <;> (try split) <;> simp_all [ParseState.addAnchor]
 
 /-! ### §5e′  parseNodeProperties preservation lemmas -/
 
@@ -3102,7 +3099,8 @@ lemma parseStreamLoop_docs_from_parseDocument
               (h_eq ▸ h_fpsv) (h_eq ▸ h_matched) h_pd).trans h_eq
           -- Tokens preserved through struct update + tryConsume
           let ps_reset : ParseState :=
-            { ps' with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
+            { ps' with anchors := #[], anchorIndex := .empty, declaredAnchors := #[],
+                       declaredIndex := .empty, nodePositions := #[], currentPath := #[] }
           have h_next_tok : (ps_reset.tryConsume .documentEnd).2.tokens = tokens :=
             (tryConsume_tokens _ _).trans h_pd_tok
           -- The accumulator grows by one doc

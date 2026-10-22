@@ -60,10 +60,8 @@ lemma applyNodeFinalization_commits_anchor
           { anchor := some name, tag := tag, hadDuplicateAnchor := dup } start).2)
       name := by
   unfold applyNodeFinalization
-  split <;> simp only
-  all_goals
-    split <;> simp [AliasAllowed, ofParserAliases, ParseState.addAnchor,
-      Array.toList_push]
+  dsimp only
+  split <;> simp [AliasAllowed, ofParserAliases, ParseState.addAnchor, Array.toList_push]
 
 /-- With no anchor property, finalization does not change the alias-name
 projection. -/
@@ -75,9 +73,8 @@ lemma applyNodeFinalization_no_anchor_projection
         { anchor := none, tag := tag, hadDuplicateAnchor := dup } start).2).anchors =
       (ofParserAliases ps).anchors := by
   unfold applyNodeFinalization
-  split <;> simp only
-  all_goals
-    split <;> rfl
+  dsimp only
+  split <;> rfl
 
 end L4YAML.Proofs.Serialization.AnchorRuntime
 

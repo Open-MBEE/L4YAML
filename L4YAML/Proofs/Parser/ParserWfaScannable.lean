@@ -151,8 +151,7 @@ lemma addAnchor_wfaS (ps : ParseState) (name : String) (val : YamlValue)
       Scannable (((val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors).stripAnchors)
         inFlow) :
     WellFormedAnchorsS (ps.addAnchor name val).anchors := by
-  unfold ParseState.addAnchor
-  dsimp only []
+  rw [ParseState.addAnchor_anchors]
   exact WFAS_of_push _ _ h_wfa h_scan
 
 /-- **The lemma the parse-side clique turns on**, mirrored: node finalization

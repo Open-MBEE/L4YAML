@@ -46,7 +46,6 @@ DECLARED_GAPS = {
     # Row 12 step 1 (the frame-list retyping) is written up on its own branch;
     # drop this row when that entry lands.
     332: "row-12--the-plan-table-cell-archived-2026-10-18",
-    334: "row-12--the-plan-table-cell-archived-2026-10-18",
 }
 
 HEADING_RE = re.compile(r"^###\s+Item\s+(\d+)([a-z]?)\b(.*)$")

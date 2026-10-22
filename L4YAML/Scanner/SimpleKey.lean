@@ -468,7 +468,7 @@ def scanValue (s : ScannerState) : Except ScanError ScannerState := do
   -- outer `?` survives an inner one's value (`?⏎  ? y⏎  : z⏎: w: x`).
   let survives : Bool := scanValueKeySurvives s s_kc
   let settle : Array (Option Nat) × Option Nat × Int :=
-    if s.inFlow then (s_after_advance.pendingKeys.map fun _ => none, none, -1)
+    if s.inFlow then (s_after_advance.pendingKeys, none, -1)
     else if survives then
       (s_after_advance.pendingKeys, s_kc.explicitKeyLine,
         if s_kc.explicitKeyLine.isSome then s_kc.explicitKeyCol else -1)

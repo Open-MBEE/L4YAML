@@ -2092,6 +2092,20 @@ def testPendingKeys (state : IO.Ref TestCollector) : IO Unit := do
   checkM state "parse/control: value left of a dead key refused (libyaml)"
     (!accepts "- a\n- ? a\n: a\n") ""
   checkM state "parse/control: item 333 main input" (accepts "? a\n[1]: b\n") ""
+  -- Flow collection inside a nested explicit key: the flow `:` must leave the BLOCK
+  -- pending-key slots alone (the flow open saved the register on `explicitKeyStack`
+  -- and the close restores it; a cleared slot would orphan that register).
+  let acceptsIx (input : String) : Bool :=
+    match L4YAML.TokenParser.Indexed.parseYamlIx input with | .ok _ => true | .error _ => false
+  for (label, input) in [
+      ("flow map value", "?\n  ? {a: b}\n  : z\n: w: x\n"),
+      ("flow seq value", "?\n  ? [a, b]\n  : z\n: w: x\n"),
+      ("flow map as the inner value", "?\n  ? y\n  : {a: b}\n: w: x\n"),
+      ("flow map in the outer value", "?\n  ? y\n  : z\n: {a: b}\n"),
+      ("nested flow in flow", "?\n  ? {a: [b, {c: d}]}\n  : z\n: w: x\n"),
+      ("single level, flow key", "? {a: b}\n: z\n")] do
+    checkM state s!"parse/flow inside a nested ? — legacy: {label}" (accepts input) ""
+    checkM state s!"parse/flow inside a nested ? — indexed: {label}" (acceptsIx input) ""
 
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)

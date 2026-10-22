@@ -293,6 +293,9 @@ census sees it too: four of them DO eliminate their arm — they read the FLAG,
 which is the loose arm's whole left disjunct — while the conjunct's one reader
 is `colon_fires_implicit_key` alone.  Disjoint readers, from the term. -/
 
+-- 2026-10-21 (item 311): `flowKeyRoute_of_open`'s `h_park` is binder #15 and `flowKeyRoute_of_root`'s #10 — both lemmas
+-- take the flow frame's gate `{g : Option ScannerState}` before it (their conclusions carry the frame's named alternative
+-- `PackAltG g`); the rows are re-indexed, the verdicts stand (the index is fixed in the table below, the name is printed from it).
 def expectedCalibration : List String :=
   [ "FIELD block_dispatch_deferred#5 (h_arm)",
     "RELAY block_dispatch_deferred_stamp_offcol#8 (h_arm)",
@@ -304,8 +307,8 @@ def expectedCalibration : List String :=
     "RELAY accum_block_on_pendingBlockContent#25 (h_park)",
     "RELAY accum_block_on_noPending#13 (h_arm)",
     "RELAY accum_content_on_noPending#14 (h_park)",
-    "READ flowKeyRoute_of_open#14 (h_park)",
-    "RELAY flowKeyRoute_of_root#9 (h_park)",
+    "READ flowKeyRoute_of_open#15 (h_park)",
+    "RELAY flowKeyRoute_of_root#10 (h_park)",
     "RELAY keyctx_of_preprocess#11 (h_park)",
     "READ landing_or_park_save#6 (h_park)",
     "READ landing_or_park_ska#6 (h_park)",
@@ -324,8 +327,8 @@ run_cmd do
       (``accum_block_on_pendingBlockContent, 25, `h_park),
       (``accum_block_on_noPending, 13, `h_arm),
       (``accum_content_on_noPending, 14, `h_park),
-      (``flowKeyRoute_of_open, 14, `h_park),
-      (``flowKeyRoute_of_root, 9, `h_park),
+      (``flowKeyRoute_of_open, 15, `h_park),
+      (``flowKeyRoute_of_root, 10, `h_park),
       (``keyctx_of_preprocess, 11, `h_park),
       (``landing_or_park_save, 6, `h_park),
       (``landing_or_park_ska, 6, `h_park),
@@ -509,9 +512,95 @@ adds.**   `constants` counts the module's non-internal constants, generated ones
 -- keep their verdicts.  No other row moves: the deleted alternatives bound
 -- nothing, and the `w ∉ ks` exits apply binders the frameless exit already
 -- reads (item 296's two `h_node` rows read READ, as pinned).
+-- 2026-10-20 (item 299): `constants` 1363 → 1364, `eta` 386 → 387, `RELAY`
+-- 2302 → 2301.  The roster (`scratchpad/l4yaml-row12-steps/525-roster-299.out`
+-- against `501-roster-297.out`, 4024 rows both) loses the three deleted token
+-- walk lemmas' six RELAY binders (`docStartOnLineLoop_hit#3/#4`,
+-- `docStartOnLineLoop_skip_ph#3`, `docStartOnLine_of_lastReal#3/#4/#5`) and
+-- gains six: `PendingNode.pendingDocStart#11 (h_docline)` ETA, and five RELAY
+-- — `dispatch_refutes_sameLine#8 (h_dsl_eq)`, `ad_docStartLine#4/#5`,
+-- `dispatchContent_docStartLine#3`, `preprocess_preserves_docStartLine#3`.
+-- `dispatch_refutes_sameLine`'s later binders renumber and keep their
+-- verdicts; no other row moves.
+-- 2026-10-20 (item 300): `constants` 1364 → 1366 (`KeyPackPunt.markerLine`,
+-- `flowOpen_marker`), `decls` +2, `eta` 387 → 390, `READ` 1121 → 1125, `RELAY`
+-- 2301 → 2314.  The roster (`scratchpad/l4yaml-row12-steps/556-roster-300.out`
+-- against `525-roster-299.out`, 4024 → 4044 rows) gains exactly twenty: ETA
+-- `KeyPackPunt.markerLine#1 (h_doc)`, `#2 (h_kline)` and `KeyPackPunt.rec#4
+-- (markerLine)`; READ `KeyPackPunt.casesOn#5 (markerLine)`,
+-- `content_dispatch_routed#26 (h_markerline)`, `KmSound.push#17 (h_marker_new)`
+-- and `flowOpen_marker#4 (h_doc)`; RELAY `KeyPackPunt.recOn#5 (markerLine)`,
+-- `flowOpen_marker#5 (h_pre)` and `#6 (h_dsl')`, `km_push_at_open#20 (h_dsl')`
+-- and `#21 (h_marker_new)`, and the field-equality premises `h_dsl`/`h_dsl'`/
+-- `h_dsl_open` of `KmSound.transport`, `colon_transport`, `push`, `pop`,
+-- `close_km_pop`, `close_col_of_base`, `keyPackPunt_transport` and
+-- `accum_flow_open_depth0`.  Later binders renumber and keep their verdicts;
+-- no other row moves.
+-- 2026-10-20 (item 303): `constants` 1366 → 1386, `decls` 1084 → 1103, `eta`
+-- 390 → 414, `READ` 1125 → 1138, `RELAY` 2314 → 2330 — `KeyFrames`, item 302's
+-- value-line resume stack over mixed levels (the inductive with its three
+-- constructors and recursors, `KeyFrames.close`, `KeyFrames.ofResumeFrames`,
+-- `KeyFrames.resumeAt`), which nothing in the library reads yet.  The roster
+-- (`scratchpad/l4yaml-row12-steps/601-roster-303.out` against
+-- `556-roster-300.out`, 4044 → 4097 rows) gains exactly the 53 rows of those
+-- declarations and nothing else: ETA 24 — `KeyFrames.bottom#1`, `mapLevel#4/#5`,
+-- `seqLevel#4/#5`, `rec#4–#7`, and the structural-recursion auxiliaries
+-- `below#1`, `below.bottom#1`, `below.mapLevel#…` ×4, `below.seqLevel#…` ×4,
+-- `below.rec#…` ×5; READ 13 — `casesOn` ×3, `below.casesOn` ×3, `brecOn#…`,
+-- and the `match_1` auxiliaries of `close` ×2, `ofResumeFrames` ×2,
+-- `resumeAt` ×2; RELAY 16 — `recOn` ×4, `casesOn#…`, `below.casesOn` ×2,
+-- `brecOn#…`, `close#…`, `ofResumeFrames#…`, `resumeAt` ×2 and the three
+-- `match_1` auxiliaries ×1/×1/×2.  No existing row moves or renumbers.
+-- 2026-10-20 (item 304): `constants` 1386 → 1388, `decls` 1103 → 1105 (the
+-- route helpers' `KeyFrames` twins `resumeFrameRouteK`, `resumeMapRouteK`),
+-- `FIELD` 158 → 163, `READ` 1138 → 1144, `eta`/`RELAY` unchanged — the
+-- value-line stacks are `KeyFrames` (item 302's stack).  The roster
+-- (`scratchpad/l4yaml-row12-steps/611-roster-304.out` against
+-- `601-roster-303.out`, 4097 → 4108 rows) gains exactly eleven rows and loses
+-- none: FIELD `resumeFrameRouteK#5 (h_ind)`, `#8 (_)`, `resumeMapRouteK#5
+-- (h_ind)`, `#8 (_)`, `#10 (_)` — the twins' indent premise and conclusion
+-- binders; READ `resumeFrameRouteK#6 (h_frames)`, `resumeMapRouteK#6
+-- (h_frames)`, and the `h_2` binder of the four `match_1` auxiliaries
+-- (`entryKeyPack_of_dispatch.match_1_14/_18`, `entryPropsKeyPack_of_dispatch
+-- .match_1_12/_16`) that split `KeyFrames.resumeAt`'s sum at the two key-pack
+-- lemmas' value-line resumes.  No existing row moves or renumbers.
+-- 2026-10-20 (item 307): `constants` 1388 → 1392, `decls` 1105 → 1109, `READ` 1144 → 1154 — `closeThenBlock`'s three new
+-- haves (`h_resSeqV`, `h_resKslot`, `h_slotV'`) and their match auxiliaries; the γ roots read `h_closeFV_old`/`h_mapFV108`.
+-- 2026-10-20 (item 307, second chain): `constants` 1392 → 1393, `decls` 1109 → 1110, `READ` 1154 → 1160, `RELAY` 2330 → 2329 — the three relays are `match`es
+-- (one more auxiliary, one more read each; the `.imp` relay gone).
+-- 2026-10-20 (item 309): `constants` 1393 → 1398, `decls` 1110 → 1114, `READ` 1160 → 1161, `RELAY` 2329 → 2337 — `ExplicitValueRefused`, the three sentinel
+-- lemmas and the refutation; the generic helpers relay their alternative.
+-- 2026-10-21 (item 311): `constants` 1398 → 1403, `decls` 1114 → 1117, `UNUSED` 9 → 12 — the named alternative's two
+-- abbrevs and three stubs (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`), each stub's `_h` unused by
+-- construction until its lane proves it.
+-- 2026-10-21 (item 313): `constants` 1403 → 1405, `decls` 1117 → 1119, `READ` +1, `RELAY` +2, `UNUSED` 12 → 15 —
+-- `ExplicitValueRefused.step_content` (reads its predicate, relays the two step facts) and `PackAlt.step_content`, whose
+-- three binders are unused until the promise after `-- refused:` is its body.
+-- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
+-- dispatch-only transport and its promised wrapper (two unused binders until the promise is its body).
+-- 2026-10-21 (item 315): `RELAY` 2340 → 2341 — `entryPropsKeyPack_of_dispatch`'s `h_dispatch`, relayed to the step lemma.
+-- 2026-10-21 (item 318): `constants` 1407 → 1408, `decls` 1121 → 1122, `READ` 1163 → 1161, `RELAY` 2341 → 2343,
+-- `UNUSED` 17 → 24 — the block lane's two transports and their two wrappers (+4) less item 309's three indent lemmas (−3);
+-- `not_of_classA` lost its indent premise and the two content transports hand `h` on whole (one register equation each)
+-- where they destructured it; the seven `_`-binders of `PackAlt.step_blockEntry` and `PackAlt.step_value` are the new UNUSED.
+-- 2026-10-21 (item 320): `constants` 1408 → 1409, `decls` 1122 → 1123, `eta` 414 → 416, `READ` 1161 → 1166 — the marker
+-- constructors' new field `h_noek` (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split
+-- arms' `h_alt`, and the `h_seqFramesV` relay's wrapper; RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 322): `READ` 1166 → 1168 — the two colon openers' new step premise `h_alt_step` is applied inside each
+-- (a READ); the callers' `PackAlt.step_value …` arguments are terms, not hypotheses, so RELAY stands.
+-- 2026-10-21 (item 324): `constants`/`decls` +2, `RELAY` 2343 → 2345, `UNUSED` 24 → 26 — `ExplicitValueRefused.step_preprocess`
+-- relays its two hypotheses into the preprocess register lemma; its wrapper `PackAlt.step_preprocess` holds the same two unused
+-- (`trivial` while `PackAlt` is `True`, the promise after `-- refused:`), like the family's four other wrappers.
 def expectedModuleTally : String :=
-  "constants=1363 decls=1082 eta=386 FIELD=158 READ=1121 RELAY=2302 RETURN=48 UNUSED=9"
+  "constants=1411 decls=1125 eta=416 FIELD=163 READ=1168 RELAY=2346 RETURN=48 UNUSED=26"
 
+-- 2026-10-21 (item 311): `flowKeyPack_of_close`'s unused `_` is binder #11 (`{g}` precedes it); the three conversion stubs
+-- (`PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`) leave their `_h` unused until their lanes prove them.
+-- 2026-10-21 (item 318): seven rows added — `PackAlt.step_blockEntry`'s `_h_preprocess`/`_h_dispatch`/`_h` (#3–#5: three
+-- implicit states precede them, where `step_content` also has `{c}`) and `PackAlt.step_value`'s four (#3–#6, `_h_noflow` among
+-- them); regenerated from the census's own `got` rows.
+-- 2026-10-21 (item 324): two rows added — `PackAlt.step_preprocess`'s `_h_preprocess`/`_h` (#3–#4: two implicit states and
+-- `{c}` precede them), unused while its promise is not yet its body, like the family's other wrappers; rows from the guard's `got`.
 def expectedUnused : List String :=
   -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is
   -- its thirteenth binder.
@@ -522,8 +611,25 @@ def expectedUnused : List String :=
     "block_dispatch_deferred_stamp_offcol#11 (_h_src)",
     "block_dispatch_deferred_stamp_offcol#12 (_h_indent)",
     "block_dispatch_deferred_stamp_offcol#13 (_h_ne)",
-    "flowKeyPack_of_close#10 (_)",
-    "question_open_map#15 (_h_noflow_disp)" ]
+    "flowKeyPack_of_close#11 (_)",
+    "ofGateClose#2 (_h)",
+    "ofPark#2 (_h)",
+    "ofRefused#1 (_h)",
+    "question_open_map#15 (_h_noflow_disp)",
+    "step_blockEntry#3 (_h_preprocess)",
+    "step_blockEntry#4 (_h_dispatch)",
+    "step_blockEntry#5 (_h)",
+    "step_content#4 (_h_preprocess)",
+    "step_content#5 (_h_dispatch)",
+    "step_content#6 (_h)",
+    "step_dispatch#3 (_h_dispatch)",
+    "step_dispatch#4 (_h)",
+    "step_preprocess#3 (_h_preprocess)",
+    "step_preprocess#4 (_h)",
+    "step_value#3 (_h_preprocess)",
+    "step_value#4 (_h_dispatch)",
+    "step_value#5 (_h_noflow)",
+    "step_value#6 (_h)" ]
 
 run_cmd do
   let env ← getEnv
@@ -584,18 +690,25 @@ inherit their parents' binders filtered out so the denominator is declarations. 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` is no longer a
 -- `_ ∨ True` (a READ one), so it leaves the population.  Item 288: nor is
 -- `PendingNode.pendingMapValue.h_vslot` (a constructor field, read ETA).
-def expectedOptTally : String := "total=161 ETA=33 READ=84 RELAY=44"
+-- Item 300: two more optional contexts, both READ — `content_dispatch_routed`'s
+-- `h_markerline` (cased in both cascades) and `km_push_at_open`'s
+-- `h_marker_new` (applied to the base-open premise).
+-- 2026-10-20 (item 307): `READ` 86 → 87, `RELAY` 44 → 43 — `accum_block_on_pendingContent`'s `h_mapFV108` is READ
+-- (a `match`) where it was RELAYed.
+def expectedOptTally : String := "total=163 ETA=33 READ=87 RELAY=43"
 
-/-- The six item 212 enumerated, by verdict.  Five are read in
-    `content_dispatch_routed`'s own term; `h_ref` alone relays, and §5 says
-    where it lands. -/
+/-- The six item 212 enumerated, by verdict — seven since item 300.  Six are
+    read in `content_dispatch_routed`'s own term (`h_markerline`, the marker
+    reason's payload, cased in both cascades); `h_ref` alone relays, and §5
+    says where it lands. -/
 def expectedContentDispatch : List String :=
   [ "READ content_dispatch_routed#18 (h_keyctx)",
     "READ content_dispatch_routed#20 (h_suffixctx)",
     "READ content_dispatch_routed#21 (h_nodocctx)",
     "READ content_dispatch_routed#22 (h_markerctx)",
     "RELAY content_dispatch_routed#24 (h_ref)",
-    "READ content_dispatch_routed#25 (h_propsctx)" ]
+    "READ content_dispatch_routed#25 (h_propsctx)",
+    "READ content_dispatch_routed#26 (h_markerline)" ]
 
 run_cmd do
   let env ← getEnv
@@ -659,7 +772,7 @@ def expectedCoreTerminal : List String :=
     "accum_block_on_pendingContent#30 (h_seqF168)",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old)",
     "colon_open_map#24 (h_cov_in)",
-    "flowKeyRoute_of_root#20 (h_tail143)",
+    "flowKeyRoute_of_root#21 (h_tail143)",  -- item 311: `{g}` precedes it
     "indicator_open_map#26 (h_ref_land)",
     "question_open_map#23 (h_cov_in)",
     "question_open_map#24 (h_cov_nil)" ]
@@ -714,12 +827,13 @@ about proofs.** -/
 def expectedPuntFields : String :=
   -- Item 289: `tab` carries the saved key's possibility and line beside the
   -- scan's reading and the park's flags.  Item 297: `dedent` is deleted.
-  "tab=4 implicitValue=3 noKeyContext=0"
+  -- Item 300: `markerLine` carries the field read and the key's line.
+  "tab=4 implicitValue=3 markerLine=2 noKeyContext=0"
 
 run_cmd do
   let env ← getEnv
   let got := String.intercalate " " ([``KeyPackPunt.tab,
-      ``KeyPackPunt.implicitValue, ``KeyPackPunt.noKeyContext].map (fun c =>
+      ``KeyPackPunt.implicitValue, ``KeyPackPunt.markerLine, ``KeyPackPunt.noKeyContext].map (fun c =>
     match env.find? c with
     | some (.ctorInfo cv) => s!"{c.getString!}={cv.numFields}"
     | _ => s!"{c.getString!}=?"))

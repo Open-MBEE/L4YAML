@@ -277,7 +277,7 @@ pins below are what makes that checkable rather than asserted. -/
     library — the `Scannable`-valued compose chain, kept in its own module
     because two `maxHeartbeats 4000000` `YamlValue` inductions do not elaborate
     in one. -/
-def expectedClosure : Nat := 248
+def expectedClosure : Nat := 250
 
 /-- `scripts/drop_sweep.py`'s reading, re-derivable in one command and pinned
     here so that a walk which starts from the wrong root disagrees with it
@@ -304,10 +304,22 @@ def expectedClosure : Nat := 248
     `Tests.ContentEqRefl` belongs to no Lake target at all, so nothing can
     elaborate it.  Reading its source finds no mention of the stream, which is
     a hint and not a check — item 237's own finding is that a statement can
-    assert `InYamlLanguage` without naming it. -/
+    assert `InYamlLanguage` without naming it.
+
+    **Re-pinned at DOCS item 299** (2026-10-20), where the gate battery ran the
+    sweep for the first time since item 265 pinned 866: eighteen modules were
+    added in between by work outside row 12 — the serialization semantics
+    (`097b7a29`, `62cc64ad`: `Proofs/Serialization/*`, ten modules), the WFA
+    twins (`f0081be0`, `5a1c0a24`: `Proofs/Parser/*WfaScannable*`,
+    `ParserScannableBase`, `Guards/Proofs/AliasNodeRoute`), the deriving
+    consumer (`92115689`: `Tests/DerivingConsumer`, whose `Runner` is the one
+    new EXCLUDED module, a non-default target) and the schema proof
+    (`78fab13e`: `Proofs/Schema/FlowIndicator`) — so the closure reads 883,
+    imported 879, excluded 37 and `excludedDecls` 603.  Item 299 itself adds
+    no module. -/
 def expectedWide : String :=
-  "closure=866 imported=862 excluded=36 readable=36 unreadable=0 \
-excludedDecls=600 excludedDropRefs=0"
+  "closure=883 imported=879 excluded=37 readable=37 unreadable=0 \
+excludedDecls=603 excludedDropRefs=0"
 
 /-- **The four counts the WHOLE TREE reads, which are not the four this file's
     own `run_cmd` reads.**  `census` filters by `inScope`, which reads a

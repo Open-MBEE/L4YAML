@@ -9,6 +9,7 @@ public import L4YAML.Proofs.Coupling.CouplingBridge
 public import L4YAML.Proofs.Foundation.SurfaceSpan
 public import L4YAML.Proofs.Scanner.ScanStrictCoupling
 public import L4YAML.Proofs.Scanner.ScannerWhitespace
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -48,6 +49,8 @@ because the landing IS the line start.
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.TabIndentBridge
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Surface
 open L4YAML.Scanner
@@ -366,7 +369,7 @@ lemma preprocess_input {sc s_prep : ScannerState} {c : Char}
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
-            rw [saveSimpleKey_input]
+            rw [closeStaleExplicitKey_input, saveSimpleKey_input]
             show (unwindIndents s_content ↑s_content.col).input = sc.input
             unfold unwindIndents
             rw [unwindIndentsLoop_input]; exact h_c
@@ -376,7 +379,7 @@ lemma preprocess_input {sc s_prep : ScannerState} {c : Char}
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
-            rw [saveSimpleKey_input]; exact h_c
+            rw [closeStaleExplicitKey_input, saveSimpleKey_input]; exact h_c
 
 /-! ## §5 The bridge -/
 

@@ -485,9 +485,12 @@ def expectedCloses : List String :=
    "accum_content_on_noPending→keyctx_of_preprocess.h_close [SSLComments ⇒ Stream] comps=SLYamlStream.implicitContinue[S,GStar.cons(SLDocumentPrefix.comments,GStar.nil),GOpt.none,GStar.nil] viaClose=false param=keyctx_of_preprocess.h_close",
    "accum_content_pending→keyctx_of_preprocess.h_close [SSLComments ⇒ Stream] comps=SLYamlStream.implicitContinue[S,GStar.cons(SLDocumentPrefix.comments,GStar.nil),GOpt.none,GStar.nil],SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.none,GStar.nil],SLYamlStream.scannerDrop[S,prem:SSLComments] viaClose=true param=keyctx_of_preprocess.h_close",
    "accum_flow_open_depth0→flowKeyRoute_of_root.h_close [SSLComments ⇒ Stream] comps=absorb:absorb_stacksB ▹ SLYamlStream.implicitContinue[S,GStar.cons(SLDocumentPrefix.comments,GStar.nil),GOpt.none,GStar.nil],absorb:absorb_stacksB ▹ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.none,GStar.nil],absorb:absorb_stacksB ▹ SLYamlStream.scannerDrop[S,prem:SSLComments] viaClose=true param=flowKeyRoute_of_root.h_close"]
+-- Item 305: `closeThenBlock`'s `h_vslot` is spent at two more nodes — the first entry's
+-- value-line stack at the landed-`-` arm (`h_slotV`) and at the compact arm, both the slot's
+-- inner pack under `KeyFrames.bottom`: `spends` 8 → 10.
 def expectedSites : List String :=
   ["accum_block_pending→accum_block_on_closeThenBlock.h_close_pending → accum_block_on_closeThenBlock.h_close_pending: spends=1 (node 0) handoffs=0 carries=0 WIDTH reach=1 reachJudged=1 reachBoth=false",
-   "accum_block_pending→accum_block_on_closeThenBlock.h_vslot → accum_block_on_closeThenBlock.h_vslot: spends=8 (node 8) handoffs=3 carries=0 BOTH reach=2 reachJudged=3 reachBoth=true",
+   "accum_block_pending→accum_block_on_closeThenBlock.h_vslot → accum_block_on_closeThenBlock.h_vslot: spends=10 (node 10) handoffs=3 carries=0 BOTH reach=2 reachJudged=3 reachBoth=true",
    "accum_block_pending→accum_block_on_pendingBlock.h_close_pending → accum_block_on_pendingBlock.h_close_pending: spends=4 (node 0) handoffs=1 carries=0 BOTH reach=2 reachJudged=6 reachBoth=false",
    "accum_block_pending→accum_block_on_pendingBlockContent.h_close_pending → accum_block_on_pendingBlockContent.h_close_pending: spends=4 (node 0) handoffs=1 carries=0 BOTH reach=2 reachJudged=6 reachBoth=false",
    "accum_block_pending→accum_block_on_pendingContent.h_close_pending → accum_block_on_pendingContent.h_close_pending: spends=0 (node 0) handoffs=2 carries=0 NEITHER reach=2 reachJudged=3 reachBoth=false",
@@ -495,7 +498,11 @@ def expectedSites : List String :=
    "accum_content_pending→keyctx_of_preprocess.h_close → keyctx_of_preprocess.h_close: spends=2 (node 0) handoffs=0 carries=0 WIDTH reach=1 reachJudged=2 reachBoth=false",
    "accum_flow_open_depth0→flowKeyRoute_of_root.h_close → flowKeyRoute_of_root.h_close: spends=2 (node 0) handoffs=0 carries=0 WIDTH reach=1 reachJudged=2 reachBoth=false"]
 def expectedSpends : List String :=
+  -- Item 305: two spends more at `closeThenBlock` — the slot's inner pack through `slotLandedSeq`
+  -- for the first entry's stack (`h_slotV`, the landed arm) and through the compact fill for the
+  -- compact entry's (`h_closeFV` at the compact arm), both under `KeyFrames.bottom`.
   ["accum_block_on_closeThenBlock spend:comments @sp_mid arg=prem:SSLComments width=ws[ws:hws,col:hcol_mid] index=packed[cur:h_vslot,col:h_vslot,slot:h_vslot,slot:h_valF,slot:h_valFV] cmp=no",
+   "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.node(SBlockNode.blockSeq(GOpt.none,prem:SSLComments,lemma:SBlockSeqEntries_of_compactTail(prem:SIndent,prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail))) width=none index=direct[cur:nv,col:nv,slot:nv] cmp=no",
    "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.node(SBlockNode.blockSeq(GOpt.none,prem:SSLComments,lemma:SBlockSeqEntries_of_compactTail(prem:SIndent,prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail))) width=none index=direct[cur:nv,col:nv,slot:nv] cmp=no",
    "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.node(SBlockNode.blockSeq(GOpt.none,prem:SSLComments,lemma:SBlockSeqEntries_of_compactTail(prem:SIndent,prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail))) width=none index=direct[cur:nv,col:nv,slot:nv] cmp=no",
    "accum_block_on_closeThenBlock handoff→slotChainMap.up @sp_mid arg=— width=ind[ws:hws,col:hcol_mid,ind:h_ind] index=direct[cur:nv,col:nv,slot:nv] cmp=yes[hnk:nv + 1 ≤ k]",
@@ -506,6 +513,7 @@ def expectedSpends : List String :=
    "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.compactSeq(prem:SIndent,SCompactSeq.mk(prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail)) width=ind[ind:h_iv] index=direct[cur:nv] cmp=yes[≡nv]",
    "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.compactSeq(prem:SIndent,SCompactSeq.mk(prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail)) width=none index=direct[cur:nv,col:nv,slot:nv] cmp=no",
    "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.compactSeq(prem:SIndent,SCompactSeq.mk(prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail)) width=ind[ind:h_iv] index=direct[cur:nv] cmp=no",
+   "accum_block_on_closeThenBlock spend:node @sp_e arg=SBlockIndented.compactSeq(prem:SIndent,SCompactSeq.mk(prem:GLit,prem:GNot,prem:SBlockIndented,prem:SCompactSeqTail)) width=none index=direct[cur:nv] cmp=no",
    "accum_block_on_closeThenBlock spend:node @sp arg=prem:SBlockIndented width=none index=direct[cur:nv,col:nv,slot:nv] cmp=no",
    "accum_block_on_pendingBlock handoff→accum_block_on_closeThenBlock.h_close_pending @sp_mid arg=— width=ind[ws:hws,col:hcol_mid,ind:h_ind] index=direct[slot:n,tail:n,col:n,cur:n] cmp=yes[hkn:¬k = n,_hge:n ≥ k]",
    "accum_block_on_pendingBlock spend:comments @sp_mid arg=prem:SSLComments width=ind[ws:hws,col:hcol_mid,ind:h_ind] index=direct[slot:n,tail:n,col:n,cur:n] cmp=no",
@@ -529,10 +537,19 @@ def expectedEdges : List String :=
    "accum_block_on_pendingBlock → accum_block_on_closeThenBlock.h_close_pending",
    "accum_block_on_pendingBlockContent → accum_block_on_closeThenBlock.h_close_pending",
    "accum_block_on_pendingContent → accum_block_on_closeThenBlock.h_close_pending"]
+-- 2026-10-20 (item 306): 18 → 21 — the three key-pack calls in
+-- `accum_content_on_pendingBlock_indented` pay `h_dframesV` with the entry's level
+-- pushed over the EMPTY entry (`SBlockIndented.empty n … sp_m`), the value twin of
+-- the stream-lane `h_dframes` relay beside it: three more of the same row.
+-- 2026-10-20 (item 307): 21 → 23 — `accum_block_on_pendingBlock`'s dedent `-` builds `h_vpack`
+-- and `h_mapFV` over the EMPTY awaited entry (`SBlockIndented.empty n … sp_m`), the twins of
+-- item 167's `h_seqF_old` relay between them.
 def expectedEmpties : List String :=
   ["close_with_ssl SBlockIndented.empty n=n @sp_mid width=none cmp=no",
    "close_with_ssl SBlockNode.emptyNode n=n + 1 @sp_mid width=none cmp=no",
    "accum_block_on_pendingBlock SBlockIndented.empty n=n @sp_mid width=ind[ws:hws,col:hcol_mid,ind:h_ind] cmp=no",
+   "accum_block_on_pendingBlock SBlockIndented.empty n=n @sp_m width=none cmp=no",
+   "accum_block_on_pendingBlock SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_block_on_pendingBlock SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_block_on_pendingBlock SBlockIndented.empty n=n @sp_mid width=ind[ws:hws,col:hcol_mid,ind:h_ind] cmp=no",
    "accum_block_on_pendingBlock SBlockIndented.empty n=n @sp_m width=ind[ind:h_iv] cmp=no",
@@ -540,6 +557,9 @@ def expectedEmpties : List String :=
    "accum_block_pending SBlockIndented.empty n=nmv @sp_m width=ind[ind:h_ind] cmp=yes[≡nmv]",
    "accum_block_pending SBlockNode.emptyNode n=nmv + 1 @sp_m width=ind[ind:h_ind] cmp=no",
    "accum_block_pending SBlockIndented.empty n=nmv @sp_m width=ind[ind:h_ind] cmp=no",
+   "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
+   "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
+   "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
    "accum_content_on_pendingBlock_indented SBlockIndented.empty n=n @sp_m width=none cmp=no",
@@ -554,8 +574,20 @@ def expectedEmpties : List String :=
     `accum_block_on_closeThenBlock.h_vslot`, so that site reads `spends=8
     (node 8)` and the line `spends=22 spendsN=9`; the spends on comments,
     the hand-offs and every width and index column stand. -/
+-- Item 305: `closeThenBlock`'s `h_vslot` is spent at two more nodes (the slot bottoms under
+-- `KeyFrames.bottom` at the landed and compact arms): `spends` 22 → 24, `spendsN` 9 → 11.
+-- 2026-10-20 (item 306): `empties` 18 → 21 — the content lemma's three key-pack calls pay
+-- `h_dframesV` with the entry's level pushed over the EMPTY entry, the value twin of the
+-- stream-lane `h_dframes` relay beside each.
+-- 2026-10-20 (item 307): `empties` 21 → 23 (the two above).
+-- 2026-10-20 (item 307): corrected from the census — the dedent route's two new empties: `emptyInd` 10 → 11.
 def expectedLine : String :=
-  "closeSites=8 closePairs=6 closePairsD=8 viaClose=6 params=7 spends=22 spendsC=13 spendsE=0 spendsN=9 handoffs=7 carries=0 untyped=0 edges=4 paramsWalked=8 widthInd=12 widthWs=1 widthNone=0 idxDirect=8 idxPacked=1 idxNone=4 cmp=0 cmpSame=0 both=8 bothCmp=0 handInd=5 handDirect=5 handCmp=5 sitesBoth=3 sitesWidth=4 sitesNeither=1 sitesBothAll=1 empties=18 emptyLemmas=6 emptyInd=10 emptyCmp=4 emptySame=2 emptyClose=2 sites=23 pairs=21 pairs21=21 pairs18=18 nonANoDrop=8 reach=38"
+  "closeSites=8 closePairs=6 closePairsD=8 viaClose=6 params=7 spends=24 spendsC=13 \
+spendsE=0 spendsN=11 handoffs=7 carries=0 untyped=0 edges=4 paramsWalked=8 widthInd=12 \
+widthWs=1 widthNone=0 idxDirect=8 idxPacked=1 idxNone=4 cmp=0 cmpSame=0 both=8 bothCmp=0 \
+handInd=5 handDirect=5 handCmp=5 sitesBoth=3 sitesWidth=4 sitesNeither=1 sitesBothAll=1 \
+empties=23 emptyLemmas=6 emptyInd=11 emptyCmp=4 emptySame=2 emptyClose=2 sites=23 \
+pairs=21 pairs21=21 pairs18=18 nonANoDrop=8 reach=38"
 
 /-! ## §5 The reading -/
 

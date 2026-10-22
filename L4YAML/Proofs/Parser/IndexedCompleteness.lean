@@ -15,10 +15,7 @@ public import L4YAML.Proofs.Parser.ParserSoundness
 public meta import L4YAML.CapstoneAttr
 @[expose] public section Blanket
 
-/-! # `IndexedCompleteness` — Phase 3 Step 6d.3 indexed completeness (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedCompleteness` — Phase 3 Step 6d.3 indexed completeness
 
 ## Role
 

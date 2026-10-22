@@ -85,8 +85,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = ROOT / "L4YAML/Proofs/Production/StreamAccum.lean"
 
-# Item 297 deleted `dedent`.
-REASONS = ["tab", "implicitValue", "noKeyContext"]
+# Item 297 deleted `dedent`; item 300 added `markerLine`.
+REASONS = ["tab", "implicitValue", "markerLine", "noKeyContext"]
 
 # The declaration the PACK PUNT lane skips, and why.  Printed apart rather than
 # dropped: an instrument that hides a row cannot be asked about it.

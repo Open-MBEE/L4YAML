@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -59,6 +60,8 @@ See `../Basic.lean` for the directory-wide cutover plan.
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.Indexed
@@ -374,7 +377,7 @@ lemma scanNextTokenIx_preprocess_preserves_flowLevel {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_flowLevel]
+          rw [closeStaleExplicitKeyIx_flowLevel, saveSimpleKeyIx_flowLevel]
           show (unwindIndentsIx _ _).flowLevel = s.flowLevel
           rw [unwindIndentsIx_preserves_flowLevel, skipToContentS_flowLevel]
     · split at h
@@ -383,7 +386,7 @@ lemma scanNextTokenIx_preprocess_preserves_flowLevel {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_flowLevel, skipToContentS_flowLevel]
+          rw [closeStaleExplicitKeyIx_flowLevel, saveSimpleKeyIx_flowLevel, skipToContentS_flowLevel]
 
 /-- `skipToContentS` preserves `tokens` (cursor-only update). -/
 @[simp] lemma skipToContentS_preserves_tokens {input : String}
@@ -411,7 +414,7 @@ lemma scanNextTokenIx_preprocess_preserves_simpleKeyStack {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_preserves_simpleKeyStack]
+          rw [closeStaleExplicitKeyIx_simpleKeyStack, saveSimpleKeyIx_preserves_simpleKeyStack]
           show (unwindIndentsIx _ _).simpleKeyStack = s.simpleKeyStack
           rw [unwindIndentsIx_preserves_simpleKeyStack, h_skip]
     · split at h
@@ -420,7 +423,7 @@ lemma scanNextTokenIx_preprocess_preserves_simpleKeyStack {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_preserves_simpleKeyStack, h_skip]
+          rw [closeStaleExplicitKeyIx_simpleKeyStack, saveSimpleKeyIx_preserves_simpleKeyStack, h_skip]
 
 /-- `scanNextTokenIx_preprocess` only grows the token stream. -/
 lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
@@ -443,6 +446,7 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_save := saveSimpleKeyIx_tokens_size_le
             ({ unwindIndentsIx s.skipToContentS s.skipToContentS.cursor.pos.col
                 with needIndentCheck := false } : ScannerStateIx input)
@@ -463,6 +467,7 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_save := saveSimpleKeyIx_tokens_size_le s.skipToContentS
           show s.tokens.size ≤ (saveSimpleKeyIx s.skipToContentS).tokens.size
           omega
@@ -511,6 +516,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_unwind_sz :=
             unwindIndentsIx_tokens_size_le s.skipToContentS s.skipToContentS.cursor.pos.col
           have h_unwind_sk :=
@@ -536,6 +542,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_tok_post : n ≤ s.skipToContentS.tokens.size := by omega
           have h_sk_post : s.skipToContentS.simpleKey.possible = true →
               s.skipToContentS.simpleKey.tokenIndex ≥ n := by

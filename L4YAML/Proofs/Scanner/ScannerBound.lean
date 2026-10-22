@@ -11,6 +11,7 @@ public import L4YAML.Proofs.Scanner.ScannerProgress
 public import L4YAML.Proofs.Scanner.FlowAdjacency
 public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
 public import L4YAML.Proofs.Scanner.AliasTrailingContent
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -33,6 +34,8 @@ the scanner pipeline.
 -/
 
 namespace L4YAML.Proofs.ScannerBound
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Scanner
 open L4YAML.Proofs.ScannerLoopInvariant
@@ -152,10 +155,6 @@ lemma fieldUpdate_BoundInv {s₀ : ScannerState} (s : ScannerState)
 These are the simplest: each is `pushIndent.saveKey.emit.advance`
 or `flowPop.emit.advance`, with no loops. -/
 
--- Helper: the result of a flow open/close function has the same
--- offset/inputEnd/input as advance applied to an intermediate state
--- that preserves BoundInv.
-
 lemma scanFlowSequenceStart_BoundInv (s : ScannerState)
     (h : BoundInv s s) (hend : s.inputEnd = s.input.utf8ByteSize) :
     BoundInv s (scanFlowSequenceStart s) := by
@@ -169,6 +168,12 @@ lemma scanFlowSequenceStart_BoundInv (s : ScannerState)
   have h2 : BoundInv s s_em := emit_BoundInv _ _ h1
   have h3 : BoundInv s s_adv := advance_BoundInv _ h2 hend
   exact ⟨h3.offset_le, h3.inputEnd_eq, h3.input_eq, h3.isValid⟩
+
+/-- Item 333: the register reset reads no bound-bearing field. -/
+lemma closeStaleExplicitKey_BoundInv {s₀ : ScannerState} (s : ScannerState)
+    (h : BoundInv s₀ s) : BoundInv s₀ (closeStaleExplicitKey s) := by
+  rcases closeStaleExplicitKey_cases s with h_eq | h_eq <;> rw [h_eq] <;>
+    exact ⟨h.offset_le, h.inputEnd_eq, h.input_eq, h.isValid⟩
 
 lemma scanFlowMappingStart_BoundInv (s : ScannerState)
     (h : BoundInv s s) (hend : s.inputEnd = s.input.utf8ByteSize) :
@@ -1037,7 +1042,9 @@ lemma scanDocumentEnd_BoundInv (s s' : ScannerState)
   have h_res : BoundInv s { (unwindIndents s (-1) |> fun s => { s with simpleKey := { possible := false } }
     |>.emit .documentEnd |>.advanceN 3) with
     simpleKeyAllowed := true, allowDirectives := true,
-    directivesPresent := false, definedAnchors := #[] } :=
+    directivesPresent := false, definedAnchors := #[],
+    -- Item 317: the marker ends the explicit-key register.
+    explicitKeyLine := none, explicitKeyCol := -1 } :=
     fieldUpdate_BoundInv _ _ h_adv rfl rfl rfl
   repeat split at hok
   all_goals (try dsimp only [] at hok)
@@ -1635,7 +1642,7 @@ lemma preprocess_preserves_bound (s : ScannerState) (sp : ScannerState) (c : Cha
           · cases hok  -- none ≠ some
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, rfl⟩ := hok
-            exact saveSimpleKey_BoundInv _ h_bi2
+            exact closeStaleExplicitKey_BoundInv _ (saveSimpleKey_BoundInv _ h_bi2)
       · -- no-unwind branch: s2 = s1
         split at hok
         · cases hok  -- error
@@ -1643,7 +1650,7 @@ lemma preprocess_preserves_bound (s : ScannerState) (sp : ScannerState) (c : Cha
           · cases hok  -- none ≠ some
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
             obtain ⟨rfl, rfl⟩ := hok
-            exact saveSimpleKey_BoundInv _ h_bi1
+            exact closeStaleExplicitKey_BoundInv _ (saveSimpleKey_BoundInv _ h_bi1)
 
 -- Structural dispatch preserves BoundInv.
 -- Dispatches to scanDocumentStart, scanDocumentEnd, or scanDirective.

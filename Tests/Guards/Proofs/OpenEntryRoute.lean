@@ -425,6 +425,8 @@ def funnel (reach : Array Name) : MetaM (Array String × Nat × Nat × Nat × Na
 def exhibits : List Name :=
   [``slotMapRoute, ``slotMapRouteF, ``slotMapRouteF_stream, ``slotMapRoute_closedFirst, ``slotMapRouteC]
 
+-- Item 304: the value-line rows respell `Resume(_)▹…` → `Key(_)▹…` and their bottom
+-- `KeyFrames.bottom` — the stacks are `KeyFrames` (item 302's), as `RouteShapes` renders them.
 def expectedExhibits : List String :=
   ["slotMapRoute ⟶ (fact) ⊢ SBlockIndented.node(SBlockNode.blockMap(GOpt.none,prem:SSLComments,SBlockMapEntries.single(prem:SIndent,prem:SBlockMapEntry))) paths=1",
    "slotMapRouteF ⟶ (fact) ⊢ SBlockIndented.node(SBlockNode.blockMap(GOpt.none,prem:SSLComments,lemma:SBlockMapEntries_of_compactTail(prem:SIndent,prem:SBlockMapEntry,prem:SCompactMapTail))) paths=1",
@@ -438,8 +440,8 @@ def expectedAPlain : List String :=
    "question_open_map:pendingMapValue.h_vslot [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "question_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
    "question_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
-   "question_open_map:pendingMapValue.h_closeFV [SBlockNode(_+1,blockIn) ⇒ Resume(_)▹ExplValueLine(_)] T1 hops=rootMapRoute,rootMapRoute_or_refused",
-   "question_open_map:pendingMapValue.h_framesV [SSLComments ⇒ Resume(_)▹ExplValueLine(_)] T1 hops=rootMapRoute,rootMapRoute_or_refused",
+   "question_open_map:pendingMapValue.h_closeFV [SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_)] T1 hops=rootMapRoute,rootMapRoute_or_refused",
+   "question_open_map:pendingMapValue.h_framesV [SSLComments ⇒ Key(_)▹ExplValueLine(_)] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "colon_open_map:pendingMapValue.h_close [SBlockNode(_+1,blockIn) ⇒ Stream] T1 hops=rootMapRoute,rootMapRoute_or_refused",
    "colon_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
    "colon_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] T2 hops=rootMapRouteF,rootMapRouteF_or_refused",
@@ -447,10 +449,10 @@ def expectedAPlain : List String :=
 def expectedAPairs : List String :=
   ["SBlockMapEntry(_) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ T1",
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ N",
-   "SBlockNode(_+1,blockIn) ⇒ Resume(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ⟵ T1",
+   "SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S] ⟵ T1",
    "SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S] ⟵ T2",
    "SBlockNode(_+1,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ T1",
-   "SSLComments ⇒ Resume(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ⟵ T1",
+   "SSLComments ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S] ⟵ T1",
    "SSLComments ⇒ Resume(_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S] ⟵ T2",
    "[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ⟵ T1"]
 def expectedAvail : List String :=

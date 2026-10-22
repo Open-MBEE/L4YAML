@@ -294,14 +294,54 @@ def expectedTransports : List String :=
 -- floor walk over the same 32 scanned theorems, +576 as at item 296: the
 -- frameless exit's terms, taken verbatim at the `w ∉ ks` exit of both
 -- producers.  Every row holds.
+-- 2026-10-20 (item 299): `nodes` 100103 → 100339 is `CloseStackCover`'s —
+-- `pendingDocStart`'s new `h_docline` field and `dispatch_refutes_sameLine`'s
+-- new `h_dsl_eq` premise, passed at every walked site; `floorNodes` 25677 →
+-- 25679 is the floor walk over the same 32 scanned theorems, the two
+-- `pendingDocStart` producers' one new argument each.  Every row holds.
+-- 2026-10-20 (item 300): `nodes` 100339 → 100885 is `CloseStackCover`'s — the
+-- marker reason's productions and refutations in the walked declarations;
+-- `floorNodes` 25679 → 25685 is the floor walk over the same 32 scanned
+-- theorems, the marker arguments the flow open's arms and the `---` arm now
+-- pass.  Every row holds.
 /-- **The delta's own line.**  `nodes` is the proof-term size of the walked
     declarations; item 272 is the one move, and it moves nothing else, for the
     reason `CloseStackCover` records — the under-run disjunct the three
     flow-open arms destructure gains a component none of them yet reads.
     Lean v4.35.0 moves it again and alone: `nodes` 96158 → 96125, every other
     field byte-identical — 33 fewer term nodes for the same walk. -/
+-- 2026-10-20 (item 304): `floorNodes` 25685 → 25748 — the value-line stacks are
+-- `KeyFrames` (item 302's) and the three value-line resumes split `resumeAt`'s
+-- sum with `rcases`; the proof terms the floor walk counts grow by those
+-- splits.  Every other count stands (`nodes` 100885 among them).
+-- 2026-10-20 (item 305): the pushes' and bottoms' terms (item 305): `nodes` 100885 → 101410, `floorNodes` 25748 → 25751.
+-- 2026-10-20 (item 306): the content lemma's six key-pack stack arguments are matches on `h_closeFV_old`, each pushing the entry's level under `KeyFrames.seqLevel` (the floor walk reads the new `n :: ks` bounds): `nodes` 101410 → 101421, `floorNodes` 25751 → 26213.
+-- 2026-10-20 (item 307): `nodes` 101421 → 101427 (the same walk as CloseStackCover).
+-- 2026-10-20 (item 309): `nodes` 101427 → 101432 (CloseStackCover's walk, the generic helpers' `Or.inr h` terms).
+-- 2026-10-21 (item 311): `nodes` 101432 → 101924 (CloseStackCover's walk: the named alternative's definitions, stubs and
+-- frame-crossing conversions), `floorNodes` 26213 → 26215 (the two `.imp id PackAlt.ofGateClose` wrappers at the closes).
+-- 2026-10-21 (item 313): `nodes` 101924 → 103174 (CloseStackCover's walk: the content-step lemma, its wrapper and the
+-- twenty-one relays through it).
+-- 2026-10-21 (item 314): `nodes` 103174 → 103286 — `ExplicitValueRefused.step_dispatch`, `PackAlt.step_dispatch` and the
+-- content lane's sixty-one leaf payments (each `Or.inr trivial` an application or a hypothesis now); every row stands.
+-- 2026-10-21 (item 315): `nodes` 103286 → 103289 — the key-pack lemmas' six arms step through the wrapper (three a side).
+-- 2026-10-21 (item 315): `floorNodes` 26215 → 26216 — `entryPropsKeyPack_of_dispatch`'s new premise in the floor walk.
+-- 2026-10-21 (item 320): `nodes` 103289 floorNodes → 103324 floorNodes — the marker parks' field, the eight payments, the relay and the
+-- two split arms grow the family's terms; rows and payments stand.
+-- 2026-10-21 (item 322): `nodes` 103324 floorNodes → 103328 floorNodes — the colon openers' step premise, its six
+-- spends and the two callers grow the family's terms; rows and payments stand.
+-- 2026-10-21 (item 324): `nodes` 103328 → 103335 — as `CloseStackCover`: this item's payments in the flow opener and the
+-- resume context grow the walked terms; `floorNodes` and every row stand.
 def expectedLine : String :=
-  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 rootMonoSite=1 rootNtop=1 nodes=100103 floorNodes=25677"
+  "rows=167 payments=1 literal=0 relay=1 scenarios=2 baseContent=16/6/15/2/2 \
+allContent=18/6/16/2/2 baseEntry=16/6/15/2/2 allEntry=18/6/16/2/2 \
+turnedPaidContent=0 turnedPaidEntry=0 originsBaseContent=6 originsAllContent=6 \
+originsBaseEntry=6 originsAllEntry=6 puntContent=+1 puntEntry=+1 coverPuntContent=+0 \
+coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=69 \
+ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 \
+floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 \
+raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 \
+rootMonoSite=1 rootNtop=1 nodes=103335 floorNodes=26222"
 
 /-! ## §4 The reading -/
 

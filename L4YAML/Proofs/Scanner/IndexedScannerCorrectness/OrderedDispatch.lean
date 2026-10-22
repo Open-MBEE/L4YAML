@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.OrderedPrims
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -24,6 +25,8 @@ Split out of `IndexedScannerCorrectness.lean` (Reflection 112). -/
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.ScannerCorrectness
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.Indexed
@@ -398,7 +401,9 @@ lemma scanDocumentEndIx_preserves_ScanInvIx {input : String}
         simpleKey := { cursor := IxCursor.start input } }
       : ScannerStateIx input).emit YamlToken.documentEnd).advanceN 3) with
         simpleKeyAllowed := true, allowDirectives := true,
-        directivesPresent := false, definedAnchors := #[] } h_adv rfl rfl
+        directivesPresent := false, definedAnchors := #[],
+        -- Item 317: the marker ends the explicit-key register (`scanDocumentEndIx`).
+        explicitKeyLine := none, explicitKeyCol := -1 } h_adv rfl rfl
   unfold scanDocumentEndIx at h_ok
   simp only [bind, Except.bind] at h_ok
   repeat (any_goals (split at h_ok))
@@ -1085,7 +1090,7 @@ lemma scanNextTokenIx_preprocess_preserves_ScanInvIx {input : String}
               (s.skipToContentS.cursor.pos.col : Int) with needIndentCheck := false }
               : ScannerStateIx input) :=
             ScanInvIx_of_field_update _ _ h_unwind rfl rfl
-          exact saveSimpleKeyIx_preserves_ScanInvIx _ h_fld
+          exact ScanInvIx_of_field_update _ _ (saveSimpleKeyIx_preserves_ScanInvIx _ h_fld) (by simp) (by simp)
     · -- without indent check
       split at h_pre
       · simp at h_pre
@@ -1094,7 +1099,7 @@ lemma scanNextTokenIx_preprocess_preserves_ScanInvIx {input : String}
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
           obtain ⟨hs, _⟩ := h_pre
           subst hs
-          exact saveSimpleKeyIx_preserves_ScanInvIx _ h_skip
+          exact ScanInvIx_of_field_update _ _ (saveSimpleKeyIx_preserves_ScanInvIx _ h_skip) (by simp) (by simp)
 
 lemma scanNextTokenIx_preprocess_preserves_AllKeysValidIx {input : String}
     {s s' : ScannerStateIx input} {c : Char} (h_akv : AllKeysValidIx s)
@@ -1124,7 +1129,8 @@ lemma scanNextTokenIx_preprocess_preserves_AllKeysValidIx {input : String}
             refine AllKeysValidIx_mono _ _ h_unwind rfl rfl ?_ ?_
             · exact Nat.le_refl _
             · intro i hi; rfl
-          exact saveSimpleKeyIx_preserves_AllKeysValidIx _ h_fld
+          exact AllKeysValidIx_mono _ _ (saveSimpleKeyIx_preserves_AllKeysValidIx _ h_fld) (by simp) (by simp)
+            (by simp) (by intro i hi; simp)
     · -- without indent check
       split at h_pre
       · simp at h_pre
@@ -1133,7 +1139,8 @@ lemma scanNextTokenIx_preprocess_preserves_AllKeysValidIx {input : String}
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
           obtain ⟨hs, _⟩ := h_pre
           subst hs
-          exact saveSimpleKeyIx_preserves_AllKeysValidIx _ h_skip
+          exact AllKeysValidIx_mono _ _ (saveSimpleKeyIx_preserves_AllKeysValidIx _ h_skip) (by simp) (by simp)
+            (by simp) (by intro i hi; simp)
 
 /-! #### §8.8.2  `scanNextTokenIx_dispatchStructural` preservation. -/
 

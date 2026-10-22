@@ -79,6 +79,17 @@ inductive Step | opt | ex | andL | andR
 def Step.render : Step → String
   | .opt => "∨" | .ex => "∃" | .andL => "∧L" | .andR => "∧R"
 
+/-- Item 311: a cover-carrying type's outer option is `∨ True` or the family's named alternative
+    (`isOptTrue`), or a Prop VARIABLE — a lemma that states the alternative generically
+    (`colon_open_map_implicit`'s `{alt : Prop}`), read on its own binders and, through
+    `lemParams`, at its applications.  Only under `hasCov`, so no other variable qualifies. -/
+def isOptAlt (t : Expr) : Bool :=
+  let t := t.consumeMData
+  isOptTrue t || (t.isAppOfArity ``Or 2 &&
+    match (t.getArg! 1).consumeMData with
+    | .bvar _ | .fvar _ => true
+    | _ => false)
+
 /-- The path from a position's type to its cover option: through the outer
     option, the existentials and the conjunctions, to the innermost `∨ True`
     whose left mentions the cover, or to a bare `Covered`. -/
@@ -86,7 +97,7 @@ partial def coverPath (ty : Expr) : Option (List Step) :=
   let ty := ty.consumeMData
   if !hasCov ty then none
   else if ty.isAppOf coveredN then some []
-  else if isOptTrue ty then
+  else if isOptAlt ty then
     let l := (ty.getArg! 0).consumeMData
     match depthTo l (·.isAppOf coveredN) with
     | some 0 => some []
@@ -809,6 +820,9 @@ nodes (`nodes` 95157 → 95163).  Item 272 adds 861 more without moving a
 row: the under-run disjunct the three flow-open arms destructure gains a
 sixth component (`nodes` 95163 → 96024). -/
 
+-- 2026-10-20 (item 306): six rows re-read — the two key-pack builders' value-line
+-- stacks at the three entry-park calls are `match`es on `h_closeFV_old` (paid with the
+-- cover punted | punt) where item 108 left bare punts.
 def expectedRows : List String :=
   ["accum_block_on_closeThenBlock #1 fn:accum_block_on_closeThenBlock.h_cov_step := via:IndentStackCover.scanBlockEntry_cover(via:Covered.of_indents_eq(via:IndentStackCover.preprocess_cover(relay(fnp:accum_block_on_closeThenBlock.h_cov_step.hc))))",
    "accum_block_on_closeThenBlock #1 local:accum_block_on_closeThenBlock.h_seqFrames := cases[ite[paid{cover=step(relay(param:accum_block_on_closeThenBlock.h_valF))}|paid{cover=punt}]|paid{cover=punt}]",
@@ -835,21 +849,21 @@ def expectedRows : List String :=
    "accum_content_on_pendingBlock_indented #1 ctor:pendingBlockContent.h_closeF := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_nodeF := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
-   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_nodeFV := punt",
-   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_dframesV := punt",
+   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
+   "accum_content_on_pendingBlock_indented #1 param:entryKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #1 ctor:pendingProps.h_closeFE := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 ctor:pendingProps.h_closeF := punt",
    "accum_content_on_pendingBlock_indented #1 ctor:pendingProps.h_closeFV := punt",
    "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_nodeF := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
-   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_nodeFV := punt",
-   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_dframesV := punt",
+   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
+   "accum_content_on_pendingBlock_indented #1 param:entryPropsKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #2 ctor:pendingBlockContent.h_closeF := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #3 ctor:pendingBlockContent.h_closeF := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeF := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
    "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframes := match[paid{cover=relay(param:accum_content_on_pendingBlock_indented.h_closeF_old)}|punt]",
-   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeFV := punt",
-   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframesV := punt",
+   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_nodeFV := match[paid{cover=punt}|punt]",
+   "accum_content_on_pendingBlock_indented #2 param:entryKeyPack_of_dispatch.h_dframesV := match[paid{cover=punt}|punt]",
    "accum_content_on_pendingBlock_indented #1 fn:accum_content_on_pendingBlock_indented.h_pay_seq := cases[cases[lit(lo=—,idx=w,ks=w :: ksw',by=via:StreamAccum.dedent_cover_of_floor(via:IndentStackCover.preprocess_cover(relay(fnp:accum_content_on_pendingBlock_indented.h_pay_seq.h_cv))))|punt]|punt]",
    "accum_content_on_pendingBlock_indented #1 param:resumectx_of_landing.h_fS := match[paid{cover=step(relay(param:accum_content_on_pendingBlock_indented.h_closeF_old))}|punt]",
    "accum_content_on_pendingBlock_indented #1 param:resumectx_of_landing.h_fV := punt",
@@ -1089,9 +1103,47 @@ def expectedDoor : List String :=
     declarations whose terms changed: the two producers' `w ∉ ks` exits grow
     by the fresh-document terms, and the `dedent` alternatives of
     `accum_flow_open_depth0` and the two `:` consumers go with the
-    constructor. -/
+    constructor.  Item 299 moves `nodes` alone, 100103 → 100339: the walked
+    declarations that build a `pendingDocStart` pass its new `h_docline`
+    field, and the six that apply `dispatch_refutes_sameLine` pass its new
+    `h_dsl_eq` premise — the `docStartLine` field's transport through
+    preprocessing; no row, door or cover moves.  Item 300 moves `nodes` alone,
+    100339 → 100885: the marker reason's productions and refutations in the
+    walked declarations — the content dispatch's two cascades and its `---`
+    caller's payment, the flow close's third base reading, the flow open's
+    marker argument at seven arms, the two `:` consumers' new arms, and the
+    mask's maintenance lemmas carrying the field; no row, door or cover
+    moves. -/
+-- Item 305: the sequence fields carry the width bound `∀ k' ∈ ks, k' < n` and the nested arms push the
+-- entry's level (`KeyFrames.seqLevel`): `nodes` 100885 → 101410.
+-- 2026-10-20 (item 306): the six key-pack stack rows are matches on `h_closeFV_old` (paid, cover punted | punt) where item 108 left bare punts: `nodes` 101410 → 101421.
+-- 2026-10-20 (item 307): the γ roots' pack and stack from the closed park's stack, the landed arm's resume: `nodes` 101421 → 101427.
+-- 2026-10-20 (item 309): the generic helpers'  terms: `nodes` 101427 → 101432.
+-- 2026-10-21 (item 311): the named alternative's definitions and stubs (`PackAlt`, `PackAltG`, `ofRefused`, `ofPark`,
+-- `ofGateClose`), the four conversions at the frame crossings and the two `.imp id PackAlt.ofGateClose` wrappers at the
+-- closes: `nodes` 101432 → 101924; every row stands (167), with `colon_open_map_implicit`'s generic `h_routeFV` read as
+-- the cover-carrying parameter it is (`isOptAlt`).
+-- 2026-10-21 (item 313): `nodes` 101924 → 103174 — `ExplicitValueRefused.step_content`, `PackAlt.step_content` and the
+-- content lane's twenty-one `.imp id (PackAlt.step_content …)` wrappers; every row stands.
+-- 2026-10-21 (item 314): `nodes` 103174 → 103286 — `ExplicitValueRefused.step_dispatch`, `PackAlt.step_dispatch` and the
+-- content lane's sixty-one leaf payments (each `Or.inr trivial` an application or a hypothesis now); every row stands.
+-- 2026-10-21 (item 315): `nodes` 103286 → 103289 — the key-pack lemmas' six arms step through the wrapper (three a side).
+-- 2026-10-21 (item 320): `nodes` 103289 → 103324 — the marker parks' new field (`h_noek`) at the three producers, the eight
+-- `PackAlt.ofRefused h_noek…` payments, the `h_seqFramesV` relay and the two split arms grow the family's terms; rows stand.
+-- 2026-10-21 (item 322): `nodes` 103324 → 103328 — the two colon openers' new step premise
+-- (`h_alt_step`) and the six leaves and two callers that spend it; rows stand.
+-- 2026-10-21 (item 324): `nodes` 103328 → 103335 — this item's payments in the flow opener and the resume context
+-- (applications where `trivial` stood) grow the walked terms; `walked` and every row stand.
 def expectedLine : String :=
-  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 doorForgotten=8 doorDropped=23 doorsOther=4 nodes=100103"
+  "positions=21 ctorFields=11 lemParams=29 lemmas=16 walked=24 doors=8 rows=167 ctorRows=79 \
+lemRows=55 localRows=4 fnRows=19 fnpRows=8 valRows=2 coverTypes=4 mentions=0 pbc=6 \
+pbcRelay=6 pbcPaid=0 pbcPunt=0 pbcCoverPunt=0 pb=7 pbRelay=2 pbPaid=4 pbPunt=1 \
+pbCoverPunt=0 pmv=6 pmvRelay=4 pmvPaid=1 pmvPunt=1 pmvCoverPunt=0 valF=11 valFRelay=2 \
+valFPaid=0 valFPunt=9 contentPaid=6 contentPunt=15 contentCoverPunt=2 contentLemma=0 \
+contentOpen=2 contentPos=16 entryPaid=6 entryPunt=15 entryCoverPunt=2 entryLemma=0 \
+entryOpen=2 entryPos=16 eight=8 eightPB=4 eightPBC=4 eightIndents=0 eightTop=4 \
+eightFloor=0 eightMinCI=0 eightNic=8 eightPrep=8 eightCover=4 doorUses=41 doorKept=10 \
+doorForgotten=8 doorDropped=23 doorsOther=4 nodes=103335"
 
 /-! ## §6 The reading -/
 

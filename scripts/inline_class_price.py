@@ -232,7 +232,7 @@ def arm_label(lines, i, decl_line):
     # a punt REASON's own arm, written on the application's line; any other
     # `| …` there (a `match` on the slot, say) is not the arm it stands in
     m = re.match(r"^\s*\| (\w+)", lines[i])
-    if m and m.group(1) in ("tab", "implicitValue", "noKeyContext"):  # item 297: no `dedent`
+    if m and m.group(1) in ("tab", "implicitValue", "markerLine", "noKeyContext"):  # item 297: no `dedent`; item 300: `markerLine`
         return m.group(1)
     ind = len(lines[i]) - len(lines[i].lstrip())
     for j in range(i - 1, decl_line, -1):

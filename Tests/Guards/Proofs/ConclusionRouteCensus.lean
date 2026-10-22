@@ -391,16 +391,23 @@ end L4YAML.Tests.Guards.ConclusionRouteCensus
 namespace L4YAML.Tests.Guards.ConclusionRouteCensus
 
 /-- The route census, pinned, one line per optional conclusion conjunct in
-    `ConclusionCensus`'s own order — 24 of them, the same 24 that census counts.
+    `ConclusionCensus`'s own order — 24 of them, the same 24 that census counts
+    (27 since item 300: `flowOpen_marker`, the stamp lemma's twin, decides its
+    conclusion the same way, and `back_col` and `close_col_of_base` carry the
+    base slot's marker reading as a second optional conjunct, a FIELD read
+    like the stamp's).
     A proof that stops deciding its own conjunct, or starts, moves a line here;
     so does a tactic swap that puts a new combinator between the conclusion and
     the term that decides it, because the new combinator will read as a
     producer until it is named a pipe above. -/
+-- 2026-10-20 (item 309): 27 → 24 — `frameChainUnion`, `flowVPack_of_close` and `explFrameValueLine` conclude in
+-- `∨ alt` (generic in the alternative) and leave the `∨ True` survey.
 def expectedRows : List String :=
   ["back_col#0 :: FIELD of premise#3",
+   "back_col#1 :: FIELD of premise#3",
    "close_col_of_base#0 :: FIELD of VIA KmSound.back_col",
+   "close_col_of_base#1 :: FIELD of VIA KmSound.back_col",
    "dedent_cover_of_landing#0 :: DECLINE | DECLINE | DECLINE | PAY",
-   "explFrameValueLine#0 :: VIA frameChainUnion",
    "flowKeyHead#0 :: VIA L4YAML.Proofs.FlowKeyLift.flowNode_toBlockKey",
    "flowKeyRoute_of_open#0 :: DECLINE | DECLINE | DECLINE | DECLINE | PAY | PAY",
    "flowKeyRoute_of_open#1 :: UNREACHABLE under →/∀",
@@ -416,9 +423,8 @@ PARENT-DECLINED | PARENT-DECLINED | PAY",
    "flowKeyRoute_of_root#3 :: PARENT-DECLINED | PARENT-DECLINED | PAY | PAY | PAY | PAY | PAY",
    "flowKeyRoute_of_root#4 :: DECLINE | DECLINE | PARENT-DECLINED | PARENT-DECLINED | PAY",
    "flowOpen_floor_at_prep#0 :: DECLINE | PAY",
+   "flowOpen_marker#0 :: DECLINE | DECLINE | PAY",
    "flowOpen_stamp#0 :: DECLINE | DECLINE | PAY",
-   "flowVPack_of_close#0 :: DECLINE | PAY",
-   "frameChainUnion#0 :: PAY | PAY | RELAY",
    "keyctx_of_preprocess#0 :: DECLINE | DECLINE | DECLINE | PAY | PAY",
    "markerctx_of_landing#0 :: DECLINE | DECLINE | DECLINE | PAY",
    "nodocctx_of_preprocess#0 :: DECLINE | DECLINE | DECLINE | PAY | PAY",
@@ -429,18 +435,25 @@ PARENT-DECLINED | PARENT-DECLINED | PAY",
     constants whose value has fewer leading lambdas than their type has binders.
     `DEEP`, `OTHER`, `OOB` or an `ALL` prefix appearing here would mean the walk
     stopped short of the conjunct and read whatever it was standing on; none
-    does. -/
+    does.  Item 300: `positions` 24 → 27 — `FIELD` +2 (`back_col#1`,
+    `close_col_of_base#1`, the base slot's marker reading) and `SPLIT` +1
+    (`flowOpen_marker#0`, the stamp lemma's twin). -/
+-- 2026-10-20 (item 309): `positions` 27 → 24, `SPLIT` 19 → 17, `VIA` 2 → 1 — `frameChainUnion`, `flowVPack_of_close` and
+-- `explFrameValueLine` conclude in `∨ alt` and leave the `∨ True` survey.
 def expectedTally : String :=
-  "positions=24 skipped=0 [FIELD=2, SPLIT=18, UNREACHABLE=2, VIA=2]"
+  "positions=24 skipped=0 [FIELD=4, SPLIT=17, UNREACHABLE=2, VIA=1]"
 
 /-- **The cross-instrument control.**  Route PAY-arms against `ConclusionCensus`'s
     `inl`, route DECLINE-arms against its `inr`, conjunct by conjunct under that
-    census's own grammar key.  Twenty agree.  The two that do not are the whole
-    finding of item 213: one census reads a lemma that decides nothing as paying
-    and punting, and the other reads a lemma that pays and punts as neither. -/
+    census's own grammar key.  Twenty agree — twenty-three since item 300,
+    whose three new conjuncts (`flowOpen_marker#0`, `back_col#1`,
+    `close_col_of_base#1`) read alike under both.  The two that do not are the
+    whole finding of item 213: one census reads a lemma that decides nothing as
+    paying and punting, and the other reads a lemma that pays and punts as
+    neither. -/
+-- 2026-10-20 (item 309): `agree` 23 → 21 and `explFrameValueLine`'s row gone — its conclusion is `∨ alt`, outside the survey.
 def expectedCross : List String :=
-  ["agree=20",
-   "explFrameValueLine#0 route=0+0 term=1+1",
+  ["agree=21",
    "scanValue_ok_park_facts#0 route=1+1 term=0+0"]
 
 /-- **Item 212's producer surface, split by the pipe test**, re-derived from that
@@ -458,8 +471,17 @@ def expectedCross : List String :=
     **not one of the 43 reaches a producer.**  The landing table's own parts are
     summed here too, so a row added to it without its total moving fails.  If
     item 212's lists move, its gate fails before this one does. -/
+-- 2026-10-20 (item 307, second chain): back to `landed=43 total=80` — the content route's `h_vpack` was an
+-- `.imp` (a landed producer) for one chain and is a `match` now.
+-- 2026-10-21 (item 311): `landed` 43 → 45, `landed-producers` 0 → 2, `total` 80 → 82 — the two flow closes hand
+-- `flowVPack_of_close resume.vslot` into the content park through `.imp id PackAlt.ofGateClose` (the frame's named
+-- alternative into the park's); a pipe whose right map is a lemma lands as a producer, and that lemma is lane (d)'s stub.
+-- 2026-10-21 (item 313): `landed` 45 → 54, `landed-producers` 2 → 3, `total` 82 → 91 — the content lane's transports are
+-- `Or.imp` pipes with `PackAlt.step_content` on the right, landing in the park the content step builds.
+-- 2026-10-21 (item 320): `landed` 54 → 55, `total` 91 → 92 — `accum_block_on_closeThenBlock`'s `h_seqFramesV` lands in the
+-- new park through `.imp id (PackAlt.step_blockEntry …)`, the relay item 319's payments surfaced; producers stand.
 def expectedPipeSplit : String :=
-  "pipes=0/0 producers=37/11 landed=43 landed-producers=0 total=80"
+  "pipes=0/0 producers=37/11 landed=55 landed-producers=3 total=92"
 
 end L4YAML.Tests.Guards.ConclusionRouteCensus
 

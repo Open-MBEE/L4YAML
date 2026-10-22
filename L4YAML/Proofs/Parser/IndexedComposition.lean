@@ -11,10 +11,7 @@ public import L4YAML.Parser.IndexedComposition
 public meta import L4YAML.Parser.IndexedComposition
 @[expose] public section Blanket
 
-/-! # `IndexedComposition` proofs — Phase 3 Step 6e end-to-end corpus (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedComposition` proofs — Phase 3 Step 6e end-to-end corpus
 
 ## Role
 

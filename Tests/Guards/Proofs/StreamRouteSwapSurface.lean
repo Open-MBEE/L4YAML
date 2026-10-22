@@ -160,10 +160,14 @@ example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos}
     (h_nodir : sc.allowDirectives = false)
     -- Item 207: and the park's own indent check, which both producers pay from
     -- `[203]`'s three columns.
-    (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true) :
+    (h_nic0 : sp_scan.col = 0 → sc.needIndentCheck = true)
+    -- Item 299: and the marker's line as the scanner's field reads it.
+    (h_docline : sc.docStartLine = some sc.line)
+    -- Item 320: and the dead register the marker leaves (lane (e)'s field).
+    (h_noek : sc.explicitKeyLine = none) :
     PendingNode sc false sp_start sp_block sp_scan :=
   PendingNode.pendingDocStart sp_start sp_block sp_scan h_doc_route
-    h_nic h_real h_marker_tail h_arm h_nodir h_nic0
+    h_nic h_real h_marker_tail h_arm h_nodir h_nic0 h_docline h_noek
 
 -- The `[208]` producer's own payment: `l-explicit-document` is what the
 -- implicit continuation takes, so this arm spends the constructor and stays

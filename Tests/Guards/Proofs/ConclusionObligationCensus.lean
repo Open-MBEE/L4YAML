@@ -224,7 +224,7 @@ run_cmd do
         -- own and reports their components instead.
         if !cod.isAppOfArity ``Or 2 then return none
         let r := cod.getArg! 1
-        if r.isConstOf ``True then return none
+        if (r.isConstOf ``True || r.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || r.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG) then return none  -- item 311: or the named alternative
         return r.getAppFn.constName?
     -- …and named by this file: `KeyPair.tc_key` concludes in a disjunction of
     -- two equations, which is a case split and not a residue.
@@ -268,7 +268,7 @@ partial def scanTerm (e : Expr) (seen : Std.HashSet Expr) (r i : Nat) :
     Std.HashSet Expr × Nat × Nat :=
   if seen.contains e then (seen, r, i) else
   let seen := seen.insert e
-  let r := if e.isAppOfArity ``Or.inr 3 && (e.getArg! 1).isConstOf ``True then r + 1 else r
+  let r := if e.isAppOfArity ``Or.inr 3 && ((e.getArg! 1).isConstOf ``True || (e.getArg! 1).isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || (e.getArg! 1).isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG) then r + 1 else r
   let i := if isOptTy e then i + 1 else i
   match e with
   | .app f a => let (s, r, i) := scanTerm f seen r i; scanTerm a s r i
@@ -282,7 +282,16 @@ partial def scanTerm (e : Expr) (seen : Std.HashSet Expr) (r i : Nat) :
   | .proj _ _ b => scanTerm b seen r i
   | _ => (seen, r, i)
 
-def expectedLedgerTally : String := "rows=17 res=54"
+-- Item 300: `flowOpen_marker`, the stamp lemma's twin, is the eighteenth row and
+-- carries the stamp row's three residues.
+-- 2026-10-20 (item 304): `res` 57 → 59 — `flowKeyRoute_of_root` 11 → 12 and
+-- `resumectx_of_landing` 9 → 10: the value-line stacks are `KeyFrames` (item
+-- 302's), whose `resumeAt` hands a mapping OR a sequence continuation, and each
+-- lemma's value-line resume splits on it; the sequence case is one more
+-- resolved obligation (`imp` 100 → 101, 61 → 63 with it).
+-- 2026-10-20 (item 309): `rows` 18 → 15, `res` 59 → 57 — `frameChainUnion`, `flowVPack_of_close` and `explFrameValueLine`
+-- conclude in `∨ alt` (generic in the alternative) and leave the `∨ True` survey.
+def expectedLedgerTally : String := "rows=15 res=57"
 
 /-- The rows, machine-produced, sorted by `res` then `prem` descending.  Three
     rows are all-zero — the proof never reaches the right arm by any route —
@@ -305,21 +314,22 @@ def expectedLedgerTally : String := "rows=17 res=54"
     was not a stronger proof but a statement that does not invert.  The
     conversion is a `mutual` block of eight lemmas now, and the content one is
     read directly (`Tests.Guards.SurfaceSpanCensus.expectedMotiveExport`). -/
+-- Item 304: `resumectx_of_landing` at `res=10` sorts before `flowKeyRoute_of_open`.
+-- 2026-10-20 (item 309): 18 → 15 — `frameChainUnion`, `flowVPack_of_close` and `explFrameValueLine` conclude in `∨ alt`
+-- and leave the `∨ True` survey (the census's paste-ready block).
 def expectedLedger : List String :=
-  ["res=11 imp=100 prem=6 proj=0 flowKeyRoute_of_root",
+  ["res=12 imp=101 prem=6 proj=0 flowKeyRoute_of_root",
+   "res=10 imp=63 prem=3 proj=0 resumectx_of_landing",
    "res=10 imp=85 prem=2 proj=0 flowKeyRoute_of_open",
-   "res=9 imp=61 prem=3 proj=0 resumectx_of_landing",
    "res=4 imp=7 prem=1 proj=0 markerctx_of_landing",
    "res=4 imp=7 prem=1 proj=0 suffixctx_of_landing",
    "res=3 imp=10 prem=2 proj=0 dedent_cover_of_landing",
+   "res=3 imp=5 prem=1 proj=0 flowOpen_marker",
    "res=3 imp=5 prem=1 proj=0 flowOpen_stamp",
    "res=3 imp=12 prem=0 proj=0 keyctx_of_preprocess",
    "res=3 imp=12 prem=0 proj=0 nodocctx_of_preprocess",
-   "res=1 imp=4 prem=2 proj=0 explFrameValueLine",
-   "res=1 imp=3 prem=1 proj=0 flowVPack_of_close",
    "res=1 imp=4 prem=1 proj=0 PreprocessIndentStable.IndentFloor.transport",
    "res=1 imp=4 prem=1 proj=0 flowOpen_floor_at_prep",
-   "res=0 imp=8 prem=2 proj=0 frameChainUnion",
    "res=0 imp=0 prem=0 proj=0 flowKeyHead",
    "res=0 imp=0 prem=0 proj=1 FlowBaseRoutes.key",
    "res=0 imp=0 prem=0 proj=1 FlowBaseRoutes.vslot"]

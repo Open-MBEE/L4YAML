@@ -193,7 +193,7 @@ run_cmd do
       (``accum_block_on_closeThenBlock, 17), (``colon_fires_implicit_key, 11),
       (``accum_block_on_pendingContent, 23), (``accum_block_on_pendingBlockContent, 25),
       (``accum_block_on_noPending, 13), (``accum_content_on_noPending, 14),
-      (``flowKeyRoute_of_open, 14), (``flowKeyRoute_of_root, 9),
+      (``flowKeyRoute_of_open, 15), (``flowKeyRoute_of_root, 10),
       (``keyctx_of_preprocess, 11), (``landing_or_park_save, 6),
       (``landing_or_park_ska, 6), (``preprocess_flow_thread, 9) ]
   if rows.length != got then
@@ -297,14 +297,68 @@ declarations' own binders and not by a rescoring of an existing one.
 -- with it (`KeyPackPunt.rec#3 (dedent)` ETA, `KeyPackPunt.casesOn#4 (dedent)`
 -- and `KeyPackPunt.recOn#4 (dedent)` RELAY), as at its sibling.  No verdict
 -- moves under this peel either.
+-- 2026-10-20 (item 299): `constants` 1363 → 1364, `eta` 386 → 387, `READ`
+-- 1160 → 1159 — the same rows its sibling's roster names (`525-roster-299.out`:
+-- the three deleted token walk lemmas' six binders go, `pendingDocStart#11
+-- (h_docline)` ETA and five binders of the `docStartLine` transport arrive),
+-- read under this peel: `docStartOnLine_of_lastReal#3 (h)` was READ here
+-- (RELAY at the sibling), the other five walk binders RELAY, and the five
+-- arriving transport binders RELAY — so one READ fewer and RELAY unmoved
+-- (`526-rosterP-299.out` against `368-rosterP-293.out`, which also shows
+-- items 296 and 297's rows and nothing else).
+-- 2026-10-20 (item 300): `constants` 1364 → 1366, `decls` +2, `eta` 387 → 390,
+-- `READ` 1159 → 1163, `RELAY` 2151 → 2164 — the sibling's twenty new rows
+-- with the same verdicts under this peel (`557-rosterP-300.out` against
+-- `526-rosterP-299.out`, 4024 → 4044 rows; no other row moves).
+-- 2026-10-20 (item 303): `constants` 1366 → 1386, `decls` 1084 → 1103, `eta`
+-- 390 → 414, `READ` 1163 → 1176, `RELAY` 2164 → 2180 — `KeyFrames` (item 302's
+-- value-line resume stack: the inductive, its constructors and recursors,
+-- `close`, `ofResumeFrames`, `resumeAt`), read by nothing in the library yet.
+-- The peeled roster (`scratchpad/l4yaml-row12-steps/602-rosterP-303.out`
+-- against `557-rosterP-300.out`, 4044 → 4097 rows) gains exactly the 53 rows
+-- the plain roster gains (`HypothesisReaderCensus`'s note), with the SAME
+-- verdicts — ETA 24, READ 13, RELAY 16 — because none of the new declarations
+-- has an `h_*` binder for the peeled reading to treat differently; no existing
+-- row moves.
+-- 2026-10-20 (item 304): `constants` 1386 → 1388, `decls` 1103 → 1105
+-- (`resumeFrameRouteK`, `resumeMapRouteK`), `FIELD` 180 → 185, `READ` 1176 →
+-- 1182, the rest unchanged — the same binders the plain roster names
+-- (`HypothesisReaderCensus`'s note), read peeled — the same eleven rows with the
+-- same verdicts (`602-rosterP-303.out` → `612-rosterP-304.out`, 4097 → 4108).
+-- 2026-10-20 (item 307): `constants` 1388 → 1393, `decls` 1105 → 1110, `READ` 1182 → 1198, `RELAY` 2180 → 2179 — as `HypothesisReaderCensus`:
+-- `closeThenBlock`'s three new haves and their match auxiliaries, and the γ roots' reads.
+-- 2026-10-20 (item 309): by `HypothesisReaderCensus`'s deltas (the five new declarations).
+-- 2026-10-21 (item 311): `constants` 1398 → 1403, `decls` 1114 → 1117, `UNUSED` 9 → 12 — the named alternative's two abbrevs
+-- and three stubs, whose `_h` is unused until its lane proves it (HypothesisReaderCensus's tally moves the same way).
+-- 2026-10-21 (item 313): `constants` 1403 → 1405, `decls` 1117 → 1119, `READ` +1, `RELAY` +2, `UNUSED` 12 → 15 — the
+-- content-step lemma and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
+-- 2026-10-21 (item 314): `constants` 1405 → 1407, `decls` 1119 → 1121, `READ` +1, `RELAY` +1, `UNUSED` 15 → 17 — the
+-- dispatch-only transport and its promised wrapper (HypothesisReaderCensus's tally moves the same way).
+-- 2026-10-21 (item 315): `RELAY` 2190 → 2191 — `entryPropsKeyPack_of_dispatch`'s `h_dispatch` (as in the unpeeled tally).
+-- 2026-10-21 (item 318): `constants` 1407 → 1408, `decls` 1121 → 1122, `READ` 1201 → 1199, `RELAY` 2191 → 2192,
+-- `RETURN` 138 → 139, `UNUSED` 17 → 24 — the block lane's two transports and two wrappers (+4) less item 309's three
+-- indent lemmas (−3); `not_of_classA` reads one premise fewer, the two content transports return their one equation,
+-- and the two wrappers' seven `_`-binders are the new UNUSED.
+-- 2026-10-21 (item 320): `constants` 1408 → 1409, `decls` 1122 → 1123, `eta` 414 → 416, `READ` 1199 → 1204 — the marker
+-- constructors' new field `h_noek` (read at the eight `PackAlt.ofRefused` payments and the two probes), the two split arms'
+-- `h_alt`, and the `h_seqFramesV` relay's wrapper; RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 322): `READ` 1204 → 1206 — the two colon openers' new step premise `h_alt_step` is applied inside each
+-- (a READ); RELAY, RETURN and UNUSED stand.
+-- 2026-10-21 (item 324): `constants`/`decls` +2, `RELAY` 2192 → 2194, `UNUSED` 24 → 26 — `ExplicitValueRefused.step_preprocess`
+-- relays its two hypotheses and its wrapper `PackAlt.step_preprocess` holds the same two unused; as `HypothesisReaderCensus`.
+-- (The item 320 and 322 notes above are corrected: their scripts garbled the field names.)
 def expectedModuleTallyP : String :=
-  "constants=1363 decls=1082 eta=386 FIELD=180 READ=1160 RELAY=2151 RETURN=138 UNUSED=9"
+  "constants=1411 decls=1125 eta=416 FIELD=185 READ=1206 RELAY=2195 RETURN=139 UNUSED=26"
 
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot`, a READ one, left the
 -- `_ ∨ True` population — its sibling's move, under this peel.  Item 288: and
 -- `PendingNode.pendingMapValue.h_vslot`, a constructor field read ETA.
+-- Item 300: the two new optional contexts (`h_markerline`, `h_marker_new`)
+-- read READ under this peel too.
+-- 2026-10-20 (item 307): `READ` 86 → 87, `RELAY` 38 → 37 — `accum_block_on_pendingContent`'s `h_mapFV108` is READ
+-- (a `match`) where it was RELAYed; as `HypothesisReaderCensus.expectedOptTally`.
 def expectedOptTallyP : String :=
-  "total=161 ETA=33 FIELD=4 READ=84 RELAY=38 RETURN=2"
+  "total=163 ETA=33 FIELD=4 READ=87 RELAY=37 RETURN=2"
 
 run_cmd do
   let env ← getEnv
@@ -403,7 +457,7 @@ def expectedNineResolved : List String :=
     "accum_block_on_pendingContent#30 (h_seqF168) => RETURN@L4YAML.Proofs.StreamAccum.accum_block_on_pendingContent#30",
     "accum_content_on_pendingMapValue_indented#14 (h_ncol_old) => FIELD@L4YAML.Proofs.StreamAccum.PendingNode.pendingProps#19",
     "colon_open_map#24 (h_cov_in) => FIELD@And.intro#2",
-    "flowKeyRoute_of_root#20 (h_tail143) => RETURN@L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root#20",
+    "flowKeyRoute_of_root#21 (h_tail143) => RETURN@L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root#21",  -- item 311: `{g}` precedes it
     "indicator_open_map#26 (h_ref_land) => ELIM@L4YAML.Proofs.StreamAccum.rootMapRouteF_or_refused#7>L4YAML.Proofs.StreamAccum.rootMapRouteF_or_refused.match_1_1#4, ELIM@L4YAML.Proofs.StreamAccum.rootMapRoute_or_refused#7>L4YAML.Proofs.StreamAccum.rootMapRoute_or_refused.match_1_1#4",
     "question_open_map#23 (h_cov_in) => FIELD@And.intro#2",
     "question_open_map#24 (h_cov_nil) => FIELD@And.intro#2" ]
@@ -419,7 +473,7 @@ run_cmd do
   let nine : List (Name × Nat) :=
     [ (``accum_block_on_pendingBlock, 27), (``accum_block_on_pendingBlockContent, 32),
       (``accum_block_on_pendingContent, 30), (``accum_content_on_pendingMapValue_indented, 14),
-      (``colon_open_map, 24), (``flowKeyRoute_of_root, 20), (``indicator_open_map, 26),
+      (``colon_open_map, 24), (``flowKeyRoute_of_root, 21), (``indicator_open_map, 26),
       (``question_open_map, 23), (``question_open_map, 24) ]
   if nine.length != expectedCoreTerminal.length then
     throwError "item 225's shortlist is no longer nine rows"
@@ -552,20 +606,47 @@ def aliveSet (g : Graph) : Std.HashSet String := Id.run do
         queue := queue.push s
   return alive
 
-/-- Ten dead binders in the whole explored closure, and every one is `UNUSED`.
-    Nine are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
-    does not move — and the tenth is one module over. -/
+/-- Nineteen dead binders in the whole explored closure, eighteen `UNUSED` and one a `RELAY`
+    chased to an unused binder (item 315: `entryPropsKeyPack_of_dispatch`'s content dispatch,
+    relayed to the promised `PackAlt.step_content`).  Eighteen are `StreamAccum`'s own — item 225's `expectedUnused`, which the peel
+    does not move, eight of them the named alternative's stubs and promised wrappers (item
+    311: `PackAlt.ofRefused`, `PackAltG.ofPark`, `PackAlt.ofGateClose`; item 313:
+    `PackAlt.step_content`'s three; item 314: `PackAlt.step_dispatch`'s two — each `trivial`
+    until its promise or its lane is its body, so its binders are dead by construction) —
+    and the nineteenth is one module over. -/
 -- Item 287: the wrapper reads its premises off the dispatch, so `_h_res` is its
 -- thirteenth binder.
+-- 2026-10-21 (item 318): seven rows added — `PackAlt.step_blockEntry`'s three `_`-binders and `PackAlt.step_value`'s four,
+-- `lane stub` like the other promised wrappers; regenerated from the census's own `got` rows.
+-- 2026-10-21 (item 324): two rows added — `PackAlt.step_preprocess`'s `_h_preprocess`/`_h`, `lane stub` like the other promised
+-- wrappers (`deadReason` lists them); rows from the guard's own `got`.
 def expectedDead : List String :=
-  [ "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
+  [ "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#3 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#4 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#5 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_content#4 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_content#5 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#3 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#4 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#3 (_h_preprocess) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#4 (_h_dispatch) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#5 (_h_noflow) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAlt.step_value#6 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2 (_h) [lane stub]",
+    "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_inline#12 (_h_res) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#10 (_h_src) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#11 (_h_indent) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_nopack#12 (_h_park) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#11 (_h_src) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#12 (_h_indent) [class marker]",
     "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#13 (_h_ne) [class marker]",
-    "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#10 (_) [conclusion binder]",
+    "L4YAML.Proofs.StreamAccum.entryPropsKeyPack_of_dispatch#30 (h_dispatch) [promised step]",
+    "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#11 (_) [conclusion binder]",
     "L4YAML.Proofs.StreamAccum.question_open_map#15 (_h_noflow_disp) [family uniformity]",
     "L4YAML.Proofs.StructureCoupling.scanTagDirective_corr#2 (_hcorr) [family uniformity]" ]
 
@@ -580,10 +661,36 @@ def deadReason : String → String
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#11"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#12"
   | "L4YAML.Proofs.StreamAccum.block_dispatch_deferred_stamp_offcol#13" => "class marker"
-  | "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#10" => "conclusion binder"
+  | "L4YAML.Proofs.StreamAccum.flowKeyPack_of_close#11" => "conclusion binder"
+  -- Item 315: relayed to `PackAlt.step_content`, whose own step binder is unused while its promise is not yet
+  -- its body — so the chase ends at a dead binder; alive the moment `PackAlt` is the predicate.
+  | "L4YAML.Proofs.StreamAccum.entryPropsKeyPack_of_dispatch#30" => "promised step"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.ofRefused#1"
+  | "L4YAML.Proofs.StreamAccum.PackAltG.ofPark#2"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.ofGateClose#2"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#4"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#5"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_content#6"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_dispatch#4"
+  -- Item 318: the block lane's two promised wrappers (three implicit states precede their binders).
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#4"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_blockEntry#5"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#4"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#5"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_value#6"
+  -- Item 324: the preprocess transport's promised wrapper (two implicit states and `{c}` precede its binders).
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#3"
+  | "L4YAML.Proofs.StreamAccum.PackAlt.step_preprocess#4" => "lane stub"
   | _ => "family uniformity"
 
-def expectedDeadTally : String := "dead=10 UNUSED=10 RELAY=0"
+-- 2026-10-21 (item 315): `dead` 18 → 19, `RELAY` 0 → 1 — `entryPropsKeyPack_of_dispatch`'s new `h_dispatch` is relayed to
+-- the promised wrapper and chased to its unused step binder.
+-- 2026-10-21 (item 318): `dead` 19 → 26, `UNUSED` 18 → 25 — the seven lane-stub binders above.
+-- 2026-10-21 (item 324): `dead` 26 → 28, `UNUSED` 25 → 27 — `PackAlt.step_preprocess`'s two lane-stub binders above.
+def expectedDeadTally : String := "dead=28 RELAY=1 UNUSED=27 RELAY=1"
 
 run_cmd do
   let env ← getEnv
@@ -686,7 +793,13 @@ lemma opt_premise_is_no_premise {A P : Prop} : (A ∨ True → P) ↔ P :=
     the sentence above true and empty. -/
 -- Item 287: `accum_block_on_closeThenBlock`'s `h_vslot` left the `_ ∨ True`
 -- population.  Item 288: and `PendingNode.pendingMapValue.h_vslot`, a field.
-def expectedOptPopulation : String := "total=161 optTy=161 ctorFields=33"
+-- 2026-10-20 (item 309): `optTy` 163 → 158 — the three generic helpers' five `∨ alt` binders are no `∨ True`
+-- to this census (their callers instantiate the alternative).
+-- 2026-10-21 (item 311): `optTy` 158 → 156 — `colon_open_map_implicit` states the family's alternative generically
+-- (`{alt : Prop}`), so its two `∨ alt` premises leave the literal-optional population, as the three generic helpers'
+-- did at item 309; `total` stands at 163.
+def expectedOptPopulation : String :=
+  "total=163 optTy=156 ctorFields=33"
 
 run_cmd do
   let env ← getEnv

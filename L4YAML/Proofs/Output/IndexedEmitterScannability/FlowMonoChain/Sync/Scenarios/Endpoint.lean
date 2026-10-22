@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.FlowClose
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -72,6 +73,8 @@ With this sub-session, `.flowmono` closes: 13/13 sub-sessions across
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.CharPredicates
@@ -221,7 +224,10 @@ lemma scanNextTokenIx_preprocess_init_state (input : String) (c : Char)
                   from by
                   show ¬ ((1 : Nat) < 1); omega,
                decide_false, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-    -- Final peek? matches some c via saveSimpleKeyIx_peek?
+    -- Final peek? matches some c via saveSimpleKeyIx_peek? (item 333's hook
+    -- moves no cursor)
+    rw [closeStaleExplicitKeyIx_of_ek_none _
+      (by first | rfl | (unfold saveSimpleKeyIx; split <;> rfl) | simp [saveSimpleKeyIx])]
     rw [show (saveSimpleKeyIx { (ScannerStateIx.mk' input).emit YamlToken.streamStart
                                 with needIndentCheck := false }).peek?
             = some c by

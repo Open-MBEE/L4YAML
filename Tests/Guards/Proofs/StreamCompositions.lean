@@ -71,7 +71,7 @@ def short2 (n : Name) : String :=
   | _ => short n
 
 def isStreamCtor (n : Name) : Bool :=
-  n.getPrefix == ``SLYamlStream || n.getPrefix == ``ResumeFrames
+  n.getPrefix == ``SLYamlStream || n.getPrefix == ``ResumeFrames || n.getPrefix == ``KeyFrames
 
 def isLogicCtor (n : Name) : Bool :=
   n == ``And.intro || n == ``Or.inl || n == ``Or.inr || n == ``Exists.intro
@@ -211,7 +211,7 @@ def roleOf (cx : TCtx) (id : FVarId) : MetaM String := do
 
 def docLevel (n : Name) : Bool :=
   let p := n.getPrefix
-  p == ``SLYamlStream || p == ``ResumeFrames || p == ``GOpt || p == ``GStar || p == ``GPlus ||
+  p == ``SLYamlStream || p == ``ResumeFrames || p == ``KeyFrames || p == ``GOpt || p == ``GStar || p == ``GPlus ||
   p == ``SLAnyDocument
 
 def isProofArg (a : Expr) : MetaM Bool := do
@@ -270,7 +270,7 @@ partial def concludesStream (t : Expr) : MetaM Bool := do
     let b := b.consumeMData
     match b.getAppFn with
     | .const n _ =>
-      if n == ``SLYamlStream || n == ``ResumeFrames || n == ``ExplValueLine || n == ``SeqEntryTail then
+      if n == ``SLYamlStream || n == ``ResumeFrames || n == ``KeyFrames || n == ``ExplValueLine || n == ``SeqEntryTail then
         return true
       if (n == ``And || n == ``Or) && b.getAppNumArgs == 2 then
         return (← concludesStream (b.getArg! 0)) || (← concludesStream (b.getArg! 1))
@@ -620,6 +620,8 @@ Pinned by `scratchpad/l4yaml-beta5-item249/fill_pins.py` from the first clean
 reading; every numeric field of the line and one row of each list are
 perturbed by `perturb.sh`, and each perturbation must throw. -/
 
+-- Item 304: the two value-line rows respell `Resume(_)▹…` → `Key(_)▹…` — the
+-- stacks are `KeyFrames` (item 302's), rendered as `RouteShapes` renders them.
 def expectedSites : List String :=
   ["question_open_map:pendingMapValue.h_close [SBlockNode(_+1,blockIn) ⇒ Stream] segments=2 comps=1",
    "question_open_map:pendingMapValue.h_ivl [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] segments=2 comps=1",
@@ -627,8 +629,8 @@ def expectedSites : List String :=
    "question_open_map:pendingMapValue.h_vslot [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] segments=2 comps=1",
    "question_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] segments=2 comps=1 NEW",
    "question_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] segments=2 comps=1 NEW",
-   "question_open_map:pendingMapValue.h_closeFV [SBlockNode(_+1,blockIn) ⇒ Resume(_)▹ExplValueLine(_)] segments=2 comps=1",
-   "question_open_map:pendingMapValue.h_framesV [SSLComments ⇒ Resume(_)▹ExplValueLine(_)] segments=2 comps=1",
+   "question_open_map:pendingMapValue.h_closeFV [SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_)] segments=2 comps=1",
+   "question_open_map:pendingMapValue.h_framesV [SSLComments ⇒ Key(_)▹ExplValueLine(_)] segments=2 comps=1",
    "colon_open_map:pendingMapValue.h_close [SBlockNode(_+1,blockIn) ⇒ Stream] segments=2 comps=1",
    "colon_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] segments=2 comps=1 NEW",
    "colon_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] segments=2 comps=1 NEW",
@@ -658,8 +660,8 @@ def expectedSiteComps : List String :=
    "question_open_map:pendingMapValue.h_vslot ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "question_open_map:pendingMapValue.h_closeF ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
    "question_open_map:pendingMapValue.h_frames ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
-   "question_open_map:pendingMapValue.h_closeFV ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S]",
-   "question_open_map:pendingMapValue.h_framesV ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S]",
+   "question_open_map:pendingMapValue.h_closeFV ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
+   "question_open_map:pendingMapValue.h_framesV ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
    "colon_open_map:pendingMapValue.h_close ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "colon_open_map:pendingMapValue.h_closeF ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
    "colon_open_map:pendingMapValue.h_frames ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
@@ -693,12 +695,13 @@ def expectedSiteComps : List String :=
    "accum_structural_pending→dispatch_new_pending.h_dir_route ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.some(SLAnyDocument.directive(prem:SLDirectiveDocument)),GStar.nil]",
    "structural_dispatch_to_pending:pendingDocStart.h_doc_route ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.explicit(SLExplicitDocument.withContent)),GStar.nil]"]
 
+-- Item 304: the bottom of the value-line compositions is `KeyFrames.bottom`.
 def expectedComps : List String :=
   ["(fact)",
    "SLYamlStream.implicitContinue[S,GStar.cons(SLDocumentPrefix.comments,GStar.nil),GOpt.none,GStar.nil]",
    "SLYamlStream.implicitContinue[S,GStar.cons(SLDocumentPrefix.comments,GStar.nil),GOpt.none,GStar.nil] ▹ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
-   "SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S]",
+   "SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
    "SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
    "SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.explicit(SLExplicitDocument.withContent)),GStar.nil]",
    "SLYamlStream.scannerDrop[S,prem:SSLComments]",
@@ -717,11 +720,11 @@ def expectedShapeComps : List String :=
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.scannerDrop[S,prem:SSLComments] ▹ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.none,GStar.nil] ▹ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
-   "SBlockNode(_+1,blockIn) ⇒ Resume(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S]",
+   "SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
    "SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
    "SBlockNode(_+1,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SLDirectiveDocument ⇒ Stream ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.some(SLAnyDocument.directive(prem:SLDirectiveDocument)),GStar.nil]",
-   "SSLComments ⇒ Resume(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S]",
+   "SSLComments ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
    "SSLComments ⇒ Resume(_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
    "SSLComments ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.cons(SLDocumentPrefix.comments,GStar.nil),GOpt.none,GStar.nil]",
    "SSLComments ⇒ Stream ⟶ SLYamlStream.scannerDrop[S,prem:SSLComments]",

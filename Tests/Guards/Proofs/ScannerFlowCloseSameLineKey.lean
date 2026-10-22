@@ -116,11 +116,13 @@ private def emitsOk (input : String) : Bool :=
 -- §5a The transport, at its type: the two readings the base slot now carries,
 -- and the step that records them.
 open L4YAML.Scanner L4YAML.Proofs.StreamAccum in
-/-- The mask's base slot answers the close's two questions at once. -/
+/-- The mask's base slot answers the close's ~~two~~ three questions at once
+    (item 300 adds the marker's line). -/
 example {sc : ScannerState} {km : Array Bool} {kc : Nat}
     (h : KmSound sc km kc) (h1 : km.size = 1) :
     ∃ key, sc.simpleKeyStack.back? = some key ∧ key.pos.col = kc ∧
-      (sc.implicitValueLine = some key.pos.line ∨ True) :=
+      (sc.implicitValueLine = some key.pos.line ∨ True) ∧
+      (sc.docStartLine = some key.pos.line ∨ True) :=
   KmSound.back_col h h1
 
 open L4YAML.Scanner L4YAML.Proofs.StreamAccum in

@@ -70,12 +70,13 @@ partial def occ (i : Nat) : Expr → Nat
   | .proj _ _ e => occ i e
   | _ => 0
 
-/-- A SATURATED `ResumeFrames P ks sp`; the partial applications are the same
-    site seen again and are not counted. -/
+/-- A SATURATED `ResumeFrames P ks sp` — or, since item 304, `KeyFrames P ks sp`,
+    the value-line stack's own constructor (item 302's stack over mixed levels);
+    the partial applications are the same site seen again and are not counted. -/
 def resumeBottom (e : Expr) : Option Name :=
   match e.getAppFn with
   | .const n _ =>
-      if n != ``ResumeFrames then none else
+      if n != ``ResumeFrames && n != ``KeyFrames then none else
       let args := e.getAppArgs
       if args.size != 3 then none else
         match args[0]!.getAppFn with
@@ -271,6 +272,9 @@ def surfaceControl : CommandElabM (Array String) := do
     `resumectx_of_landing`'s membership test.  A list in a place where the
     index is read would be spendable; a list where nothing is read is a
     quantifier no consumer can ask about. -/
+-- Item 305: `valueline/frames/occ=1` 10 → 3 and `occ=2` 8 → 15, `valueline/other/occ=1` → `occ=3` —
+-- the width bound `∀ k' ∈ ks, k' < n` on the two sequence fields, their three restating premises,
+-- `pendingProps.h_closeFEV` and `closeThenBlock`'s `h_valFV` names `ks` (and `n`) once more in the binder's own type.
 def expected : List String :=
   ["seq/bottom/occ=1  ×9",
    "seq/frames/occ=2  ×9",
@@ -282,16 +286,16 @@ def expected : List String :=
    "stream/other/occ=4  ×4",
    "stream/other/occ=6  ×1",
    "valueline/bottom/occ=1  ×34",
-   "valueline/frames/occ=1  ×10",
-   "valueline/frames/occ=2  ×8",
+   "valueline/frames/occ=1  ×3",
+   "valueline/frames/occ=2  ×15",
    "valueline/frames/occ=3  ×7",
    "valueline/frames/occ=4  ×10",
-   "valueline/other/occ=1  ×1",
    "valueline/other/occ=10  ×5",
    "valueline/other/occ=13  ×1",
    "valueline/other/occ=16  ×1",
    "valueline/other/occ=19  ×1",
-   "valueline/other/occ=2  ×1"]
+   "valueline/other/occ=2  ×1",
+   "valueline/other/occ=3  ×1"]
 
 /-- The three carriers a TYPE-ONLY census cannot see. -/
 def expectedSurface : List String :=

@@ -12,10 +12,7 @@ public import L4YAML.Proofs.Scanner.IndexedScalar
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `IndexedDispatch` — Phase 3 top-level scanner (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedDispatch` — Phase 3 top-level scanner
 
 This file ties the per-rule recognisers from
 `L4YAML/Scanner/IndexedScanner.lean` to a top-level scanner over
@@ -420,6 +417,20 @@ namespace ScannerStateIx
 `scanValuePrepareIx` overwrites them with `blockMappingStart` + `key`
 when a `:` retroactively confirms the simple key. -/
 
+/-- Item 333, indexed twin of `closeStaleExplicitKey` (see its docstring): a
+    sibling entry at or left of the `?`'s column ends the pending explicit key. -/
+@[yaml_spec "8.2.2"]
+def closeStaleExplicitKeyIx {input : String} (s : ScannerStateIx input) :
+    ScannerStateIx input :=
+  if s.inFlow then s
+  else match s.explicitKeyLine, s.peek? with
+    | some ekLine, some c =>
+      if s.cursor.pos.line != ekLine && (s.cursor.pos.col : Int) ≤ s.explicitKeyCol
+          && c != ':' && c != '-' && c != '?' then
+        { s with explicitKeyLine := none, explicitKeyCol := -1 }
+      else s
+    | _, _ => s
+
 /-- Reserve placeholder slots and record the current cursor as a
     potential implicit key. -/
 def saveSimpleKeyIx {input : String} (s : ScannerStateIx input) :
@@ -525,25 +536,6 @@ def lastRealTokenIdxIx? {input : String} (ts : Indexed.TokenStream input) :
       else some (lastIdx - 1)
     else some lastIdx
   else none
-
-/-- Walk this line's tokens backwards looking for a `---` — the indexed twin
-    of `docStartOnLine` (item 48). -/
-def docStartOnLineLoopIx {input : String} (ts : Indexed.TokenStream input)
-    (i : Nat) (line : Nat) : Bool :=
-  match i with
-  | 0 => false
-  | j + 1 =>
-    match ts.tokens[j]? with
-    | none => false
-    | some t =>
-      if t.token == .documentStart && t.start.line == line then true
-      else if t.start.line == line || t.token == .placeholder then
-        docStartOnLineLoopIx ts j line
-      else false
-
-def docStartOnLineIx {input : String} (ts : Indexed.TokenStream input)
-    (line : Nat) : Bool :=
-  docStartOnLineLoopIx ts ts.size line
 
 /-- The real token *before* the one `lastRealTokenValIx?` reads (indexed twin of
     `L4YAML.Scanner.penultRealTokenVal?`). -/
@@ -692,7 +684,7 @@ def scanBlockEntryIx {input : String} (s : ScannerStateIx input) :
     -- Item 48: mirror of the legacy same-line check — see `scanBlockEntry`.
     else if s.implicitValueLine == some s.cursor.pos.line
         || lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
-        || docStartOnLineIx s.tokens s.cursor.pos.line then
+        || s.markerOnLine then
       throw (.sameLineBlockCollection s.cursor.pos.line s.cursor.pos.col)
     -- §9.2 [211] (item 134): mirror of the legacy check — see
     -- `scanBlockEntryValidate`.
@@ -718,7 +710,7 @@ def scanKeyValidateIx {input : String} (s : ScannerStateIx input) :
   -- Item 48: mirror of the legacy same-line check — see `scanKey`.
   if s.implicitValueLine == some s.cursor.pos.line
       || lastTokenIsNodePropertyOnLineIx s.tokens s.cursor.pos.line
-      || docStartOnLineIx s.tokens s.cursor.pos.line then
+      || s.markerOnLine then
     throw (.sameLineBlockCollection s.cursor.pos.line s.cursor.pos.col)
   -- §8.2.1: mirror of the legacy check — see `scanKey`.
   if atSequenceIndentIx s then
@@ -816,7 +808,7 @@ def scanValueValidateIx {input : String} (s : ScannerStateIx input) :
   -- Item 48: mirror of the legacy same-line checks — see `scanValueValidate`.
   if !s.inFlow && s.implicitValueLine == some s.cursor.pos.line then
     throw (.nestedMappingOnLine s.cursor.pos.line s.cursor.pos.col)
-  if !s.inFlow && docStartOnLineIx s.tokens s.cursor.pos.line then
+  if !s.inFlow && s.markerOnLine then
     throw (.contentOnDocumentStartLine s.cursor.pos.line s.cursor.pos.col)
 
 /-- Resolve a pending simple key by overwriting placeholders at
@@ -933,7 +925,12 @@ def scanDocumentStartIx {input : String} (s : ScannerStateIx input) :
       seenYamlDirective := false,
       directivesPresent := false,
       documentEverStarted := true,
-      definedAnchors := #[] }
+      definedAnchors := #[],
+      -- Item 299: the marker's line, for §9.1.1's three block checks.
+      docStartLine := some s.cursor.pos.line,
+      -- Item 317: the marker ends the `?` frame and its register (see `scanDocumentStart`).
+      explicitKeyLine := none,
+      explicitKeyCol := -1 }
 
 /-- Scan `...` document-end marker. -/
 def scanDocumentEndIx {input : String} (s : ScannerStateIx input) :
@@ -948,7 +945,10 @@ def scanDocumentEndIx {input : String} (s : ScannerStateIx input) :
       simpleKeyAllowed := true,
       allowDirectives := true,
       directivesPresent := false,
-      definedAnchors := #[] }
+      definedAnchors := #[],
+      -- Item 317: as at `scanDocumentStartIx` — the register dies with the frame.
+      explicitKeyLine := none,
+      explicitKeyCol := -1 }
   let probe := skipDocEndWhitespaceIx s.cursor (input.utf8ByteSize + 1)
   match probe.peek? with
   | none => pure ()
@@ -1431,6 +1431,7 @@ def scanNextTokenIx_preprocess {input : String} (s : ScannerStateIx input) :
       .error (.trailingContent s.cursor.pos.line s.cursor.pos.col)
     else
       let s := saveSimpleKeyIx s
+      let s := closeStaleExplicitKeyIx s
       match s.peek? with
       | none => .ok none
       | some c => .ok (some (s, c))
@@ -2148,6 +2149,7 @@ def scanNextTokenIx_preprocessWC {input : String} (s : ScannerStateIx input) :
       .error (.trailingContent s.cursor.pos.line s.cursor.pos.col)
     else
       let s := saveSimpleKeyIx s
+      let s := closeStaleExplicitKeyIx s
       match s.peek? with
       | none => .ok none
       | some c => .ok (some (s, c))

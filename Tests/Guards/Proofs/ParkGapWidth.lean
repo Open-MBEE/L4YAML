@@ -511,11 +511,27 @@ corrBlock=0 corrScan=1 via="]
     preprocessing, so the rows read 102, 130 and 202.  DOCS item 293 adds
     three content-dispatch holders and four preprocessing ones and no crossing
     — the possibility lemmas `DispatchPrice` names — so the rows read 102, 133
-    and 206. -/
+    and 206.  DOCS item 299 adds two holders of each and no crossing — the
+    `docStartLine` field's transport, `dispatchContent_preserves_docStartLine`
+    and `dispatchContent_docStartLine` for the content dispatch,
+    `preprocess_preserves_docStartLine` and `ad_docStartLine` for
+    preprocessing — so the rows read 102, 135 and 208.  DOCS item 300 adds
+    one preprocessing holder, `flowOpen_marker`, and no crossing — 102, 135
+    and 209. -/
+-- 2026-10-20 (item 309): `scanNextToken_preprocess` holders 209 → 212 (the sentinel transports and the refutation).
+-- 2026-10-21 (item 313): `holders` +2 on both rungs — `ExplicitValueRefused.step_content` and `PackAlt.step_content`
+-- hold the preprocess and the content dispatch as hypotheses; no edge or chain moves.
+-- 2026-10-21 (item 314): the dispatch rung's `holders` 137 → 139 — the two `step_dispatch` declarations.
+-- 2026-10-21 (item 315): the dispatch rung's `holders` 139 → 140 — `entryPropsKeyPack_of_dispatch`'s new premise.
+-- 2026-10-21 (item 318): `dispatchBlockIndicators holders` 102 → 106, `preprocess holders` 214 → 216 — the block lane's two
+-- transports (`ExplicitValueRefused.step_blockEntry`, `.step_value`) and their `PackAlt` wrappers hold the block dispatch and
+-- the preprocess (+4 each); item 309's `preprocess_currentIndent_neg` and `indent_neg_dis_of_park`, deleted, held the preprocess (−2).
+-- 2026-10-21 (item 324): `preprocess holders` 216 → 218 — `ExplicitValueRefused.step_preprocess` and its `PackAlt` wrapper
+-- hold the preprocess as a hypothesis; no edge or chain moves.
 def expectedLadder : List String :=
-  ["scanNextToken_dispatchBlockIndicators holders=102 edge=0 chain=0",
-   "scanNextToken_dispatchContent holders=133 edge=2 chain=1",
-   "scanNextToken_preprocess holders=206 edge=17 chain=6"]
+  ["scanNextToken_dispatchBlockIndicators holders=106 edge=0 chain=0",
+   "scanNextToken_dispatchContent holders=140 edge=2 chain=1",
+   "scanNextToken_preprocess holders=219 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

@@ -633,6 +633,8 @@ def witnessOf (eq : String) (idx : String) : String :=
   | _ => s!"?({body})"
 
 def resumeN : Name := ``L4YAML.Proofs.StreamAccum.ResumeFrames
+-- Item 304: the value-line stacks are `KeyFrames` (item 302's); the same faces.
+def keyN : Name := ``L4YAML.Proofs.StreamAccum.KeyFrames
 def tailN : Name := ``L4YAML.Surface.SCompactMapTail
 
 /-- Inside a hypothesis mentioning `ResumeFrames`: the level of the first
@@ -654,7 +656,7 @@ partial def resumeShape (env : Environment) (st : Stack) (t : Expr) (prev : Opti
       (resumeShape env st ty prev).orElse fun _ => resumeShape env (st.push { name := n, ty := ty, prov := none }) b prev'
   | .lam n ty b _ => resumeShape env (st.push { name := n, ty := ty, prov := none }) b prev
   | .app .. =>
-    if t.isAppOfArity resumeN 3 then some s!"frames({ppc st (t.getArg! 1)})"
+    if t.isAppOfArity resumeN 3 || t.isAppOfArity keyN 3 then some s!"frames({ppc st (t.getArg! 1)})"
     else t.getAppArgs.findSome? fun a => resumeShape env st a prev
   | _ => none
 
@@ -664,7 +666,7 @@ def relaysOf (env : Environment) (stAll : Stack) : Array String := Id.run do
   let mut out : Array String := #[]
   for i in [0:stAll.size] do
     let b := stAll[i]!
-    unless hasHead b.ty resumeN do continue
+    unless hasHead b.ty resumeN || hasHead b.ty keyN do continue
     let st0 := stAll.extract 0 i
     out := out.push s!"{bname b.name}:{(resumeShape env st0 b.ty none).getD "?"}"
   return out
@@ -726,8 +728,11 @@ def expectedBottoms : List String :=
    "colon_open_map_explicit #1 ctor:pendingMapValue.h_closeF idx=nv bottom=at[hvp,h_slot:SBlockIndented(nv) at(syn)] resume=[]",
    "content_dispatch_routed #1 ctor:pendingProps.h_closeFE idx=0 bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[]",
    "content_dispatch_routed #2 ctor:pendingProps.h_closeFE idx=0 bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[]"]
+-- 2026-10-20 (item 307): the landed-`-` arm's `pendingBlock.h_closeF` row names the two new resumes
+-- (`h_resSeqV`, `h_slotV'`) among its resume haves; nothing else moves.
 def expectedBottomsPaid : List String :=
-  ["accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_docRoute:SBlockNode(0) undecided(—); h_seqRoute:SBlockSeqEntries(k) at(syn); h_entryTail:SCompactSeqTail(k) at(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([]); h_seqFrames:frames(ks); h_seqFramesV:frames(ks)] relaySrc=[local:accum_block_on_closeThenBlock.h_seqFrames]",
+  -- Item 305: `closeThenBlock`'s first entry park reads the `?` slot's bottom (`h_slotV`) beside the awaited node's frames.
+  ["accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_docRoute:SBlockNode(0) undecided(—); h_seqRoute:SBlockSeqEntries(k) at(syn); h_entryTail:SCompactSeqTail(k) at(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([]); h_seqFrames:frames(ks); h_slotV:frames(ks); h_resSeqV:frames(ks); h_slotV':frames(ks); h_seqFramesV:frames(ks)] relaySrc=[local:accum_block_on_closeThenBlock.h_seqFrames]",
    "accum_block_on_closeThenBlock #2 ctor:pendingBlock.h_closeF idx=nv + 1 + m bottom=below[hvs:SBlockIndented(nv) below(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks)] relaySrc=[]",
    "accum_block_on_noPending #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_rootTail:SCompactSeqTail(k) at(syn)] resume=[] relaySrc=[]",
    "accum_block_on_pendingBlock #2 ctor:pendingBlock.h_closeF idx=k bottom=below[h_close_entry_old:SCompactSeqTail(n) below(by hlt:n<k); h_close_inner:SBlockSeqEntries(k) at(syn)] resume=[h_closeFV_old:frames(ks)] relaySrc=[]",
@@ -762,10 +767,38 @@ def expectedNamed : String :=
     declaration), item 295 100079 → 100098 (all of it
     `accum_flow_open_depth0`'s, the one declaration whose term changed), and
     item 296 100098 → 100108 (the two entry pack producers' frameless dedent
-    exit), and item 297 100108 → 100103 (the net over the declarations whose
-    terms changed; `CloseStackCover` names them). -/
+    exit), item 297 100108 → 100103 (the net over the declarations whose
+    terms changed; `CloseStackCover` names them), and item 299 100103 → 100339
+    (`pendingDocStart`'s new field and `dispatch_refutes_sameLine`'s new
+    premise, passed at every walked site; `CloseStackCover` names them), and
+    item 300 100339 → 100885 (the marker reason's productions and refutations;
+    `CloseStackCover` names them). -/
+-- 2026-10-20 (item 305): the sequence fields carry the width bound and `closeThenBlock`'s first entry park reads the `?` slot's bottom: `nodes` 100885 → 101410.
+-- 2026-10-20 (item 306): the content lemma's six key-pack stack arguments are matches on `h_closeFV_old` (the same walk as CloseStackCover): `nodes` 101410 → 101421.
+-- 2026-10-20 (item 307): `nodes` 101421 → 101427 (the same walk as CloseStackCover).
+-- 2026-10-20 (item 309): `nodes` 101427 → 101432 (CloseStackCover's walk, the generic helpers' `Or.inr h` terms).
+-- 2026-10-21 (item 311): `nodes` 101432 → 101924 (CloseStackCover's walk: the named alternative's definitions and stubs, the
+-- four frame-crossing conversions, the two `.imp id PackAlt.ofGateClose` wrappers at the closes).
+-- 2026-10-21 (item 313): `nodes` 101924 → 103174 — `ExplicitValueRefused.step_content`, `PackAlt.step_content` and the
+-- content lane's twenty-one `.imp id (PackAlt.step_content …)` wrappers; every row stands.
+-- 2026-10-21 (item 314): `nodes` 103174 → 103286 — `ExplicitValueRefused.step_dispatch`, `PackAlt.step_dispatch` and the
+-- content lane's sixty-one leaf payments (each `Or.inr trivial` an application or a hypothesis now); every row stands.
+-- 2026-10-21 (item 315): `nodes` 103286 → 103289 — the key-pack lemmas' six arms step through the wrapper (three a side).
+-- 2026-10-21 (item 320): `nodes` 103289 → 103324 — the marker parks' new field at the three producers, the eight
+-- `PackAlt.ofRefused h_noek…` payments, the `h_seqFramesV` relay and the two split arms grow the family's terms; rows stand.
+-- 2026-10-21 (item 322): `nodes` 103324 → 103328 — the colon openers' step premise and its six spends and two
+-- callers grow the family's terms; rows stand.
+-- 2026-10-21 (item 324): `nodes` 103328 → 103335 — as `CloseStackCover`: this item's payments in the flow opener and the
+-- resume context grow the walked terms; every row stands.
 def expectedLine : String :=
-  "sites=5 pb=1 pmv=1 props=3 idx0=2 mono=2 monoOpt=0 base=2 baseOpt=0 prep=2 dispB=2 dispC=3 hc=2 chr=3 dash=1 corr=5 noflow=5 save=1 fl=0 top=2 larm=1 floor=2 nic=5 armed=0 col0=3 ids=0 coverSites=1 coverBinders=4 coverFnSites=3 full=1 fullB=1 missMono=3 missBase=3 missPrep=3 missFloorSrc=3 own=2 empty=0 relay=1 relayEntries=4 bounds=2 below=0 belowSyn=0 belowArm=0 at=2 atSyn=1 atArm=1 undecided=0 bOwn=1 bOld=1 landedBelow=0 inlineBelow=0 payable=0 lack=3 lackCallers=19 lackSupplied=0 lackSuppliedB=3 lackLow=0 lackPayable=0 vacuous=2 bottomBelow=0 paidRows=14 bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=100103"
+  "sites=5 pb=1 pmv=1 props=3 idx0=2 mono=2 monoOpt=0 base=2 baseOpt=0 prep=2 dispB=2 \
+dispC=3 hc=2 chr=3 dash=1 corr=5 noflow=5 save=1 fl=0 top=2 larm=1 floor=2 nic=5 \
+armed=0 col0=3 ids=0 coverSites=1 coverBinders=4 coverFnSites=3 full=1 fullB=1 \
+missMono=3 missBase=3 missPrep=3 missFloorSrc=3 own=2 empty=0 relay=1 relayEntries=4 \
+bounds=2 below=0 belowSyn=0 belowArm=0 at=2 atSyn=1 atArm=1 undecided=0 bOwn=1 \
+bOld=1 landedBelow=0 inlineBelow=0 payable=0 lack=3 lackCallers=19 lackSupplied=0 \
+lackSuppliedB=3 lackLow=0 lackPayable=0 vacuous=2 bottomBelow=0 paidRows=14 \
+bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=103335"
 
 /-! ## §3 The reading -/
 

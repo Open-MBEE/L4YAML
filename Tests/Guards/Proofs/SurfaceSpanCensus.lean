@@ -333,7 +333,7 @@ run_cmd liftTermElabM do
       | throwError "{export_} is gone from FlowKeyLift"
     let some v := ci.value? (allowOpaque := true) | throwError "no proof term for {export_}"
     let n (s : String) := countConst (fkl.str s) v
-    let noop := countInr (·.isConstOf ``True) v
+    let noop := countInr (fun x => (x.isConstOf ``True || x.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || x.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG)) v  -- item 311
     let carried := countInr (·.isAppOf (fkl.str "SepResidue")) v
     let mut payable := 0
     let mut blocked := 0
@@ -513,7 +513,7 @@ run_cmd liftTermElabM do
       return some (t, cod.getArg! 1)
     if let some (t, r) := hit then
       if r.isAppOf (fkl.str "SepResidue") then residue := residue.insert t
-      else if r.isConstOf ``True then viaTrue := viaTrue.insert t
+      else if (r.isConstOf ``True || r.isAppOf ``L4YAML.Proofs.StreamAccum.PackAlt || r.isAppOf ``L4YAML.Proofs.StreamAccum.PackAltG) then viaTrue := viaTrue.insert t  -- item 311
   let viaTrueOnly := viaTrue.toList.filter (!residue.contains ·)
   let covered := residue.size + viaTrueOnly.length
   let got := s!"motives={motives} flow={flowTypeNames.length} residue={residue.size} \

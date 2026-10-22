@@ -135,11 +135,11 @@ example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
 example {sp_start sp_land sp_key : SurfPos} {k nv : Nat} {ks : List Nat}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_end) :
+      KeyFrames (ExplValueLine sp_start nv) ks sp_end) :
     ∀ sp_v, SBlockMapEntry k sp_key sp_v →
     ∀ sp_e, SCompactMapTail k sp_v sp_e →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_e :=
-  resumeMapRouteF h_ind h_frames
+      KeyFrames (ExplValueLine sp_start nv) ks sp_e :=
+  resumeMapRouteK h_ind h_frames
 
 /-! ## §3 The two new fields SUBSUME the two closes they ride beside
 
@@ -155,7 +155,7 @@ example {sp_start sp_scan : SurfPos} {ks : List Nat}
 
 example {sp_start sp_scan : SurfPos} {nv : Nat} {ks : List Nat}
     (h : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) :
+      KeyFrames (ExplValueLine sp_start nv) ks sp_mid) :
     ∀ sp_mid sp_i sp_c : SurfPos, SSLComments sp_scan sp_mid →
       SIndent nv sp_mid sp_i → GLit ':' sp_i sp_c →
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
@@ -176,11 +176,11 @@ value-completion sites and `Or.inr trivial` everywhere else. -/
 example {sc : ScannerState} {sp_start sp_scan : SurfPos} {n nv : Nat} {ks : List Nat}
     (build : ∀ sp_mid, SSLComments sp_scan sp_mid → SBlockNode n .blockIn sp_scan sp_mid)
     (closeFV : ∀ sp_mid, SBlockNode n .blockIn sp_scan sp_mid →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) :
+      KeyFrames (ExplValueLine sp_start nv) ks sp_mid) :
     (∃ (nv : Nat) (ks : List Nat),
       ((∃ lo n : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
-      ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ True :=
+      KeyFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ True :=
   Or.inl ⟨nv, ks, Or.inr trivial, fun sp_mid h_ssl => closeFV sp_mid (build sp_mid h_ssl)⟩
 
 /-! ## §5 The landing's context, read at the entries level
@@ -205,7 +205,7 @@ example {sc s_prep : ScannerState} {c : Char}
         ((∃ lo n : Nat, Floor lo n ks ∧
           Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
-        ResumeFrames (ExplValueLine sp_start nv) ks sp_m) ∨ True)
+        KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ True)
     (h_pay : ∀ (w : Nat) (ks ks' : List Nat),
         ((∃ lo n : Nat, Floor lo n ks ∧
           Covered lo ks sc) ∨ True) →
@@ -262,11 +262,11 @@ example {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
 example {sp_start sp_land sp_key : SurfPos} {k nv : Nat}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end →
-      ResumeFrames (ExplValueLine sp_start nv) [] sp_end)
+      KeyFrames (ExplValueLine sp_start nv) [] sp_end)
     {sp_v : SurfPos} (h_entry : SBlockMapEntry k sp_key sp_v)
     {sp_e : SurfPos} (h_tail : SCompactMapTail k sp_v sp_e) :
     ExplValueLine sp_start nv sp_e :=
-  (resumeMapRouteF h_ind h_frames sp_v h_entry sp_e h_tail).close
+  (resumeMapRouteK h_ind h_frames sp_v h_entry sp_e h_tail).close
 
 /-! ## §7 What this item does NOT close
 

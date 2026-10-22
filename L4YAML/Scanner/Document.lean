@@ -296,7 +296,15 @@ def scanDocumentStart (s : ScannerState) : ScannerState :=
     seenYamlDirective := false
     directivesPresent := false
     documentEverStarted := true
-    definedAnchors := #[] }
+    definedAnchors := #[]
+    -- Item 299: the marker's line, for §9.1.1's three block checks.
+    docStartLine := some s_advanced.line
+    -- Item 317: a document marker ends every open node, the `?` frame among them, so the
+    -- explicit-key register dies with it.  A register that survived `---` made a later `:` the
+    -- explicit value of a key from the PREVIOUS document: `? a⏎---⏎- b⏎: v` scanned as three
+    -- documents, the third an empty scalar, where libyaml refuses it as it refuses `- b⏎: v`.
+    explicitKeyLine := none
+    explicitKeyCol := -1 }
 
 /-- Helper: skip whitespace (spaces + tabs) using structural recursion.
     Used by scanDocumentEnd for trailing content validation. -/
@@ -338,7 +346,10 @@ def scanDocumentEnd (s : ScannerState) : Except ScanError ScannerState := do
     simpleKeyAllowed := true
     allowDirectives := true
     directivesPresent := false
-    definedAnchors := #[] }
+    definedAnchors := #[]
+    -- Item 317: as at `scanDocumentStart` — the marker ends the `?` frame and its register.
+    explicitKeyLine := none
+    explicitKeyCol := -1 }
   -- §9.1.2: After `...`, only s-l-comments (whitespace + optional comment) allowed.
   -- Skip whitespace on the same line (structural recursion via skipDocEndWhitespace)
   let s'' := skipDocEndWhitespace result (s.inputEnd - result.offset + 1)

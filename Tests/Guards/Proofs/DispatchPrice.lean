@@ -279,9 +279,32 @@ def expectedAlphabet : String := "prodTyped=129 prodSurf=92 prodSpec=54"
     `preprocess_possible_of_live0` and `close_poss_of_base` a preprocessing
     one, `live_of_dispatch`, `dispatchContent_blockScalar_ska` and
     `content_live0` a content dispatch (`content_live0` both).  None holds two
-    correspondences, and `fns` and `fnsIx` hold. -/
+    correspondences, and `fns` and `fnsIx` hold.
+
+    Moved to 1706 / 305 by DOCS item 299 and no new step: the `docStartLine`
+    preservation family cloned from `implicitValueLine`'s holds a step
+    equation at 25 of its lemmas, two of them a content dispatch
+    (`dispatchContent_preserves_docStartLine` and `dispatchContent_docStartLine`); the rest state pure functions.  None holds two
+    correspondences, and `fns` and `fnsIx` hold.
+
+    Moved to 1707 / 305 by DOCS item 300 and no new step: `flowOpen_marker`,
+    the stamp lemma's twin, holds preprocessing's equation and no path. -/
+-- 2026-10-20 (item 309): three lemmas more mention the preprocess step (the sentinel transports and the refutation): `stepHolders` 1707 → 1710.
+-- 2026-10-21 (item 313): `stepHolders` 1710 → 1712, `dispHolders` 305 → 307 — `ExplicitValueRefused.step_content` and
+-- `PackAlt.step_content` state the preprocess and content-dispatch steps as hypotheses.
+-- 2026-10-21 (item 314): `stepHolders` 1712 → 1714, `dispHolders` 307 → 309 — `ExplicitValueRefused.step_dispatch` and
+-- `PackAlt.step_dispatch` hold the content dispatch.
+-- 2026-10-21 (item 315): `dispHolders` 309 → 310, `dispTwoCorr` 28 → 29 — `entryPropsKeyPack_of_dispatch` takes the content
+-- dispatch as a premise beside its two correspondences.
+-- 2026-10-21 (item 318): `stepHolders` 1714 → 1716, `dispHolders` 310 → 314 — the block lane's two transports
+-- (`ExplicitValueRefused.step_blockEntry`, `.step_value`) and their `PackAlt` wrappers hold the block dispatch, the two
+-- predicate lemmas also the preprocess; item 309's three indent lemmas, deleted, held neither step.
+-- 2026-10-21 (item 320): `stepHolders` 1716 → 1717 — `ExplicitKeyCoupling.scanDocumentEnd_explicitKeyLine` holds the `...`
+-- scan's step (`scanDocumentEnd s = .ok s'`), the marker parks' dead-register fact; the dispatch holders stand.
+-- 2026-10-21 (item 324): `stepHolders` 1717 → 1719 — `ExplicitValueRefused.step_preprocess` and its wrapper
+-- `PackAlt.step_preprocess` (the family's preprocess transport) each hold the preprocess step equation; dispatch holders stand.
 def expectedSteps : String :=
-  "stepHolders=1681 dispHolders=303 dispTwoCorr=28 fns=72 fnsIx=26"
+  "stepHolders=1720 dispHolders=314 dispTwoCorr=29 fns=72 fnsIx=26"
 
 /-- **The ladder, at each population.**  `edge` is a production whose right
     endpoint is the step's output; `chain` requires a path to it from another
@@ -332,10 +355,25 @@ def expectedChainSpec : List Name :=
     adds four holders of preprocessing's (`preprocess_saved_key_possible_post`,
     `preprocess_possible_of_live0`, `close_poss_of_base`, `content_live0`) and
     three of the content dispatch's (`live_of_dispatch`,
-    `dispatchContent_blockScalar_ska`, `content_live0`), none with a path. -/
+    `dispatchContent_blockScalar_ska`, `content_live0`), none with a path.
+    DOCS item 299 adds two holders of each, the `docStartLine` field's
+    transport: `preprocess_preserves_docStartLine` and `ad_docStartLine` hold
+    preprocessing's equation, `dispatchContent_preserves_docStartLine` and
+    `dispatchContent_docStartLine` the content dispatch's, none with a path.
+    DOCS item 300 adds one holder of preprocessing's, `flowOpen_marker`, with
+    no path. -/
+-- 2026-10-20 (item 309): `scanNextToken_preprocess` decls 209 → 212 (the sentinel transports and the refutation).
+-- 2026-10-21 (item 313): both steps' declaration counts +2 — `ExplicitValueRefused.step_content` and
+-- `PackAlt.step_content` hold the preprocess and the content dispatch as hypotheses.
+-- 2026-10-21 (item 314): the dispatch rung +2 (the two `step_dispatch` declarations); the preprocess rung stands.
+-- 2026-10-21 (item 315): the dispatch rung +1 — `entryPropsKeyPack_of_dispatch`.
+-- 2026-10-21 (item 318): `preprocess decls` 214 → 216 — the block lane's two transports and their two wrappers hold the
+-- preprocess (+4), item 309's `preprocess_currentIndent_neg` and `indent_neg_dis_of_park`, deleted, held it too (−2).
+-- 2026-10-21 (item 324): `scanNextToken_preprocess decls` 216 → 218 — the two preprocess-transport lemmas of the alternative
+-- family (`ExplicitValueRefused.step_preprocess`, `PackAlt.step_preprocess`) read the preprocess equation; the content dispatch stands.
 def expectedPerFn : List String :=
-  ["scanNextToken_dispatchContent decls=133 chain=1",
-   "scanNextToken_preprocess decls=206 chain=6"]
+  ["scanNextToken_dispatchContent decls=140 chain=1",
+   "scanNextToken_preprocess decls=219 chain=6"]
 
 /-- **The one worked precedent is outside the work.**  It is not in item 238's
     transitive set and not on either repair thread, so β.5 neither pays for it

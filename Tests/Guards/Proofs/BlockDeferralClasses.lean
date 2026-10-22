@@ -69,7 +69,7 @@ stamp source where it used to split on it.  §5 pins the field and the family.
 **The three that remain now carry a proposition of their own** (item 187).
 Item 185 read this class as having none — "the field's other alternative is
 `True`" — and that is true of the PACK and false of the branch: the branch
-reads the explicit-key register LIVE, and `ekl_dis_eq_park` carries that
+reads the explicit-key register LIVE, and `ekl_disp_none_of_park_none` carries that
 reading back to the park the carrier would have to be paid at.  `_h_park` is
 that fact, and it is what refutes the cheap carrier item 186 priced.  §6 pins
 the re-pricing, the census that re-derives it, and the class's own inputs.
@@ -238,11 +238,12 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' sc s_dis : ScannerState)
     reads the register on the DISPATCH state, and the park is where a carrier
     would have to be paid. -/
 example {sc s_prep : ScannerState} {c : Char}
-    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
+    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h0 : sc.explicitKeyLine = none) :
     (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).explicitKeyLine = sc.explicitKeyLine :=
-  ekl_dis_eq_park h
+    else s_prep).explicitKeyLine = none :=
+  ekl_disp_none_of_park_none h h0
 
 /-! ~~`compact`: the stamp branch AND the inline residue, which is what says the
     two classes overlap at these two sites.~~  **Item 209 deleted the wrapper**
@@ -610,7 +611,7 @@ repeating the pattern.
 
 **And the register is the wrong carrier, not merely an expensive one.**  §1's
 `_h_park` states why: at every site in this class the branch reads
-`explicitKeyLine ≠ none`, and `ekl_dis_eq_park` carries that reading back to
+`explicitKeyLine ≠ none`, and `ekl_disp_none_of_park_none` carries that reading back to
 the park.  So `… ∨ sc.explicitKeyLine = none` is FALSE wherever the class
 stands; narrowing the punt relocates the obligation onto the producers rather
 than discharging it, and there it is the PACK that must be paid.
@@ -685,7 +686,13 @@ private def classAReg (input : String) : Option (Option Nat × Int × Nat) :=
 #guard classAReg "?\n  - a\n: w\n" == some (some 0, 0, 0)
 #guard classAReg "? -\n: - w\n" == some (some 0, 0, 0)
 #guard classAReg "?\n  &p a\n: w\n" == some (some 0, 0, 0)
-#guard classAReg "?\na\n: w\n" == some (some 0, 0, 0)
+-- Item 333: the sibling `a` at the `?`'s column ends the register in
+-- preprocessing, so the `:` below reads it DEAD and the row leaves class A.
+#guard classAReg "?\na\n: w\n" == none
+-- Item 301: the row above reads the register at a `:` the scanner then REFUSES
+-- (`invalidBareDocument 1 0` — a plain scalar at the frame's own column); the
+-- register family is not the accepted family.  §30.
+#guard pins "?\na\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
 
 -- The NEGATIVE control: no `?` frame, a `:` off the frame's column, and §3's
 -- dedent input — all three read `none`, so the rows above are a reading and
@@ -3679,10 +3686,12 @@ example {sc : ScannerState} {sp_start sp_block sp_scan : SurfPos}
     (h_arm : (sc.simpleKeyAllowed = true ∧ sc.simpleKey.possible = false) ∨ 0 < sp_scan.col)
     -- Item 284: and the offer the `...` records — the token the marker pushed,
     -- which `structural_dispatch_to_pending` reads off `scanDocumentEnd`.
-    (h_offer : OfferPred sc.tokens) :
+    (h_offer : OfferPred sc.tokens)
+    -- Item 320: and the dead register the marker leaves (lane (e)'s field).
+    (h_noek : sc.explicitKeyLine = none) :
     PendingNode sc false sp_start sp_block sp_scan :=
   PendingNode.pendingDocEnd (h_offer := h_offer) sp_start sp_block sp_scan h_line h_marker h_arm
-    (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega))
+    (nic0_of_col_pos (by rw [scDocumentEnd_col h_marker]; omega)) h_noek
 
 /-- …and the `---` park, whose marker its producers hold but the constructor
     does not keep, which is why the field is stated rather than derived. -/
@@ -4417,6 +4426,290 @@ private def land210 : List String :=
 #guard landRows "a: |\n  x\n- b\n" == [(1, false, ':'), (0, true, '-')]
 
 end Item210
+
+/-! ## §30  `_stamp_nopack`'s DOMAIN, measured — the pack's flip census and the
+class-A `:` by key shape (item 301)
+
+Item 264 §3 carried `_stamp_nopack` as STARVED with item 187's carrier — the
+seq-spaces alternative at `accum_block_on_closeThenBlock`'s dash arm — and item
+188 paid that carrier; the three applications did not move, and what they still
+stand under was not re-measured after it.  Two instruments do that here.
+
+**The flip, over the whole pack family at once.**  `scripts/pack_flip_census.py`
+flips the family's NAMED alternative — since item 311 every value-line pack,
+chain pack and value-line stack in `StreamAccum` is typed `… ∨ PackAlt sc`
+(`∨ PackAltG g` on the flow frame), and the script rewrites the two bodies to
+`False` in ONE patched tree, sorries the three conversion stubs (the lanes'
+obligations, counted as `stubs`), and iterates `lake env lean` to a fixpoint: each
+`Or.inr trivial` it breaks is sorried (a DECLINE), each relay from an unflipped
+`∨ True` source is wrapped (a RELAY), and the tree is restored byte-identical.
+Item 312 gave it a second flip, `--alt refused`: `PackAlt sc` becomes the predicate
+itself, so a relay between two park states is a type error the census wraps in a
+probe and counts as `relayState` — the transports the lanes owe, which the `False`
+flip reads as the identity.  Item 186
+ran a one-field flip and read 23 payments; item 187 counted 31 alternatives in
+16 declarations by grep; §7 and §9 ran one-field flips at four fields and found
+each one's surface SMALLER than the family's.  The whole-family flip reads
+**103 sites in 20 declarations, in 3 rounds** (101 + 2 + 0): 102 declines and
+one relay (none since item 309: `frameChainUnion` is generic in the alternative).  By shape, **70** are split leaves — `| Or.inr _ => Or.inr trivial`,
+a decline conditional on the incoming optional declining, i.e. TRANSPORT — and
+**32** are unconditional, the ROOTS — **29** since item 307 threaded the three γ roots.  The pin is read from this side by the
+script, as `expectedInlineArms` is. -/
+
+-- 2026-10-20 (item 307): `uncond` 32 → 29, `leaf` 70 → 72 — the three γ roots are threaded
+-- (`h_vpack` from the closed park's stack, closed), so their bare declines are gone.
+-- 2026-10-20 (item 309): `sites` 102 → 99, `decls` 20 → 18, `rounds` 3 → 2, `decline` 101 → 99, `relay` 1 → 0, `leaf` 72 → 70 — `frameChainUnion`, `flowVPack_of_close` and
+-- `explFrameValueLine` are generic in the alternative (item 309): the flip reaches them through their callers, so
+-- the one RELAY (`question_open_map`'s union of the frame above) and the two helpers' own leaves (`Or.inr h` relays
+-- now) are no longer sites of the family's textual surface; the roots stand at 29.
+-- 2026-10-21 (item 311): the flip is the family's NAMED alternative — `PackAlt`'s and `PackAltG`'s one body each
+-- → `False` — so it reads the whole component item 310 found: the 99 pack sites stand (70 leaves, 29 roots, matched
+-- by declaration and source line) and the chain-pack and value-stack families add 165 (91 leaves, 74 roots) in 24
+-- declarations, 6 new to the surface; `rounds` 2 → 4 (item 312: the cap — see below); the three conversion stubs (`ofRefused`, `ofPark`,
+-- `ofGateClose`) are sorried up front and counted as `stubs`, not as sites; the leaf reading also accepts
+-- `| … => exact Or.inr trivial`.
+-- 2026-10-21 (item 312): `rounds` 4 → 2 — the four rounds were Lean's 100-error cap (`maxErrors`), not the component's
+-- depth: the census raises the cap, and the same 264 sites are read at once.
+-- 2026-10-21 (item 313): `stubs` 3 → 4 — `PackAlt.step_content`, lane (b)'s transport wrapper, is `trivial` with its
+-- predicate proof promised after `-- refused:`; the `False` flip sorries every promised body (a lemma, not a site).
+-- 2026-10-21 (item 314): `sites` 264 → 203, `leaf` 161 → 100, `stubs` 4 → 5 — the content lane's sixty-one
+-- leaves hand the alternative on (through `PackAlt.step_content`/`step_dispatch` or verbatim) and are no `trivial` to flip;
+-- `PackAlt.step_dispatch` is the fifth promised body.
+-- 2026-10-21 (item 315): `sites` 203 → 197, `leaf` 100 → 94 — the two key-pack lemmas' six transport arms
+-- step through `PackAlt.step_content` (`entryPropsKeyPack_of_dispatch` takes the content dispatch as a premise).
+-- 2026-10-21 (item 318): `sites` 197 → 196, `leaf` 94 → 93, `stubs` 5 → 7 — the predicate is the dead register alone
+-- (item 317 ended the register at a marker, so the sentinel disjunct had no producer); the block lane's two transport
+-- wrappers `PackAlt.step_blockEntry`/`step_value` are the sixth and seventh promised bodies, and one dash-arm leaf of
+-- `accum_block_on_pendingBlock` is paid through the first (item 319's consumer probe).
+-- 2026-10-21 (item 319): `sites` 196 → 163, `leaf` 93 → 60 — the block lane's thirty-three leaf transports and identities
+-- are paid (fourteen through `PackAlt.step_blockEntry`, nineteen `Or.inr h_alt` at the park's own state); the two `h_resKslot`
+-- relays were never sites of this mode.  The roots stand at 103.
+-- 2026-10-21 (item 320): `sites` 163 → 155, `uncond` 103 → 95 — the eight marker-arm premises of `accum_block_pending` and
+-- `accum_content_pending` pay through `PackAlt.ofRefused h_noek…` (the marker parks' dead-register field, lane (e)); the
+-- eighteen other `(Or.inr trivial)` of those arms are `∨ True` optionals, which this mode reads as relays when paid and
+-- which are therefore not paid; the surfaced `h_seqFramesV` relay was never a site of this mode.
+-- 2026-10-21 (item 321): `sites` 155 → 146 — `accum_block_on_noPending`'s five roots pay from its own
+-- `h_noek` (three through `PackAlt.step_blockEntry`, two directly, item 186's fact), `colon_open_map_props`'s three leaves through
+-- `PackAlt.step_value` and `question_open_map`'s have-block identity: the roots fall by five, the leaves by four.
+-- 2026-10-21 (item 322): `sites` 146 → 140, `leaf` 56 → 50 — the colon openers' six leaves
+-- (`colon_open_map` 3, `colon_open_map_implicit` 3) hand the alternative on through the new step premise `h_alt_step`, which
+-- their one caller each supplies as `PackAlt.step_value …`; the roots stand.
+-- 2026-10-21 (item 323): `sites` 140 → 136, `leaf` 50 → 46 — the key-pack lemmas' four
+-- `h_dframesV` catch arms step through `PackAlt.step_content` as their `h_nodeFV` neighbours did at item 315; the roots stand.
+-- 2026-10-21 (item 324): `sites` 136 → 129 — the flow lane's register-fact payments
+-- (`accum_flow_open_depth0`'s `noPending`, `...` and `---` arms hand their parks' dead register to the flow opener) and its
+-- same-state identities (`pendingBlock`/`pendingMapValue` arms, `flowKeyRoute_of_root`'s have) and `resumectx_of_landing`'s
+-- `PackAlt.step_preprocess` (the one transport the family lacked; `stubs` 7 → 8 is its wrapper); roots and leaves as read.
+def expectedPackFlip : String :=
+  "sites=129 decls=23 rounds=2 decline=129 relay=0 leaf=42 uncond=87 stubs=8"
+
+/-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
+    predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
+    decline); a relay between two park states (`Or.inr h` with `h : PackAlt sc` where `PackAlt s'` is
+    owed, `.imp f id` across a step) fails too, and `False` could not see it.  `relayState` is the
+    count of those transports, `decline` the unpaid sites; a lane pays the first with a preservation
+    lemma and the second with `PackAlt.ofRefused`, and this line is what each lane drives down.
+    `PackAltG g` stays `True` in this mode (the frame's carrier is lane (d)'s), so `stubs=1` is
+    `PackAlt.ofGateClose` alone.  Read from the script's side, as `expectedPackFlip` is. -/
+-- 2026-10-21 (item 313): `relayState` 20 → 3 — the content lane's transports pay through `PackAlt.step_content`
+-- (`promised=2`: it and `ofRefused`), four of them surfacing only as the ones before them in the same application were
+-- paid (an application reports its first failing argument); the ones left are the `-`/`:` dispatch's (lane (e),
+-- `accum_block_on_closeThenBlock`) and the flow open's (`compact_open_map`); `decline` stands at 245, no root is paid yet.
+-- 2026-10-21 (item 314): `decline` 245 → 184 (`leaf` 151 → 90), `relayState` 3 → 3, `promised` 2 → 3 — the
+-- content lane's leaves are paid; what stands are its roots (the resumed sequence levels, the fresh parks of
+-- `content_dispatch_routed`), the key-pack lemmas' arms (no step in scope) and the other dispatches' sites.
+-- 2026-10-21 (item 315): `decline` 184 → 178 (`leaf` 90 → 84) — the key-pack lemmas' six arms; what stands in
+-- the content lane is its roots (fresh parks after a landing, resumed sequence levels, the frames without the landing's
+-- width), none with a register fact in scope yet.
+-- 2026-10-21 (item 318): `decline` 178 → 177 (`leaf` 84 → 83), `promised` 3 → 5 — the one paid dash leaf, and the two
+-- block-lane transports' promises (`ExplicitValueRefused.step_blockEntry`, `.step_value`) substituted and elaborating;
+-- `relayState` stands at 3 (`accum_block_on_closeThenBlock`'s `h_resKslot` ×2, `compact_open_map`'s `h_expl105`), item 319's.
+-- 2026-10-21 (item 319): `decline` 177 → 144 (`leaf` 83 → 50), `relayState` 3 → 2, `rounds` 2 → 3 — the block lane's
+-- thirty-three transports and identities and its two `h_resKslot` relays are paid; the third round surfaced one relay the
+-- paid ones had hidden (`accum_block_on_closeThenBlock`'s `h_seqFramesV`, an application reports its first failing argument),
+-- which stands beside `compact_open_map`'s `h_expl105`.  What declines in the block lane now (39 rows) is measured by kind in
+-- item 319's entry: twelve side-condition declines on resume facts, three catch-alls, five fresh fields, fourteen caller-side
+-- premises of `accum_block_pending`, and `accum_block_on_noPending`'s five roots.
+-- 2026-10-21 (item 320): `decline` 144 → 136, `relayState` 2 → 1 — the eight marker-arm premises paid from the new field,
+-- `accum_block_on_closeThenBlock`'s `h_seqFramesV` relayed through `PackAlt.step_blockEntry`, and two catch-alls split into
+-- their inner-alternative arm; what declines in the block lane now is item 319's list less these (item 320's entry).
+-- 2026-10-21 (item 321): `decline` 136 → 127 — the same nine sites; `relayState` stands at 1 (`compact_open_map`'s
+-- `h_expl105`, whose `?` half has no step).
+-- 2026-10-21 (item 322): `decline` 127 → 121 — the same six leaves; `relayState` stands at 1.
+-- 2026-10-21 (item 323): `decline` 121 → 117 — the same four arms; `relayState` stands at 1.
+-- 2026-10-21 (item 324): `decline` 117 → 110 — the same seven sites; `relayState` 1 (the resume-context arm read
+-- RELAY-STATE as an identity and is a transport now); `promised` 5 → 6 for `PackAlt.step_preprocess`.
+def expectedPackResidue : String :=
+  "sites=111 decls=21 rounds=2 decline=110 relayTrue=0 relayState=1 leaf=32 uncond=78 stubs=1 promised=6"
+
+/-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
+(the compiler prices it when the construction is attempted, §1):
+
+| the register at the site | roots | where |
+|---|---|---|
+| provably DEAD — no `?` frame is open | ~~20~~ 12 | `accum_block_on_noPending` ×2 (`h_noek`); `accum_flow_open_depth0`'s `noPending` arm ×1 (`h_noek`); ~~the `pendingDocEnd`/`pendingDocStart` arms of `accum_block_pending` ×3 and `accum_flow_open_depth0`'s `pendingDocStart` arms ×2 (a marker scan writes `explicitKeyLine := none`)~~ **item 308: the markers do NOT write the register** (the writers are `scanKey`, `scanValue`, the flow brackets and `scanFlowEntry`; probe `726`: a `?` frame crosses `---`/`...` with its register live, and the references accept the same inputs) — those 4 marker roots are LIVE and pay by the marker's unwind (`currentIndent = -1`), the `pendingProps` arm ×1 of `accum_block_pending` and the two constructions inside `accum_flow_open_depth0`'s `main` relay the enclosing pack; `FlowBaseRoutes.ofValue` ×1 (a flow open saves the register to `explicitKeyStack` and writes `none`); `content_dispatch_routed` ×6 (bare-document content under a `noPending` park); `colon_open_map_explicit` ×2 (the frame's own `:` fired — `scanValue`'s `explicitValue` branch writes `none`); `pendingFlow`'s arm ×1 (12.4 deletes it) |
+| a different FACE — this `∨ True` is not "pack unknown" | 9 | `colon_open_map`/`_implicit`/`_props` ×3 and `compact_open_map` ×1 are `pendingMapValue.h_expl`, the entry's own `?` slot, which an implicit entry does not have — its alternative is the stamp, passed beside it as `h_stamp`; `accum_content_pending` ×3 are `h_kslotUp`, the frame ABOVE — never class A's, since a nested `?` overwrites the register (the rows below); `accum_content_on_pendingMapValue_indented` ×1 is `h_kslotE` and the node-domain faces; `accum_content_pending` ×1 is `h_vslot51.imp … (fun _ => trivial)`, a relay of the `?` park's slot |
+| ~~LIVE, the pack available upstream, NOT threaded~~ — the γ roots, THREADED at item 307 (`h_vpack` is the closed park's stack closed at the landing, `h_mapFV` the stack itself, and `closeThenBlock`'s landed-`-` arm resumes it) | ~~3~~ 0 | `accum_block_on_pendingBlock`'s dedent `-`, `accum_block_on_pendingBlockContent`'s `k ≠ n` `-`, `accum_block_on_pendingContent`'s non-`:` indicator: each calls `accum_block_on_closeThenBlock` with `h_vpack := Or.inr trivial` AND `h_vslot := Or.inr trivial`, and the landed-`-` arm pays the new park's `h_kslot` from `h_vslot` ALONE (item 188's `slotLandedSeq`) — `h_vpack` is the `:` arm's.  So a `-` that lands on the frame's key sequence from any park that is not the `?` park itself hands the next entry no pack, and the class-A `:` after it is this escape |
+
+**The runtime, by KEY SHAPE.**  §6 pinned the register's family and §7 the
+sequence family item 188 paid; the three sites take ANY park inside a frame, so
+the second instrument walks every shape a `?` frame's key can end in and records
+at every class-A `:` the last real token before it — the runtime proxy for which
+`accum_block_on_*` lemma consumes the `:` (which ARM it takes is not a runtime
+question; the readings above are the proof's).  `scratchpad/l4yaml-row12-steps/`
+`581-classA-shapes.py` (102 inputs, 95 accepted) and `582-classA-gamma.py` (38
+inputs, 31 accepted).  Every accepted class-A `:` lands after a `scalar`, a
+`flow*End`, an `anchor`/`tag`, an `alias`, a `blockEntry`, the `?` itself or a
+`value` — `pendingContent`/`pendingBlockContent`, `pendingProps`, `pendingBlock`,
+`pendingMapValue` — and each of those parks is paid from the `?` slot by item 188's
+chain EXCEPT where a `-` reached it through `closeThenBlock`.  That family — the
+γ roots' — is accepted in every variant tried, and it is the escape's domain: -/
+
+#guard pins "?\n-\n  -\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL : -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  - a\n  - b\n- c\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL :a =VAL :b -SEQ =VAL :c -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  k: v\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k =VAL :v -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- a:\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :a =VAL : -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- a: 1\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :a =VAL :1 -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- ? a\n  : b\n- c\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :a =VAL :b -MAP =VAL :c -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- [a]\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ [] =VAL :a -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- |\n  x\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL |x\\n =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- &p\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL &p : =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- a\n-\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL :a =VAL : -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n  -\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL : =VAL : -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "- ?\n  -\n    - a\n  - b\n  : w\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :w -MAP -SEQ -DOC -STR")
+-- …class A at the frame's own column (`(explicitKeyLine, explicitKeyCol, col)`):
+#guard classAReg "?\n-\n  - a\n- b\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "?\n- a: 1\n- b\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "- ?\n  -\n    - a\n  - b\n  : w\n" == some (some 0, 2, 2)
+
+/-! **Controls**: the same nesting WITHOUT a dedent before the frame's `:` is
+item 188's chain (the inner park's `h_kslot` is the outer's, consed), and a `-`
+landing after a CONTENT park — the third γ root's `-` case — is refused by the
+scanner (`invalidBareDocument`), while its `?` case opens a NEW frame whose own
+slot `question_open_map` pays: -/
+
+#guard pins "?\n-\n  - a\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  k: v\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k =VAL :v -MAP -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n  a\n- b\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 2 0", "ERR L4YAML.ScanError.invalidBareDocument 2 0")
+#guard pins "? a\n- b\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
+#guard pins "?\n  [a]\n- b\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 2 0", "ERR L4YAML.ScanError.invalidBareDocument 2 0")
+#guard pins "? [a]\n- b\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
+#guard pins "?\n  a\n? b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :a =VAL : =VAL :b =VAL :w -MAP -DOC -STR")
+#guard pins "? a\n? b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :a =VAL : =VAL :b =VAL :w -MAP -DOC -STR")
+
+/-! **Boundaries the scanner draws**: a keyless compact entry inside the frame
+is refused (`misindentedExplicitValue` — §8's rule that a `:` strictly inside
+the frame is refused), a nested `?` owns the register so the OUTER `:` is not
+class A at all (`_stamp_offcol`'s lane, §8–§10), and the four shapes at the
+frame's own column that §6 reads the register of are REFUSED at that `:` — §6's
+`?⏎a⏎: w` row reads a register the scanner then refuses, so the register family
+and the accepted family are not one set, and the escape's domain is the
+accepted one: -/
+
+#guard pins "?\n- : v\n: w\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
+#guard pins "?\n- :\n: w\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
+#guard pins "?\n- : v\n- b\n: w\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
+#guard pins "?\n- ? x\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :x =VAL : -MAP -SEQ =VAL :w -MAP -DOC -STR")
+#guard classAReg "?\n  ? a\n: w\n" == none
+#guard classAReg "?\n  ?\n    ? -\n: w\n" == none
+#guard classAReg "?\n  ? a\n  : b\n: w\n" == some (some 1, 2, 2)
+#guard pins "?\na\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
+#guard pins "?\n\"a\"\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
+#guard pins "?\n[a]\n: w\n" == ("scan-refused L4YAML.ScanError.underIndentedFlowContent 1 0", "ERR L4YAML.ScanError.underIndentedFlowContent 1 0")
+#guard pins "?\n&x a\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 1 0", "ERR L4YAML.ScanError.invalidBareDocument 1 0")
+
+/-! **Read PAID by the chain, pinned ACCEPTED here**: a props-only node as a
+value inside the key's mapping, and a props-only entry in the key's sequence —
+`pendingProps.h_kslot` is `explFrameValueLine h_expl h_kslot` at the indented
+map-value arm and the entry park's own pack at the entry arm, both relays of
+item 189's `slotLandedMap`/item 188's `slotLandedSeq`.  These rows are the
+inputs; whether the chain pays them is the proof's, and the next item's flip
+decides it. -/
+
+#guard pins "?\n  k: &p\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +MAP =VAL :k =VAL &p : -MAP =VAL :w -MAP -DOC -STR")
+#guard pins "?\n  k: !!str\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +MAP =VAL :k =VAL <tag:yaml.org,2002:str> : -MAP =VAL :w -MAP -DOC -STR")
+#guard pins "?\n  k: &p\n  m: 1\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +MAP =VAL :k =VAL &p : =VAL :m =VAL :1 -MAP =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- k: &p\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k =VAL &p : -MAP -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n  k:\n    &p\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +MAP =VAL :k =VAL &p : -MAP =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- &p\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL &p : -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- &p a\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL &p :a -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- &p\n  a\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL &p :a -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- !!str\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL <tag:yaml.org,2002:str> : -SEQ =VAL :w -MAP -DOC -STR")
+
+/-! **The consumer side is already in hand.**  All three applications pass
+`_h_park` as `fun h => h_src (Or.inl (ekl_disp_none_of_park_none h_preprocess h))`
+— so once the pack's alternative carries `sc.explicitKeyLine = none` instead of
+`True`, the `inr` branch at each site is that term, and the wrapper goes.  The
+price of that narrowing is the census above: 20 register-dead proofs, 9 faces
+re-read, 70 transports (one lemma per dispatch kind — content, `-`, implicit
+`:`, props run, flow open/close, marker), and the 3 γ payments, whose carrier
+is `h_seqF`'s value-line twin (`SeqEntryTail` at the `ExplValueLine` bottom,
+as `h_closeF`/`h_closeFV`): consumer and producer terms typechecked at
+`scratchpad/l4yaml-row12-steps/583-consumer-probe.lean`. -/
+
+
+/-! ## §31  The carrier's SHAPE — a landing two levels out, and a mapping level
+between the sequence levels (item 302)
+
+§30 named the three γ roots' carrier as `h_seqF`'s value-line twin and item 301
+priced it at "one item, item 198's shape".  Item 167 §4 carried `h_seqF` as ONE
+width — "`- - - a⏎- b` names its INNERMOST enclosing collection, so a landing
+two levels out punts to the document reading … A stack would be `ResumeFrames`
+with `SCompactSeqTail` in place of `SCompactMapTail`; nothing in the corpus asks
+for it" — and the stream twin can afford that because the stream has the
+document reading to fall back on.  The frame's value line has no fallback: a
+class-A `:` after a landing two levels out is this escape or it is paid.  So
+the question item 301 did not ask is whether such landings are ACCEPTED inside a
+frame, and they are — two levels out, three levels deep, and with a MAPPING
+level between the sequence levels (`?⏎- k:⏎    - a⏎- b⏎: w`, item 168's shape,
+76 of item 167's corpus): -/
+
+#guard pins "?\n-\n  -\n    - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n    - a\n  - b\n- c\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :c -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n    -\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL : -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  -\n    - a\n  -\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL : -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - a\n  - b\n- c\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ =VAL :a =VAL :b -SEQ =VAL :c -SEQ =VAL :w -MAP -DOC -STR")
+-- …with a mapping level between the sequence levels:
+#guard pins "?\n-\n  - k:\n      - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP -SEQ =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- k:\n    - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  k:\n    - a\n- b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP =VAL :b -SEQ =VAL :w -MAP -DOC -STR")
+-- …all class A at the frame's own column:
+#guard classAReg "?\n-\n  -\n    - a\n- b\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "?\n- - - a\n- b\n: w\n" == some (some 0, 0, 0)
+#guard classAReg "?\n- k:\n    - a\n- b\n: w\n" == some (some 0, 0, 0)
+
+/-! A dedent that lands on an INNER level and then reaches the frame's `:` is the
+same stack read one level higher, and the frame itself may be nested: -/
+
+#guard pins "?\n-\n  -\n    - a\n  - b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n- - - a\n  - b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "?\n-\n  - k:\n      - a\n  - b\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ +SEQ +MAP =VAL :k +SEQ =VAL :a -SEQ -MAP =VAL :b -SEQ -SEQ =VAL :w -MAP -DOC -STR")
+#guard pins "- ?\n  -\n    -\n      - a\n  - b\n  : w\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP +SEQ +SEQ +SEQ =VAL :a -SEQ -SEQ =VAL :b -SEQ =VAL :w -MAP -SEQ -DOC -STR")
+#guard pins "k:\n  ?\n  -\n    - a\n  - b\n  : w\n" == ("scan-accepted", "+STR +DOC +MAP =VAL :k +MAP +SEQ +SEQ =VAL :a -SEQ =VAL :b -SEQ =VAL :w -MAP -MAP -DOC -STR")
+
+/-! The one refusal in the family is the scanner's — a `-` at the map VALUE's
+indentation after that value's own sequence closed: -/
+
+#guard pins "?\n- k:\n    - a\n  - b\n: w\n" == ("scan-refused L4YAML.ScanError.invalidBareDocument 3 2", "ERR L4YAML.ScanError.invalidBareDocument 3 2")
+
+/-! **So the twin is a STACK over mixed levels, not one width**: `ResumeFrames`
+with a sequence level beside the mapping one, at the `ExplValueLine` bottom —
+`KeyFrames` in `scratchpad/l4yaml-row12-steps/591-keyframes-probe.lean`, where
+the inductive, `close`, the embedding of every mapping-lane stack
+(`ofResumeFrames`), a kind-aware `resumeAt` (the level at the landing's width
+hands back a mapping tail OR a sequence tail), the dedent's spend at
+`closeThenBlock`'s landed-`-` arm (pop to `k`, cons the new entry, close for the
+new park's `h_kslot` and keep the popped stack as its own), the nested-`-` payer
+(the outer entry's sequence level pushed on the outer park's stack over the
+same `compactSeq`/`nestedBlockSeq` crossing the outer `h_kslot` payment
+writes) and the bottom (item 188's park: its own `h_kslot`) all typecheck.
+Item 301's 12.3.4.1 row is restated accordingly; the price is items 149–155's
+shape on the sequence lane (`resumeAt` has 35 spenders today, `ResumeFrames` 200
+mentions in `StreamAccum` and 84 in this file), not item 198's. -/
+
 
 end L4YAML.Tests.Guards.BlockDeferralClasses
 

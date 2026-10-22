@@ -1658,6 +1658,36 @@ def scanBlockScalarIx {input : String} (c : IxCursor input)
       none
   | none   => none
 
+/-- Once-bound twin of `scanBlockScalarIx` for compiled code: the spec repeats
+    its header/indent/`collectBlockScalarLoopIx` subterms for `split`
+    (Reflection 40 / 37), which compiles to three body passes; this binds each once. -/
+def scanBlockScalarIxImpl {input : String} (c : IxCursor input)
+    (indentFloor : Nat) :
+    Option (String × ScalarStyle × IxCursor input) :=
+  match c.peek? with
+  | some ch =>
+    if isLiteralBool ch || isFoldedBool ch then
+      let header := parseBlockHeaderLoopIx c.advance .clip none 2
+      let body := blockHeaderToBodyIx c
+      let contentIndent :=
+        match header.2.1 with
+        | some m => indentFloor + m - 1
+        | none   => autoDetectBlockScalarIndentIx body indentFloor
+      let collected := collectBlockScalarLoopIx body "" contentIndent input.utf8ByteSize
+      let chomped := applyChomp header.1 collected.1
+      some
+        ( (if isLiteralBool ch then chomped else foldBlockContent chomped)
+        , (if isLiteralBool ch then ScalarStyle.literal else ScalarStyle.folded)
+        , collected.2 )
+    else
+      none
+  | none   => none
+
+/-- The `let`s zeta-reduce to the spec's subterms, so this is `rfl`; `@[csimp]`
+    makes every compiled call of `scanBlockScalarIx` run the twin. -/
+@[csimp] lemma scanBlockScalarIx_eq_impl :
+    @scanBlockScalarIx = @scanBlockScalarIxImpl := rfl
+
 end L4YAML.Scanner.Indexed
 
 end Blanket

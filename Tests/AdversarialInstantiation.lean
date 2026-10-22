@@ -2021,8 +2021,94 @@ def testCleanedResolveAliases (state : IO.Ref TestCollector) : IO Unit := do
     (resolveThenClean (.alias "x") #[("x", a), ("y", svAnch "b" "r")]
       == cleanThenResolve (.alias "x") #[("x", a), ("y", svAnch "b" "r")]) ""
 
+/-! ## Priority 10 — `trimEndIx_eq` and the block-fold bridges (PR: drop the `List Char` round trips)
 
-/-! ## Priority 10 — `PendingKeys` and the re-read register (item 335, row 12 step 4)
+`trimEndIx p s` is the backward scan the indexed scanner runs; its spec is the
+`reverse/dropWhile/reverse` round trip the proofs reason about.
+`foldBlockContent` runs the fold machine with `String.foldl`; its spec is the
+`List Char` recursion `foldBlockContentGo`, and `foldBlockContentGo_eq_foldl`
+is the bridge at every accumulator/state/pending triple, not only the initial
+one.  Each case is one equality the lemma asserts, run on the executable side. -/
+
+/-- The `List Char` right-hand side of `trimEndIx_eq`. -/
+def trimEndSpec (p : Char → Bool) (s : String) : String :=
+  String.ofList ((s.toList.reverse.dropWhile p).reverse)
+
+def checkTrimEnd (state : IO.Ref TestCollector) (label : String) (p : Char → Bool) (s : String) : IO Unit :=
+  checkM state s!"trimEndIx_eq/{label}" (trimEndIx p s == trimEndSpec p s)
+    s!"impl {repr (trimEndIx p s)} spec {repr (trimEndSpec p s)}"
+
+/-- `foldBlockContentGo_eq_foldl` at one `(l, acc, st, pending)` instance. -/
+def checkFoldGo (state : IO.Ref TestCollector) (label : String) (l : List Char) (acc : String)
+    (st : Indexed.FoldState) (pending : Nat) : IO Unit :=
+  checkM state s!"foldBlockContentGo_eq_foldl/{label}"
+    (foldBlockContentGo l acc st pending == foldBlockFinish (l.foldl foldBlockStep (acc, st, pending)))
+    s!"go {repr (foldBlockContentGo l acc st pending)}"
+
+/-- `foldBlockContent_eq_go` at one raw body. -/
+def checkFoldContent (state : IO.Ref TestCollector) (label : String) (raw : String) : IO Unit :=
+  checkM state s!"foldBlockContent_eq_go/{label}"
+    (Indexed.foldBlockContent raw == foldBlockContentGo raw.toList "" .start 0)
+    s!"foldl {repr (Indexed.foldBlockContent raw)} go {repr (foldBlockContentGo raw.toList "" .start 0)}"
+
+def testScalarFinishBridges (state : IO.Ref TestCollector) : IO Unit := do
+  let ws := L4YAML.CharPredicates.isWhiteSpaceBool
+  let lf := L4YAML.CharPredicates.isLineFeedBool
+  -- trimEndIx: empty, singleton match / non-match, all-match, trailing run, interior run kept.
+  checkTrimEnd state "empty/ws" ws ""
+  checkTrimEnd state "singleton/match" ws " "
+  checkTrimEnd state "singleton/nonmatch" ws "a"
+  checkTrimEnd state "all-match" ws "   \t "
+  checkTrimEnd state "trailing-run" ws "a b \t  "
+  checkTrimEnd state "trailing-nonmatch-keeps-interior" ws "a   b"
+  checkTrimEnd state "leading-only" ws "   a"
+  -- Multibyte: the last character is 2–4 UTF-8 bytes; `endsWith`/`dropEndWhile` must step by char.
+  checkTrimEnd state "multibyte/last-nonmatch" ws "a é"
+  checkTrimEnd state "multibyte/before-trailing-ws" ws "é  "
+  checkTrimEnd state "multibyte/4-byte-last" ws "x 😀"
+  checkTrimEnd state "multibyte/4-byte-then-tab" ws "😀\t"
+  -- Line-feed predicate: the `stripTrailingNewlines` instance.
+  checkTrimEnd state "lf/empty" lf ""
+  checkTrimEnd state "lf/only-newlines" lf "\n\n"
+  checkTrimEnd state "lf/trailing-newlines" lf "a\n\n"
+  checkTrimEnd state "lf/space-after-newline-kept" lf "a\n "
+  checkTrimEnd state "lf/cr-not-lf" lf "a\r"
+  -- A predicate that always holds and one that never holds.
+  checkTrimEnd state "const-true" (fun _ => true) "abc"
+  checkTrimEnd state "const-false" (fun _ => false) "abc  "
+  -- foldBlockContent_eq_go: empty, single line, trailing newline(s), folded lines, more-indented,
+  -- blank lines between content, leading blank lines, lines ending in whitespace.
+  checkFoldContent state "empty" ""
+  checkFoldContent state "single-char" "a"
+  checkFoldContent state "single-line-no-newline" "abc"
+  checkFoldContent state "single-line" "abc\n"
+  checkFoldContent state "two-lines-folded" "a\nb\n"
+  checkFoldContent state "two-lines-no-final-newline" "a\nb"
+  checkFoldContent state "blank-between" "a\n\nb\n"
+  checkFoldContent state "two-blank-between" "a\n\n\nb\n"
+  checkFoldContent state "leading-newline" "\na\n"
+  checkFoldContent state "leading-newlines" "\n\na\n"
+  checkFoldContent state "trailing-newlines" "a\n\n\n"
+  checkFoldContent state "only-newlines" "\n\n"
+  checkFoldContent state "more-indented-line" "a\n  b\nc\n"
+  checkFoldContent state "more-indented-first" "  a\nb\n"
+  checkFoldContent state "trailing-space-on-line" "a \nb\n"
+  checkFoldContent state "tab-line" "\tb\n"
+  checkFoldContent state "multibyte" "é\n😀\n"
+  -- foldBlockContentGo_eq_foldl at non-initial accumulators: every FoldState × pending 0/1/2,
+  -- with empty, newline-only, content-only, and mixed tails.
+  for st in [Indexed.FoldState.start, .content, .empty, .more] do
+    for pending in [0, 1, 2] do
+      let tag := s!"{repr st}/pending={pending}"
+      checkFoldGo state s!"{tag}/nil" [] "acc" st pending
+      checkFoldGo state s!"{tag}/lf" ['\n'] "acc" st pending
+      checkFoldGo state s!"{tag}/lf-lf" ['\n', '\n'] "acc" st pending
+      checkFoldGo state s!"{tag}/char" ['x'] "acc" st pending
+      checkFoldGo state s!"{tag}/space-char" [' ', 'x'] "acc" st pending
+      checkFoldGo state s!"{tag}/char-lf-char" ['x', '\n', 'y'] "" st pending
+      checkFoldGo state s!"{tag}/lf-space-char-lf" ['\n', ' ', 'x', '\n'] "acc" st pending
+
+/-! ## Priority 11 — `PendingKeys` and the re-read register (item 335, row 12 step 4)
 
 `ScannerState.pendingKeys` runs in lockstep with `indents`: one slot per level,
 `some line` while that level's explicit key is open.  The register
@@ -2120,6 +2206,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testHandleBlockMappingKeyEntryMono state
   testCloseStaleExplicitKey state
   testCleanedResolveAliases state
+  testScalarFinishBridges state
   testPendingKeys state
   let results ← finish state
   return { name := "adversarialinstantiation",

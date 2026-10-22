@@ -201,6 +201,9 @@ def _load_lib() -> ctypes.CDLL:
     lib.l4yaml_dump_configured.argtypes = [c_void_p, c_char_p, c_size_t]
     lib.l4yaml_dump_configured.restype = c_char_p
 
+    lib.l4yaml_dump_configured_error.argtypes = [c_void_p, c_char_p, c_size_t]
+    lib.l4yaml_dump_configured_error.restype = c_char_p
+
     # ── Config deserialization ───────────────────────────────────────
     lib.l4yaml_parse_limits_yaml.argtypes = [c_char_p, c_size_t]
     lib.l4yaml_parse_limits_yaml.restype = c_void_p

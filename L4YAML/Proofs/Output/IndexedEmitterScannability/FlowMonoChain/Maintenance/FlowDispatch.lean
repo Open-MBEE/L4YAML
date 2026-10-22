@@ -11,9 +11,8 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Pres
 
 /-! # `FlowMonoChain.Maintenance.FlowDispatch` — Phase 3 Step 6f.3b3.flowmono.maintenance.flowdispatch
 
-**Sub-session 1 of `.flowmono.maintenance`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines ~3300–~4470 +
-~4689–5115, ~700 LOC contribution before substrate elimination).
+**Sub-session 1 of `.flowmono.maintenance`** (~700 legacy LOC contribution
+before substrate elimination).
 Per-flow-dispatcher state-field preservation, `flowLevel` change
 lemmas, and `lastRealTokenValIx?` push helpers.
 
@@ -73,15 +72,15 @@ variants ship here; End variants already live in
 
 ## Legacy mapping
 
-  | Section | Legacy lines     | Indexed counterpart           |
-  | ------- | ---------------- | ----------------------------- |
-  | §1      | 3793–3815        | `scanFlowSequenceStartIx_*`   |
-  | §2      | 5010–5032        | `scanFlowMappingStartIx_*`    |
-  | §3      | 4689–4711        | `scanFlowSequenceEndIx_*`     |
-  | §4      | 5066–5085        | `scanFlowMappingEndIx_*`      |
-  | §5      | n/a (legacy did not collate per-field) | `scanFlowEntryIx_*` |
-  | §6      | 4463–4527        | `lastRealTokenValIx_push_*`   |
-  | §7      | 4528–4551        | `saveSimpleKeyIx_preserves_lastRealTokenValIx_ne_flow` |
+  | Section | Indexed counterpart |
+  | ------- | ------------------- |
+  | §1      | `scanFlowSequenceStartIx_*`   |
+  | §2      | `scanFlowMappingStartIx_*`    |
+  | §3      | `scanFlowSequenceEndIx_*`     |
+  | §4      | `scanFlowMappingEndIx_*`      |
+  | §5      | `scanFlowEntryIx_*` (legacy did not collate per-field) |
+  | §6      | `lastRealTokenValIx_push_*`   |
+  | §7      | `saveSimpleKeyIx_preserves_lastRealTokenValIx_ne_flow` |
 
 ## Deferred to `.maintenance.pipeline`
 
@@ -288,8 +287,7 @@ for `.maintenance` consumers:
 /-- After pushing a non-`.placeholder` token onto a token stream,
     `lastRealTokenValIx?` returns the pushed token's value.
 
-    Indexed twin of legacy `lastRealTokenVal_push_non_ph`
-    (legacy line 4463). -/
+    Indexed twin of legacy `lastRealTokenVal_push_non_ph`. -/
 lemma lastRealTokenValIx_push_non_ph
     (ts : Indexed.TokenStream input)
     (t : IxToken input) (h_nph : t.token ≠ YamlToken.placeholder) :
@@ -320,8 +318,7 @@ lemma lastRealTokenValIx_push_non_ph
     token or reports `.placeholder` (when the original stream was
     empty or had only one slot).
 
-    Indexed twin of legacy `lastRealTokenVal_push_two_ph`
-    (legacy line 4480). -/
+    Indexed twin of legacy `lastRealTokenVal_push_two_ph`. -/
 lemma lastRealTokenValIx_push_two_ph
     (ts : Indexed.TokenStream input)
     (ph1 ph2 : IxToken input)

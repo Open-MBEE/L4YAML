@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -14,23 +15,23 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.ScanChain
 **Status**: §1 + §2 landed 2026-05-25 (sub-sessions
 `.flowmono.inductive` and `.flowmono.skaf`). Together they port the
 `FlowMonoChain` core + `SimpleKeyAboveFloor` machinery from
-`Proofs/Output/EmitterScannability.lean` lines 1304–1805.
+`Proofs/Output/EmitterScannability.lean`.
 
 This file holds the inductive type and the ghost predicate. The
-prefix-preservation infrastructure (legacy lines 1806–~3300) is split
+prefix-preservation infrastructure is split
 across siblings under `FlowMonoChain/Preserve/` (one file per
 sub-session of `.flowmono.preserve`).
 
 ## Scope
 
-  - **§1 `FlowMonoChainIx` inductive + immediate helpers** (legacy
-    lines 1304–1387, ~70 LOC). `FlowMonoChainIx fl₀ s n s'` (a
+  - **§1 `FlowMonoChainIx` inductive + immediate helpers** (~70 legacy LOC).
+    `FlowMonoChainIx fl₀ s n s'` (a
     `ScanChainIx` where every intermediate state has
     `flowLevel ≥ fl₀`), `.toScanChainIx`, `.flowLevel_ge_start` /
     `_end`, `.single`, `.trans`, `.weaken`, `.tokens_mono`.
 
-  - **§2 `SimpleKeyAboveFloorIx` predicate + maintenance** (legacy
-    lines 1388–1805, ~420 LOC). Flow-level-aware simple-key
+  - **§2 `SimpleKeyAboveFloorIx` predicate + maintenance** (~420 legacy LOC).
+    Flow-level-aware simple-key
     invariant. Five constructors (`_of_cleared_preserved`,
     `_of_preserved`, `_of_endLine_update`, `_of_flow_open`,
     `_of_flow_close`); preprocess + dispatch maintenance + the
@@ -46,11 +47,10 @@ sub-session of `.flowmono.preserve`).
     `scanFilteredIx_of_chain[_eq]`, pipeline factoring.
   - **`DpInv.lean`** (sub-session `.flowmono.preserve.dpinv`, queued)
     — per-stage `_preserves_dp` / `_preserves_indents` /
-    `_preserves_ek` triplet (legacy lines 2166–2745).
+    `_preserves_ek` triplet.
   - **`Helpers.lean`** (sub-session `.flowmono.preserve.helpers`,
     queued) — `AllTokensOnLine` / `EndLineOnLine` /
-    `StackEndLineOnLine` definitions + supporting lemmas (legacy
-    lines 2747–~3300).
+    `StackEndLineOnLine` definitions + supporting lemmas.
 
 ## Phase 3 Step 6f cutover
 
@@ -60,6 +60,8 @@ See `../Basic.lean` for the directory-wide cutover plan.
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.Indexed
@@ -72,8 +74,7 @@ variable {input : String}
 
 /-! ## §1  `FlowMonoChainIx` — `ScanChainIx` with flow-level lower bound
 
-Indexed twin of legacy `FlowMonoChain` (lines 1304–1387 of
-`Proofs/Output/EmitterScannability.lean`). `FlowMonoChainIx fl₀ s n s'`
+Indexed twin of legacy `FlowMonoChain`. `FlowMonoChainIx fl₀ s n s'`
 is a `ScanChainIx` where every *visited* state (the start of each
 step) has `flowLevel ≥ fl₀`. This captures the "flow-balanced"
 property: the chain never closes brackets below the initial flow
@@ -104,7 +105,7 @@ because the emitter produces balanced bracket sequences: every
 
 /-- `FlowMonoChainIx fl₀ s n s'` is a `ScanChainIx` where every
     intermediate state has `flowLevel ≥ fl₀`. Indexed twin of legacy
-    `FlowMonoChain` (line 1319). -/
+    `FlowMonoChain`. -/
 inductive FlowMonoChainIx (fl₀ : Nat) :
     ScannerStateIx input → Nat → ScannerStateIx input → Prop where
   | zero {s : ScannerStateIx input} (h_fl : s.flowLevel ≥ fl₀) :
@@ -118,8 +119,7 @@ inductive FlowMonoChainIx (fl₀ : Nat) :
 /-! ### §1.1  Degradation to `ScanChainIx` -/
 
 /-- Degrade a `FlowMonoChainIx` to a plain `ScanChainIx` by forgetting
-    flow-level bounds. Indexed twin of legacy `FlowMonoChain.toScanChain`
-    (line 1329). -/
+    flow-level bounds. Indexed twin of legacy `FlowMonoChain.toScanChain`. -/
 lemma FlowMonoChainIx.toScanChainIx {fl₀ : Nat}
     {s s' : ScannerStateIx input} {n : Nat}
     (h : FlowMonoChainIx fl₀ s n s') : ScanChainIx s n s' := by
@@ -130,8 +130,7 @@ lemma FlowMonoChainIx.toScanChainIx {fl₀ : Nat}
 /-! ### §1.2  Flow-level endpoint bounds -/
 
 /-- The start state of a `FlowMonoChainIx` has `flowLevel ≥ fl₀`.
-    Indexed twin of legacy `FlowMonoChain.flowLevel_ge_start`
-    (line 1336). -/
+    Indexed twin of legacy `FlowMonoChain.flowLevel_ge_start`. -/
 lemma FlowMonoChainIx.flowLevel_ge_start {fl₀ : Nat}
     {s s' : ScannerStateIx input} {n : Nat}
     (h : FlowMonoChainIx fl₀ s n s') : s.flowLevel ≥ fl₀ := by
@@ -140,8 +139,7 @@ lemma FlowMonoChainIx.flowLevel_ge_start {fl₀ : Nat}
   | step h_fl _ _ => exact h_fl
 
 /-- The end state of a `FlowMonoChainIx` has `flowLevel ≥ fl₀`.
-    Indexed twin of legacy `FlowMonoChain.flowLevel_ge_end`
-    (line 1343). -/
+    Indexed twin of legacy `FlowMonoChain.flowLevel_ge_end`. -/
 lemma FlowMonoChainIx.flowLevel_ge_end {fl₀ : Nat}
     {s s' : ScannerStateIx input} {n : Nat}
     (h : FlowMonoChainIx fl₀ s n s') : s'.flowLevel ≥ fl₀ := by
@@ -152,7 +150,7 @@ lemma FlowMonoChainIx.flowLevel_ge_end {fl₀ : Nat}
 /-! ### §1.3  Combinators (`.single`, `.trans`) -/
 
 /-- A single `scanNextTokenIx` step as a `FlowMonoChainIx`. Indexed
-    twin of legacy `FlowMonoChain.single` (line 1350). -/
+    twin of legacy `FlowMonoChain.single`. -/
 lemma FlowMonoChainIx.single {fl₀ : Nat} {s s' : ScannerStateIx input}
     (h_snt : scanNextTokenIx s = .ok (some s'))
     (h_fl : s.flowLevel ≥ fl₀)
@@ -161,7 +159,7 @@ lemma FlowMonoChainIx.single {fl₀ : Nat} {s s' : ScannerStateIx input}
   .step h_fl h_snt (.zero h_fl')
 
 /-- Transitivity: concatenate two `FlowMonoChainIx`s with the same
-    floor. Indexed twin of legacy `FlowMonoChain.trans` (line 1358). -/
+    floor. Indexed twin of legacy `FlowMonoChain.trans`. -/
 lemma FlowMonoChainIx.trans {fl₀ : Nat}
     {s₁ s₂ s₃ : ScannerStateIx input} {n₁ n₂ : Nat}
     (h1 : FlowMonoChainIx fl₀ s₁ n₁ s₂)
@@ -179,7 +177,7 @@ lemma FlowMonoChainIx.trans {fl₀ : Nat}
 
 /-- Weaken the flow-level floor: if `fl₀ ≤ fl₁`, a `FlowMonoChainIx fl₁`
     is also a `FlowMonoChainIx fl₀`. Indexed twin of legacy
-    `FlowMonoChain.weaken` (line 1372). -/
+    `FlowMonoChain.weaken`. -/
 lemma FlowMonoChainIx.weaken {fl₀ fl₁ : Nat}
     {s s' : ScannerStateIx input} {n : Nat}
     (h : FlowMonoChainIx fl₁ s n s') (h_le : fl₀ ≤ fl₁) :
@@ -191,7 +189,7 @@ lemma FlowMonoChainIx.weaken {fl₀ fl₁ : Nat}
 /-- Token monotonicity for `FlowMonoChainIx`: tokens only grow through
     the chain (delegates to `ScanChainIx` token monotonicity via the
     `scanNextTokenIx_tokens_size_le` step lemma). Indexed twin of
-    legacy `FlowMonoChain.tokens_mono` (line 1381). -/
+    legacy `FlowMonoChain.tokens_mono`. -/
 lemma FlowMonoChainIx.tokens_mono {fl₀ : Nat}
     {s s' : ScannerStateIx input} {n : Nat}
     (h : FlowMonoChainIx fl₀ s n s') : s'.tokens.size ≥ s.tokens.size := by
@@ -202,8 +200,7 @@ lemma FlowMonoChainIx.tokens_mono {fl₀ : Nat}
 
 /-! ## §2  `SimpleKeyAboveFloorIx` — flow-level-aware simple-key invariant
 
-Indexed twin of legacy `SimpleKeyAboveFloor` (lines 1388–1488 of
-`Proofs/Output/EmitterScannability.lean`). Like `SimpleKeyAbove` but
+Indexed twin of legacy `SimpleKeyAboveFloor`. Like `SimpleKeyAbove` but
 only constrains stack entries at index ≥ `stackFloor`, with a size
 guarantee. Designed for use with `FlowMonoChainIx` where the stack
 floor equals the initial flow level.
@@ -217,7 +214,7 @@ before the chain. -/
        has `tokenIndex ≥ n`;
     3. The stack has at least `stackFloor` entries.
 
-    Indexed twin of legacy `SimpleKeyAboveFloor` (line 1396). -/
+    Indexed twin of legacy `SimpleKeyAboveFloor`. -/
 def SimpleKeyAboveFloorIx (s : ScannerStateIx input) (n : Nat)
     (stackFloor : Nat) : Prop :=
   (s.simpleKey.possible = true → s.simpleKey.tokenIndex ≥ n) ∧
@@ -229,8 +226,7 @@ def SimpleKeyAboveFloorIx (s : ScannerStateIx input) (n : Nat)
 
 /-- If `s_out` clears the simple key (`possible = false`) and preserves
     the stack, then `SimpleKeyAboveFloorIx` transports from `s_in`.
-    Indexed twin of legacy `SimpleKeyAboveFloor_of_cleared_preserved`
-    (line 1404). -/
+    Indexed twin of legacy `SimpleKeyAboveFloor_of_cleared_preserved`. -/
 lemma SimpleKeyAboveFloorIx_of_cleared_preserved
     (s_out s_in : ScannerStateIx input) (n fl₀ : Nat)
     (h_sk : s_out.simpleKey.possible = false)
@@ -243,7 +239,7 @@ lemma SimpleKeyAboveFloorIx_of_cleared_preserved
 
 /-- If `s_out` preserves both `simpleKey` and `simpleKeyStack`, then
     `SimpleKeyAboveFloorIx` transports from `s_in`. Indexed twin of
-    legacy `SimpleKeyAboveFloor_of_preserved` (line 1412). -/
+    legacy `SimpleKeyAboveFloor_of_preserved`. -/
 lemma SimpleKeyAboveFloorIx_of_preserved
     (s_out s_in : ScannerStateIx input) (n fl₀ : Nat)
     (h_sk : s_out.simpleKey = s_in.simpleKey)
@@ -258,7 +254,7 @@ lemma SimpleKeyAboveFloorIx_of_preserved
     the entire stack, then `SimpleKeyAboveFloorIx` transports from `s_in`.
     Useful when scalar scanners update `endLine` or `cursor` but
     preserve the key-status fields. Indexed twin of legacy
-    `SimpleKeyAboveFloor_of_endLine_update` (line 1420). -/
+    `SimpleKeyAboveFloor_of_endLine_update`. -/
 lemma SimpleKeyAboveFloorIx_of_endLine_update
     (s_out s_in : ScannerStateIx input) (n fl₀ : Nat)
     (h_poss : s_out.simpleKey.possible = s_in.simpleKey.possible)
@@ -275,7 +271,7 @@ lemma SimpleKeyAboveFloorIx_of_endLine_update
 /-- Flow-open transport: `s_out` clears the simple key and pushes the
     old `simpleKey` onto `simpleKeyStack`. Both the floor-above
     invariant and the size lower bound carry over. Indexed twin of
-    legacy `SimpleKeyAboveFloor_of_flow_open` (line 1431). -/
+    legacy `SimpleKeyAboveFloor_of_flow_open`. -/
 lemma SimpleKeyAboveFloorIx_of_flow_open
     (s_out s_in : ScannerStateIx input) (n fl₀ : Nat)
     (h_sk : s_out.simpleKey.possible = false)
@@ -304,7 +300,7 @@ lemma SimpleKeyAboveFloorIx_of_flow_open
     preservation requires either `simpleKeyStack.size > fl₀` (so the
     popped slot was above the floor) or `fl₀ = 0` (so all positions are
     trivially above the floor). Indexed twin of legacy
-    `SimpleKeyAboveFloor_of_flow_close` (line 1452). -/
+    `SimpleKeyAboveFloor_of_flow_close`. -/
 lemma SimpleKeyAboveFloorIx_of_flow_close
     (s_out s_in : ScannerStateIx input) (n fl₀ : Nat)
     (h_sk : s_out.simpleKey =
@@ -362,7 +358,7 @@ grows the token stream. -/
   split <;> rfl
 
 /-- `scanNextTokenIx_preprocess` preserves `flowLevel`. Indexed twin of
-    legacy `preprocess_preserves_flowLevel` (line 1492). -/
+    legacy `preprocess_preserves_flowLevel`. -/
 lemma scanNextTokenIx_preprocess_preserves_flowLevel {input : String}
     (s s1 : ScannerStateIx input) (c : Char)
     (h : scanNextTokenIx_preprocess s = .ok (some (s1, c))) :
@@ -381,7 +377,7 @@ lemma scanNextTokenIx_preprocess_preserves_flowLevel {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_flowLevel]
+          rw [closeStaleExplicitKeyIx_flowLevel, saveSimpleKeyIx_flowLevel]
           show (unwindIndentsIx _ _).flowLevel = s.flowLevel
           rw [unwindIndentsIx_preserves_flowLevel, skipToContentS_flowLevel]
     · split at h
@@ -390,7 +386,7 @@ lemma scanNextTokenIx_preprocess_preserves_flowLevel {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_flowLevel, skipToContentS_flowLevel]
+          rw [closeStaleExplicitKeyIx_flowLevel, saveSimpleKeyIx_flowLevel, skipToContentS_flowLevel]
 
 /-- `skipToContentS` preserves `tokens` (cursor-only update). -/
 @[simp] lemma skipToContentS_preserves_tokens {input : String}
@@ -418,7 +414,7 @@ lemma scanNextTokenIx_preprocess_preserves_simpleKeyStack {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_preserves_simpleKeyStack]
+          rw [closeStaleExplicitKeyIx_simpleKeyStack, saveSimpleKeyIx_preserves_simpleKeyStack]
           show (unwindIndentsIx _ _).simpleKeyStack = s.simpleKeyStack
           rw [unwindIndentsIx_preserves_simpleKeyStack, h_skip]
     · split at h
@@ -427,7 +423,7 @@ lemma scanNextTokenIx_preprocess_preserves_simpleKeyStack {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_preserves_simpleKeyStack, h_skip]
+          rw [closeStaleExplicitKeyIx_simpleKeyStack, saveSimpleKeyIx_preserves_simpleKeyStack, h_skip]
 
 /-- `scanNextTokenIx_preprocess` only grows the token stream. -/
 lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
@@ -450,6 +446,7 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_save := saveSimpleKeyIx_tokens_size_le
             ({ unwindIndentsIx s.skipToContentS s.skipToContentS.cursor.pos.col
                 with needIndentCheck := false } : ScannerStateIx input)
@@ -470,6 +467,7 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_save := saveSimpleKeyIx_tokens_size_le s.skipToContentS
           show s.tokens.size ≤ (saveSimpleKeyIx s.skipToContentS).tokens.size
           omega
@@ -491,7 +489,7 @@ lemma saveSimpleKeyIx_simpleKey_inv {input : String}
     · exact h_sk
 
 /-- The `simpleKey` part of SKAF carries through `scanNextTokenIx_preprocess`.
-    Indexed twin of legacy `preprocess_simpleKey_inv` (line 4291). -/
+    Indexed twin of legacy `preprocess_simpleKey_inv`. -/
 lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
     (s s1 : ScannerStateIx input) (c : Char)
     (h : scanNextTokenIx_preprocess s = .ok (some (s1, c))) (n : Nat)
@@ -518,6 +516,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_unwind_sz :=
             unwindIndentsIx_tokens_size_le s.skipToContentS s.skipToContentS.cursor.pos.col
           have h_unwind_sk :=
@@ -543,6 +542,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          try peel_stale_ix
           have h_tok_post : n ≤ s.skipToContentS.tokens.size := by omega
           have h_sk_post : s.skipToContentS.simpleKey.possible = true →
               s.skipToContentS.simpleKey.tokenIndex ≥ n := by
@@ -550,8 +550,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_inv {input : String}
           exact saveSimpleKeyIx_simpleKey_inv s.skipToContentS n h_tok_post h_sk_post h_poss
 
 /-- `scanNextTokenIx_preprocess` maintains `SimpleKeyAboveFloorIx`.
-    Indexed twin of legacy `preprocess_maintains_SimpleKeyAboveFloor`
-    (line 1523). -/
+    Indexed twin of legacy `preprocess_maintains_SimpleKeyAboveFloor`. -/
 lemma scanNextTokenIx_preprocess_maintains_SKAFIx {input : String}
     (s s1 : ScannerStateIx input) (c : Char)
     (h : scanNextTokenIx_preprocess s = .ok (some (s1, c)))
@@ -570,8 +569,7 @@ lemma scanNextTokenIx_preprocess_maintains_SKAFIx {input : String}
 /-! ### §2.3  Dispatcher SKAF maintenance -/
 
 /-- `scanNextTokenIx_dispatchStructural` maintains `SimpleKeyAboveFloorIx`.
-    Indexed twin of legacy `dispatchStructural_maintains_SimpleKeyAboveFloor`
-    (line 1536). -/
+    Indexed twin of legacy `dispatchStructural_maintains_SimpleKeyAboveFloor`. -/
 lemma scanNextTokenIx_dispatchStructural_maintains_SKAFIx {input : String}
     (s : ScannerStateIx input) (c : Char) (s' : ScannerStateIx input)
     (h : scanNextTokenIx_dispatchStructural s c = .ok (some s'))
@@ -613,8 +611,8 @@ lemma scanFlowMappingEndIx_flowLevel_eq {input : String}
   simp only [advance_flowLevel, emit_flowLevel]
 
 /-- `scanNextTokenIx_dispatchFlowIndicators` maintains `SimpleKeyAboveFloorIx`.
-    Indexed twin of legacy `dispatchFlowIndicators_maintains_SimpleKeyAboveFloor`
-    (line 1562). Requires:
+    Indexed twin of legacy `dispatchFlowIndicators_maintains_SimpleKeyAboveFloor`.
+    Requires:
     - `h_sync`: `simpleKeyStack.size ≥ flowLevel` (stack-flow sync invariant)
     - `h_fl_post`: `s'.flowLevel ≥ fl₀` (from `FlowMonoChainIx` continuation) -/
 lemma scanNextTokenIx_dispatchFlowIndicators_maintains_SKAFIx {input : String}
@@ -660,8 +658,7 @@ lemma scanNextTokenIx_dispatchFlowIndicators_maintains_SKAFIx {input : String}
       (scanFlowEntryIx_preserves_simpleKeyStack s _ hOk) h_inv
 
 /-- `scanNextTokenIx_dispatchBlockIndicators` maintains `SimpleKeyAboveFloorIx`.
-    Indexed twin of legacy `dispatchBlockIndicators_maintains_SimpleKeyAboveFloor`
-    (line 1615). -/
+    Indexed twin of legacy `dispatchBlockIndicators_maintains_SimpleKeyAboveFloor`. -/
 lemma scanNextTokenIx_dispatchBlockIndicators_maintains_SKAFIx {input : String}
     (s : ScannerStateIx input) (c : Char) (s' : ScannerStateIx input)
     (h : scanNextTokenIx_dispatchBlockIndicators s c = .ok (some s'))
@@ -700,8 +697,7 @@ anchor/alias/tag branches (`&`/`*`/`!`) still use the state-keyed
 lemmas in `IndexedScannerPlainScalarValid`. -/
 
 /-- `scanNextTokenIx_dispatchContent` maintains `SimpleKeyAboveFloorIx`.
-    Indexed twin of legacy `dispatchContent_maintains_SimpleKeyAboveFloor`
-    (line 1641). -/
+    Indexed twin of legacy `dispatchContent_maintains_SimpleKeyAboveFloor`. -/
 lemma scanNextTokenIx_dispatchContent_maintains_SKAFIx {input : String}
     (s : ScannerStateIx input) (c : Char) (s' : ScannerStateIx input)
     (h : scanNextTokenIx_dispatchContent s c = .ok s')
@@ -822,7 +818,7 @@ four sub-dispatchers' SKAF maintenance. -/
 
 set_option maxHeartbeats 400000 in
 /-- `scanNextTokenIx` maintains `SimpleKeyAboveFloorIx`. Indexed twin
-    of legacy `scanNextToken_maintains_SimpleKeyAboveFloor` (line 1721). -/
+    of legacy `scanNextToken_maintains_SimpleKeyAboveFloor`. -/
 lemma scanNextTokenIx_maintains_SKAFIx {input : String}
     (s s' : ScannerStateIx input)
     (h_next : scanNextTokenIx s = .ok (some s'))

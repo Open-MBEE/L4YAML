@@ -12,8 +12,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain
 /-! # `FilteredGrowth.FirstFiltered` — Phase 3 Step
 `6f.3b3.filteredgrowth.firstfiltered`
 
-**Sub-session 1 of `.filteredgrowth`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 5587–5899, ~313 LOC).
+**Sub-session 1 of `.filteredgrowth`** (~313 legacy LOC).
 
 First-filtered-token lemmas for flow-content scanners (Tier-2-Turn-1).
 When `scanNextTokenIx` runs in flow context with a leading content
@@ -35,12 +34,12 @@ Plus emitter-shape helpers and a generic array prefix lemma reused by
 later filtered-growth bodies:
   * `emit_first_char` / `emitList_first_char` / `emitList_toList_ne_nil`
     — pure `String`-level shape lemmas about `L4YAML.Emit.emit`. No
-    indexed-scanner content; ported verbatim from legacy 5833–5871.
-  * `emit_tokens_pushIx` — indexed twin of `emit_tokens_push` (legacy
-    5877). Identifies the single-token push performed by
+    indexed-scanner content; ported verbatim from legacy.
+  * `emit_tokens_pushIx` — indexed twin of `emit_tokens_push`.
+    Identifies the single-token push performed by
     `ScannerStateIx.emit`.
-  * `Array_filter_prefix_of_raw_prefix` — generic `Array α` lemma
-    (legacy 5883). Used downstream by `.perdispatch` / `.turn3`.
+  * `Array_filter_prefix_of_raw_prefix` — generic `Array α` lemma.
+    Used downstream by `.perdispatch` / `.turn3`.
 
 ## Indexed simplification
 
@@ -50,8 +49,8 @@ legacy `scanDoubleQuoted` was responsible for emitting the scalar
 token. The indexed `scanDoubleQuotedIx` is **cursor-level only**:
 `IxCursor input → Option (String × IxCursor input)`. The actual
 `emitAt` for the scalar token happens inside
-`scanNextTokenIx_dispatchContent` itself (see `Scanner/IndexedDispatch.lean`
-lines 1002–1014). So this port reduces the dispatch branch directly,
+`scanNextTokenIx_dispatchContent` itself (see `Scanner/IndexedDispatch.lean`).
+So this port reduces the dispatch branch directly,
 extracting `(content, cAfter)` from the `scanDoubleQuotedIx` case
 analysis and reading the `emitAt` shape off the dispatch body — no
 separate `_tokens_push` lemma needed.
@@ -77,7 +76,7 @@ variable {input : String}
 
 /-- After `scanNextTokenIx` with leading `[` in flow context, the
     first new filtered token is `.flowSequenceStart`. Indexed twin of
-    `scanFlowSequenceStart_first_filtered_token` (legacy 5598). -/
+    `scanFlowSequenceStart_first_filtered_token`. -/
 lemma scanFlowSequenceStartIx_first_filtered_token (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'[' :: rest, s.cursor.pos.col⟩)
@@ -154,7 +153,7 @@ lemma scanFlowSequenceStartIx_first_filtered_token (s : ScannerStateIx input)
 
 /-- After `scanNextTokenIx` with leading `{` in flow context, the
     first new filtered token is `.flowMappingStart`. Indexed twin of
-    `scanFlowMappingStart_first_filtered_token` (legacy 5657). -/
+    `scanFlowMappingStart_first_filtered_token`. -/
 lemma scanFlowMappingStartIx_first_filtered_token (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'{' :: rest, s.cursor.pos.col⟩)
@@ -234,7 +233,7 @@ the token-push shape off the `emitAt`-then-record-update body. -/
     new filtered token is some `.scalar _ .doubleQuoted`. Content and
     subType are existentially quantified — the lemma's purpose is
     dispatch identification. Indexed twin of
-    `scanDoubleQuoted_first_filtered_token` (legacy 5746). -/
+    `scanDoubleQuoted_first_filtered_token`. -/
 lemma scanDoubleQuotedIx_first_filtered_token (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'"' :: rest, s.cursor.pos.col⟩)
@@ -405,7 +404,7 @@ lemma scanDoubleQuotedIx_first_filtered_token (s : ScannerStateIx input)
 /-! ## §4  Emitter shape helpers
 
 These three lemmas are about the **string** produced by `L4YAML.Emit.emit`.
-No indexed-scanner content; ported verbatim from legacy 5833–5871.
+No indexed-scanner content; ported verbatim from legacy.
 
 `Emit.emit` is referenced fully-qualified here to avoid ambiguity with
 `ScannerStateIx.emit` (both are in scope via the broader `open L4YAML`
@@ -474,7 +473,7 @@ lemma emit_tokens_pushIx (s : ScannerStateIx input) (tok : YamlToken) :
 /-! ## §6  `Array_filter_prefix_of_raw_prefix`
 
 Generic `Array α` lemma: if `b` extends `a`, then `b.filter p` has
-`a.filter p` as a prefix. Ported verbatim from legacy 5883. -/
+`a.filter p` as a prefix. Ported verbatim from legacy. -/
 
 /-- If `b` extends `a` (same elements at all positions `i < a.size`),
     then `b.filter p` has `a.filter p` as a prefix. -/

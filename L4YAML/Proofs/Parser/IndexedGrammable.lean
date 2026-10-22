@@ -20,10 +20,7 @@ public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness
 
 @[expose] public section Blanket
 
-/-! # `IndexedGrammable` — Phase 3 Step 6d.3 indexed grammability (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedGrammable` — Phase 3 Step 6d.3 indexed grammability
 
 ## Role
 

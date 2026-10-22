@@ -8,6 +8,7 @@ module
 public import L4YAML.Proofs.Scanner.ScannerCorrectness
 public import L4YAML.Proofs.Scanner.ScannerLinePreservation
 public import L4YAML.Proofs.Scanner.PreprocessIndentStable
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -30,6 +31,8 @@ producers pay or refute through exactly these lemmas. -/
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.ExplicitKeyCoupling
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -1823,11 +1826,13 @@ lemma scanFlowMappingEnd_explicitKeyCol (s : ScannerState) :
   unfold scanFlowMappingEnd
   simp [emit_preserves_explicitKeyStack]
 
-/-- Preprocessing carries both registers: the skip chain, the unwind and the
-    save write none of them. -/
-lemma preprocess_preserves_explicitKey (s s1 : ScannerState) (c : Char)
+/-- Preprocessing either carries both registers — the skip chain, the unwind and
+    the save write none of them — or ends them together (item 333: a sibling
+    entry at or left of the `?`'s column closes the stale key). -/
+lemma preprocess_explicitKey_cases (s s1 : ScannerState) (c : Char)
     (h : scanNextToken_preprocess s = .ok (some (s1, c))) :
-    s1.explicitKeyLine = s.explicitKeyLine ∧ s1.explicitKeyCol = s.explicitKeyCol := by
+    (s1.explicitKeyLine = s.explicitKeyLine ∧ s1.explicitKeyCol = s.explicitKeyCol) ∨
+    (s1.explicitKeyLine = none ∧ s1.explicitKeyCol = -1) := by
   unfold scanNextToken_preprocess at h
   simp only [bind, pure, Pure.pure, Except.pure] at h
   simp only [Except.bind] at h
@@ -1845,20 +1850,37 @@ lemma preprocess_preserves_explicitKey (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
-            constructor
-            · show (unwindIndents s_skip s_skip.col).explicitKeyLine = s.explicitKeyLine
-              rw [unwindIndents_preserves_explicitKeyLine]; exact h_l_skip
-            · show (unwindIndents s_skip s_skip.col).explicitKeyCol = s.explicitKeyCol
-              rw [unwindIndents_preserves_explicitKeyCol]; exact h_c_skip
+            rcases closeStaleExplicitKey_cases
+                (saveSimpleKey { unwindIndents s_skip s_skip.col with needIndentCheck := false })
+              with h_eq | h_eq <;> rw [h_eq]
+            · left
+              rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
+              constructor
+              · show (unwindIndents s_skip s_skip.col).explicitKeyLine = s.explicitKeyLine
+                rw [unwindIndents_preserves_explicitKeyLine]; exact h_l_skip
+              · show (unwindIndents s_skip s_skip.col).explicitKeyCol = s.explicitKeyCol
+                rw [unwindIndents_preserves_explicitKeyCol]; exact h_c_skip
+            · right; exact ⟨rfl, rfl⟩
       · split at h
         · contradiction
         · split at h
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
-            exact ⟨h_l_skip, h_c_skip⟩
+            rcases closeStaleExplicitKey_cases (saveSimpleKey s_skip) with h_eq | h_eq <;> rw [h_eq]
+            · left
+              rw [saveSimpleKey_preserves_explicitKeyLine, saveSimpleKey_preserves_explicitKeyCol]
+              exact ⟨h_l_skip, h_c_skip⟩
+            · right; exact ⟨rfl, rfl⟩
+
+/-- A dead register stays dead through preprocessing: both arms of
+    `preprocess_explicitKey_cases` end at `none`. -/
+lemma preprocess_explicitKeyLine_none (s s1 : ScannerState) (c : Char)
+    (h : scanNextToken_preprocess s = .ok (some (s1, c)))
+    (h0 : s.explicitKeyLine = none) : s1.explicitKeyLine = none := by
+  rcases preprocess_explicitKey_cases s s1 c h with ⟨h1, _⟩ | ⟨h1, _⟩
+  · exact h1.trans h0
+  · exact h1
 
 /-! ### `scanValueClearKey`: what survives the phantom clear -/
 

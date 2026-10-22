@@ -11,11 +11,7 @@ public import L4YAML.Spec.CharPredicates
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `IndexedScanner` — Phase 3 character/whitespace layer (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6). The legacy `L4YAML/Scanner/*.lean`
-remains the production scanner for the duration of Phase 3 Steps 2–5.
+/-! # `IndexedScanner` — Phase 3 character/whitespace layer
 
 ## What this layer provides
 
@@ -682,33 +678,38 @@ def foldQuotedNewlinesIx {input : String} (c : IxCursor input) :
 
 `collectDoubleQuotedLoopIx` consumes the body of a double-quoted
 scalar starting from *after* the opening `"`. Stops at:
-- `'"'`: closing quote — return content + cursor past the quote
+- `'"'`: closing quote — return content + buffered spaces + cursor past
+  the quote
 - `'\\'` then line break: line-continuation escape — consume LF and
   leading whitespace, emit no character
 - `'\\'` otherwise: escape — recurse with `processEscapeIx`'s result
-- line break: fold per `foldQuotedNewlinesIx` (Layer F1), trim
-  trailing whitespace of the current content, append the folded
-  string, continue
-- EOF: `none`. -/
+- line break: fold per `foldQuotedNewlinesIx` (Layer F1), drop the
+  buffered trailing whitespace, buffer/append the folded string,
+  continue
+- EOF: `none`.
+
+The accumulator is split in two, as in `collectPlainScalarLoopIx`:
+`content` holds everything up to and including the last
+`ns-double-char` — a non-white char *or* an **escaped** white char
+(`ns-esc-tab`/`ns-esc-space`, [62]) — and is never trimmed; `spaces`
+buffers the *unescaped* `s-white*` run (and a folded `b-as-space`) that
+follows it, the layout whitespace a line fold drops (§6.5). The buffer
+is flushed into `content` when the next `ns-double-char` arrives and
+emitted at the closing quote, so the result is the content the legacy
+per-fold `trimTrailingWS` produced (legacy fix B2: an escaped trailing
+tab, `"…\t\n …"`, DE56/00–03, survives as content; a literal one,
+DE56/04–05, is trimmed) — but each fold costs the buffer, not a rescan
+of the whole accumulator, so a multi-line scalar scans in linear time. -/
 
 def collectDoubleQuotedLoopIx {input : String} (c : IxCursor input)
-    (content : String) (protectedLen : Nat) : Nat → Option (String × IxCursor input)
-  -- `protectedLen` is the number of leading characters of `content` that a line
-  -- fold must NOT trim (§6.5): everything up to and including the last
-  -- `ns-double-char` — a non-white char *or* an **escaped** white char
-  -- (`ns-esc-tab`/`ns-esc-space`, [62]).  Only the *unescaped* `s-white*` run
-  -- past `protectedLen` is layout whitespace and is dropped at a fold.  This
-  -- keeps an escaped trailing tab (`"…\t\n …"`, DE56/00–03) as content while
-  -- still trimming a literal trailing tab (DE56/04–05).  For any scalar without
-  -- an escaped trailing white char, `protectedLen` equals the naive
-  -- `trimTrailingWSIx` boundary, so behaviour is byte-identical (legacy fix B2).
+    (content spaces : String) : Nat → Option (String × IxCursor input)
   | 0          => none
   | fuel + 1 =>
     match c.peek? with
     | none       => none
     | some ch    =>
       if isDoubleQuoteBool ch then
-        some (content, c.advance)
+        some (content ++ spaces, c.advance)
       else if isEscapeBool ch then
         -- Look at the character after the backslash to decide
         -- between line-continuation escape and normal escape.
@@ -716,46 +717,46 @@ def collectDoubleQuotedLoopIx {input : String} (c : IxCursor input)
         | some lbCh =>
           if isLineBreakBool lbCh then
             -- `\\<LF>` line-continuation — `[112] s-double-escaped(n)`.  The
-            -- escaped break is excluded from content, but each blank line the
+            -- escaped break is excluded from content and the white run before
+            -- it is preserved (it stays buffered), but each blank line the
             -- landing opens folds to a line feed (`[70] l-empty` in `[112]`'s
             -- own slot), so the landing runs through the fold itself, with
             -- `b-as-space` mapped to nothing (a lone escaped break emits no
             -- character).  The feeds are content and are protected from a
             -- later fold's trim; a blank-free landing leaves both untouched.
-            collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c.advance).2
-              (if (foldQuotedNewlinesIx c.advance).1 == " " then content
-               else content ++ (foldQuotedNewlinesIx c.advance).1)
-              (if (foldQuotedNewlinesIx c.advance).1 == " " then protectedLen
-               else (content ++ (foldQuotedNewlinesIx c.advance).1).length)
-              fuel
+            -- `.1`/`.2` projections rather than a `let`-destructure keep the
+            -- body `split`-able in proofs (Reflection 40 / 37).
+            if (foldQuotedNewlinesIx c.advance).1 == " " then
+              collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c.advance).2
+                content spaces fuel
+            else
+              collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c.advance).2
+                (content ++ spaces ++ (foldQuotedNewlinesIx c.advance).1) "" fuel
           else
             match processEscapeIx c.advance with
             | some (decoded, cAfterEsc) =>
               -- An escaped char is `ns-double-char` (content, never layout), so
-              -- the whole prefix through it is protected from a fold's trim.
-              collectDoubleQuotedLoopIx cAfterEsc (content.push decoded)
-                (content.push decoded).length fuel
+              -- the buffered run before it is flushed and protected.
+              collectDoubleQuotedLoopIx cAfterEsc
+                ((content ++ spaces).push decoded) "" fuel
             | none => none
         | none => none
       else if isLineBreakBool ch then
-        -- Multi-line continuation: trim only the *unescaped* trailing white
-        -- run (everything past `protectedLen`), fold the break.
-        -- We use `.1`/`.2` projections rather than `let`-destructuring
-        -- on the fold result; the `let` would be hoisted to `have`
-        -- by elaboration and opacify the body to `split` in proofs
-        -- (Reflection 40 / 37).  A folded space (`b-as-space`) is layout and
-        -- stays trimmable; folded line feeds (`b-l-trimmed`) are content and
-        -- are protected.
-        collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2
-          (takeCharsIx content protectedLen ++ (foldQuotedNewlinesIx c).1)
-          ((takeCharsIx content protectedLen).length
-            + (if (foldQuotedNewlinesIx c).1 == " " then 0 else (foldQuotedNewlinesIx c).1.length))
-          fuel
+        -- Multi-line continuation: the buffered *unescaped* trailing white
+        -- run is dropped, the break folds.  A folded space (`b-as-space`) is
+        -- layout and is re-buffered; folded line feeds (`b-l-trimmed`) are
+        -- content and are appended.
+        if (foldQuotedNewlinesIx c).1 == " " then
+          collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2 content " " fuel
+        else
+          collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2
+            (content ++ (foldQuotedNewlinesIx c).1) "" fuel
+      else if isWhiteSpaceBool ch then
+        -- Unescaped space/tab is layout (`s-white`) — buffer it so it stays
+        -- droppable at a fold.
+        collectDoubleQuotedLoopIx c.advance content (spaces.push ch) fuel
       else
-        -- Unescaped space/tab is layout (`s-white`) — leave `protectedLen` so it
-        -- stays trimmable at a fold; any other char advances the boundary.
-        collectDoubleQuotedLoopIx c.advance (content.push ch)
-          (if isWhiteSpaceBool ch then protectedLen else (content.push ch).length) fuel
+        collectDoubleQuotedLoopIx c.advance ((content ++ spaces).push ch) "" fuel
 
 /-- Scan a double-quoted scalar. Cursor must be at the opening `"`.
     Multi-line folding (§6.5) is handled by
@@ -765,7 +766,7 @@ def scanDoubleQuotedIx {input : String} (c : IxCursor input) :
   match c.peek? with
   | some ch =>
     if isDoubleQuoteBool ch then
-      collectDoubleQuotedLoopIx c.advance "" 0 input.utf8ByteSize
+      collectDoubleQuotedLoopIx c.advance "" "" input.utf8ByteSize
     else
       none
   | none => none
@@ -777,10 +778,14 @@ scalar starting from *after* the opening `'`. Stops at:
 - `'\''` not followed by `'\''`: closing quote
 - `'\''` followed by `'\''`: doubled-quote escape — emit one `'`
 - line break: fold per §6.5 (multi-line continuation)
-- EOF: `none`. -/
+- EOF: `none`.
+
+Same `content`/`spaces` split as `collectDoubleQuotedLoopIx`: `content`
+ends in an `ns-single-char` (or a folded line feed), `spaces` buffers
+the trailing `s-white*` run a fold drops, so the fold is linear. -/
 
 def collectSingleQuotedLoopIx {input : String} (c : IxCursor input)
-    (content : String) : Nat → Option (String × IxCursor input)
+    (content spaces : String) : Nat → Option (String × IxCursor input)
   | 0          => none
   | fuel + 1 =>
     match c.peek? with
@@ -791,16 +796,21 @@ def collectSingleQuotedLoopIx {input : String} (c : IxCursor input)
         | some next =>
           if isSingleQuoteBool next then
             collectSingleQuotedLoopIx c.advance.advance
-              (content.push singleQuoteChar) fuel
+              ((content ++ spaces).push singleQuoteChar) "" fuel
           else
-            some (content, c.advance)
+            some (content ++ spaces, c.advance)
         | none =>
-          some (content, c.advance)
+          some (content ++ spaces, c.advance)
       else if isLineBreakBool ch then
-        collectSingleQuotedLoopIx (foldQuotedNewlinesIx c).2
-          (trimTrailingWSIx content ++ (foldQuotedNewlinesIx c).1) fuel
+        if (foldQuotedNewlinesIx c).1 == " " then
+          collectSingleQuotedLoopIx (foldQuotedNewlinesIx c).2 content " " fuel
+        else
+          collectSingleQuotedLoopIx (foldQuotedNewlinesIx c).2
+            (content ++ (foldQuotedNewlinesIx c).1) "" fuel
+      else if isWhiteSpaceBool ch then
+        collectSingleQuotedLoopIx c.advance content (spaces.push ch) fuel
       else
-        collectSingleQuotedLoopIx c.advance (content.push ch) fuel
+        collectSingleQuotedLoopIx c.advance ((content ++ spaces).push ch) "" fuel
 
 /-- Scan a single-quoted scalar. Cursor must be at the opening `'`. -/
 def scanSingleQuotedIx {input : String} (c : IxCursor input) :
@@ -808,7 +818,7 @@ def scanSingleQuotedIx {input : String} (c : IxCursor input) :
   match c.peek? with
   | some ch =>
     if isSingleQuoteBool ch then
-      collectSingleQuotedLoopIx c.advance "" input.utf8ByteSize
+      collectSingleQuotedLoopIx c.advance "" "" input.utf8ByteSize
     else
       none
   | none => none
@@ -1677,6 +1687,36 @@ def scanBlockScalarIx {input : String} (c : IxCursor input)
     else
       none
   | none   => none
+
+/-- Once-bound twin of `scanBlockScalarIx` for compiled code: the spec repeats
+    its header/indent/`collectBlockScalarLoopIx` subterms for `split`
+    (Reflection 40 / 37), which compiles to three body passes; this binds each once. -/
+def scanBlockScalarIxImpl {input : String} (c : IxCursor input)
+    (indentFloor : Nat) :
+    Option (String × ScalarStyle × IxCursor input) :=
+  match c.peek? with
+  | some ch =>
+    if isLiteralBool ch || isFoldedBool ch then
+      let header := parseBlockHeaderLoopIx c.advance .clip none 2
+      let body := blockHeaderToBodyIx c
+      let contentIndent :=
+        match header.2.1 with
+        | some m => indentFloor + m - 1
+        | none   => autoDetectBlockScalarIndentIx body indentFloor
+      let collected := collectBlockScalarLoopIx body "" contentIndent input.utf8ByteSize
+      let chomped := applyChomp header.1 collected.1
+      some
+        ( (if isLiteralBool ch then chomped else foldBlockContent chomped)
+        , (if isLiteralBool ch then ScalarStyle.literal else ScalarStyle.folded)
+        , collected.2 )
+    else
+      none
+  | none   => none
+
+/-- The `let`s zeta-reduce to the spec's subterms, so this is `rfl`; `@[csimp]`
+    makes every compiled call of `scanBlockScalarIx` run the twin. -/
+@[csimp] lemma scanBlockScalarIx_eq_impl :
+    @scanBlockScalarIx = @scanBlockScalarIxImpl := rfl
 
 end L4YAML.Scanner.Indexed
 

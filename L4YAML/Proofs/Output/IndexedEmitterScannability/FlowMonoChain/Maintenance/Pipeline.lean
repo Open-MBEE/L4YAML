@@ -12,10 +12,7 @@ public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
 
 /-! # `FlowMonoChain.Maintenance.Pipeline` — Phase 3 Step 6f.3b3.flowmono.maintenance.pipeline
 
-**Sub-session 2 of `.flowmono.maintenance`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines ~3735–~3901,
-~4066–~4082, ~4354–~4393, ~4554–~4570, ~4777–~4789, ~4918–~4943,
-~5057–~5064, ~5119–~5139, ~5247–~5272, ~5425–~5440; ~400 LOC
+**Sub-session 2 of `.flowmono.maintenance`** (~400 legacy LOC
 contribution before substrate elimination).
 
 Per-character dispatch return-value lemmas (one each for the
@@ -68,13 +65,13 @@ bridge).
 
 ## Legacy mapping
 
-  | Section | Legacy lines     | Indexed counterpart                |
-  | ------- | ---------------- | ---------------------------------- |
-  | §1      | 3735–3747, 4066–4073, 5425–5432 | `dispatchStructural_*` |
-  | §3      | 3759–3774, 4085–4088, 5057–5064, 4777–4789 (+4918–4943 → collapsed), 5125–5139 (+5247–5272 → collapsed), 4554–4570 | `dispatchFlowIndicators_*` |
-  | §4      | 3777–3788, 4354–4377                | `dispatchBlockIndicators_*` |
-  | §5      | 4398–4421                          | `scanFlowEntryIx_ok` |
-  | §6      | 3852–3901                          | `scanNextTokenIx_via_*` |
+  | Section | Indexed counterpart |
+  | ------- | ------------------- |
+  | §1      | `dispatchStructural_*` |
+  | §3      | `dispatchFlowIndicators_*` |
+  | §4      | `dispatchBlockIndicators_*` |
+  | §5      | `scanFlowEntryIx_ok` |
+  | §6      | `scanNextTokenIx_via_*` |
 
 ## Deferred to `.sync`
 
@@ -101,7 +98,7 @@ variable {input : String}
 /-- In flow context with `currentIndent < 0` and `col > 0`,
     structural dispatch returns `none` (no doc-marker / directive
     handling at non-zero column). Indexed twin of
-    `dispatchStructural_none_flow` (legacy 3735). -/
+    `dispatchStructural_none_flow`. -/
 lemma dispatchStructural_none_flow (s : ScannerStateIx input) (c : Char)
     (h_flow : s.inFlow = true)
     (h_indent : s.currentIndent < 0)
@@ -114,9 +111,9 @@ lemma dispatchStructural_none_flow (s : ScannerStateIx input) (c : Char)
 
 /-- At initial state (`flowLevel = 0`, not at doc-start/end markers),
     structural dispatch returns `none` for any non-`%` character.
-    Indexed twin of `dispatchStructural_none_bracket_init`
-    (legacy 4066) / `_none_brace_init` (legacy 5425), generalised
-    to any character — caller supplies the specialisation. -/
+    Indexed twin of `dispatchStructural_none_bracket_init` /
+    `_none_brace_init`, generalised to any character — caller supplies the
+    specialisation. -/
 lemma dispatchStructural_none_non_directive (s : ScannerStateIx input) (c : Char)
     (h_fl : s.flowLevel = 0)
     (h_noDocStart : atDocumentStartIx s.cursor = false)
@@ -149,7 +146,7 @@ lemma dispatchStructural_none_brace_init (s : ScannerStateIx input)
 
 /-- For a character that is none of `[`, `]`, `{`, `}`, `,`, flow
     dispatch returns `none`. Indexed twin of
-    `dispatchFlowIndicators_none` (legacy 3759). -/
+    `dispatchFlowIndicators_none`. -/
 lemma dispatchFlowIndicators_none (s : ScannerStateIx input) (c : Char)
     (h1 : c ≠ '[') (h2 : c ≠ ']') (h3 : c ≠ '{') (h4 : c ≠ '}') (h5 : c ≠ ',')
     (h_adj : scanNextTokenIx_checkFlowAdjacency s c = .ok ()) :
@@ -216,7 +213,7 @@ lemma dispatchFlowIndicators_close_brace (s : ScannerStateIx input)
 /-! ## §5  `scanFlowEntryIx_ok` (used by `_comma`) -/
 
 /-- `scanFlowEntryIx` succeeds when the last real token is not a
-    flow delimiter. Indexed twin of `scanFlowEntry_ok` (legacy 4398). -/
+    flow delimiter. Indexed twin of `scanFlowEntry_ok`. -/
 lemma scanFlowEntryIx_ok (s : ScannerStateIx input)
     (h_last : ∀ t, lastRealTokenValIx? s.tokens = some t →
       t ≠ YamlToken.flowSequenceStart ∧ t ≠ YamlToken.flowMappingStart
@@ -310,7 +307,7 @@ lemma scanNextTokenIx_checkAdjacentValue_ok_of_ne_colon
 /-- When all four upstream stages (preprocess → struct → check →
     flow → block) yield `.ok none` and content dispatch produces a
     result, `scanNextTokenIx` returns that result.
-    Indexed twin of `scanNextToken_via_content_dispatch` (legacy 3852). -/
+    Indexed twin of `scanNextToken_via_content_dispatch`. -/
 lemma scanNextTokenIx_via_content_dispatch
     (s s_pp s_ad s_result : ScannerStateIx input) (c : Char)
     (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))
@@ -342,7 +339,7 @@ lemma scanNextTokenIx_via_content_dispatch
 
 /-- Error variant: when content dispatch errors, `scanNextTokenIx`
     propagates that error. Indexed twin of
-    `scanNextToken_via_content_dispatch_error` (legacy 3869). -/
+    `scanNextToken_via_content_dispatch_error`. -/
 lemma scanNextTokenIx_via_content_dispatch_error
     (s s_pp s_ad : ScannerStateIx input) (c : Char) (e : ScanError)
     (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))
@@ -375,7 +372,7 @@ lemma scanNextTokenIx_via_content_dispatch_error
 /-- When structural/flow dispatches yield `.ok none` and block-
     indicator dispatch produces a result, `scanNextTokenIx` returns
     that result. Used for `:` (value indicator) in flow context.
-    Indexed twin of `scanNextToken_via_block_dispatch` (legacy 3889). -/
+    Indexed twin of `scanNextToken_via_block_dispatch`. -/
 lemma scanNextTokenIx_via_block_dispatch
     (s s_pp s_ad s_result : ScannerStateIx input) (c : Char)
     (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))

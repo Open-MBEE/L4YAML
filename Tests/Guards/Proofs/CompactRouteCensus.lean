@@ -136,7 +136,7 @@ def census : Nat × Nat × Nat × Nat × Nat := Id.run do
     without the mid-line conjunct is accepted 916 times, which is what says the
     zero belongs to `InlineResidue` and not to a discriminator that never
     fires. -/
-#guard census == (35937, 8660, 244, 0, 916)
+#guard census == (35937, 8648, 232, 0, 916)
 
 /-- What refuses a program: the error's constructor name, or `ACCEPTED`. -/
 partial def refusal (input : String) : String :=
@@ -174,7 +174,7 @@ def refusalCensus : List (String × Nat) := Id.run do
     That single-cause histogram is what makes the emptiness a REFUTATION target
     rather than an accident of the corpus: the proof and the sweep are the same
     fact read two ways (`BlockDeferralClasses` §23). -/
-#guard refusalCensus == [("L4YAML.ScanError.misindentedExplicitValue", 244)]
+#guard refusalCensus == [("L4YAML.ScanError.misindentedExplicitValue", 232)]
 
 end Tests.Guards.CompactRouteCensus
 

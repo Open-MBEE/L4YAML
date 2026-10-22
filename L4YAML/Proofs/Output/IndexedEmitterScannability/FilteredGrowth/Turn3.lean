@@ -11,8 +11,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FilteredGrowth.Per
 
 /-! # `FilteredGrowth.Turn3` — Phase 3 Step `6f.3b3.filteredgrowth.turn3`
 
-**Single session** (legacy `Proofs/Output/EmitterScannability.lean`
-lines 6759–6908, ~150 LOC).
+**Single session** (~150 legacy LOC).
 
 Dispatch-level filtered growth (Turn 3 of the EmitterScannability
 migration). These compose the per-phase pieces from `.perdispatch`
@@ -23,15 +22,15 @@ in-flow corollary used by the `EmitScansInFlowIx` construction sites.
 Ships:
 
   * **§1 `scanNextTokenIx_via_flow_dispatch_filtered_grows`** —
-    `≥ +1` when the flow-indicator dispatcher succeeds (legacy 6769).
+    `≥ +1` when the flow-indicator dispatcher succeeds.
   * **§2 `scanNextTokenIx_via_block_dispatch_filtered_grows`** —
-    `≥ +1` when the block-indicator dispatcher succeeds (legacy 6787).
+    `≥ +1` when the block-indicator dispatcher succeeds.
   * **§3 `scanNextTokenIx_via_content_dispatch_filtered_grows`** —
-    `≥ +1` when the content dispatcher succeeds (legacy 6806).
+    `≥ +1` when the content dispatcher succeeds.
   * **§4 `scanNextTokenIx_filtered_grows_in_flow`** — in flow context
     (with `currentIndent < 0`, `col > 0`, non-whitespace non-`#`
     next char), every successful `scanNextTokenIx` step strictly grows
-    the filtered token count (legacy 6837). The directive branch is
+    the filtered token count. The directive branch is
     ruled out by `dispatchStructural_none_flow`, so the conclusion is
     unconditional for emitter outputs.
 
@@ -66,7 +65,7 @@ open L4YAML.Proofs.Indexed.EmitterScannability.ScanChain
 
 variable {input : String}
 
-/-! ## §1  `scanNextTokenIx_via_flow_dispatch_filtered_grows` (legacy 6769) -/
+/-! ## §1  `scanNextTokenIx_via_flow_dispatch_filtered_grows` -/
 
 lemma scanNextTokenIx_via_flow_dispatch_filtered_grows
     (s s_pp s_ad s_result : ScannerStateIx input) (c : Char)
@@ -85,7 +84,7 @@ lemma scanNextTokenIx_via_flow_dispatch_filtered_grows
   have h_disp := dispatchFlowIndicators_filtered_growsIx h_flow
   omega
 
-/-! ## §2  `scanNextTokenIx_via_block_dispatch_filtered_grows` (legacy 6787) -/
+/-! ## §2  `scanNextTokenIx_via_block_dispatch_filtered_grows` -/
 
 lemma scanNextTokenIx_via_block_dispatch_filtered_grows
     (s s_pp s_ad s_result : ScannerStateIx input) (c : Char)
@@ -105,7 +104,7 @@ lemma scanNextTokenIx_via_block_dispatch_filtered_grows
   have h_disp := dispatchBlockIndicators_filtered_growsIx h_block
   omega
 
-/-! ## §3  `scanNextTokenIx_via_content_dispatch_filtered_grows` (legacy 6806) -/
+/-! ## §3  `scanNextTokenIx_via_content_dispatch_filtered_grows` -/
 
 lemma scanNextTokenIx_via_content_dispatch_filtered_grows
     (s s_pp s_ad s_result : ScannerStateIx input) (c : Char)
@@ -126,7 +125,7 @@ lemma scanNextTokenIx_via_content_dispatch_filtered_grows
   have h_disp := dispatchContent_filtered_growsIx h_content
   omega
 
-/-! ## §4  `scanNextTokenIx_filtered_grows_in_flow` (legacy 6837)
+/-! ## §4  `scanNextTokenIx_filtered_grows_in_flow`
 
 In flow context, every successful `scanNextTokenIx` step strictly
 grows the filtered token count. With `s.inFlow = true`,

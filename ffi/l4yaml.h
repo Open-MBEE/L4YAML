@@ -241,12 +241,22 @@ const char *l4yaml_dump_docs(l4yaml_docs_t docs);
 /*
  * Dump a YamlValue using a YAML-configured DumpConfig.
  * The config_yaml string is itself parsed (bootstrapping) with strict
- * limits.  Falls back to default DumpConfig on config parse error.
- * See "String lifetime" note.
+ * limits.  Returns NULL if config_yaml does not parse into a DumpConfig
+ * (no fallback to the default DumpConfig); l4yaml_dump_configured_error()
+ * gives the reason.  See "String lifetime" note.
  */
 const char *l4yaml_dump_configured(l4yaml_value_t v,
                                       const char *config_yaml,
                                       size_t config_len);
+
+/*
+ * Why l4yaml_dump_configured() returned NULL: the DumpConfig parse error
+ * for config_yaml, or NULL if config_yaml is valid.  Re-runs the config
+ * parse only.  See "String lifetime" note.
+ */
+const char *l4yaml_dump_configured_error(l4yaml_value_t v,
+                                            const char *config_yaml,
+                                            size_t config_len);
 
 /* ── Config deserialization (self-hosted) ────────────────────────── */
 
@@ -278,8 +288,10 @@ uint8_t l4yaml_config_is_ok(l4yaml_config_result_t r);
 const char *l4yaml_config_error_message(l4yaml_config_result_t r);
 
 /*
- * Extract the ParserLimits handle from a successful config parse.
- * Caller must free.  Returns default limits on error.
+ * Extract the ParserLimits handle from a ParserLimits config result.
+ * Caller must free.  Returns DEFAULT limits if the result is an error,
+ * indistinguishably from a config that spelled out the defaults — check
+ * l4yaml_config_is_ok() first.
  */
 void *l4yaml_config_get_limits(l4yaml_config_result_t r);
 
@@ -287,7 +299,8 @@ void *l4yaml_config_get_limits(l4yaml_config_result_t r);
  * Parse YAML with custom limits specified as a YAML config string.
  * Two-step bootstrap: parses the config YAML first (strict limits),
  * then parses the input with the resulting ParserLimits.
- * Falls back to default limits on config parse error.
+ * A config parse error is an error result ("config error: ..." from
+ * l4yaml_result_error_message()); the input is not parsed.
  */
 l4yaml_result_t l4yaml_parse_configured(const char *input, size_t len,
                                               const char *config_yaml,

@@ -10,9 +10,9 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.EkSt
 
 @[expose] public section Blanket
 
-/-! # `IndexedEmitterScannability.EmitScans` — Phase 3 Step 6f.3b3 staging
+/-! # `IndexedEmitterScannability.EmitScans` — Phase 3 Step 6f.3b3
 
-**Status**: staging file. Populated incrementally as the
+**Status**: populated incrementally as the
 `ScanChainGrewIx` strict-variant track + the `EmitScansInFlowIx` main
 theorem family are ported to the indexed substrate.
 
@@ -28,8 +28,8 @@ theorem family are ported to the indexed substrate.
     preprocess-equality lemma), landed alongside in `FlowMonoChain/Sync/
     Scenarios/Preflow.lean` §1b.
   - ✅ **`scanNextToken_flow_valueIx`** — landed (`.flowvalue` sub-session
-    2b, see §2b below): the value-indicator (`:`) flow dispatcher
-    (legacy 7256–7621). Almost all of legacy's field-tracking collapsed
+    2b, see §2b below): the value-indicator (`:`) flow dispatcher.
+    Almost all of legacy's field-tracking collapsed
     onto the indexed `@[simp]` cursor lemmas; the only new twins needed
     were `scanValuePrepareIx_{indents,directivesPresent}_of_inFlow`,
     `AllTokensOnLineIx_{overwriteAtCursor,scanValuePrepare_flow}` (the
@@ -44,7 +44,7 @@ theorem family are ported to the indexed substrate.
     `scanNextTokenIx_flow_comma`, `scanNextTokenIx_preprocess_flow_ws1`,
     `emitPairList_first_charIx`); the legacy `h_sv` plumbing is dropped
     (see §2b). Zero new infra; built clean 89/89, sorry-free, axioms OK.
-  - ⏳ `emit_scans_in_flowIx` (`Grammable` induction, legacy 8014–8255) —
+  - ⏳ `emit_scans_in_flowIx` (`Grammable` induction) —
     **now unblocked** (`.flowpair` SS2 landed both scenario prerequisites:
     `scanNextTokenIx_flow_open_seq_nested` in `Scenarios/FlowSeqOpen.lean`
     and `scanNextTokenIx_flow_scanDoubleQuoted` in `Scenarios/FlowScalar.lean`).
@@ -54,14 +54,14 @@ theorem family are ported to the indexed substrate.
 
 ## Scope (mapping to legacy `EmitterScannability.lean`)
 
-  - **`ScanChainGrew` inductive (strict-variant track)** (legacy lines
-    6909–7002, ~95 LOC). `ScanChainGrewIx p s n s'` (a `ScanChainIx`
+  - **`ScanChainGrew` inductive (strict-variant track)** (~95 legacy LOC).
+    `ScanChainGrewIx p s n s'` (a `ScanChainIx`
     plus a witness that *at least one* `p`-satisfying token was added).
     Helpers: `.toScanChainIx`, `.single`, `.trans`,
     `ScanChainGrewIx_filtered_grows`, `ScanChainGrewIx_of_scanNextTokenIx_eq`.
 
-  - **`EmitScansInFlow` predicate + per-value-form lemmas** (legacy
-    lines 7003–7625, ~623 LOC). The main predicate
+  - **`EmitScansInFlow` predicate + per-value-form lemmas** (~623 legacy
+    LOC). The main predicate
     `EmitScansInFlow v`: scanning `emit v` (inside a flow context)
     produces a non-empty `ScanChainGrew`. Body lemmas:
     `emit_list_scans_in_flow` family — `emitList_scans_empty`,
@@ -70,13 +70,13 @@ theorem family are ported to the indexed substrate.
     `scanNextToken_flow_value` (the dispatcher's flow-value entry
     point).
 
-  - **`EmitPairListScansInFlow` + main proof** (legacy lines
-    7626–8013, ~388 LOC). The dual predicate for key-value pair
+  - **`EmitPairListScansInFlow` + main proof** (~388 legacy LOC). The dual
+    predicate for key-value pair
     lists; `emitPairList_scans_empty`, `emitPairList_scans_nonempty`,
     and the main theorem `emit_scans_in_flow` (induction over
     `Grammable v inFlow`).
 
-  - **`emit_produces_valid_yaml`** (legacy lines 8281–8399, ~120 LOC).
+  - **`emit_produces_valid_yaml`** (~120 legacy LOC).
     Top-level composition: `scanFiltered (emit v)` succeeds and
     produces a valid token stream.
 
@@ -119,8 +119,7 @@ Existing `ScanChainIx` / its filtered-growth bound are unchanged; this
 predicate runs alongside them. The forgetful `.toScanChainIx` lets a
 strict chain be passed wherever a `ScanChainIx` was expected.
 
-Indexed twin of legacy `ScanChainGrew` (lines 6909–7002 of
-`Proofs/Output/EmitterScannability.lean`). The only delta from legacy is
+Indexed twin of legacy `ScanChainGrew`. The only delta from legacy is
 the substrate bridge: the predicate ranges over `IxToken input` and the
 filtered count is `(_.tokens.tokens.filter p).size` (`TokenStream` wraps
 `Array (IxToken input)`); `input` is type-level. The proofs transfer
@@ -207,14 +206,14 @@ lemma ScanChainGrewIx_of_scanNextTokenIx_eq {p : IxToken input → Bool}
 Step `6f.3b3.emitscans.flowvalue`, **sub-sessions 1 and 2a**. SS1 ported
 the predicate layer and three small helpers (`emitList_scans_emptyIx`,
 `emitPairList_first_charIx`, `isValueCandidate_of_peekAt_blankIx`); SS2a
-ported the comma-path list body `emitList_scans_nonemptyIx` (legacy
-7068–7207), after building its one missing supporting twin
+ported the comma-path list body `emitList_scans_nonemptyIx`, after building its
+one missing supporting twin
 `scanNextTokenIx_preprocess_flow_ws1` (in `Preflow.lean` §1b). The
 remaining heavy body `scanNextToken_flow_valueIx` (the `:` value-indicator
-dispatcher, legacy 7256–7621) lands in sub-session 2b.
+dispatcher) lands in sub-session 2b.
 
-Indexed twin of legacy `Proofs/Output/EmitterScannability.lean`
-lines 7003–7254 (SS1) and 7068–7207 (SS2a). Substrate bridge:
+Indexed twin of the legacy `EmitScansInFlow` track (SS1) and
+`emitList_scans_nonempty` (SS2a). Substrate bridge:
 `ScannerState` → `ScannerStateIx input`;
 `s.col`/`s.line` → `s.cursor.pos.col`/`s.cursor.pos.line`;
 `ScannerSurfCorr` → `ScannerSurfCorrIx`; `AllTokensOnLine`/`EndLineOnLine`
@@ -225,8 +224,8 @@ lines 7003–7254 (SS1) and 7068–7207 (SS2a). Substrate bridge:
 /-- `EmitScansInFlowIx v`: scanning `emit v` inside a flow context (from a
     state surface-corresponding to `(emit v).toList ++ rest`) produces a
     non-empty `ScanChainGrewIx`, preserves the flow invariants, and leaves
-    the cursor at `rest`. Indexed twin of legacy `EmitScansInFlow`
-    (lines 7003–7029); note the two conjuncts absent from
+    the cursor at `rest`. Indexed twin of legacy `EmitScansInFlow`;
+    note the two conjuncts absent from
     `EmitListScansInFlowIx`: `simpleKeyAllowed = false` and the
     `lastRealTokenValIx?` non-flow-opener clause. -/
 def EmitScansInFlowIx (v : YamlValue) : Prop :=
@@ -276,7 +275,7 @@ def EmitScansInFlowIx (v : YamlValue) : Prop :=
 /-- `EmitListScansInFlowIx items`: scanning the comma-separated `emitList`
     output (the body between `[` and `]` in a flow sequence) succeeds in
     flow context, preserving invariants. Indexed twin of legacy
-    `EmitListScansInFlow` (lines 7031–7057). -/
+    `EmitListScansInFlow`. -/
 def EmitListScansInFlowIx (items : List YamlValue) : Prop :=
   ∀ (s : ScannerStateIx input) (rest : List Char),
     ScannerSurfCorrIx s ⟨(L4YAML.Emit.emit.emitList items).toList ++ rest, s.cursor.pos.col⟩ →
@@ -307,7 +306,7 @@ def EmitListScansInFlowIx (items : List YamlValue) : Prop :=
       ∧ FlowMonoChainIx s.flowLevel s n s'
 
 /-- Empty list body is trivially scanned (0-step chain). Indexed twin of
-    legacy `emitList_scans_empty` (lines 7059–7066). -/
+    legacy `emitList_scans_empty`. -/
 lemma emitList_scans_emptyIx : EmitListScansInFlowIx (input := input) [] := by
   intro s rest hcorr h_flow h_fl h_indent h_col h_ek h_atol h_endline _h_sync h_dp _h_last
   have h_eq : (L4YAML.Emit.emit.emitList ([] : List YamlValue)).toList ++ rest = rest := by
@@ -319,7 +318,7 @@ lemma emitList_scans_emptyIx : EmitListScansInFlowIx (input := input) [] := by
 /-- Non-empty list scanning via induction on the item list. Singleton case
     uses `EmitScansInFlowIx` directly; the multi-item case chains
     `emit v` + `", "` + recursive `emitList`. Indexed twin of legacy
-    `emitList_scans_nonempty` (lines 7068–7207). -/
+    `emitList_scans_nonempty`. -/
 lemma emitList_scans_nonemptyIx (items : List YamlValue) (h_ne : items ≠ [])
     (h_all : ∀ v ∈ items, EmitScansInFlowIx (input := input) v) :
     EmitListScansInFlowIx (input := input) items := by
@@ -468,7 +467,7 @@ lemma emitList_scans_nonemptyIx (items : List YamlValue) (h_ne : items ≠ [])
 
 /-- The first char of `emitPairList (p :: ps)` is the first char of the key
     `emit p.1` — a non-whitespace, non-`#` content char. Indexed twin of
-    legacy `emitPairList_first_char` (lines 7211–7229). -/
+    legacy `emitPairList_first_char`. -/
 lemma emitPairList_first_charIx (p : YamlValue × YamlValue)
     (ps : List (YamlValue × YamlValue)) :
     ∃ c rest', (L4YAML.Emit.emit.emitPairList (p :: ps)).toList = c :: rest' ∧
@@ -494,8 +493,7 @@ lemma emitPairList_first_charIx (p : YamlValue × YamlValue)
 /-- `isValueCandidateIx` returns true when `peekAt? 1` is a space (blank):
     every branch of `isValueCandidateIx` has a `peekAt? 1` fallback whose
     blank-acceptance (`isBlankBool ' ' = true`) collapses the result to
-    `true`. Indexed twin of legacy `isValueCandidate_of_peekAt_blank`
-    (lines 7234–7254). -/
+    `true`. Indexed twin of legacy `isValueCandidate_of_peekAt_blank`. -/
 lemma isValueCandidate_of_peekAt_blankIx (s : ScannerStateIx input)
     (h : s.peekAt? 1 = some ' ') :
     isValueCandidateIx s = true := by
@@ -506,8 +504,8 @@ lemma isValueCandidate_of_peekAt_blankIx (s : ScannerStateIx input)
 /-! ### §2b  `scanNextToken_flow_valueIx` (the `:` value dispatcher)
 
 The remaining heavy body of the `EmitScansInFlow` family (legacy
-7256–7621). It threads preprocessing → structural dispatch (none) →
-flow dispatch (none) → block
+`scanNextToken_flow_value`). It threads preprocessing → structural
+dispatch (none) → flow dispatch (none) → block
 dispatch (`:` → `scanValueIx`). The supporting twins below all exploit
 the indexed substrate's `@[simp]` cursor/field lemmas: `scanValuePrepareIx`
 preserves the cursor outright, and `overwriteAtCursor`/`emit`/`advance`
@@ -563,7 +561,7 @@ lemma AllTokensOnLineIx_overwriteAtCursor (s : ScannerStateIx input)
     In the `simpleKey.possible` branch it overwrites the placeholder at
     `tokenIndex + 1` with a `.key` token saved at `simpleKey.cursor`,
     whose line is `s.cursor.pos.line` by `EndLineOnLineIx`. Indexed twin
-    of legacy `AllTokensOnLine_scanValuePrepare_flow` (lines 3189–3213). -/
+    of legacy `AllTokensOnLine_scanValuePrepare_flow`. -/
 lemma AllTokensOnLineIx_scanValuePrepare_flow (s : ScannerStateIx input) (l : Nat)
     (h_atol : AllTokensOnLineIx s l) (h_line : s.cursor.pos.line = l)
     (h_flow : s.inFlow = true)
@@ -592,7 +590,7 @@ lemma AllTokensOnLineIx_scanValuePrepare_flow (s : ScannerStateIx input) (l : Na
     emitter always produces `": "`) makes `isValueCandidateIx` hold via
     the `peekAt? 1` blank fallback. The result state sits at `' ' :: rest'`
     (the space is not yet consumed). Indexed twin of legacy
-    `scanNextToken_flow_value` (lines 7256–7621). Unlike legacy, the
+    `scanNextToken_flow_value`. Unlike legacy, the
     `scanValueValidate` precondition is *derived* internally from the
     `AllTokensOnLineIx`/`EndLineOnLineIx` invariants (via
     `scanValueValidateIx_ok_of_flow_allTokensOnLine`), so no `h_sv`
@@ -865,21 +863,22 @@ lemma scanNextToken_flow_valueIx (s : ScannerStateIx input)
 /-! ### §2c  `EmitPairListScansInFlowIx` + the pair-list body
 
 Step `6f.3b3.emitscans.flowpair`, **sub-session 1** (the pair-list track,
-legacy lines 7626–8013). The dual of the `emitList` track: scanning the
-comma-separated key-value entries between `{` and `}` in a flow mapping.
+legacy `EmitPairListScansInFlow`). The dual of the `emitList` track:
+scanning the comma-separated key-value entries between `{` and `}` in a
+flow mapping.
 Each pair contributes a key (`EmitScansInFlowIx`), a `:` value indicator
 (`scanNextToken_flow_valueIx`, §2b), a value (`EmitScansInFlowIx`), and —
 for the multi-pair tail — a `,` separator (`scanNextTokenIx_flow_comma`).
 The leading space after each `:` and `,` is absorbed by the one-space
 preprocessing-equality twin `scanNextTokenIx_preprocess_flow_ws1` (§2a).
 
-Indexed twin of legacy `EmitPairListScansInFlow` / `emitPairList_scans_*`
-(lines 7626–8011). Substrate bridge as in §2. One contract simplification
+Indexed twin of legacy `EmitPairListScansInFlow` / `emitPairList_scans_*`.
+Substrate bridge as in §2. One contract simplification
 inherited from §2b: the legacy Step 2 (deriving `saveSimpleKey` identity +
 the `scanValueValidate` precondition `h_sv`) is **dropped** — `scanNextToken_flow_valueIx`
 derives validate-success internally, so the `:` step needs no `h_sv`.
 
-The dependent main theorem `emit_scans_in_flowIx` (legacy 8014–8255) is
+The dependent main theorem `emit_scans_in_flowIx` is
 deferred to sub-session 3 (§2d). Its scanner-scenario prerequisites
 `scanNextTokenIx_flow_scanDoubleQuoted` and `scanNextTokenIx_flow_open_seq_nested`
 (the `[` opener) **landed in SS2** under
@@ -889,7 +888,7 @@ unblocked. -/
 /-- `EmitPairListScansInFlowIx pairs`: scanning the comma-separated
     `emitPairList` output (the body between `{` and `}` in a flow mapping)
     succeeds in flow context, preserving invariants. Indexed twin of legacy
-    `EmitPairListScansInFlow` (lines 7626–7649); same conclusion shape as
+    `EmitPairListScansInFlow`; same conclusion shape as
     `EmitListScansInFlowIx`. -/
 def EmitPairListScansInFlowIx (pairs : List (YamlValue × YamlValue)) : Prop :=
   ∀ (s : ScannerStateIx input) (rest : List Char),
@@ -926,7 +925,7 @@ def EmitPairListScansInFlowIx (pairs : List (YamlValue × YamlValue)) : Prop :=
       ∧ FlowMonoChainIx s.flowLevel s n s'
 
 /-- Empty pair list is trivially scanned (0-step chain). Indexed twin of
-    legacy `emitPairList_scans_empty` (lines 7651–7655). -/
+    legacy `emitPairList_scans_empty`. -/
 lemma emitPairList_scans_emptyIx : EmitPairListScansInFlowIx (input := input) [] := by
   intro s rest hcorr h_flow h_fl h_indent h_col h_ek h_atol h_endline _h_ska _h_lrv _h_sync
     h_dp _h_last
@@ -940,7 +939,7 @@ lemma emitPairList_scans_emptyIx : EmitPairListScansInFlowIx (input := input) []
 /-- Non-empty pair list scanning via induction on the pair list. Each pair
     contributes key + `:` + value steps; the multi-pair tail additionally
     contributes a `,` separator and a recursive scan. Indexed twin of legacy
-    `emitPairList_scans_nonempty` (lines 7663–8011). Unlike legacy, the
+    `emitPairList_scans_nonempty`. Unlike legacy, the
     `scanValueValidate` precondition for the `:` step is derived internally
     (see §2b), so no `h_sv` plumbing is needed. -/
 lemma emitPairList_scans_nonemptyIx (pairs : List (YamlValue × YamlValue))
@@ -1334,7 +1333,7 @@ lemma emitPairList_scans_nonemptyIx (pairs : List (YamlValue × YamlValue))
 
 Step `6f.3b3.emitscans.flowpair`, **sub-session 3** — the now-unblocked
 induction over `Grammable v inFlow`. Indexed twin of legacy
-`emit_scans_in_flow` (lines 8014–8255). Three cases:
+`emit_scans_in_flow`. Three cases:
 
   - **Scalar** (`v = .scalar s`): the `"` content-dispatch path via
     `scanNextTokenIx_flow_scanDoubleQuoted` (SS2b). Single
@@ -1365,7 +1364,7 @@ documented budget; **no `axiom`/`sorry`/`partial`** (Reflection 142). -/
 
 /-- **`emit_scans_in_flowIx`** — main theorem of §2.
 
-Indexed twin of legacy `emit_scans_in_flow` (lines 8014–8255). For
+Indexed twin of legacy `emit_scans_in_flow`. For
 every `Grammable v inFlow` value `v`, scanning the canonical emitter
 output `(emit v).toList` inside a flow context produces a non-empty
 `ScanChainGrewIx` that preserves all the flow invariants. -/
@@ -1654,17 +1653,18 @@ prerequisite twins that the legacy version inlines):
     the sequence analog of §5's `_open_mapping_init`).
   - **SS2** ✅ landed: the scalar init twin
     `scanNextTokenIx_emitScalar_init` and its thin wrapper
-    `scan_accepts_emitScalarIx`. Indexed twins of legacy lines
-    3333–3499 and 3500–3532. Both live in this §3 rather than
-    Endpoint.lean §7 as originally planned: the helper is only
+    `scan_accepts_emitScalarIx`. Indexed twins of legacy
+    `scanNextToken_emitScalar_init` and `scan_accepts_emitScalar`. Both
+    live in this §3 rather than Endpoint.lean §7 as originally planned:
+    the helper is only
     consumed by the wrapper (no `FlowMonoChain` scenario chain
     needs it), and placing both here keeps the SS2 deliverable
     file-local. SS2 inherits the same 43 `native_decide` axioms
     from `scanDoubleQuotedIx`-cluster reductions as `.flowpair`
     SS2b/SS3 (Reflection 142) — no new user-defined axioms.
   - **SS3**: the main `emit_produces_valid_yamlIx` composition theorem
-    itself (legacy 8281–8398, ~120 LOC, induction over `Grammable v
-    false` with the three cases delegating to SS1/SS2 + the just-landed
+    itself (legacy `emit_produces_valid_yaml`, ~120 LOC, induction over
+    `Grammable v false` with the three cases delegating to SS1/SS2 + the just-landed
     §2d).
 
 See the Blueprint's `.toplevel` plan tree and Reflection 144. -/
@@ -1676,7 +1676,7 @@ See the Blueprint's `.toplevel` plan tree and Reflection 144. -/
     / `(scanFilteredIx "{}").toBool = true` (each closed-input scan is a
     decidable Boolean, so `native_decide` settles it; this bridge then
     forgets the Boolean witness back to the existential the main theorem
-    expects). Indexed twin of `scanFiltered_exists_of_isOk` (legacy 8258). -/
+    expects). Indexed twin of `scanFiltered_exists_of_isOk`. -/
 lemma scanFilteredIx_exists_of_isOk {s : String}
     (h : (scanFilteredIx s).toBool = true) :
     ∃ tokens, scanFilteredIx s = .ok tokens := by
@@ -1712,7 +1712,7 @@ It threads the full `scanNextTokenIx` pipeline:
   7. `peek_none_of_empty_surfIx` (ScanChain §1.3) on the post-quote
      surface (empty chars) gives `s_final.peek? = none`.
 
-Indexed twin of `scanNextToken_emitScalar_init` (legacy 3333–3499).
+Indexed twin of `scanNextToken_emitScalar_init`.
 The legacy `(s₁.tokens.filter ...).map (·.val) = #[…]` token-array
 equality is *not* exposed — `scan_accepts_emitScalarIx` (and
 ultimately `emit_produces_valid_yamlIx`) only needs existential
@@ -1727,7 +1727,7 @@ set_option maxHeartbeats 800000 in
     the scanner consumes the entire `'"' :: escapeString content :: '"'`
     in a single step (via `scanDoubleQuotedIx`), landing at EOF with
     `flowLevel = 0` and `directivesPresent = false`. Indexed twin of
-    `scanNextToken_emitScalar_init` (legacy 3333). The `input` / `s₀`
+    `scanNextToken_emitScalar_init`. The `input` / `s₀`
     abbreviations are introduced as locals after the `show` so the
     body re-elaborates with them as opaque names rather than as
     `let`-bound projections — avoids whnf-elaboration thrashing on
@@ -1987,7 +1987,7 @@ Thin wrapper composing `scanNextTokenIx_emitScalar_init` (first
 iteration: `'"'` → scalar token) with `scanNextTokenIx_eof`
 (second iteration: EOF → `.ok none`) via `scanLoopIx_two_iter`,
 plus the BOM-check no-op (first char is `'"'`, not `'﻿'`).
-Indexed twin of `scan_accepts_emitScalar` (legacy 3500–3532). -/
+Indexed twin of `scan_accepts_emitScalar`. -/
 
 /-- The scanner accepts any double-quoted scalar produced by the
     emitter: `scanFilteredIx (emitScalar content)` succeeds. -/

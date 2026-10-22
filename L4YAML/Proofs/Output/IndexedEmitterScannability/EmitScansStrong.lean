@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.EmitScans
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -21,7 +22,7 @@ Ships ONE new strong predicate and ONE strong inductive theorem:
     `EmitPairListScansInFlowIx` (`EmitScans.lean §3`) that additionally
     exposes the **`n ≥ 3` lower bound** on the chain length. Direct
     consumer enabler for the legacy `emitPairList_body_filtered_
-    characterization` sorry at line 9638 (`n ≥ 3`).
+    characterization` sorry (`n ≥ 3`).
   * **§2 `emitPairList_scans_nonemptyIx_strong`** — proof by induction
     on the pair list, mirroring the singleton/multi-pair split of the
     weak `emitPairList_scans_nonemptyIx`. The `n ≥ 3` bound emerges
@@ -106,6 +107,8 @@ set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.EmitScans
 
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
+
 open L4YAML
 open L4YAML.CharPredicates
 open L4YAML.Indexed
@@ -130,7 +133,7 @@ multi-pair case adds a comma step and a recursive call, both
 positive, so the bound is preserved.
 
 This predicate directly enables the legacy
-`emitPairList_body_filtered_characterization` sorry at line 9638
+`emitPairList_body_filtered_characterization` sorry
 (`n ≥ 3`) — the consumer derives the bound from the strong
 predicate's output. -/
 
@@ -963,6 +966,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_pointwise_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          rw [closeStaleExplicitKeyIx_simpleKey] at h_poss ⊢
           have h_unwind_sz :=
             unwindIndentsIx_tokens_size_le s.skipToContentS s.skipToContentS.cursor.pos.col
           have h_unwind_sk :=
@@ -989,6 +993,7 @@ lemma scanNextTokenIx_preprocess_simpleKey_pointwise_inv {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
+          rw [closeStaleExplicitKeyIx_simpleKey] at h_poss ⊢
           have h_tok_post : m < s.skipToContentS.tokens.size := by omega
           have h_sk_post : s.skipToContentS.simpleKey.possible = true →
               m ≠ s.skipToContentS.simpleKey.tokenIndex ∧
@@ -1309,7 +1314,7 @@ lemma scanNextTokenIx_maintains_NoOverwriteAtIx {input : String}
 /-- Pointwise (≠m) form of `scanValuePrepareIx_preserves_prefix`
     (`IndexedScannerPlainScalarValid §12k`): preserves position `m`
     given the simpleKey hypothesis `m ≠ tokenIndex ∧ m ≠ tokenIndex + 1`.
-    Mirrors the prefix-form proof at line 5101 but uses the pointwise
+    Mirrors the prefix-form proof but uses the pointwise
     hypothesis directly (no need to derive `tokenIndex ≠ m` from
     `i < n ≤ tokenIndex`). -/
 lemma scanValuePrepareIx_preserves_position_specific {input : String}

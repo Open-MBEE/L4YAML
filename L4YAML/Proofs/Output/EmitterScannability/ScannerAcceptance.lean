@@ -19,6 +19,7 @@ public import L4YAML.Proofs.Scanner.ScannerPlainContent
 public import L4YAML.Proofs.Scanner.ScannerBound
 public import L4YAML.Proofs.Output.EmitterScannability.EscapeProperties
 public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -39,6 +40,8 @@ prefix preservation, and the substrate predicate layers `NoOverwriteAt` (d),
 -/
 
 namespace L4YAML.Proofs.EmitterScannability
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Emit
@@ -726,7 +729,7 @@ lemma preprocess_preserves_flowLevel (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
+            rw [closeStaleExplicitKey_flowLevel, ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
             show (unwindIndents s_skip s_skip.col).flowLevel = s.flowLevel
             rw [ScannerCorrectness.unwindIndents_preserves_flowLevel]; exact h_fl_skip
       · split at h
@@ -735,7 +738,7 @@ lemma preprocess_preserves_flowLevel (s s1 : ScannerState) (c : Char)
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [ScannerCorrectness.saveSimpleKey_preserves_flowLevel]; exact h_fl_skip
+            rw [closeStaleExplicitKey_flowLevel, ScannerCorrectness.saveSimpleKey_preserves_flowLevel]; exact h_fl_skip
 
 lemma preprocess_maintains_SimpleKeyAboveFloor (s s1 : ScannerState) (c : Char)
     (h : scanNextToken_preprocess s = .ok (some (s1, c)))
@@ -1467,6 +1470,7 @@ lemma preprocess_simpleKey_pointwise_inv (s s1 : ScannerState) (c : Char)
                     needIndentCheck := false } : ScannerState).simpleKey.tokenIndex + 1 := by
               show (unwindIndents s_skip s_skip.col).simpleKey.possible = true → _
               simp only [h_sk_u, h_sk_skip]; exact h_inv
+            simp only [closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_tokens] at h_poss ⊢
             exact saveSimpleKey_simpleKey_pointwise_inv _ m h_tok_post h_sk_post h_poss
       · split at h
         · contradiction
@@ -1480,6 +1484,7 @@ lemma preprocess_simpleKey_pointwise_inv (s s1 : ScannerState) (c : Char)
                 m ≠ s_skip.simpleKey.tokenIndex ∧
                 m ≠ s_skip.simpleKey.tokenIndex + 1 := by
               simp only [h_sk_skip]; exact h_inv
+            simp only [closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_tokens] at h_poss ⊢
             exact saveSimpleKey_simpleKey_pointwise_inv s_skip m h_tok_post h_sk_post h_poss
 
 /-- `scanNextToken_preprocess` maintains the full `NoOverwriteAt` invariant.
@@ -2143,6 +2148,7 @@ lemma preprocess_simpleKey_pointwise_inv_flow (s s1 : ScannerState) (c : Char)
                     needIndentCheck := false } : ScannerState).simpleKey.tokenIndex + 1 := by
               show (unwindIndents s_skip s_skip.col).simpleKey.possible = true → _
               simp only [h_sk_u, h_sk_skip]; exact h_inv
+            simp only [closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_tokens] at h_poss ⊢
             exact saveSimpleKey_simpleKey_pointwise_inv_flow _ m h_tok_post h_sk_post h_poss
       · split at h
         · contradiction
@@ -2155,6 +2161,7 @@ lemma preprocess_simpleKey_pointwise_inv_flow (s s1 : ScannerState) (c : Char)
             have h_sk_post : s_skip.simpleKey.possible = true →
                 m ≠ s_skip.simpleKey.tokenIndex + 1 := by
               simp only [h_sk_skip]; exact h_inv
+            simp only [closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_tokens] at h_poss ⊢
             exact saveSimpleKey_simpleKey_pointwise_inv_flow s_skip m h_tok_post h_sk_post h_poss
 
 /-- `scanNextToken_preprocess` maintains the full `FlowNoOverwriteAt` invariant.

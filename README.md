@@ -780,12 +780,20 @@ port must also re-prove the corresponding `Indexed*` lemmas:
   still returns an empty node unconditionally.
 - **B2** — the `protectedLen` boundary parameter of
   `collectDoubleQuotedLoop` (escaped-trailing-tab trimming); the indexed
-  `collectDoubleQuotedLoopIx` has no such parameter.
+  `collectDoubleQuotedLoopIx` carries the same boundary as a `content` /
+  `spaces` split of the accumulator (the buffered trailing `s-white*` run is
+  dropped at a fold without rescanning `content`).
 
 ## Contributing
 
 Issues and pull requests are welcome. Please open an issue before starting
 substantial work so we can discuss scope and proof strategy.
+
+Proof work follows [`Blueprint/06-discipline.md`](Blueprint/06-discipline.md);
+[`AGENTS.md`](AGENTS.md) is the one-screen orientation (sources of truth,
+build and gates, the closure-log item protocol, campaign vocabulary), and
+`python3 scripts/docs_nav.py next` finds the active mandate in `DOCS.md`
+without paging it.
 
 ## Acknowledgments
 

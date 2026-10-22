@@ -23,7 +23,7 @@ it, so it is ported here.
 
   * **§1 fuel-bound length helpers** (`CharsFromOffset_length_le`,
     `escapeString_length_ge`) — tiny ports of the legacy lemmas of the
-    same names (legacy 850/877). Needed to discharge the
+    same names. Needed to discharge the
     `input.utf8ByteSize ≥ content.length + 1` fuel obligation of the
     loop lemma. Kept local (not hoisted to `Basic`) to avoid a
     foundation-wide rebuild; `escapeString_length_ge` uses the
@@ -40,8 +40,7 @@ it, so it is ported here.
 
   * **§3 `scanNextTokenIx_flow_scanDoubleQuoted`** — the full
     `scanNextTokenIx` scenario for a double-quoted scalar in flow
-    context. Indexed twin of `scanNextToken_flow_scanDoubleQuoted`
-    (legacy 3910).
+    context. Indexed twin of `scanNextToken_flow_scanDoubleQuoted`.
 
 ## Indexed simplification vs legacy
 
@@ -81,7 +80,7 @@ variable {input : String}
 
 /-- Each character occupies at least one UTF-8 byte: a `CharsFromOffset`
     witness bounds its list length by the remaining byte count. Local
-    port of legacy `CharsFromOffset_length_le` (legacy 850). -/
+    port of legacy `CharsFromOffset_length_le`. -/
 lemma CharsFromOffset_length_le {offset : Nat} {chars : List Char}
     (h : CharsFromOffset input offset chars) :
     chars.length ≤ input.utf8ByteSize - offset := by
@@ -94,7 +93,7 @@ lemma CharsFromOffset_length_le {offset : Nat} {chars : List Char}
     omega
 
 /-- `escapeString` never shrinks the character count. Local port of
-    legacy `escapeString_length_ge` (legacy 877), using the
+    legacy `escapeString_length_ge`, using the
     already-ported `escapeChar_nonempty`. -/
 lemma escapeString_length_ge (cs : List Char) :
     (escapeString (String.ofList cs)).toList.length ≥ cs.length := by
@@ -191,8 +190,7 @@ lemma quotedScalarErrIx_escapeString_none (c : IxCursor input)
 /-! ## §3  `scanNextTokenIx_flow_scanDoubleQuoted` -/
 
 /-- Full `scanNextTokenIx` for a double-quoted scalar `"…"` in flow
-    context. Indexed twin of `scanNextToken_flow_scanDoubleQuoted`
-    (legacy 3910). -/
+    context. Indexed twin of `scanNextToken_flow_scanDoubleQuoted`. -/
 lemma scanNextTokenIx_flow_scanDoubleQuoted (s : ScannerStateIx input)
     (content : String) (rest : List Char)
     (hcorr : ScannerSurfCorrIx s

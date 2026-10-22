@@ -23,7 +23,7 @@ preserved.
 ## Sub-sessions (Phase 3 Step 6f.3b3.filteredgrowth)
 
   - `FilteredGrowth/FirstFiltered.lean` — first-filtered-token lemmas
-    for flow-content scanners (legacy lines 5587–5899). Ships
+    for flow-content scanners. Ships
     `scanFlowSequenceStartIx_first_filtered_token`,
     `scanFlowMappingStartIx_first_filtered_token`,
     `scanDoubleQuotedIx_first_filtered_token`, plus emitter shape
@@ -31,7 +31,7 @@ preserved.
     `emitList_toList_ne_nil`), `emit_tokens_pushIx`, and the generic
     `Array_filter_prefix_of_raw_prefix` array lemma.
   - `FilteredGrowth/Infra.lean` — filtered token array growth
-    infrastructure (legacy lines 5900–6070). Ships
+    infrastructure. Ships
     `List_filter_set_length_monoIx`, `Array_setIfInBounds_filter_monoIx`,
     `preprocess_filtered_monoIx`, `allowDir_ite_filter_monoIx`,
     `List_filter_length_ge_oneIx`,
@@ -40,7 +40,7 @@ preserved.
     dispatch-layer filtered growth, sub-split under
     `FilteredGrowth/PerDispatch/` (Step 6f.3b3.filteredgrowth.perdispatch,
     both sub-sessions landed). Ships:
-      * `PerDispatch/StructFlow.lean` *(legacy 6071–6362)* —
+      * `PerDispatch/StructFlow.lean` —
         structural + flow-indicator dispatch lemmas
         (`scanDocumentStart_filtered_growsIx`,
         `scanDocumentEnd_filtered_growsIx`,
@@ -49,14 +49,14 @@ preserved.
         `scanDirective_filtered_growsIx`,
         `dispatchStructural_filtered_monoIx`,
         `dispatchFlowIndicators_filtered_growsIx`).
-      * `PerDispatch/BlockContent.lean` *(legacy 6364–6757)* —
+      * `PerDispatch/BlockContent.lean` —
         block-indicator + content dispatch lemmas
         (`scanBlockEntry_filtered_growsIx`, `scanKey_filtered_growsIx`,
         `scanValue_filtered_growsIx`,
         `dispatchBlockIndicators_filtered_growsIx`,
         `dispatchContent_new_not_placeholderIx`,
         `dispatchContent_filtered_growsIx`).
-  - `FilteredGrowth/Turn3.lean` *(legacy 6759–6908)* — dispatch-level
+  - `FilteredGrowth/Turn3.lean` — dispatch-level
     filtered growth (Step 6f.3b3.filteredgrowth.turn3). Ships
     `scanNextTokenIx_via_flow_dispatch_filtered_grows`,
     `scanNextTokenIx_via_block_dispatch_filtered_grows`,

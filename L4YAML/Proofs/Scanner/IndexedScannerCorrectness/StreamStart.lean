@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.Basic
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -23,6 +24,8 @@ Split out of `IndexedScannerCorrectness.lean` (Reflection 112). -/
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.ScannerCorrectness
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.Indexed
@@ -258,7 +261,8 @@ lemma scanNextTokenIx_preprocess_maintains_SimpleKeyAboveIx {input : String}
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
           obtain ⟨hs, _⟩ := h_pre
           subst hs
-          exact saveSimpleKeyIx_maintains_SimpleKeyAboveIx _ n h_n_unwind h_inv_unwind
+          exact SimpleKeyAboveIx_mono _ _ n (saveSimpleKeyIx_maintains_SimpleKeyAboveIx _ n h_n_unwind h_inv_unwind)
+            (closeStaleExplicitKeyIx_simpleKey _) (closeStaleExplicitKeyIx_simpleKeyStack _)
     · -- without indent check
       split at h_pre
       · simp at h_pre
@@ -267,7 +271,8 @@ lemma scanNextTokenIx_preprocess_maintains_SimpleKeyAboveIx {input : String}
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
           obtain ⟨hs, _⟩ := h_pre
           subst hs
-          exact saveSimpleKeyIx_maintains_SimpleKeyAboveIx _ n h_n_skip h_inv_skip
+          exact SimpleKeyAboveIx_mono _ _ n (saveSimpleKeyIx_maintains_SimpleKeyAboveIx _ n h_n_skip h_inv_skip)
+            (closeStaleExplicitKeyIx_simpleKey _) (closeStaleExplicitKeyIx_simpleKeyStack _)
 
 /-! ### §7.5  Sub-dispatcher maintains lemmas
 
@@ -789,6 +794,7 @@ lemma _preprocess_preserves_prefix {input : String}
           have h_i_save : i < (saveSimpleKeyIx
               ({ unwindIndentsIx s.skipToContentS s.skipToContentS.cursor.pos.col with
                   needIndentCheck := false } : ScannerStateIx input)).tokens.size := by omega
+          rw [closeStaleExplicitKeyIx_tokens]
           refine ⟨h_i_save, ?_⟩
           rw [saveSimpleKeyIx_preserves_prefix
             ({ unwindIndentsIx s.skipToContentS s.skipToContentS.cursor.pos.col with
@@ -804,6 +810,7 @@ lemma _preprocess_preserves_prefix {input : String}
           subst hs
           have h_save_sz := saveSimpleKeyIx_tokens_size_le s.skipToContentS
           have h_i_save : i < (saveSimpleKeyIx s.skipToContentS).tokens.size := by omega
+          rw [closeStaleExplicitKeyIx_tokens]
           refine ⟨h_i_save, ?_⟩
           rw [saveSimpleKeyIx_preserves_prefix s.skipToContentS i h_i_skip]
           exact h_skip_eq

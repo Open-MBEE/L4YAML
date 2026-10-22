@@ -772,11 +772,12 @@ Created [`L4YAML/Config/Config.lean`](L4YAML/Config/Config.lean) — `FromYaml`/
 |---|---|
 | `l4yaml_parse_limits_yaml_impl` | Parse YAML string → `Except String ParserLimits` |
 | `l4yaml_parse_dump_config_yaml_impl` | Parse YAML string → `Except String DumpConfig` |
-| `l4yaml_config_result_is_ok` | Check config result success |
-| `l4yaml_config_result_get_error` | Extract error message |
-| `l4yaml_config_result_get_limits` | Extract `ParserLimits` handle |
-| `l4yaml_parse_with_yaml_config_impl` | Two-step: parse config YAML → parse input with limits |
-| `l4yaml_dump_with_yaml_config_impl` | Dump with YAML-configured `DumpConfig` |
+| `l4yaml_config_result_is_ok_impl` | Check config result success |
+| `l4yaml_config_result_get_error_impl` | Extract error message |
+| `l4yaml_config_result_get_limits_or_default_impl` | Extract `ParserLimits` handle (default limits on an error result — check `is_ok` first) |
+| `l4yaml_parse_with_yaml_config_impl` | Two-step: parse config YAML → parse input with limits; a config error is `ParseError.configError` |
+| `l4yaml_dump_with_yaml_config_impl` | Dump with YAML-configured `DumpConfig` → `Except String String` |
+| `l4yaml_dump_result_is_ok_impl` / `..._get_error_impl` / `..._get_output_impl` | Inspect a dump result |
 
 **New C API functions (6):**
 
@@ -785,9 +786,10 @@ Created [`L4YAML/Config/Config.lean`](L4YAML/Config/Config.lean) — `FromYaml`/
 | `l4yaml_parse_limits_yaml(yaml, len)` | Parse YAML config → `ParserLimits` result handle |
 | `l4yaml_config_is_ok(r)` | Check config parse success (1/0) |
 | `l4yaml_config_error_message(r)` | Error message or NULL |
-| `l4yaml_config_get_limits(r)` | Extract `ParserLimits` handle |
-| `l4yaml_parse_configured(input, len, config_yaml, config_len)` | Parse with YAML-configured limits |
-| `l4yaml_dump_configured(v, config_yaml, config_len)` | Dump with YAML-configured `DumpConfig` |
+| `l4yaml_config_get_limits(r)` | Extract `ParserLimits` handle (default limits on an error result) |
+| `l4yaml_parse_configured(input, len, config_yaml, config_len)` | Parse with YAML-configured limits; a bad config is an error result, not a default-limits parse |
+| `l4yaml_dump_configured(v, config_yaml, config_len)` | Dump with YAML-configured `DumpConfig`; NULL on a bad config |
+| `l4yaml_dump_configured_error(v, config_yaml, config_len)` | The config error behind a NULL dump, or NULL |
 
 **Verification:** `libl4yaml.so` — 50 symbols total (was 40, +10 new). Build: 395/395 jobs, 0 new warnings.
 
@@ -951,7 +953,7 @@ match l4yaml::load(bad_input, LimitsPreset::Strict) {
 | `l4yaml_docs_t` | `Vec<YamlDocument>` (eagerly extracted) |
 | `l4yaml_doc_t` | `YamlDocument { root: YamlValue }` |
 | `uint8_t` kind | `enum Kind { Scalar, Sequence, Mapping, Alias }` |
-| `const char *` | `&str` (via `CStr::from_ptr` + `to_str()`) |
+| `const char *` | `String` (copied via `CStr::from_ptr` + `to_str()` before the shim's thread-local slot is reused) |
 | `uint8_t` preset | `enum LimitsPreset` |
 
 **`YamlValue` trait implementations:**
@@ -959,12 +961,12 @@ match l4yaml::load(bad_input, LimitsPreset::Strict) {
 ```rust
 impl YamlValue {
     pub fn kind(&self) -> Kind;
-    pub fn as_str(&self) -> Result<&str, Error>;    // borrows from internal C string
+    pub fn as_str(&self) -> Result<String, Error>;  // owned copy of the C string
     pub fn as_seq(&self) -> Result<Vec<YamlValue>, Error>;
     pub fn as_map(&self) -> Result<Vec<(String, YamlValue)>, Error>;
     pub fn get(&self, key: &str) -> Option<YamlValue>;
-    pub fn tag(&self) -> Option<&str>;
-    pub fn anchor(&self) -> Option<&str>;
+    pub fn tag(&self) -> Option<String>;
+    pub fn anchor(&self) -> Option<String>;
     pub fn len(&self) -> usize;
     pub fn is_empty(&self) -> bool;
 }

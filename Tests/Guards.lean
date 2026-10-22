@@ -176,6 +176,7 @@ import Tests.Guards.Proofs.PropsParkDangling
 import Tests.Guards.Proofs.FlowRunDanglingClosed
 import Tests.Guards.Proofs.PropsRunReadingTransport
 import Tests.Guards.Proofs.FlowBracketBalance
+import Tests.Guards.Proofs.FlowContextProviderAxioms
 import Tests.Guards.Proofs.FlowParkAnchor
 import Tests.Guards.Proofs.FlowGateGeneration
 import Tests.Guards.Proofs.FlowReservationFloor
@@ -255,3 +256,4 @@ import Tests.Guards.Proofs.SuiteGuards.Scalar
 import Tests.Guards.Proofs.TagResolution
 import Tests.Guards.Proofs.TestSuite
 import Tests.Guards.Schema.Dump
+import Tests.Guards.Proofs.GhostIndexCensus

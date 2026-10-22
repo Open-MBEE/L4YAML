@@ -29,27 +29,27 @@ of legacy `Proofs/Output/EmitterScannability.lean`. No axioms remain.
 
 ## Scope (mapping to legacy `EmitterScannability.lean`)
 
-  - **§1 Escape Character Properties** (legacy lines 76–139, ~64 LOC).
+  - **§1 Escape Character Properties** (~64 legacy LOC).
     Pure value-level facts about `escapeChar c` —
     `escapeChar_passthrough_is_valid`, `escapeChar_output_nbJson`. No
     scanner state involved; ports verbatim (namespace only).
 
-  - **§2.1 escapeString Decomposition** (legacy lines 140–197, ~57 LOC).
+  - **§2.1 escapeString Decomposition** (~57 legacy LOC).
     `emit_nonempty`, `string_foldl_toList`, `escapeString_foldl_shift`,
     `escapeString_nil`, `escapeString_cons`. Pure list/string homo.
 
-  - **§2.2 First-Character Properties** (legacy lines 198–277, ~80 LOC).
+  - **§2.2 First-Character Properties** (~80 legacy LOC).
     `escapeChar_head_not_quote`, `escapeChar_head_not_linebreak`,
     `escapeChar_output_no_linebreak`, `escapeChar_nonempty`. Pure
     character predicates.
 
-  - **§2.3 escapeString Character Properties** (legacy lines 278–337,
-    ~60 LOC). `foldl_append_toList_eq_flatMap`, `escapeString_mem_iff`,
+  - **§2.3 escapeString Character Properties** (~60 legacy LOC).
+    `foldl_append_toList_eq_flatMap`, `escapeString_mem_iff`,
     `escapeString_all_nbJson`, `escapeString_no_linebreak`. Pure
     homomorphism lifts.
 
   - **§2.4 collectDoubleQuotedLoop Acceptance — value-level helpers**
-    (legacy lines 338–456 value-level slice). `escapeTag_not_linebreak`,
+    (legacy value-level slice). `escapeTag_not_linebreak`,
     `escapeChar_passthrough_toList`, `escapeChar_named_toList`,
     `scannerHexCheck`, `hexNibble_is_hex`, `hexNibble_lt128`,
     `hex_two_foldl_bound`, `escapeChar_hex_structure`,
@@ -57,7 +57,7 @@ of legacy `Proofs/Output/EmitterScannability.lean`. No axioms remain.
     `hex_foldl_roundtrip`.
 
   - **§3 collectDoubleQuotedLoopIx Acceptance — closure** (legacy
-    lines 355–841 state-dependent slice). Cursor-level surface
+    state-dependent slice). Cursor-level surface
     correspondence (`CursorSurfCorrIx`); indexed advance helpers
     (`peek_corrIx`, `eof_corrIx`, `advance_non_newline_corrIx`,
     `advance_line_non_newline_ix`); state-dependent helpers
@@ -745,7 +745,7 @@ lemma processEscapeIx_hex_ok {input : String} (c : IxCursor input)
 
 `collectDoubleQuotedLoopIx` succeeds on `escapeString content ++ "\"" ++ rest`,
 leaving the cursor at `rest`. Twin of legacy
-`collectDoubleQuotedLoop_escapeString_succeeds` (lines 577–840).
+`collectDoubleQuotedLoop_escapeString_succeeds`.
 
 The legacy `isNbJsonBool` check has no indexed counterpart — the
 indexed loop accepts any non-`"`/non-`\\`/non-linebreak character — so

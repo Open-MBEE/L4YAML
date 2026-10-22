@@ -7,13 +7,11 @@ module
 
 public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
-/-! # `IndexedDispatch` — Phase 3 dispatcher-layer proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedDispatch` — Phase 3 dispatcher-layer proofs
 
 ## Scope (Step 5b.1b.i–iv, partial)
 
@@ -90,6 +88,7 @@ namespace L4YAML.Scanner.Indexed
 
 open L4YAML L4YAML.Indexed L4YAML.CharPredicates
 open L4YAML.Proofs.FlowAdjacencyIx
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 /-! ## `ScannerStateIx` — cursor-preservation lemmas
 
@@ -1156,7 +1155,7 @@ lemma scanNextTokenIx_preprocess_offset_monotonic {input : String}
           obtain ⟨hs, _⟩ := h
           subst hs
           show s.cursor.pos.offset ≤ _
-          simp only [saveSimpleKeyIx_cursor, unwindIndentsIx_cursor]
+          simp only [closeStaleExplicitKeyIx_cursor, saveSimpleKeyIx_cursor, unwindIndentsIx_cursor]
           exact skipToContentS_offset_monotonic s
 
 lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
@@ -1181,6 +1180,7 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
           subst hs
           show s.tokens.size ≤ _
           rw [← skipToContentS_tokens s]
+          rw [closeStaleExplicitKeyIx_tokens]
           refine Nat.le_trans ?_ (saveSimpleKeyIx_tokens_size_le _)
           first
             | exact Nat.le_refl _

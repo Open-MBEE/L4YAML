@@ -4,6 +4,7 @@ public import L4YAML.Scanner.Scanner
 public import L4YAML.Proofs.Scanner.ScannerCorrectness
 public import L4YAML.Proofs.Scanner.ScannerLinePreservation
 public import L4YAML.Proofs.Scanner.FlowAdjacency
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -33,6 +34,8 @@ says so — the pending CLOSES) or on the run's own line with the token readings
 and the line untouched (the coupling FIRES). -/
 
 namespace L4YAML.Proofs.PropsRunLineCoupling
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -603,7 +606,7 @@ lemma preprocess_some_needIndentCheck_false {sc s_prep : ScannerState} {c : Char
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, _⟩ := Prod.mk.inj h; subst h1
-            rw [saveSimpleKey_needIndentCheck]
+            rw [closeStaleExplicitKey_needIndentCheck, saveSimpleKey_needIndentCheck]
       · -- plain branch: the branch condition says the flag is already clear.
         rename_i h_cond
         have h_flag : s_content.needIndentCheck = false := by
@@ -617,7 +620,7 @@ lemma preprocess_some_needIndentCheck_false {sc s_prep : ScannerState} {c : Char
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, _⟩ := Prod.mk.inj h; subst h1
-            rw [saveSimpleKey_needIndentCheck, h_flag]
+            rw [closeStaleExplicitKey_needIndentCheck, saveSimpleKey_needIndentCheck, h_flag]
 
 end L4YAML.Proofs.PropsRunLineCoupling
 

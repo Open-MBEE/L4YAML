@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Scenarios.FlowClose
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -13,8 +14,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync
 `6f.3b3.flowmono.sync.scenarios.endpoint`
 
 **Sub-session 3 of `.flowmono.sync.scenarios`** (final `.flowmono`
-sub-session; legacy `Proofs/Output/EmitterScannability.lean` lines
-3258–3329, 4910–5005, 5274–5326, 5445–5586).
+sub-session).
 
 Four scenarios closing out `.flowmono`:
 
@@ -74,6 +74,8 @@ set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
 
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
+
 open L4YAML
 open L4YAML.CharPredicates
 open L4YAML.Indexed
@@ -129,7 +131,7 @@ at sentinel), trailing-content check, `saveSimpleKeyIx`, `peek?`.
     needIndentCheck := false }, c)`. The witness `s_pp` preserves
     every field needed by downstream init-state chains (flowLevel,
     indents, cursor position, allowDirectives, etc.).
-    Indexed twin of `scanNextToken_preprocess_init_state` (legacy 3258). -/
+    Indexed twin of `scanNextToken_preprocess_init_state`. -/
 lemma scanNextTokenIx_preprocess_init_state (input : String) (c : Char)
     (rest : List Char)
     (h_toList : input.toList = c :: rest)
@@ -222,7 +224,10 @@ lemma scanNextTokenIx_preprocess_init_state (input : String) (c : Char)
                   from by
                   show ¬ ((1 : Nat) < 1); omega,
                decide_false, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-    -- Final peek? matches some c via saveSimpleKeyIx_peek?
+    -- Final peek? matches some c via saveSimpleKeyIx_peek? (item 333's hook
+    -- moves no cursor)
+    rw [closeStaleExplicitKeyIx_of_ek_none _
+      (by first | rfl | (unfold saveSimpleKeyIx; split <;> rfl) | simp [saveSimpleKeyIx])]
     rw [show (saveSimpleKeyIx { (ScannerStateIx.mk' input).emit YamlToken.streamStart
                                 with needIndentCheck := false }).peek?
             = some c by
@@ -310,7 +315,7 @@ differ: `flowLevel = 0` and `peek? = none`. -/
 
 /-- Full `scanNextTokenIx` for `']'` at outermost flow close
     (`flowLevel = 1`, EOF). Indexed twin of `scanNextToken_flow_close_
-    seq_outermost` (legacy 4947). -/
+    seq_outermost`. -/
 lemma scanNextTokenIx_flow_close_seq_outermost (s : ScannerStateIx input)
     (hcorr : ScannerSurfCorrIx s ⟨[']'], s.cursor.pos.col⟩)
     (h_flow : s.inFlow = true)
@@ -417,7 +422,7 @@ Mirror of §3 for `}` and `scanFlowMappingEndIx`. -/
 
 /-- Full `scanNextTokenIx` for `'}'` at outermost flow close
     (`flowLevel = 1`, EOF). Indexed twin of `scanNextToken_flow_close_
-    mapping_outermost` (legacy 5274). -/
+    mapping_outermost`. -/
 lemma scanNextTokenIx_flow_close_mapping_outermost (s : ScannerStateIx input)
     (hcorr : ScannerSurfCorrIx s ⟨['}'], s.cursor.pos.col⟩)
     (h_flow : s.inFlow = true)
@@ -517,7 +522,7 @@ the init-state preprocessing (§2) through the dispatcher chain
 
 /-- `scanNextTokenIx` on the initial scanner state at `{` dispatches
     to `scanFlowMappingStartIx`, entering flow context.
-    Indexed twin of `scanNextToken_flow_open_mapping_init` (legacy 5445). -/
+    Indexed twin of `scanNextToken_flow_open_mapping_init`. -/
 lemma scanNextTokenIx_flow_open_mapping_init (input : String) (rest : List Char)
     (h_toList : input.toList = '{' :: rest) :
     let s₀ := (ScannerStateIx.mk' input).emit YamlToken.streamStart
@@ -762,7 +767,7 @@ YamlToken.flowSequenceStart`. -/
 
 /-- `scanNextTokenIx` on the initial scanner state at `[` dispatches
     to `scanFlowSequenceStartIx`, entering flow context. Indexed twin
-    of `scanNextToken_flow_open_init` (legacy 4095). -/
+    of `scanNextToken_flow_open_init`. -/
 lemma scanNextTokenIx_flow_open_seq_init (input : String) (rest : List Char)
     (h_toList : input.toList = '[' :: rest) :
     let s₀ := (ScannerStateIx.mk' input).emit YamlToken.streamStart

@@ -14,10 +14,7 @@ public import L4YAML.Proofs.Scanner.ScannerCorrectness
 
 @[expose] public section Blanket
 
-/-! # `IndexedCorrectness` — Phase 3 Step 6d.3 indexed correctness (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedCorrectness` — Phase 3 Step 6d.3 indexed correctness
 
 ## Role
 

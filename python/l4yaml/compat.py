@@ -24,11 +24,19 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, NoReturn
 
 from l4yaml import _ffi
 from l4yaml.exceptions import ConfigError, L4YAMLError
-from l4yaml.types import YamlDocument, YamlValue
+from l4yaml.types import (
+    _ALIAS,
+    _MAPPING,
+    _PLAIN,
+    _SCALAR,
+    _SEQUENCE,
+    YamlDocument,
+    YamlValue,
+)
 
 __all__: list[str] = [
     "safe_load",
@@ -87,14 +95,22 @@ def _coerce_scalar(s: str) -> Any:
 
 
 def _scalar_to_python(v: YamlValue) -> Any:
-    """Convert one scalar node to Python.
+    """Convert one scalar node to Python (kind checked by ``as_str``)."""
+    return _resolve_scalar(v, v.as_str())
+
+
+def _resolve_scalar(v: YamlValue, s: str) -> Any:
+    """Resolve the content ``s`` of the scalar node ``v``.
 
     Core Schema resolution applies to PLAIN scalars only
     (YAML 1.2 §10.3.2): a quoted or block scalar is always a string,
-    so ``"42"`` stays ``"42"`` while ``42`` becomes ``int``.
+    so ``"42"`` stays ``"42"`` while ``42`` becomes ``int``.  The style
+    is fetched only when the content would resolve to a non-string.
     """
-    s: str = v.as_str()
-    return _coerce_scalar(s) if v.style == "plain" else s
+    coerced: Any = _coerce_scalar(s)
+    if coerced is s:
+        return s
+    return coerced if v._style_id == _PLAIN else s
 
 
 # ── Recursive conversion ─────────────────────────────────────────────
@@ -110,17 +126,17 @@ def to_python(v: YamlValue) -> Any:
     - Mappings become ``dict`` (keys are converted the same way).
     - Aliases return the raw anchor name as ``str``.
     """
-    kind: str = v.kind
-    if kind == "scalar":
-        return _scalar_to_python(v)
-    if kind == "sequence":
-        return [to_python(item) for item in v.as_list()]
-    if kind == "mapping":
+    kind: int = v._kind_id
+    if kind == _SCALAR:
+        return _resolve_scalar(v, v._str_unchecked())
+    if kind == _SEQUENCE:
+        return [to_python(item) for item in v._seq_unchecked()]
+    if kind == _MAPPING:
         return {
             _scalar_to_python(k): to_python(val)
-            for k, val in v.raw_items()
+            for k, val in v._map_unchecked()
         }
-    if kind == "alias":
+    if kind == _ALIAS:
         return v.as_str()
     return None
 
@@ -165,6 +181,21 @@ def _read_dump_config(config: str | Path | None) -> str | None:
 # ── Parsing helpers (configured) ──────────────────────────────────────
 
 
+def _raise_configured_error(msg: str) -> NoReturn:
+    """Map an `l4yaml_parse_configured` error message onto an exception.
+
+    A limits config that does not parse comes back as ``config error: …``
+    (the parser does not fall back to default limits); the rest is a
+    limit violation or a syntax error in the data.
+    """
+    from l4yaml.exceptions import LimitError, ParseError
+    if msg.startswith("config error:"):
+        raise ConfigError(msg)
+    if "limit" in msg.lower() or "exceeded" in msg.lower():
+        raise LimitError(msg)
+    raise ParseError(msg)
+
+
 def _load_configured_single(input_str: str, config_yaml: str) -> YamlValue:
     """Parse a single YAML document with custom limits (YAML config)."""
     lib = _ffi.ensure_initialized()
@@ -178,10 +209,7 @@ def _load_configured_single(input_str: str, config_yaml: str) -> YamlValue:
         raw: bytes | None = lib.l4yaml_result_error_message(result)
         msg: str = raw.decode("utf-8") if raw else "unknown parse error"
         lib.l4yaml_free(result)
-        from l4yaml.exceptions import LimitError, ParseError
-        if "limit" in msg.lower() or "exceeded" in msg.lower():
-            raise LimitError(msg)
-        raise ParseError(msg)
+        _raise_configured_error(msg)
     # l4yaml_parse_configured returns a multi-doc result;
     # extract the first document's root value.
     docs_h: int = lib.l4yaml_result_docs(result)
@@ -213,10 +241,7 @@ def _load_configured_all(
         raw: bytes | None = lib.l4yaml_result_error_message(result)
         msg: str = raw.decode("utf-8") if raw else "unknown parse error"
         lib.l4yaml_free(result)
-        from l4yaml.exceptions import LimitError, ParseError
-        if "limit" in msg.lower() or "exceeded" in msg.lower():
-            raise LimitError(msg)
-        raise ParseError(msg)
+        _raise_configured_error(msg)
     docs_h: int = lib.l4yaml_result_docs(result)
     count: int = lib.l4yaml_docs_count(docs_h)
     docs: list[YamlDocument] = []
@@ -368,9 +393,9 @@ def safe_dump_all(
 
 
 # DumpConfig fields (L4YAML/Output/Dump.lean) and their value shapes,
-# used to validate user configs eagerly: the Lean config reader falls
-# back to ALL defaults when any field fails to parse, which would
-# silently drop the fidelity settings below over a cosmetic typo.
+# used to validate user configs eagerly with a field-level message: the
+# Lean config reader rejects the WHOLE config when any field fails to
+# parse, so a cosmetic typo would otherwise fail the dump outright.
 _DUMP_CONFIG_SPEC: dict[str, Any] = {
     "indent": int,
     "lineWidth": int,
@@ -417,8 +442,7 @@ def _fidelity_config(user_cfg: str | None) -> str:
             ok = val in spec
             expected = " | ".join(spec)
         elif spec is int:
-            # The Lean fields are Nat: bools and negatives would fail
-            # its reader and silently drop the whole config.
+            # The Lean fields are Nat: bools and negatives fail its reader.
             ok = isinstance(val, int) and not isinstance(val, bool) and val >= 0
             expected = "non-negative int"
         else:

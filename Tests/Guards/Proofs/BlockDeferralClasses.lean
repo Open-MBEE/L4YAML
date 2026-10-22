@@ -69,7 +69,7 @@ stamp source where it used to split on it.  §5 pins the field and the family.
 **The three that remain now carry a proposition of their own** (item 187).
 Item 185 read this class as having none — "the field's other alternative is
 `True`" — and that is true of the PACK and false of the branch: the branch
-reads the explicit-key register LIVE, and `ekl_dis_eq_park` carries that
+reads the explicit-key register LIVE, and `ekl_disp_none_of_park_none` carries that
 reading back to the park the carrier would have to be paid at.  `_h_park` is
 that fact, and it is what refutes the cheap carrier item 186 priced.  §6 pins
 the re-pricing, the census that re-derives it, and the class's own inputs.
@@ -238,11 +238,12 @@ example (sp_start sp_X sp_scan' : SurfPos) (s' sc s_dis : ScannerState)
     reads the register on the DISPATCH state, and the park is where a carrier
     would have to be paid. -/
 example {sc s_prep : ScannerState} {c : Char}
-    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
+    (h : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
+    (h0 : sc.explicitKeyLine = none) :
     (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
-    else s_prep).explicitKeyLine = sc.explicitKeyLine :=
-  ekl_dis_eq_park h
+    else s_prep).explicitKeyLine = none :=
+  ekl_disp_none_of_park_none h h0
 
 /-! ~~`compact`: the stamp branch AND the inline residue, which is what says the
     two classes overlap at these two sites.~~  **Item 209 deleted the wrapper**
@@ -610,7 +611,7 @@ repeating the pattern.
 
 **And the register is the wrong carrier, not merely an expensive one.**  §1's
 `_h_park` states why: at every site in this class the branch reads
-`explicitKeyLine ≠ none`, and `ekl_dis_eq_park` carries that reading back to
+`explicitKeyLine ≠ none`, and `ekl_disp_none_of_park_none` carries that reading back to
 the park.  So `… ∨ sc.explicitKeyLine = none` is FALSE wherever the class
 stands; narrowing the punt relocates the obligation onto the producers rather
 than discharging it, and there it is the PACK that must be paid.
@@ -685,7 +686,9 @@ private def classAReg (input : String) : Option (Option Nat × Int × Nat) :=
 #guard classAReg "?\n  - a\n: w\n" == some (some 0, 0, 0)
 #guard classAReg "? -\n: - w\n" == some (some 0, 0, 0)
 #guard classAReg "?\n  &p a\n: w\n" == some (some 0, 0, 0)
-#guard classAReg "?\na\n: w\n" == some (some 0, 0, 0)
+-- Item 333: the sibling `a` at the `?`'s column ends the register in
+-- preprocessing, so the `:` below reads it DEAD and the row leaves class A.
+#guard classAReg "?\na\n: w\n" == none
 -- Item 301: the row above reads the register at a `:` the scanner then REFUSES
 -- (`invalidBareDocument 1 0` — a plain scalar at the frame's own column); the
 -- register family is not the accepted family.  §30.
@@ -4636,7 +4639,7 @@ decides it. -/
 #guard pins "?\n- !!str\n: w\n" == ("scan-accepted", "+STR +DOC +MAP +SEQ =VAL <tag:yaml.org,2002:str> : -SEQ =VAL :w -MAP -DOC -STR")
 
 /-! **The consumer side is already in hand.**  All three applications pass
-`_h_park` as `fun h => h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h))`
+`_h_park` as `fun h => h_src (Or.inl (ekl_disp_none_of_park_none h_preprocess h))`
 — so once the pack's alternative carries `sc.explicitKeyLine = none` instead of
 `True`, the `inr` branch at each site is that term, and the wrapper goes.  The
 price of that narrowing is the census above: 20 register-dead proofs, 9 faces

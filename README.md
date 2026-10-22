@@ -787,6 +787,12 @@ port must also re-prove the corresponding `Indexed*` lemmas:
 Issues and pull requests are welcome. Please open an issue before starting
 substantial work so we can discuss scope and proof strategy.
 
+Proof work follows [`Blueprint/06-discipline.md`](Blueprint/06-discipline.md);
+[`AGENTS.md`](AGENTS.md) is the one-screen orientation (sources of truth,
+build and gates, the closure-log item protocol, campaign vocabulary), and
+`python3 scripts/docs_nav.py next` finds the active mandate in `DOCS.md`
+without paging it.
+
 ## Acknowledgments
 
 **Heath Sanchez**, [Metalogic Labs](https://metalogiclabs.xyz/) — two

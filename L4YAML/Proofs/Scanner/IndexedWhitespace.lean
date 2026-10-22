@@ -10,10 +10,7 @@ public import L4YAML.Proofs.Foundation.CharClass
 
 @[expose] public section Blanket
 
-/-! # `IndexedWhitespace` — Phase 3 character/whitespace spec proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedWhitespace` — Phase 3 character/whitespace spec proofs
 
 This file lands the *bidirectional* proofs that bridge the runtime
 recognisers in `Scanner.Indexed` to the YAML 1.2.2 spec predicates in

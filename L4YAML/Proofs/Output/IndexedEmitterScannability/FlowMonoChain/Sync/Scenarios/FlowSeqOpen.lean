@@ -21,8 +21,8 @@ the sequence opener. The `emit_scans_in_flowIx` induction (sequence
 case) *does*, so it is ported here.
 
 This is the direct sequence analog of `FlowClose` §3
-(`scanNextTokenIx_flow_open_mapping_nested`, legacy 5329), itself the
-nested analog of `scanNextToken_flow_open_nested` (legacy 4251).
+(`scanNextTokenIx_flow_open_mapping_nested`), itself the
+nested analog of `scanNextToken_flow_open_nested`.
 Every step is identical with `'{' ↦ '['`,
 `scanFlowMappingStartIx ↦ scanFlowSequenceStartIx`,
 `dispatchFlowIndicators_brace ↦ dispatchFlowIndicators_bracket`, and
@@ -59,7 +59,7 @@ increment `flowLevel`, yield `StackEndLineOnLineIx s' s'.line`
 inheriting the prior `EndLineOnLineIx s`. -/
 
 /-- Full `scanNextTokenIx` for `'['` inside an existing flow context.
-    Indexed twin of `scanNextToken_flow_open_nested` (legacy 4251).
+    Indexed twin of `scanNextToken_flow_open_nested`.
     Sequence analog of `scanNextTokenIx_flow_open_mapping_nested`. -/
 lemma scanNextTokenIx_flow_open_seq_nested (s : ScannerStateIx input)
     (rest : List Char)

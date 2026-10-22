@@ -1,6 +1,7 @@
 module
 
 public import L4YAML.Scanner.Scanner
+public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Output.Emitter
 public import L4YAML.Parser.Composition
 public import L4YAML.Proofs.Parser.ParserGrammableBase
@@ -1797,6 +1798,114 @@ def testHandleBlockMappingKeyEntryMono (state : IO.Ref TestCollector) : IO Unit 
   checkBMKEMono state "complex-1" "a:\n  b:\n    - c\n    - d\ne: f"
   checkBMKEMono state "complex-2" "root:\n  list:\n    - item1\n    - item2\n  map:\n    key: value"
 
+/-! ## Priority 8 — `closeStaleExplicitKey_cases` and the stale-register projections (item 333)
+
+`closeStaleExplicitKey` (legacy) and `closeStaleExplicitKeyIx` (indexed) end a
+pending explicit key whose entry a sibling has closed.  The lemma family in
+`L4YAML/Proofs/Scanner/CloseStaleExplicitKey{,Ix}.lean` claims (i) the hook is
+the identity or EXACTLY the reset of `explicitKeyLine`/`explicitKeyCol`
+(`_cases`), (ii) every other projection passes through (`_tokens`, `_offset`,
+`_flowLevel`, `_simpleKey`, …), (iii) the identity holds in flow and on a dead
+register (`_of_inFlow`, `_of_ek_none`).
+
+**Risk:** LOW on (i)/(iii) — they are by `split`.  MEDIUM on (ii) and on
+which arm fires: the arm is the behaviour item 333 measured (`? a⏎[1]: b`
+re-reads as `{a: null, [1]: b}`), and the exceptions `:`/`-`/`?` are what keep
+`?⏎- a⏎- b⏎: v` a sequence key.  A wrong exception set would compile and pass
+the lemmas (they hold for ANY exception set) — only an instantiation sees it.
+
+**Audit approach:** build states parked at a line start with the register set
+by hand (live/dead, block/flow, sibling at/left of/right of the `?` column,
+each exception character, same line, end of input), run both hooks, and check
+(a) the result is one of the two arms with ALL other projections equal,
+(b) the arm is the one the input owes, (c) legacy and indexed agree.
+-/
+
+open L4YAML.Scanner.Indexed
+
+/-- A legacy state parked at `(offset, line, col)` of `input` with the explicit-key
+    register and flow depth set by hand. -/
+def staleStateAt (input : String) (offset line col : Nat) (ek : Option Nat) (ekc : Int)
+    (flowLevel : Nat) : ScannerState :=
+  let s0 : ScannerState := ScannerState.mk' input
+  { s0 with offset := offset, line := line, col := col,
+            explicitKeyLine := ek, explicitKeyCol := ekc, flowLevel := flowLevel }
+
+/-- The indexed twin of `staleStateAt` (ASCII inputs: `offset` characters = bytes). -/
+def staleStateIxAt (input : String) (offset : Nat) (ek : Option Nat) (ekc : Int)
+    (flowLevel : Nat) : ScannerStateIx input :=
+  let t0 : ScannerStateIx input := (ScannerStateIx.mk' input).advanceN offset
+  { t0 with explicitKeyLine := ek, explicitKeyCol := ekc, flowLevel := flowLevel }
+
+/-- Every projection of a legacy state EXCEPT the register, as one comparable tuple. -/
+def nonRegisterView (s : ScannerState) :
+    Nat × Nat × Nat × Nat × Nat × Nat × Bool × Nat × Bool :=
+  (s.offset, s.line, s.col, s.tokens.size, s.indents.size, s.flowLevel,
+   s.simpleKeyAllowed, s.explicitKeyStack.size, s.needIndentCheck)
+
+def nonRegisterViewIx {input : String} (s : ScannerStateIx input) :
+    Nat × Nat × Nat × Nat × Nat × Nat × Bool × Nat × Bool :=
+  (s.cursor.pos.offset, s.cursor.pos.line, s.cursor.pos.col, s.tokens.size, s.indents.size,
+   s.flowLevel, s.simpleKeyAllowed, s.explicitKeyStack.size, s.needIndentCheck)
+
+/-- Which arm of `closeStaleExplicitKey_cases` a result took: `some true` = reset,
+    `some false` = identity, `none` = neither (the dichotomy is violated). -/
+def staleArm (before after : Option Nat × Int) : Option Bool :=
+  if after == before then some false
+  else if after == (none, -1) then some true
+  else none
+
+/-- One scenario: `input`, the cursor at the start of line `line` (byte `offset`, column `col`),
+    the register `(ek, ekc)`, flow depth, and the arm the input owes (`true` = reset). -/
+def checkStaleCase (state : IO.Ref TestCollector) (label input : String)
+    (offset line col : Nat) (ek : Option Nat) (ekc : Int) (flowLevel : Nat)
+    (expectReset : Bool) : IO Unit := do
+  let s := staleStateAt input offset line col ek ekc flowLevel
+  let s' := closeStaleExplicitKey s
+  let armL := staleArm (s.explicitKeyLine, s.explicitKeyCol) (s'.explicitKeyLine, s'.explicitKeyCol)
+  checkM state s!"{label}: legacy result is one of the two arms" armL.isSome
+    s!"register went to ({repr s'.explicitKeyLine}, {s'.explicitKeyCol})"
+  checkM state s!"{label}: legacy other projections pass through"
+    (nonRegisterView s' == nonRegisterView s) s!"{repr (nonRegisterView s')} ≠ {repr (nonRegisterView s)}"
+  checkM state s!"{label}: legacy arm is {if expectReset then "reset" else "identity"}"
+    (armL == some expectReset) s!"got {repr armL}"
+  let t := staleStateIxAt input offset ek ekc flowLevel
+  checkM state s!"{label}: indexed cursor parked at the same place"
+    (t.cursor.pos.line == line && t.cursor.pos.col == col) s!"cursor at {t.cursor.pos.line}:{t.cursor.pos.col}"
+  let t' := t.closeStaleExplicitKeyIx
+  let armI := staleArm (t.explicitKeyLine, t.explicitKeyCol) (t'.explicitKeyLine, t'.explicitKeyCol)
+  checkM state s!"{label}: indexed result is one of the two arms" armI.isSome
+    s!"register went to ({repr t'.explicitKeyLine}, {t'.explicitKeyCol})"
+  checkM state s!"{label}: indexed other projections pass through"
+    (nonRegisterViewIx t' == nonRegisterViewIx t) s!"{repr (nonRegisterViewIx t')} ≠ {repr (nonRegisterViewIx t)}"
+  checkM state s!"{label}: indexed arm agrees with legacy" (armI == armL) s!"indexed {repr armI}, legacy {repr armL}"
+
+def testCloseStaleExplicitKey (state : IO.Ref TestCollector) : IO Unit := do
+  setCategory state "Priority 8: closeStaleExplicitKey_cases (item 333)"
+  -- `_of_ek_none`: a dead register is left alone whatever follows.
+  checkStaleCase state "dead-register-sibling" "? a\nb: c" 4 1 0 none (-1) 0 false
+  checkStaleCase state "dead-register-value" "? a\n: b" 4 1 0 none (-1) 0 false
+  -- `_of_inFlow`: in flow the hook is the identity even at a sibling.
+  checkStaleCase state "live-in-flow" "? a\n[1]: b" 4 1 0 (some 0) 0 1 false
+  checkStaleCase state "live-in-flow-deep" "? a\nb: c" 4 1 0 (some 0) 0 3 false
+  -- The reset arm: a sibling entry at the `?`'s column, or left of it.
+  checkStaleCase state "sibling-flow-key" "? a\n[1]: b" 4 1 0 (some 0) 0 0 true
+  checkStaleCase state "sibling-plain-key" "? a\nz: v" 4 1 0 (some 0) 0 0 true
+  checkStaleCase state "sibling-anchor" "? &p\n[1]: b" 5 1 0 (some 0) 0 0 true
+  checkStaleCase state "sibling-left-of-key" "  ? a\nz: v" 6 1 0 (some 0) 2 0 true
+  checkStaleCase state "sibling-quoted" "? a\n\"q\": v" 4 1 0 (some 0) 0 0 true
+  -- The three exceptions: the explicit value, the sequence continuing the key, the next key.
+  checkStaleCase state "explicit-value" "? a\n: b" 4 1 0 (some 0) 0 0 false
+  checkStaleCase state "seq-continuation" "?\n- a\n- b\n: v" 2 1 0 (some 0) 0 0 false
+  checkStaleCase state "seq-continuation-2" "?\n- a\n- b\n: v" 6 2 0 (some 0) 0 0 false
+  checkStaleCase state "next-explicit-key" "? a\n? b\n: c" 4 1 0 (some 0) 0 0 false
+  -- Right of the `?`: the key's own content continues.
+  checkStaleCase state "deeper-content" "? a\n  b" 6 1 2 (some 0) 0 0 false
+  checkStaleCase state "deeper-sibling-column" "  ? a\n    z: v" 10 1 4 (some 0) 2 0 false
+  -- Same line as the `?`, and end of input: nothing to close.
+  checkStaleCase state "same-line" "? a b" 4 0 4 (some 0) 0 0 false
+  checkStaleCase state "end-of-input" "? a\n" 4 1 0 (some 0) 0 0 false
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -1808,6 +1917,7 @@ def collectTests : IO VerifiedSuiteResult := do
   test_filtered_prefix state
   testFlowParserHelpers state
   testHandleBlockMappingKeyEntryMono state
+  testCloseStaleExplicitKey state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

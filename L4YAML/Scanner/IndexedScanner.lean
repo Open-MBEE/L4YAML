@@ -11,11 +11,7 @@ public import L4YAML.Spec.CharPredicates
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `IndexedScanner` — Phase 3 character/whitespace layer (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6). The legacy `L4YAML/Scanner/*.lean`
-remains the production scanner for the duration of Phase 3 Steps 2–5.
+/-! # `IndexedScanner` — Phase 3 character/whitespace layer
 
 ## What this layer provides
 

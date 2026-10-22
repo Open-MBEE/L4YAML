@@ -531,7 +531,7 @@ corrBlock=0 corrScan=1 via="]
 def expectedLadder : List String :=
   ["scanNextToken_dispatchBlockIndicators holders=106 edge=0 chain=0",
    "scanNextToken_dispatchContent holders=140 edge=2 chain=1",
-   "scanNextToken_preprocess holders=218 edge=17 chain=6"]
+   "scanNextToken_preprocess holders=219 edge=17 chain=6"]
 
 /-- **What §1's proofs spend.**  `drop=false` is the non-circularity check
     items 242 and 243 also carry: a measurement of what the escape costs may

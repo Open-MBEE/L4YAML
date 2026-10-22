@@ -8,6 +8,7 @@ module
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Detail
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Sync.Invariant
 public import L4YAML.Proofs.Scanner.IndexedIndent
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -66,6 +67,8 @@ mid-chain (this file + `.flowclose`) share the same `saveSimpleKeyIx
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.CharPredicates
@@ -135,7 +138,9 @@ lemma scanNextTokenIx_preprocess_flow (s : ScannerStateIx input) (c : Char)
   simp only [show ¬(s.indents.size < s.indents.size) from by omega,
     decide_false, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
   -- saveSimpleKeyIx s.peek? = s.peek? = some c
-  rw [saveSimpleKeyIx_peek?, h_pk]
+  rw [closeStaleExplicitKeyIx_peek, saveSimpleKeyIx_peek?, h_pk]
+  rw [closeStaleExplicitKeyIx_of_inFlow _
+    (by unfold ScannerStateIx.inFlow; rw [saveSimpleKeyIx_flowLevel]; exact h_flow)]
 
 /-! ## §1b  `scanNextTokenIx_preprocess_flow_ws1`
 
@@ -270,7 +275,9 @@ lemma scanNextTokenIx_preprocess_flow_ws1 (s : ScannerStateIx input) (c : Char)
     simp only [h_flow_adv, Bool.not_true, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
     simp only [show ¬(s.advance.indents.size < s.advance.indents.size) from by omega,
       decide_false, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-    rw [saveSimpleKeyIx_peek?, h_next]
+    rw [closeStaleExplicitKeyIx_peek, saveSimpleKeyIx_peek?, h_next]
+    rw [closeStaleExplicitKeyIx_of_inFlow _
+      (by unfold ScannerStateIx.inFlow; rw [saveSimpleKeyIx_flowLevel]; exact h_flow_adv)]
   have h_pp_adv : scanNextTokenIx_preprocess s.advance =
       .ok (some (saveSimpleKeyIx s.advance, c)) :=
     scanNextTokenIx_preprocess_flow s.advance c rest (s.cursor.pos.col + 1)

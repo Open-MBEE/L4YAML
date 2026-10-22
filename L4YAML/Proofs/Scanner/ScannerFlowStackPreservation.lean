@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -35,6 +36,8 @@ flow frames) consume it.
 set_option maxHeartbeats 1000000
 
 namespace L4YAML.Proofs.ScannerFlowStack
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -744,7 +747,7 @@ lemma preprocess_preserves_flowStack (s : ScannerState) (s1 : ScannerState) (c :
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_flowStack]
+            rw [closeStaleExplicitKey_flowStack, saveSimpleKey_preserves_flowStack]
             show (unwindIndents s_skip s_skip.col).flowStack = s.flowStack
             rw [unwindIndents_preserves_flowStack]; exact h_stack_skip
       · split at h
@@ -753,7 +756,7 @@ lemma preprocess_preserves_flowStack (s : ScannerState) (s1 : ScannerState) (c :
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_flowStack]; exact h_stack_skip
+            rw [closeStaleExplicitKey_flowStack, saveSimpleKey_preserves_flowStack]; exact h_stack_skip
 
 -- Cloned from `ScannerCorrectness` lines 4302-4308 (`_preserves_flowStack` twin).
 lemma advanceNLoop_preserves_flowStack (s : ScannerState) (n : Nat) :

@@ -18,10 +18,7 @@ public import L4YAML.Proofs.Parser.IndexedWfaScannable
 import all Init.Data.Range.Basic
 @[expose] public section Blanket
 
-/-! # `IndexedWfa` — Phase 3 Step 6d.2 indexed WFA proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `IndexedWfa` — Phase 3 Step 6d.2 indexed WFA proofs
 
 ## Role
 

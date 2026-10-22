@@ -26,10 +26,7 @@ set_option compiler.relaxedMetaCheck true
 
 @[expose] public section Blanket
 
-/-! # `IndexedWellBehaved` — Phase 3 Step 6d.1b indexed infrastructure (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit (Guardrail 1).
+/-! # `IndexedWellBehaved` — Phase 3 Step 6d.1b indexed infrastructure
 
 ## Scope of Step 6d.1b (this commit)
 

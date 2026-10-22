@@ -12,10 +12,7 @@ public import L4YAML.Parser.AnchorIndex
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `ParseStateIx` — Phase 3 Step 6a indexed parser state (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `ParseStateIx` — Phase 3 Step 6a indexed parser state
 
 ## Role
 

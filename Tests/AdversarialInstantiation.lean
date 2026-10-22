@@ -1896,11 +1896,12 @@ def testCloseStaleExplicitKey (state : IO.Ref TestCollector) : IO Unit := do
   checkStaleCase state "sibling-anchor" "? &p\n[1]: b" 5 1 0 (some 0) 0 0 true
   checkStaleCase state "sibling-left-of-key" "  ? a\nz: v" 6 1 0 (some 0) 2 0 true
   checkStaleCase state "sibling-quoted" "? a\n\"q\": v" 4 1 0 (some 0) 0 0 true
-  -- The three exceptions: the explicit value, the sequence continuing the key, the next key.
+  -- The two exceptions: the explicit value, the sequence continuing the key.  The next key
+  -- is no longer one (item 338): the hook re-reads under it, and `scanKey` overwrites.
   checkStaleCase state "explicit-value" "? a\n: b" 4 1 0 (some 0) 0 0 false
   checkStaleCase state "seq-continuation" "?\n- a\n- b\n: v" 2 1 0 (some 0) 0 0 false
   checkStaleCase state "seq-continuation-2" "?\n- a\n- b\n: v" 6 2 0 (some 0) 0 0 false
-  checkStaleCase state "next-explicit-key" "? a\n? b\n: c" 4 1 0 (some 0) 0 0 false
+  checkStaleCase state "next-explicit-key" "? a\n? b\n: c" 4 1 0 (some 0) 0 0 true
   -- Right of the `?`: the key's own content continues.
   checkStaleCase state "deeper-content" "? a\n  b" 6 1 2 (some 0) 0 0 false
   checkStaleCase state "deeper-sibling-column" "  ? a\n    z: v" 10 1 4 (some 0) 2 0 false
@@ -2504,6 +2505,105 @@ def testDedentHook (state : IO.Ref TestCollector) : IO Unit := do
   checkM state "parse/dedent hook — value left of a dead key still refused"
     (!accepts "- a\n- ? a\n: a\n") ""
 
+/-! ## Priority 15 — the hook fires on `col ≤ ekCol` alone; the token-level carrier (item 338, row 12)
+
+Item 338 proves `PendingKeySound.Sound` (register = innermost pending key
+outside flow, slot 0 of `explicitKeyStack` = innermost inside, one saved pair
+per flow level, marked slots on columns ≥ 0) through every `scanNextToken`
+arm.  Two exemptions of the hook had to go for `preprocess_sound`: the
+same-line guard (`s.line != ekLine`), which let a register outlive an unwind
+that popped its level, and the `?` exemption, which left the register stale
+under a `?` that is NOT a key indicator (`?x`).  A key `?` never read the
+register (`scanKey` overwrites it), so for it the hook's re-read is invisible.
+
+**Risk:** the hook must still be the identity at or right of the register
+column, both pipelines must agree, and `PendingKeys.innermost` must pick the
+DEEPEST marked slot (the lemma `marked_le_innermost` leans on it).
+
+**Audit approach:** the hook under a non-key `?`, under a key `?` at the key's
+own column, and with a same-line register (synthetic); `innermost` on a stack
+with two marked slots and after each `closeAt`; both parsers on the inputs the
+change can touch.
+-/
+
+def testHookCarrier (state : IO.Ref TestCollector) : IO Unit := do
+  -- `- ? a⏎?x`: after the unwind to column 0 the `?`'s level (column 2) is gone; the next
+  -- character is a `?` that is NOT a key indicator.  Item 333 exempted `?` outright and left
+  -- the register alive; now it dies.
+  let nonKey := "- ? a\n?x"
+  let s := { staleStateAt nonKey 6 1 0 (some 0) 2 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := true }],
+    pendingKeys := #[none, none] }
+  checkM state "hook/non-key `?` left of the key: register dies"
+    (((closeStaleExplicitKey s).explicitKeyLine, (closeStaleExplicitKey s).explicitKeyCol)
+      == (none, -1)) ""
+  let t := { staleStateIxAt nonKey 6 (some 0) 2 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := true }],
+    pendingKeys := #[none, none] }
+  checkM state "hook/non-key `?` left of the key: register dies (indexed)"
+    ((t.closeStaleExplicitKeyIx.explicitKeyLine, t.closeStaleExplicitKeyIx.explicitKeyCol)
+      == (none, -1)) ""
+  -- `? a⏎? b`: a key `?` at the key's own column.  The hook re-reads (the slot at column 0 is
+  -- the register's own, so the re-read is `(none, -1)`); `scanKey` then marks it again.
+  let sibling := "? a\n? b"
+  let s2 := { staleStateAt sibling 4 1 0 (some 0) 0 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := false }],
+    pendingKeys := #[none, some 0] }
+  checkM state "hook/key `?` at the key's column: slot cleared, register re-read"
+    ((closeStaleExplicitKey s2).pendingKeys == #[none, none]
+      && (closeStaleExplicitKey s2).explicitKeyLine == none) ""
+  let t2 := { staleStateIxAt sibling 4 (some 0) 0 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := false }],
+    pendingKeys := #[none, some 0] }
+  checkM state "hook/key `?` at the key's column: slot cleared, register re-read (indexed)"
+    (t2.closeStaleExplicitKeyIx.pendingKeys == #[none, none]
+      && t2.closeStaleExplicitKeyIx.explicitKeyLine == none) ""
+  -- Same-line register, cursor at or left of its column (unreachable by scanning; the dropped
+  -- guard).  The hook now fires; before item 338 it was the identity.
+  let same := { staleStateAt "? a" 0 0 0 (some 0) 2 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 2, isSequence := false }],
+    pendingKeys := #[none, some 0] }
+  checkM state "hook/same-line register left of the cursor: fires"
+    ((closeStaleExplicitKey same).explicitKeyLine == none) ""
+  checkM state "hook/same-line register left of the cursor: fires (indexed)"
+    (({ staleStateIxAt "? a" 0 (some 0) 2 0 with
+        indents := #[{ column := -1, isSequence := false }, { column := 2, isSequence := false }],
+        pendingKeys := #[none, some 0] }).closeStaleExplicitKeyIx.explicitKeyLine == none) ""
+  -- Right of the register column the hook is the identity (both pipelines).
+  let right := staleStateAt "? a: b" 3 0 3 (some 0) 0 0
+  checkM state "hook/cursor right of the key: identity"
+    ((closeStaleExplicitKey right).explicitKeyLine == some 0) ""
+  checkM state "hook/cursor right of the key: identity (indexed)"
+    ((staleStateIxAt "? a: b" 3 (some 0) 0 0).closeStaleExplicitKeyIx.explicitKeyLine == some 0) ""
+  -- `PendingKeys.innermost` picks the DEEPEST marked slot; `closeAt` erases one column only.
+  let cols : Array Int := #[-1, 0, 2]
+  let pks : Array (Option Nat) := #[none, some 0, some 1]
+  checkM state "innermost/two marked slots: the deepest wins"
+    (PendingKeys.innermost cols pks == (some 1, 2)) s!"{repr (PendingKeys.innermost cols pks)}"
+  checkM state "innermost/closeAt the deep slot: the shallow one surfaces"
+    (PendingKeys.innermost cols (PendingKeys.closeAt cols pks 2) == (some 0, 0)) ""
+  checkM state "innermost/closeAt the shallow slot: the deep one stays"
+    (PendingKeys.innermost cols (PendingKeys.closeAt cols pks 0) == (some 1, 2)) ""
+  checkM state "innermost/closeAt an unmarked column: no change"
+    (PendingKeys.closeAt cols pks 7 == pks) ""
+  checkM state "innermost/all slots empty: (none, -1)"
+    (PendingKeys.innermost cols #[none, none, none] == (none, -1)) ""
+  -- End to end: both parsers agree on every input the change can touch, and every verdict is
+  -- libyaml's and the pre-item-338 binaries' (`? a⏎? b` two null-valued keys; `- ? a⏎?x` and
+  -- `- ? a⏎? b` are refused by libyaml and by both pipelines before and after the change).
+  let accepts (input : String) : Bool := match parseYaml input with | .ok _ => true | .error _ => false
+  let acceptsIx (input : String) : Bool :=
+    match L4YAML.TokenParser.Indexed.parseYamlIx input with | .ok _ => true | .error _ => false
+  for (label, input, expected) in [
+      ("sibling explicit keys", "? a\n? b\n", true),
+      ("non-key ? after a dedent", "- ? a\n?x\n", false),
+      ("key ? after a dedent", "- ? a\n? b\n", false),
+      ("nested ? family (item 335)", "?\n  ? y\n  : z\n: w: x\n", true),
+      ("dedent to a plain entry (item 337)", "- ? a\n- b\n", true),
+      ("value left of a dead key", "- a\n- ? a\n: a\n", false)] do
+    checkM state s!"parse/hook carrier — legacy: {label}" (accepts input == expected) ""
+    checkM state s!"parse/hook carrier — indexed: {label}" (acceptsIx input == expected) ""
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -2522,6 +2622,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testFrameLevelKinds state
   testPendingKeys state
   testDedentHook state
+  testHookCarrier state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

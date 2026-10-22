@@ -23,6 +23,7 @@ public import L4YAML.Proofs.Scanner.PreprocessIndentStable
 public import L4YAML.Proofs.Scanner.FlowIndentStable
 public import L4YAML.Proofs.Scanner.IndentStackBase
 public import L4YAML.Proofs.Scanner.IndentStackCover
+public import L4YAML.Proofs.Scanner.PendingKeySound
 public import L4YAML.Proofs.Scanner.StaleCursorFloor
 public import L4YAML.Proofs.Scanner.ExplicitKeyCoupling
 public import L4YAML.Proofs.Coupling.TabIndentBridge

@@ -12,16 +12,13 @@ public import L4YAML.Proofs.Foundation.StringProperties
 
 @[expose] public section Blanket
 
-/-! # `IndexedScalar` — Phase 3 Step 4a scalar-layer proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedScalar` — Phase 3 Step 4a scalar-layer proofs
 
 This file lands the proofs for the **single-line scalar** subset
 implemented in `IndexedScanner.lean` Layer E (E1 escapes, E2
 double-quoted, E3 single-quoted, E4 plain). Multi-line variants and
 block scalars (literal + folded) — the Step 4b sub-cluster — defer
-their proofs to the matching staging file.
+their proofs to the matching file.
 
 ## What's covered
 

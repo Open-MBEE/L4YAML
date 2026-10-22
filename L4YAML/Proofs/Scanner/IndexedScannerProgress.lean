@@ -12,9 +12,6 @@ public import L4YAML.Proofs.Scanner.IndexedScalar
 
 /-! # `IndexedScannerProgress` — Phase 3 Step 6f.3b3.internals.progress
 
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6f).
-
 ## Scope (`.progress.leaf` + `.progress.capstone`)
 
 Indexed twin of `Proofs/Scanner/ScannerProgress.lean` + the per-leaf,

@@ -255,3 +255,4 @@ import Tests.Guards.Proofs.SuiteGuards.Scalar
 import Tests.Guards.Proofs.TagResolution
 import Tests.Guards.Proofs.TestSuite
 import Tests.Guards.Schema.Dump
+import Tests.Guards.Proofs.GhostIndexCensus

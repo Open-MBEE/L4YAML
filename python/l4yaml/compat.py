@@ -28,7 +28,15 @@ from typing import Any, Iterator, NoReturn
 
 from l4yaml import _ffi
 from l4yaml.exceptions import ConfigError, L4YAMLError
-from l4yaml.types import YamlDocument, YamlValue
+from l4yaml.types import (
+    _ALIAS,
+    _MAPPING,
+    _PLAIN,
+    _SCALAR,
+    _SEQUENCE,
+    YamlDocument,
+    YamlValue,
+)
 
 __all__: list[str] = [
     "safe_load",
@@ -87,14 +95,22 @@ def _coerce_scalar(s: str) -> Any:
 
 
 def _scalar_to_python(v: YamlValue) -> Any:
-    """Convert one scalar node to Python.
+    """Convert one scalar node to Python (kind checked by ``as_str``)."""
+    return _resolve_scalar(v, v.as_str())
+
+
+def _resolve_scalar(v: YamlValue, s: str) -> Any:
+    """Resolve the content ``s`` of the scalar node ``v``.
 
     Core Schema resolution applies to PLAIN scalars only
     (YAML 1.2 §10.3.2): a quoted or block scalar is always a string,
-    so ``"42"`` stays ``"42"`` while ``42`` becomes ``int``.
+    so ``"42"`` stays ``"42"`` while ``42`` becomes ``int``.  The style
+    is fetched only when the content would resolve to a non-string.
     """
-    s: str = v.as_str()
-    return _coerce_scalar(s) if v.style == "plain" else s
+    coerced: Any = _coerce_scalar(s)
+    if coerced is s:
+        return s
+    return coerced if v._style_id == _PLAIN else s
 
 
 # ── Recursive conversion ─────────────────────────────────────────────
@@ -110,17 +126,17 @@ def to_python(v: YamlValue) -> Any:
     - Mappings become ``dict`` (keys are converted the same way).
     - Aliases return the raw anchor name as ``str``.
     """
-    kind: str = v.kind
-    if kind == "scalar":
-        return _scalar_to_python(v)
-    if kind == "sequence":
-        return [to_python(item) for item in v.as_list()]
-    if kind == "mapping":
+    kind: int = v._kind_id
+    if kind == _SCALAR:
+        return _resolve_scalar(v, v._str_unchecked())
+    if kind == _SEQUENCE:
+        return [to_python(item) for item in v._seq_unchecked()]
+    if kind == _MAPPING:
         return {
             _scalar_to_python(k): to_python(val)
-            for k, val in v.raw_items()
+            for k, val in v._map_unchecked()
         }
-    if kind == "alias":
+    if kind == _ALIAS:
         return v.as_str()
     return None
 

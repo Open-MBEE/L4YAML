@@ -66,8 +66,9 @@ def testAliasLimits (state : IO.Ref TestCollector) : IO Unit := do
   setCategory state "Alias Limits"
 
   -- Billion-laugh: exponential alias expansion
-  -- The parser eagerly resolves anchors during scanning, so anchor values
-  -- grow exponentially. composeLimited catches this via anchor node count.
+  -- The parser eagerly resolves anchors during scanning, so the anchor table
+  -- is a DAG whose tree size grows exponentially (sharing keeps memory
+  -- linear). composeLimited catches this via a budgeted anchor node count.
   let billionLaugh := "---\n" ++
     "a0: &a0 x\n" ++
     "a1: &a1 [*a0, *a0]\n" ++

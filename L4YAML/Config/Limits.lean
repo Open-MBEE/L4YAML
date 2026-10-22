@@ -9,8 +9,6 @@ public import L4YAML.Spec.Types
 public import L4YAML.Token.Token
 public import L4YAML.Scanner.Scanner
 public import L4YAML.Parser.IndexedComposition
-public import Std.Data.HashMap
-public import Std.Data.HashSet
 
 @[expose] public section Blanket
 
@@ -403,55 +401,127 @@ def getNodeTag : YamlValue → Option String
   | .mapping _ _ tag _ => tag
   | .alias _ => none
 
-/-- Distinct tags seen so far.  `validateTag` runs once per distinct tag, on
-    first sight, and `note` fails as soon as the number of distinct tags
-    passes `maxUniqueTags` — so a tag-dense document costs O(occurrences)
-    hash lookups and never more than `maxUniqueTags + 1` validations. -/
-structure TagCensus where
-  seen : Std.HashSet String := {}
-
-/-- Record one tag occurrence (a `none` tag is a no-op). -/
-def TagCensus.note (c : TagCensus) (tag : Option String) (limits : TagLimits)
-    : Except TagSecurityError TagCensus := do
-  match tag with
-  | none => return c
-  | some t =>
-    if c.seen.contains t then return c
-    let seen := c.seen.insert t
-    if seen.size > limits.maxUniqueTags then
-      throw (.tooManyUniqueTags seen.size limits.maxUniqueTags)
-    validateTag t limits
-    return { seen }
-
-/-- Collect all explicit tags in a value tree (unique, first occurrence
-    first, document order). -/
+/-- Collect all explicit tags in a value tree (unique). -/
 partial def collectTags (v : YamlValue) : List String :=
-  (go v ({}, #[])).2.toList
+  go v [] |>.eraseDups
 where
-  go : YamlValue → Std.HashSet String × Array String → Std.HashSet String × Array String
-    | .scalar s, acc => noteTag s.tag acc
+  go : YamlValue → List String → List String
+    | .scalar s, acc => match s.tag with | some t => t :: acc | none => acc
     | .sequence _ items tag _, acc =>
-      items.foldl (fun a item => go item a) (noteTag tag acc)
+      let acc := match tag with | some t => t :: acc | none => acc
+      items.foldl (fun a item => go item a) acc
     | .mapping _ pairs tag _, acc =>
-      pairs.foldl (fun a (k, v) => go v (go k a)) (noteTag tag acc)
+      let acc := match tag with | some t => t :: acc | none => acc
+      pairs.foldl (fun a (k, v) => go v (go k a)) acc
     | .alias _, acc => acc
-  noteTag (tag : Option String) (acc : Std.HashSet String × Array String) :=
-    match tag with
-    | some t => if acc.1.contains t then acc else (acc.1.insert t, acc.2.push t)
-    | none => acc
 
-/-- Validate all tags in a value tree against tag limits, stopping at the
-    first offending tag or as soon as `maxUniqueTags` is passed. -/
-partial def validateValueTags (v : YamlValue) (limits : TagLimits) : Except TagSecurityError Unit := do
-  let _ ← go v {}
+/-- Validate all tags in a value tree against tag limits. -/
+def validateValueTags (v : YamlValue) (limits : TagLimits) : Except TagSecurityError Unit := do
+  let tags := collectTags v
+  -- Unique tag count
+  if tags.length > limits.maxUniqueTags then
+    throw (.tooManyUniqueTags tags.length limits.maxUniqueTags)
+  -- Validate each tag
+  for tag in tags do
+    validateTag tag limits
+
+/-! ## Alias Resolution with Limits -/
+
+/-- Mutable state threaded through limited alias resolution. -/
+structure AliasResolveState where
+  expansions : Nat := 0
+  nodeCount : Nat := 0
+
+/-- Resolve aliases with depth, expansion, node-count, and cycle limits.
+
+    Unlike `YamlValue.resolveAliases` (which has no bounds), this version
+    tracks resolution depth and total expansion count, failing with an
+    `AliasLimitError` when any limit is exceeded.
+
+    Resolution is **order-aware**, mirroring `YamlValue.resolveAliasesOrdered`:
+    the walk threads an environment of bindings made so far (most recent
+    first, bound after the node's own content, cleaned like
+    `ParseState.addAnchor`), so each alias binds to the most recent
+    *preceding* definition of its anchor name (§7.1). Aliases with no
+    preceding in-tree definition fall back to the parse-time `anchors`
+    table with the original first-match lookup. -/
+partial def resolveAliasesLimited (v : YamlValue) (anchors : Array (String × YamlValue))
+    (limits : AliasLimits) : Except AliasLimitError YamlValue := do
+  let (result, _, _) ← go v anchors limits 0 [] { expansions := 0, nodeCount := 0 } []
+  return result
 where
-  go : YamlValue → TagCensus → Except TagSecurityError TagCensus
-    | .scalar s, c => c.note s.tag limits
-    | .sequence _ items tag _, c => do
-      items.foldlM (fun a item => go item a) (← c.note tag limits)
-    | .mapping _ pairs tag _, c => do
-      pairs.foldlM (fun a (k, v) => do go v (← go k a)) (← c.note tag limits)
-    | .alias _, c => return c
+  go (v : YamlValue) (anchors : Array (String × YamlValue)) (limits : AliasLimits)
+     (depth : Nat) (visiting : List String) (st : AliasResolveState)
+     (env : List (String × YamlValue))
+     : Except AliasLimitError (YamlValue × AliasResolveState × List (String × YamlValue)) := do
+    -- Node count
+    let st := { st with nodeCount := st.nodeCount + 1 }
+    if st.nodeCount > limits.maxResolvedNodes then
+      throw (.nodeCountExceeded st.nodeCount limits.maxResolvedNodes)
+    match v with
+    | .scalar s =>
+      match s.anchor with
+      | some a =>
+        return (v, st, (a, YamlValue.scalar { s with anchor := none } |>.adaptForFlowContext) :: env)
+      | none => return (v, st, env)
+    | .sequence style items tag anchor => do
+      let (items', st, env) ← goList items.toList anchors limits depth visiting st env
+      let v' := YamlValue.sequence style items'.toArray tag anchor
+      match anchor with
+      | some a => return (v', st, (a, v'.stripAnchors.adaptForFlowContext) :: env)
+      | none => return (v', st, env)
+    | .mapping style pairs tag anchor => do
+      let (pairs', st, env) ← goPairs pairs.toList anchors limits depth visiting st env
+      let v' := YamlValue.mapping style pairs'.toArray tag anchor
+      match anchor with
+      | some a => return (v', st, (a, v'.stripAnchors.adaptForFlowContext) :: env)
+      | none => return (v', st, env)
+    | .alias name => do
+      -- Cycle detection
+      if limits.rejectCycles && visiting.contains name then
+        throw (.cyclicAlias name visiting)
+      -- Depth check
+      if depth ≥ limits.maxAliasDepth then
+        throw (.depthExceeded depth limits.maxAliasDepth name)
+      -- Expansion count
+      let st := { st with expansions := st.expansions + 1 }
+      if st.expansions > limits.maxAliasExpansions then
+        throw (.expansionCountExceeded st.expansions limits.maxAliasExpansions)
+      -- Resolve: most recent preceding in-tree binding first, then the
+      -- parse-time table.  The recursion into the substituted value keeps
+      -- the node-count/cycle accounting of the original; bound values are
+      -- cleaned (anchor-free), so the recursion cannot re-bind.
+      match env.findSome? (fun (n, val) => if n == name then some val else none) with
+      | some val =>
+        let (val', st, _) ← go val anchors limits (depth + 1) (name :: visiting) st env
+        return (val', st, env)
+      | none =>
+        match anchors.findSome? (fun (n, val) => if n == name then some val else none) with
+        | some val =>
+          let (val', st, _) ← go val anchors limits (depth + 1) (name :: visiting) st env
+          return (val', st, env)
+        | none => return (v, st, env)  -- unresolved alias: preserve as-is
+  goList (vs : List YamlValue) (anchors : Array (String × YamlValue)) (limits : AliasLimits)
+      (depth : Nat) (visiting : List String) (st : AliasResolveState)
+      (env : List (String × YamlValue))
+      : Except AliasLimitError (List YamlValue × AliasResolveState × List (String × YamlValue)) := do
+    match vs with
+    | [] => return ([], st, env)
+    | v :: rest => do
+      let (v', st, env) ← go v anchors limits depth visiting st env
+      let (rest', st, env) ← goList rest anchors limits depth visiting st env
+      return (v' :: rest', st, env)
+  goPairs (ps : List (YamlValue × YamlValue)) (anchors : Array (String × YamlValue))
+      (limits : AliasLimits) (depth : Nat) (visiting : List String) (st : AliasResolveState)
+      (env : List (String × YamlValue))
+      : Except AliasLimitError (List (YamlValue × YamlValue) × AliasResolveState × List (String × YamlValue)) := do
+    match ps with
+    | [] => return ([], st, env)
+    | (k, v) :: rest => do
+      let (k', st, env) ← go k anchors limits depth visiting st env
+      let (v', st, env) ← go v anchors limits depth visiting st env
+      let (rest', st, env) ← goPairs rest anchors limits depth visiting st env
+      return ((k', v') :: rest', st, env)
 
 /-! ## Structural Validation -/
 
@@ -465,245 +535,113 @@ partial def countNodes (v : YamlValue) : Nat :=
     1 + pairs.foldl (fun acc (k, v) => acc + countNodes k + countNodes v) 0
   | .alias _ => 1
 
-/-- Count nodes, giving up as soon as the running total passes `cap`
-    (the result is then some number above `cap`, not the exact count). -/
-partial def countNodesCapped (v : YamlValue) (cap : Nat) (acc : Nat := 0) : Nat :=
-  if acc > cap then acc else
+/-- `countNodes` with a budget: adds the nodes of `v` to `acc`, stopping as soon
+    as the running total exceeds `limit`.  The result is the exact total when
+    that total is `≤ limit`, and some total `> limit` otherwise.  Anchor values
+    share substituted subtrees as a DAG whose tree size can be exponential in
+    the input, so the unbudgeted walk must not run on them. -/
+partial def countNodesBounded (limit : Nat) (v : YamlValue) (acc : Nat := 0) : Nat :=
+  if acc > limit then acc else
   match v with
   | .scalar _ => acc + 1
-  | .sequence _ items _ _ =>
-    items.foldl (fun a item => countNodesCapped item cap a) (acc + 1)
-  | .mapping _ pairs _ _ =>
-    pairs.foldl (fun a (k, v) => countNodesCapped v cap (countNodesCapped k cap a)) (acc + 1)
   | .alias _ => acc + 1
-
-/-- Validate structural limits on a resolved value tree and count its nodes
-    in the same walk.  The path is threaded as a reversed segment list and
-    materialised only for an error. -/
-partial def validateStructureCounting (v : YamlValue) (limits : StructuralLimits)
-    (path : YamlPath := #[]) (depth : Nat := 0) : Except StructuralLimitError Nat :=
-  go v limits path.toList.reverse depth 0
-where
-  go (v : YamlValue) (limits : StructuralLimits) (rpath : List PathSegment) (depth : Nat)
-      (count : Nat) : Except StructuralLimitError Nat := do
-    let count := count + 1
-    match v with
-    | .scalar s =>
-      if s.content.utf8ByteSize > limits.maxScalarBytes then
-        throw (.scalarTooLarge s.content.utf8ByteSize limits.maxScalarBytes rpath.reverse.toArray)
-      return count
-    | .sequence _ items _ _ =>
-      if depth > limits.maxDepth then
-        throw (.depthExceeded depth limits.maxDepth rpath.reverse.toArray)
-      if items.size > limits.maxSequenceLength then
-        throw (.sequenceTooLarge items.size limits.maxSequenceLength rpath.reverse.toArray)
-      let mut count := count
-      for h : idx in [:items.size] do
-        count ← go items[idx] limits (.index idx :: rpath) (depth + 1) count
-      return count
-    | .mapping _ pairs _ _ =>
-      if depth > limits.maxDepth then
-        throw (.depthExceeded depth limits.maxDepth rpath.reverse.toArray)
-      if pairs.size > limits.maxMappingSize then
-        throw (.mappingTooLarge pairs.size limits.maxMappingSize rpath.reverse.toArray)
-      let mut count := count
-      for h : idx in [:pairs.size] do
-        let (k, v) := pairs[idx]
-        let keyStr := match k with | .scalar s => s.content | _ => s!"[{idx}]"
-        count ← go k limits (.key keyStr :: rpath) (depth + 1) count
-        count ← go v limits (.key keyStr :: rpath) (depth + 1) count
-      return count
-    | .alias _ => return count
+  | .sequence _ items _ _ =>
+    items.foldl (fun acc item => countNodesBounded limit item acc) (acc + 1)
+  | .mapping _ pairs _ _ =>
+    pairs.foldl (fun acc (k, v) => countNodesBounded limit v (countNodesBounded limit k acc))
+      (acc + 1)
 
 /-- Validate structural limits on a resolved value tree. -/
-def validateStructure (v : YamlValue) (limits : StructuralLimits) (path : YamlPath := #[])
+partial def validateStructure (v : YamlValue) (limits : StructuralLimits) (path : YamlPath := #[])
     (depth : Nat := 0) : Except StructuralLimitError Unit := do
-  let _ ← validateStructureCounting v limits path depth
-
-/-! ## Limited Compose Walk -/
-
-/-- Bindings made so far in document order, anchor name → cleaned value.
-    Binding is `insert`, so a lookup answers "most recent preceding
-    definition" (§7.1) in O(1). -/
-abbrev AnchorEnv := Std.HashMap String YamlValue
-
-/-- One composed node.  `value` has aliases substituted and anchors
-    stripped.  `adapted` is `value.adaptForFlowContext` when that differs
-    from `value` (some plain scalar below carries a flow indicator) and the
-    caller asked for it; `none` means the adapted form *is* `value`, so the
-    common case shares one tree instead of building a second. -/
-structure ComposedNode where
-  value : YamlValue
-  adapted : Option YamlValue := none
-
-/-- The flow-adapted form of a composed node. -/
-@[inline] def ComposedNode.cleaned (c : ComposedNode) : YamlValue :=
-  c.adapted.getD c.value
-
-/-- Counters threaded through the compose walk. -/
-structure ComposeState where
-  expansions : Nat := 0
-  nodeCount : Nat := 0
-  tags : TagCensus := {}
-
-/-- Resolve aliases, strip anchors, validate tags and enforce alias limits
-    in **one** walk of the value tree.
-
-    Resolution is **order-aware**, mirroring `YamlValue.resolveAliasesOrdered`:
-    the walk threads an environment of bindings made so far (bound after the
-    node's own content, cleaned like `ParseState.addAnchor`), so each alias
-    binds to the most recent *preceding* definition of its anchor name (§7.1).
-    Aliases with no preceding in-tree definition fall back to the parse-time
-    `anchors` table with the original first-match lookup.
-
-    What used to be separate passes — `countNodes`, `collectTags` on the raw
-    and on the resolved tree, `stripAnchors`, and the per-anchored-node
-    `stripAnchors.adaptForFlowContext` re-walk — happen here as the nodes are
-    built.  A node is visited once; its flow-adapted twin is only
-    materialised below an anchor *and* where adaptation changes something.
-    Every tag of the raw tree is a tag of the resolved tree, so one census
-    covers both.
-
-    Fails with the first limit violation met in document order. -/
-partial def composeValueLimited (v : YamlValue) (anchors : Array (String × YamlValue))
-    (limits : ParserLimits) : Except LimitError YamlValue := do
-  let table : AnchorEnv := anchors.foldl (fun m (n, val) => m.insertIfNew n val) {}
-  let (c, _, _) ← go table v 0 [] {} {} false
-  return c.value
+  match v with
+  | .scalar s =>
+    if s.content.utf8ByteSize > limits.maxScalarBytes then
+      throw (.scalarTooLarge s.content.utf8ByteSize limits.maxScalarBytes path)
+  | .sequence _ items _ _ =>
+    if depth > limits.maxDepth then
+      throw (.depthExceeded depth limits.maxDepth path)
+    if items.size > limits.maxSequenceLength then
+      throw (.sequenceTooLarge items.size limits.maxSequenceLength path)
+    goSeq items.toList 0 limits path depth
+  | .mapping _ pairs _ _ =>
+    if depth > limits.maxDepth then
+      throw (.depthExceeded depth limits.maxDepth path)
+    if pairs.size > limits.maxMappingSize then
+      throw (.mappingTooLarge pairs.size limits.maxMappingSize path)
+    goMap pairs.toList 0 limits path depth
+  | .alias _ => pure ()
 where
-  go (table : AnchorEnv) (v : YamlValue) (depth : Nat) (visiting : List String)
-     (st : ComposeState) (env : AnchorEnv) (wantAdapted : Bool)
-     : Except LimitError (ComposedNode × ComposeState × AnchorEnv) := do
-    let st := { st with nodeCount := st.nodeCount + 1 }
-    if st.nodeCount > limits.alias.maxResolvedNodes then
-      throw (.aliasLimit (.nodeCountExceeded st.nodeCount limits.alias.maxResolvedNodes))
-    match v with
-    | .scalar s =>
-      let st ← noteTag st s.tag
-      let value := if s.anchor.isNone then v else YamlValue.scalar { s with anchor := none }
-      let want := wantAdapted || s.anchor.isSome
-      let adapted :=
-        if want && s.style == .plain && hasFlowIndicator s.content.toList then
-          some value.adaptForFlowContext
-        else none
-      let c : ComposedNode := { value, adapted }
-      return (keep c wantAdapted, st, bind env s.anchor c)
-    | .sequence style items tag anchor =>
-      let mut st ← noteTag st tag
-      let mut env := env
-      let want := wantAdapted || anchor.isSome
-      let mut out : Array YamlValue := Array.mkEmpty items.size
-      let mut outAdapted : Option (Array YamlValue) := none
-      for item in items do
-        let (c, st', env') ← go table item depth visiting st env want
-        st := st'
-        env := env'
-        outAdapted := pushAdapted outAdapted out c
-        out := out.push c.value
-      let c : ComposedNode := { value := YamlValue.sequence style out tag none
-                                adapted := outAdapted.map (YamlValue.sequence style · tag none) }
-      return (keep c wantAdapted, st, bind env anchor c)
-    | .mapping style pairs tag anchor =>
-      let mut st ← noteTag st tag
-      let mut env := env
-      let want := wantAdapted || anchor.isSome
-      let mut out : Array (YamlValue × YamlValue) := Array.mkEmpty pairs.size
-      let mut outAdapted : Option (Array (YamlValue × YamlValue)) := none
-      for (k, val) in pairs do
-        let (ck, st', env') ← go table k depth visiting st env want
-        let (cv, st'', env'') ← go table val depth visiting st' env' want
-        st := st''
-        env := env''
-        outAdapted := pushAdaptedPair outAdapted out ck cv
-        out := out.push (ck.value, cv.value)
-      let c : ComposedNode := { value := YamlValue.mapping style out tag none
-                                adapted := outAdapted.map (YamlValue.mapping style · tag none) }
-      return (keep c wantAdapted, st, bind env anchor c)
-    | .alias name =>
-      -- Cycle detection
-      if limits.alias.rejectCycles && visiting.contains name then
-        throw (.aliasLimit (.cyclicAlias name visiting))
-      -- Depth check
-      if depth ≥ limits.alias.maxAliasDepth then
-        throw (.aliasLimit (.depthExceeded depth limits.alias.maxAliasDepth name))
-      -- Expansion count
-      let st := { st with expansions := st.expansions + 1 }
-      if st.expansions > limits.alias.maxAliasExpansions then
-        throw (.aliasLimit (.expansionCountExceeded st.expansions limits.alias.maxAliasExpansions))
-      -- Most recent preceding in-tree binding first, then the parse-time
-      -- table.  Recursing into the bound value keeps the node-count and
-      -- cycle accounting; bindings made inside it are discarded on return.
-      match env[name]?.orElse (fun _ => table[name]?) with
-      | some val =>
-        let (c, st, _) ← go table val (depth + 1) (name :: visiting) st env wantAdapted
-        return (c, st, env)
-      | none =>
-        -- unresolved alias: preserve as-is
-        return ({ value := v }, st, env)
-  noteTag (st : ComposeState) (tag : Option String) : Except LimitError ComposeState :=
-    match tag with
-    | none => .ok st
-    | some _ =>
-      match st.tags.note tag limits.tag with
-      | .ok tags => .ok { st with tags }
-      | .error e => .error (.tagSecurity e)
-  /-- Drop the adapted twin once no anchored ancestor can need it. -/
-  keep (c : ComposedNode) (wantAdapted : Bool) : ComposedNode :=
-    if wantAdapted then c else { c with adapted := none }
-  bind (env : AnchorEnv) (anchor : Option String) (c : ComposedNode) : AnchorEnv :=
-    match anchor with
-    | some a => env.insert a c.cleaned
-    | none => env
-  /-- Extend the adapted items, starting a separate array only at the first
-      item whose adapted form differs (copying the identical prefix once). -/
-  pushAdapted (acc : Option (Array YamlValue)) (prefix_ : Array YamlValue) (c : ComposedNode)
-      : Option (Array YamlValue) :=
-    match acc, c.adapted with
-    | some arr, _ => some (arr.push c.cleaned)
-    | none, some a => some (prefix_.push a)
-    | none, none => none
-  pushAdaptedPair (acc : Option (Array (YamlValue × YamlValue)))
-      (prefix_ : Array (YamlValue × YamlValue)) (ck cv : ComposedNode)
-      : Option (Array (YamlValue × YamlValue)) :=
-    match acc, ck.adapted, cv.adapted with
-    | some arr, _, _ => some (arr.push (ck.cleaned, cv.cleaned))
-    | none, none, none => none
-    | none, _, _ => some (prefix_.push (ck.cleaned, cv.cleaned))
+  goSeq (items : List YamlValue) (idx : Nat) (limits : StructuralLimits)
+      (path : YamlPath) (depth : Nat) : Except StructuralLimitError Unit := do
+    match items with
+    | [] => pure ()
+    | v :: rest =>
+      validateStructure v limits (path.push (.index idx)) (depth + 1)
+      goSeq rest (idx + 1) limits path depth
+  goMap (pairs : List (YamlValue × YamlValue)) (idx : Nat) (limits : StructuralLimits)
+      (path : YamlPath) (depth : Nat) : Except StructuralLimitError Unit := do
+    match pairs with
+    | [] => pure ()
+    | (k, v) :: rest =>
+      let keyStr := match k with | .scalar s => s.content | _ => s!"[{idx}]"
+      validateStructure k limits (path.push (.key keyStr)) (depth + 1)
+      validateStructure v limits (path.push (.key keyStr)) (depth + 1)
+      goMap rest (idx + 1) limits path depth
 
 /-! ## Limited Compose -/
 
 /-- Compose a document (resolve aliases + strip anchors) with limit enforcement.
 
-    This is the safe counterpart of `YamlDocument.compose`.  Two walks:
-    `composeValueLimited` (alias limits, tag security, anchor stripping) and
-    `validateStructureCounting` (structural limits, total node count). -/
+    This is the safe counterpart of `YamlDocument.compose`. -/
 def composeLimited (doc : YamlDocument) (limits : ParserLimits) (docIndex : Nat := 0)
     : Except LimitError YamlDocument := do
-  if !limits.enabled then
-    return { doc with
-      value := (doc.value.resolveAliases doc.anchors).stripAnchors
-      anchors := #[] }
   -- Anchor count
-  if doc.anchors.size > limits.document.maxAnchors then
+  if limits.enabled && doc.anchors.size > limits.document.maxAnchors then
     throw (.documentLimit (.tooManyAnchors doc.anchors.size limits.document.maxAnchors docIndex))
-  -- Anchor value node count (catches billion-laugh expanded during parsing)
-  let anchorNodes := doc.anchors.foldl (fun acc (_, v) =>
-    countNodesCapped v limits.alias.maxResolvedNodes acc) 0
-  if anchorNodes > limits.alias.maxResolvedNodes then
-    throw (.aliasLimit (.nodeCountExceeded anchorNodes limits.alias.maxResolvedNodes))
+  -- Anchor value node count (catches billion-laugh expanded during parsing).
+  -- Budgeted: the anchor table is a shared DAG, so the count stops as soon as
+  -- it passes the limit instead of walking the full expansion.
+  if limits.enabled then
+    let anchorNodes := doc.anchors.foldl
+      (fun acc (_, v) => countNodesBounded limits.alias.maxResolvedNodes v acc) 0
+    if anchorNodes > limits.alias.maxResolvedNodes then
+      throw (.aliasLimit (.nodeCountExceeded anchorNodes limits.alias.maxResolvedNodes))
   -- Directive validation (tag handles)
-  match validateDirectives doc.directives limits.tag with
-  | .ok () => pure ()
-  | .error e => throw (.tagSecurity e)
-  -- Resolve aliases, strip anchors, validate tags
-  let resolved ← composeValueLimited doc.value doc.anchors limits
-  -- Structural validation and total node count on the resolved tree
-  match validateStructureCounting resolved limits.structural with
-  | .ok nodeCount =>
+  if limits.enabled then
+    match validateDirectives doc.directives limits.tag with
+    | .ok () => pure ()
+    | .error e => throw (.tagSecurity e)
+  -- Tag validation on raw tree (before resolution)
+  if limits.enabled then
+    match validateValueTags doc.value limits.tag with
+    | .ok () => pure ()
+    | .error e => throw (.tagSecurity e)
+  -- Resolve aliases
+  let resolved ←
+    if limits.enabled then
+      match resolveAliasesLimited doc.value doc.anchors limits.alias with
+      | .ok v => pure v
+      | .error e => throw (.aliasLimit e)
+    else
+      pure (doc.value.resolveAliases doc.anchors)
+  -- Structural validation on resolved tree
+  if limits.enabled then
+    match validateStructure resolved limits.structural with
+    | .ok () => pure ()
+    | .error e => throw (.structuralLimit e)
+    -- Total node count
+    let nodeCount := countNodes resolved
     if nodeCount > limits.structural.maxTotalNodes then
       throw (.structuralLimit (.totalNodesExceeded nodeCount limits.structural.maxTotalNodes))
-  | .error e => throw (.structuralLimit e)
-  return { doc with value := resolved, anchors := #[] }
+  -- Tag validation on resolved tree (aliases may introduce new tags)
+  if limits.enabled then
+    match validateValueTags resolved limits.tag with
+    | .ok () => pure ()
+    | .error e => throw (.tagSecurity e)
+  return { doc with
+    value := resolved.stripAnchors
+    anchors := #[] }
 
 /-! ## Safe Parsing API -/
 

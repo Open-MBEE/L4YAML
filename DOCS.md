@@ -3190,9 +3190,15 @@ transformation that makes stored anchor values universally grammable
 `YamlValue.adaptForFlowContext` on every value before storing it:
 
 ```lean
--- TokenParser.lean, addAnchor:
-let cleaned := ((val.resolveAliases ps.anchors).stripAnchors).adaptForFlowContext
+-- Parser/ParseStateIx.lean (and legacy Parser/State.lean), addAnchor:
+let cleaned := (val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors
 ```
+
+(The cleaning passes run on the *raw* value before alias substitution so
+that each registration is linear in the raw syntax and substituted anchor
+values stay shared; `Algebra.Value.cleaned_resolveAliases_comm` proves the
+result equals the resolve-first form, because every stored anchor value is
+already a fixed point of `stripAnchors ∘ adaptForFlowContext`.)
 
 `adaptForFlowContext` (Types.lean) recursively processes a value tree:
 - **Plain scalars with flow indicators** → style changed to `.doubleQuoted`

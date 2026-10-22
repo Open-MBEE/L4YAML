@@ -43661,6 +43661,94 @@ the `PackAlt sc` disjunct item 329 left on the chain fields retires — the firs
 deletes.  Then step 4 (`IndentEntry.pendingKey`, the `?⏎  ? y⏎  : z⏎: w: x` over-refusal recorded in item 331),
 then the flip.
 
+### Item 334 (2026-10-22)
+
+**Row 12, step 3 of item 331's order PRICED — no library change.  The flow frame's alternative `PackAltG g` is a
+placeholder indexed by the §9.2 gate "for want of another open-time datum"; the datum is `sc.explicitKeyStack`'s base
+pair, which `StreamAccum` never reads (0 mentions).  Two carriers priced: the mandate's re-index of the frame by the
+pushed pair, 48 hand-written signatures (item 325's probe 1002), against a `FlowStackK` conjunct read off the live
+stack beside `FlowBaseAnchor` — one predicate, a transport family on `FlowBaseAnchor`'s pattern (four bodies, the rest
+`congr` over the existing `_preserves_explicitKeyStack` leaves), ten `FlowStackK` constructions, five guards, no new index.  The conjunct is chosen (Rule 8: a projection over an index).  The residue
+instrument re-run on this tree agrees with its pin verbatim (`stubs=1` is this step's deliverable).  **And the step has
+no payable content before the flip**: the frame's alternative is INHERITED from the park's chain field — the two open
+relays are `h_pair_p.imp id PackAltG.ofPark` with `h_pair_p : … ∨ PackAlt sc` read off `h_pkey`, and
+`accum_flow_open_depth0` holds no other fact about the register (its only `explicitKeyLine` premise is `h_colon`'s) —
+so `e = none` is payable at the open exactly when `PackAlt sc` says it, i.e. after the flip.  Lane (d) is the flip's own
+work; the order becomes step 4, then the flip with the conjunct.**
+
+**The mandate.**  Item 333's NEXT: "step 3 of item 331's order: the flow frame reads the pushed register pair.
+`PackAltG (e, ec) := e = none` indexed by the `(explicitKeyLine, explicitKeyCol)` pair the scanner pushes on
+`explicitKeyStack` at the flow open (probe 1001 already transports it); with the register dead at every sibling, `main` /
+`slot_ride` pay `e = none` and the `PackAlt sc` disjunct item 329 left on the chain fields retires — the first
+GhostIndexCensus row this order deletes."  Departure, with the reason: the pair is NOT made an index of the frame.
+Item 331's rule classifies an index that copies a scanner datum onto the frame as ghost until an equality pins it
+(`ks = sc.flowStack` is the precedent, 9b(i)); a conjunct that reads the pair off `sc.explicitKeyStack` at the frame's
+depth is the projection the rule asks for, and it costs a fifth of the signatures.  The row the step deletes is
+`PackAltG`'s snapshot index `g : Option ScannerState` (one of the census's nine), not a `List Nat` row.
+
+**Predictions** (before re-running the instrument on this tree — item 333's tree, which step 3 builds on): P1 — the
+residue pin `expectedPackResidue` (`sites=111 … decline=110 relayState=1 stubs=1 promised=6`) agrees verbatim: item 333
+changed the scanner and restated two theorems, no family site.  P2 — the `False` flip pin `expectedPackFlip`
+(`sites=129 … stubs=8`) agrees verbatim.  P3 — the frame family's share of the 110 declines is single digits: the flow
+roots (`flowKeyRoute_of_root`, `accum_flow_open_depth0`, `accum_step_flow`) and nothing else names `PackAltG`.  P4 —
+`StreamAccum` restored byte-identical, `git status --porcelain` empty.
+
+**The reading, by producer.**  `PackAltG (_g : Option ScannerState) : Prop := True` (16 mentions): the definition and
+its two conversions (`PackAltG.ofPark`, `PackAlt.ofGateClose`), nine field sites on the frame's value-line pair and
+value-line twin (`flowKeyPack_of_close`'s `h_key`, `FlowBaseRoutes`, the two `flowKeyRoute_of_*` statements), two open
+relays (`.imp id PackAltG.ofPark` on the pair and on the twin, `accum_flow_open_depth0`'s props-headed landing) and four close relays
+(`flowKeyPack_of_close` ×2, the `]` and `}` arms of `accum_step_flow`).  The residue (`--alt refused`,
+`scratch/step3-residue.tsv`) reads 110 declines in 21 declarations — `content_dispatch_routed` 25,
+`entryPropsKeyPack_of_dispatch` 10, `entryKeyPack_of_dispatch` 10, `accum_block_on_closeThenBlock` 10,
+`accum_block_pending` 8, `compact_open_map` 5, `colon_open_map_explicit` 5, four each in `accum_content_pending` /
+`accum_block_on_pendingBlockContent` / `accum_block_on_pendingBlock`, three in `accum_flow_open_depth0` /
+`accum_content_on_pendingMapValue_indented`, two each in eight more — one state relay (`compact_open_map`:22244,
+`hpk` handed across the step) and the one stub, `PackAlt.ofGateClose`.  The frame family holds seven of the 110
+(`flowKeyRoute_of_root` 2, `accum_flow_open_depth0` 3, `accum_step_flow` 2); the other 103 are park sites that lanes
+(b), (c), (e)–(g) pay from the register, unchanged by this step.
+
+**The two carriers, priced.**  (a) *The mandate's re-index*: `FlowBaseRoutes`, `FlowOpenStack` and `FlowStackB` take
+the pair beside `g` — 48 hand-written library signatures (`FlowBaseRoutes.ofValue`, twelve `FlowOpenStack` lemmas,
+thirty-five `FlowStackB` holders; item 325's `1002-probe325-census-r3.out`), every `FlowStackK` existential gains a
+binder, and the census must then pin the pair to `sc.explicitKeyStack` or count it ghost.  (b) *The conjunct*:
+`FlowStackK` already reads the gate off the live state at `(0 < fl → KmSound sc km kc ∧ FlowBaseAnchor g sc (fl - 1) ∧ …)`;
+beside it, `EkBase sc (fl - 1)` — the base frame's pair sits `fl - 1` entries below the stack's top and its line is
+`none` — with the transport family `FlowBaseAnchor` already has (`transport`, `congr`, `pushInert`, `pushOpen`,
+`pushClose` and fifteen per-dispatch wrappers from `preprocess` to `seqEnd`/`mapEnd`, 71 mentions, `gate` read six
+times at the closes; for the pair only the two opens and two closes move the stack, so every other wrapper is `congr`
+over `ScannerEkStackPreservation`'s `_preserves_explicitKeyStack` leaf lemmas, which already exist; probe 1001's
+`genesis` / `nestOpen` / `nestClose` / `congr` are the four bodies that are not), ten `FlowStackK` constructions in `StreamAccum` (31 mentions)
+and the five guards that destructure it (`GhostIndexCensus`, `FlowParkAnchor`, `FlowStackFloorReal`,
+`FlowReservationFloor`, `FlowGateGeneration`).  The close then proves `ExplicitValueRefused s'` from the conjunct
+through `scanFlowSequenceEnd`'s restore (`restoredEk := explicitKeyStack.back?.getD (none, -1)`, `Scanner.lean:182`) —
+`PackAlt.ofGateClose` paid, `stubs 1 → 0` — and the open establishes it from the register the park holds dead
+(`savedEk := (s.explicitKeyLine, s.explicitKeyCol)`, `Scanner.lean:151`), which is where item 333's scanner is
+load-bearing: at `? a⏎[1]: b` the pushed line is `none` only because the stale register was cleared before the `[`.
+`PackAltG` and its index go; the frame's nine disjuncts are typed on the conjunct's predicate at the close state, and
+`GhostIndexCensus` reads `snapshot=9 → 8`.
+
+**Predictions, scored.**
+
+| P | said | result |
+|---|------|--------|
+| P1 | residue pin agrees verbatim | HELD — `PACK-RESIDUE sites=111 decls=21 rounds=2 decline=110 relayTrue=0 relayState=1 leaf=32 uncond=78 stubs=1 promised=6`, `PACK-RESIDUE-PIN agrees` |
+| P2 | flip pin agrees verbatim | HELD — `PACK-FLIP sites=129 decls=23 rounds=2 decline=129 relay=0 leaf=42 uncond=87 stubs=8`, `PACK-FLIP-PIN agrees` |
+| P3 | frame family single digits | HELD — 7 of 110 |
+| P4 | restored byte-identical | HELD — `git status --porcelain` empty after both modes |
+
+**Gates.**  No build (the tree is item 333's, green at 1267 jobs); both instrument modes to a fixpoint in two rounds
+each; closure log and gate vocabulary pass on the entry.  No declaration touched; no axiom census.
+
+**NEXT — step 4 of item 331's order: `IndentEntry.pendingKey`.**  The per-level pending `?` field on the scanner's
+`IndentEntry` (both pipelines), which retires the `ns` chains (every chain field's `(∃ ns, ∀ nv ∈ ns, …) ∨ PackAlt sc`
+becomes a quantifier over `sc.indents`), closes `question_open_map`'s two leaves, and repairs the over-refusal item 331
+recorded (`?⏎  ? y⏎  : z⏎: w: x`, accepted by libyaml as `{{y: z}: {w: x}}`).  Measured before and after on the 43
+reference inputs and the frags³ corpus, as item 333 was.  Then the flip, `PackAlt sc := ExplicitValueRefused sc`, carrying
+lane (d) as priced here: `EkBase` appended to `FlowStackK` as `(0 < fl → EkBase sc (fl - 1))` (eight destructurings in
+`StreamAccum`, three in guards, gain one component; no `.2.2` shifts), genesis at the two depth-0 opens from the flipped
+`PackAlt sc`, `PackAltG`'s `g` index deleted (`snapshot=9 → 8`), `PackAlt.ofGateClose` paid from the conjunct through
+`scanFlowSequenceEnd_ek_restored`; predictions to carry: residue `stubs 1 → 0` with `decline` unchanged at 110.
+
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 
 The [Next actions](#next-actions-in-order) row for β.5 carried the campaign's

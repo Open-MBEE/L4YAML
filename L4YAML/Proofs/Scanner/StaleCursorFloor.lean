@@ -138,7 +138,7 @@ private lemma skipSpaces_col_ge (s : ScannerState) :
   unfold skipSpaces; exact skipSpacesLoop_col_ge s _
 
 /-- `c-nb-comment-text` admits no break: the collect moves the column only. -/
-private lemma collectCommentTextLoop_col_ge (fuel : Nat) :
+lemma collectCommentTextLoop_col_ge (fuel : Nat) :
     ∀ (s : ScannerState) (text : String),
     s.col ≤ (collectCommentTextLoop s text fuel).2.col := by
   induction fuel with
@@ -156,7 +156,7 @@ private lemma collectCommentTextLoop_col_ge (fuel : Nat) :
           _ ≤ _ := ih s.advance (text.push c)
     · exact Nat.le_refl _
 
-private lemma skipToContentComment_col_ge (s : ScannerState) :
+lemma skipToContentComment_col_ge (s : ScannerState) :
     s.col ≤ (skipToContentComment s).col := by
   unfold skipToContentComment
   split
@@ -176,7 +176,7 @@ private lemma skipToContentComment_col_ge (s : ScannerState) :
   · exact Nat.le_refl _
 
 /-- The whitespace phase moves the column only. -/
-private lemma skipToContentWs_col_ge {s s' : ScannerState}
+lemma skipToContentWs_col_ge {s s' : ScannerState}
     (h : skipToContentWs s = .ok s') : s.col ≤ s'.col := by
   unfold skipToContentWs at h
   dsimp only [] at h
@@ -189,7 +189,7 @@ private lemma skipToContentWs_col_ge {s s' : ScannerState}
     | injection h
 
 /-- The whole skip never returns to an earlier line. -/
-private lemma skipToContentLoop_line_ge (fuel : Nat) :
+lemma skipToContentLoop_line_ge (fuel : Nat) :
     ∀ {s s' : ScannerState}, skipToContentLoop s fuel = .ok s' →
     s.line ≤ s'.line := by
   induction fuel with
@@ -223,7 +223,7 @@ private lemma skipToContentLoop_line_ge (fuel : Nat) :
       · injection h with h_eq; subst h_eq; omega
 
 /-- A same-line skip only moves the column right. -/
-private lemma skipToContentLoop_col_ge_of_line_eq (fuel : Nat) :
+lemma skipToContentLoop_col_ge_of_line_eq (fuel : Nat) :
     ∀ {s s' : ScannerState}, skipToContentLoop s fuel = .ok s' →
     s'.line = s.line → s.col ≤ s'.col := by
   induction fuel with
@@ -264,7 +264,7 @@ private lemma skipToContentLoop_col_ge_of_line_eq (fuel : Nat) :
 
 /-- A block skip that changed the line re-armed the key flag: the break
     iteration sets it, and nothing downstream unsets it. -/
-private lemma skipToContentLoop_allowed_of_line_ne (fuel : Nat) :
+lemma skipToContentLoop_allowed_of_line_ne (fuel : Nat) :
     ∀ {s s' : ScannerState}, skipToContentLoop s fuel = .ok s' →
     s.inFlow = false → s'.line ≠ s.line → s'.simpleKeyAllowed = true := by
   induction fuel with
@@ -308,13 +308,13 @@ private lemma skipToContentLoop_allowed_of_line_ne (fuel : Nat) :
       · injection h with h_eq; subst h_eq
         exact absurd (h_l2.trans h_l1) h_ne
 
-private lemma skipToContent_col_ge_of_line_eq {s s' : ScannerState}
+lemma skipToContent_col_ge_of_line_eq {s s' : ScannerState}
     (h : skipToContent s = .ok s') (h_line : s'.line = s.line) :
     s.col ≤ s'.col := by
   unfold skipToContent at h
   exact skipToContentLoop_col_ge_of_line_eq _ h h_line
 
-private lemma skipToContent_allowed_of_line_ne {s s' : ScannerState}
+lemma skipToContent_allowed_of_line_ne {s s' : ScannerState}
     (h : skipToContent s = .ok s') (h_nf : s.inFlow = false)
     (h_ne : s'.line ≠ s.line) : s'.simpleKeyAllowed = true := by
   unfold skipToContent at h
@@ -339,7 +339,7 @@ private lemma unwindIndents_noop_of_le (s : ScannerState) (col : Int)
 
 /-- `saveSimpleKey`, read at the key's LINE: it inherits, or saves fresh on
     the cursor's own line. -/
-private lemma saveSimpleKey_key_line_shape (st : ScannerState) :
+lemma saveSimpleKey_key_line_shape (st : ScannerState) :
     (saveSimpleKey st).simpleKey = st.simpleKey ∨
     ((saveSimpleKey st).simpleKey.possible = true ∧
      (saveSimpleKey st).simpleKey.pos.line = st.line) := by
@@ -351,7 +351,7 @@ private lemma saveSimpleKey_key_line_shape (st : ScannerState) :
     · exact Or.inl rfl
 
 /-- An armed save outside a flow is a FRESH one, at the cursor's own line. -/
-private lemma saveSimpleKey_fresh_of_allowed {st : ScannerState}
+lemma saveSimpleKey_fresh_of_allowed {st : ScannerState}
     (h_nf : st.inFlow = false) (h_al : st.simpleKeyAllowed = true) :
     (saveSimpleKey st).simpleKey.possible = true ∧
     (saveSimpleKey st).simpleKey.pos.line = st.line := by
@@ -645,7 +645,7 @@ private lemma skipToEndOfLine_line_ind (s : ScannerState) :
     (skipToEndOfLine s).indents = s.indents := by
   unfold skipToEndOfLine; exact skipToEndOfLineLoop_line_ind _ s
 
-private lemma skipWhitespace_line_ind (s : ScannerState) :
+lemma skipWhitespace_line_ind (s : ScannerState) :
     (skipWhitespace s).line = s.line ∧
     (skipWhitespace s).indents = s.indents :=
   ⟨skipWhitespace_preserves_line s,
@@ -712,7 +712,7 @@ private lemma scanTagDirective_line_ind {s s_ws s' : ScannerState}
     | cases h
 
 /-- **`scanDirective` stays on its line and never touches the indent stack.** -/
-private lemma scanDirective_line_ind {s s' : ScannerState}
+lemma scanDirective_line_ind {s s' : ScannerState}
     (h_pk : s.peek? = some '%')
     (h : scanDirective s = .ok s') :
     s'.line = s.line ∧ s'.indents = s.indents := by
@@ -859,7 +859,7 @@ private lemma collectTagHandleLoop_col_ge (fuel : Nat) :
     · exact Nat.le_refl _
 
 /-- The anchor/alias scan: same line, column right, indents untouched. -/
-private lemma scanAnchorOrAlias_cursor {s s' : ScannerState} {b : Bool} {c : Char}
+lemma scanAnchorOrAlias_cursor {s s' : ScannerState} {b : Bool} {c : Char}
     (hpk : s.peek? = some c) (hnb : isLineBreakBool c = false)
     (hok : scanAnchorOrAlias s b = .ok s') :
     s'.line = s.line ∧ s.col ≤ s'.col ∧ s'.indents = s.indents := by
@@ -889,7 +889,7 @@ private lemma scanAnchorOrAlias_cursor {s s' : ScannerState} {b : Bool} {c : Cha
     | cases hok
 
 /-- The verbatim tag: same line, column right, indents untouched. -/
-private lemma scanVerbatimTag_cursor {s s' : ScannerState} {p : YamlPos}
+lemma scanVerbatimTag_cursor {s s' : ScannerState} {p : YamlPos}
     (hpk : s.peek? = some '<') (hok : scanVerbatimTag s p = .ok s') :
     s'.line = s.line ∧ s.col ≤ s'.col ∧ s'.indents = s.indents := by
   unfold scanVerbatimTag at hok
@@ -924,7 +924,7 @@ private lemma scanVerbatimTag_cursor {s s' : ScannerState} {p : YamlPos}
     | cases hok
 
 /-- The tag scan: same line, column right, indents untouched. -/
-private lemma scanTag_cursor {s s' : ScannerState}
+lemma scanTag_cursor {s s' : ScannerState}
     (hpk : s.peek? = some '!')
     (hok : scanTag s = .ok s') :
     s'.line = s.line ∧ s.col ≤ s'.col ∧ s'.indents = s.indents := by
@@ -1024,7 +1024,7 @@ private lemma scanTag_cursor {s s' : ScannerState}
       | cases hok
 
 /-- `pushSequenceIndent` leaves the cursor and the lookahead alone. -/
-private lemma pushSequenceIndent_cursor (s : ScannerState) (col : Int) :
+lemma pushSequenceIndent_cursor (s : ScannerState) (col : Int) :
     (pushSequenceIndent s col).line = s.line ∧
     (pushSequenceIndent s col).col = s.col ∧
     (pushSequenceIndent s col).peek? = s.peek? := by
@@ -1032,7 +1032,7 @@ private lemma pushSequenceIndent_cursor (s : ScannerState) (col : Int) :
   split <;> exact ⟨rfl, rfl, rfl⟩
 
 /-- The pushed level, when it fires, is exactly the argument column. -/
-private lemma pushSequenceIndent_currentIndent_ub (s : ScannerState) (col : Int) :
+lemma pushSequenceIndent_currentIndent_ub (s : ScannerState) (col : Int) :
     (pushSequenceIndent s col).currentIndent = col ∨
     (pushSequenceIndent s col).currentIndent = s.currentIndent := by
   unfold pushSequenceIndent
@@ -1044,7 +1044,7 @@ private lemma pushSequenceIndent_currentIndent_ub (s : ScannerState) (col : Int)
   · right; rfl
 
 /-- The block entry: same line, one column. -/
-private lemma scanBlockEntry_line_col {s s' : ScannerState}
+lemma scanBlockEntry_line_col {s s' : ScannerState}
     (h_noflow : s.inFlow = false) (hpk : s.peek? = some '-')
     (hok : scanBlockEntry s = .ok s') :
     s'.line = s.line ∧ s'.col = s.col + 1 := by
@@ -1079,7 +1079,7 @@ private lemma scanBlockEntry_line_col {s s' : ScannerState}
         from rfl, h_pc]
 
 /-- A flow close spends one column on its bracket and stays on the line. -/
-private lemma scanFlowSequenceEnd_cursor {s : ScannerState}
+lemma scanFlowSequenceEnd_cursor {s : ScannerState}
     (hpk : s.peek? = some ']') :
     (scanFlowSequenceEnd s).line = s.line ∧
     (scanFlowSequenceEnd s).col = s.col + 1 := by
@@ -1096,7 +1096,7 @@ private lemma scanFlowSequenceEnd_cursor {s : ScannerState}
       (by rw [h_epk]; exact hpk) (by decide)]
     rfl
 
-private lemma scanFlowMappingEnd_cursor {s : ScannerState}
+lemma scanFlowMappingEnd_cursor {s : ScannerState}
     (hpk : s.peek? = some '}') :
     (scanFlowMappingEnd s).line = s.line ∧
     (scanFlowMappingEnd s).col = s.col + 1 := by
@@ -1123,7 +1123,7 @@ transfers the mid-state floor through a same-line, column-monotone,
 indent-stable scan. -/
 
 /-- The `inFlow` bit through a per-op `flowLevel` preservation. -/
-private lemma inFlow_eq_of_flowLevel {s t : ScannerState}
+lemma inFlow_eq_of_flowLevel {s t : ScannerState}
     (h : t.flowLevel = s.flowLevel) : t.inFlow = s.inFlow := by
   unfold ScannerState.inFlow; rw [h]
 

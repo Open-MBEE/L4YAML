@@ -951,7 +951,7 @@ match l4yaml::load(bad_input, LimitsPreset::Strict) {
 | `l4yaml_docs_t` | `Vec<YamlDocument>` (eagerly extracted) |
 | `l4yaml_doc_t` | `YamlDocument { root: YamlValue }` |
 | `uint8_t` kind | `enum Kind { Scalar, Sequence, Mapping, Alias }` |
-| `const char *` | `&str` (via `CStr::from_ptr` + `to_str()`) |
+| `const char *` | `String` (copied via `CStr::from_ptr` + `to_str()` before the shim's thread-local slot is reused) |
 | `uint8_t` preset | `enum LimitsPreset` |
 
 **`YamlValue` trait implementations:**
@@ -959,12 +959,12 @@ match l4yaml::load(bad_input, LimitsPreset::Strict) {
 ```rust
 impl YamlValue {
     pub fn kind(&self) -> Kind;
-    pub fn as_str(&self) -> Result<&str, Error>;    // borrows from internal C string
+    pub fn as_str(&self) -> Result<String, Error>;  // owned copy of the C string
     pub fn as_seq(&self) -> Result<Vec<YamlValue>, Error>;
     pub fn as_map(&self) -> Result<Vec<(String, YamlValue)>, Error>;
     pub fn get(&self, key: &str) -> Option<YamlValue>;
-    pub fn tag(&self) -> Option<&str>;
-    pub fn anchor(&self) -> Option<&str>;
+    pub fn tag(&self) -> Option<String>;
+    pub fn anchor(&self) -> Option<String>;
     pub fn len(&self) -> usize;
     pub fn is_empty(&self) -> bool;
 }

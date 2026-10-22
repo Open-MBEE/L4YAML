@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -50,6 +51,8 @@ Three groups:
 set_option maxHeartbeats 1000000
 
 namespace L4YAML.Proofs.EntryBoundaryLayout
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -524,7 +527,9 @@ lemma preprocess_inFlow_elim {sc s_prep : ScannerState} {c : Char}
       split at h
       · exact absurd h (by simp)
       · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
-        exact h.1.symm
+        rw [← h.1, closeStaleExplicitKey_of_inFlow]
+        simp [ScannerState.inFlow, ScannerCorrectness.saveSimpleKey_preserves_flowLevel,
+          ScannerCorrectness.skipToContent_preserves_flowLevel sc s_skip hsk, h_flow]
 
 /-- **Cells `.colon` × props and `.value` × `betweenEntries` (items 9n/9o's
     "one shared datum").**  A state carrying `KeyAfterValueLayout` cannot scan
@@ -751,10 +756,12 @@ lemma saveSimpleKey_fresh_block {s : ScannerState}
   exact ⟨rfl, rfl, rfl⟩
 
 /-- Preprocessing, in the shape the block context reads it: the walk, then the
-    armed unwind or nothing, then the save. -/
+    armed unwind or nothing, then the save, then the stale-register reset
+    (item 333 — a projection-transparent wrapper, `closeStaleExplicitKey_*`). -/
 lemma preprocess_save_elim {sc s_prep : ScannerState} {c : Char}
     (h : scanNextToken_preprocess sc = .ok (some (s_prep, c))) :
-    ∃ s_u s_skip, skipToContent sc = .ok s_skip ∧ s_prep = saveSimpleKey s_u ∧
+    ∃ s_u s_skip, skipToContent sc = .ok s_skip ∧
+      s_prep = closeStaleExplicitKey (saveSimpleKey s_u) ∧
       (s_u = s_skip ∨
         s_u = { unwindIndents s_skip s_skip.col with needIndentCheck := false }) := by
   unfold scanNextToken_preprocess at h
@@ -797,9 +804,10 @@ lemma preprocess_saved_key_at_cursor {sc s_prep : ScannerState} {c : Char}
     · show (unwindIndents s_skip s_skip.col).simpleKeyAllowed = true
       rw [unwindIndents_preserves_simpleKeyAllowed]; exact h_al_skip
   have h_fl : s_u.inFlow = false := by
-    rw [← saveSimpleKey_inFlow s_u, ← h_save]; exact h_noflow
+    rw [← saveSimpleKey_inFlow s_u, ← closeStaleExplicitKey_inFlow, ← h_save]; exact h_noflow
   obtain ⟨h_poss, h_pos, h_off⟩ := saveSimpleKey_fresh_block h_al h_fl
-  exact ⟨by rw [h_save]; exact h_poss, by rw [h_save, h_pos, h_off]⟩
+  exact ⟨by rw [h_save, closeStaleExplicitKey_simpleKey]; exact h_poss,
+    by rw [h_save, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_offset, h_pos, h_off]⟩
 
 /-- **The fresh save's whole position** (item 90) — `preprocess_saved_key_at_cursor`
     at the record rather than the offset.  This is the pair the implicit-key
@@ -821,8 +829,8 @@ lemma preprocess_saved_key_fresh {sc s_prep : ScannerState} {c : Char}
     · show (unwindIndents s_skip s_skip.col).simpleKeyAllowed = true
       rw [unwindIndents_preserves_simpleKeyAllowed]; exact h_al_skip
   have h_fl : s_u.inFlow = false := by
-    rw [← saveSimpleKey_inFlow s_u, ← h_save]; exact h_noflow
-  rw [h_save]
+    rw [← saveSimpleKey_inFlow s_u, ← closeStaleExplicitKey_inFlow, ← h_save]; exact h_noflow
+  rw [h_save, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_currentPos]
   unfold saveSimpleKey
   rw [ite_eq_right (by simp [h_fl]), ite_eq_left h_al]
   exact ⟨rfl, rfl⟩

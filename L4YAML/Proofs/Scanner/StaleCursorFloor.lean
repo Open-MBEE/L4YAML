@@ -10,6 +10,7 @@ public import L4YAML.Proofs.Scanner.FlowIndentStable
 public import L4YAML.Proofs.Scanner.LineOpenGuard
 public import L4YAML.Proofs.Scanner.PropsRunLineCoupling
 public import L4YAML.Proofs.Scanner.EntryBoundaryLayout
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -42,6 +43,8 @@ punt in `StreamAccum`): the pair's decidable half is a CURSOR fact —
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.StaleCursorFloor
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Scanner
 open L4YAML.CharPredicates
@@ -386,10 +389,10 @@ lemma preprocess_preserves_StaleKeyCursorFloor {s s2 : ScannerState} {c : Char}
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨h_eq, -⟩ := h
             have h_line2 : s2.line = s_skip.line := by
-              rw [← h_eq, saveSimpleKey_line]
+              rw [← h_eq, closeStaleExplicitKey_line, saveSimpleKey_line]
               exact unwindIndents_preserves_line s_skip _
             have h_col2 : s2.col = s_skip.col := by
-              rw [← h_eq, saveSimpleKey_col]
+              rw [← h_eq, closeStaleExplicitKey_col, saveSimpleKey_col]
               exact unwindIndents_col s_skip _
             by_cases h_lq : s_skip.line = s.line
             · rcases saveSimpleKey_key_line_shape
@@ -397,7 +400,7 @@ lemma preprocess_preserves_StaleKeyCursorFloor {s s2 : ScannerState} {c : Char}
                   with h_inh | ⟨h_pfresh, h_fresh⟩
               · -- inherited stale key: the entry floor transfers
                 have h_sk_eq : s2.simpleKey = s.simpleKey := by
-                  rw [← h_eq]
+                  rw [← h_eq, closeStaleExplicitKey_simpleKey]
                   refine h_inh.trans ?_
                   show (unwindIndents s_skip ↑s_skip.col).simpleKey = s.simpleKey
                   rw [unwindIndents_preserves_simpleKey]
@@ -413,7 +416,7 @@ lemma preprocess_preserves_StaleKeyCursorFloor {s s2 : ScannerState} {c : Char}
                 have h_noop : unwindIndents s_skip ↑s_skip.col = s_skip :=
                   unwindIndents_noop_of_le s_skip _ (by push_cast; omega)
                 have h_ind2 : s2.indents = s.indents := by
-                  rw [← h_eq, saveSimpleKey_preserves_indents]
+                  rw [← h_eq, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]
                   show ({ unwindIndents s_skip ↑s_skip.col
                     with needIndentCheck := false } : ScannerState).indents = s.indents
                   rw [h_noop]
@@ -424,7 +427,7 @@ lemma preprocess_preserves_StaleKeyCursorFloor {s s2 : ScannerState} {c : Char}
                 omega
               · -- fresh save: on the landing's own line — refuted
                 refine absurd ?_ h_kline
-                rw [← h_eq]
+                rw [← h_eq, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_line]
                 exact h_fresh.trans ((saveSimpleKey_line _).symm)
             · -- the line changed: the flag is armed, the save is fresh — refuted
               have h_al := skipToContent_allowed_of_line_ne h_skip h_nf h_lq
@@ -438,7 +441,7 @@ lemma preprocess_preserves_StaleKeyCursorFloor {s s2 : ScannerState} {c : Char}
                 rw [unwindIndents_preserves_simpleKeyAllowed]; exact h_al
               obtain ⟨-, h_l⟩ := saveSimpleKey_fresh_of_allowed h_nf_M h_al_M
               refine absurd ?_ h_kline
-              rw [← h_eq]
+              rw [← h_eq, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_line]
               exact h_l.trans ((saveSimpleKey_line _).symm)
       · -- no unwind
         split at h
@@ -448,32 +451,32 @@ lemma preprocess_preserves_StaleKeyCursorFloor {s s2 : ScannerState} {c : Char}
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨h_eq, -⟩ := h
             have h_line2 : s2.line = s_skip.line := by
-              rw [← h_eq]; exact saveSimpleKey_line s_skip
+              rw [← h_eq, closeStaleExplicitKey_line]; exact saveSimpleKey_line s_skip
             have h_col2 : s2.col = s_skip.col := by
-              rw [← h_eq]; exact saveSimpleKey_col s_skip
+              rw [← h_eq, closeStaleExplicitKey_col]; exact saveSimpleKey_col s_skip
             by_cases h_lq : s_skip.line = s.line
             · rcases saveSimpleKey_key_line_shape s_skip with h_inh | ⟨h_pfresh, h_fresh⟩
               · have h_sk_eq : s2.simpleKey = s.simpleKey := by
-                  rw [← h_eq]
+                  rw [← h_eq, closeStaleExplicitKey_simpleKey]
                   exact h_inh.trans (skipToContent_preserves_simpleKey s s_skip h_skip)
                 have h_floor := h_inv h_nf (by rw [← h_sk_eq]; exact h_poss)
                   (by rw [← h_sk_eq, ← h_lq, ← h_line2]; exact h_kline)
                 have h_col_ge : s.col ≤ s_skip.col :=
                   skipToContent_col_ge_of_line_eq h_skip h_lq
                 have h_ind2 : s2.indents = s.indents := by
-                  rw [← h_eq, saveSimpleKey_preserves_indents]
+                  rw [← h_eq, closeStaleExplicitKey_indents, saveSimpleKey_preserves_indents]
                   exact skipToContent_preserves_indents s s_skip h_skip
                 have h_ci2 : s2.currentIndent = s.currentIndent := by
                   unfold ScannerState.currentIndent; rw [h_ind2]
                 rw [h_ci2, h_col2]
                 omega
               · refine absurd ?_ h_kline
-                rw [← h_eq]
+                rw [← h_eq, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_line]
                 exact h_fresh.trans ((saveSimpleKey_line _).symm)
             · have h_al := skipToContent_allowed_of_line_ne h_skip h_nf h_lq
               obtain ⟨-, h_l⟩ := saveSimpleKey_fresh_of_allowed h_nf_skip h_al
               refine absurd ?_ h_kline
-              rw [← h_eq]
+              rw [← h_eq, closeStaleExplicitKey_simpleKey, closeStaleExplicitKey_line]
               exact h_l.trans ((saveSimpleKey_line _).symm)
 
 /-! ## §3  The directive scan stays on its line and off the indent stack

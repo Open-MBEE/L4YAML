@@ -2040,7 +2040,7 @@ def checkTrimEnd (state : IO.Ref TestCollector) (label : String) (p : Char → B
 
 /-- `foldBlockContentGo_eq_foldl` at one `(l, acc, st, pending)` instance. -/
 def checkFoldGo (state : IO.Ref TestCollector) (label : String) (l : List Char) (acc : String)
-    (st : FoldState) (pending : Nat) : IO Unit :=
+    (st : Indexed.FoldState) (pending : Nat) : IO Unit :=
   checkM state s!"foldBlockContentGo_eq_foldl/{label}"
     (foldBlockContentGo l acc st pending == foldBlockFinish (l.foldl foldBlockStep (acc, st, pending)))
     s!"go {repr (foldBlockContentGo l acc st pending)}"
@@ -2048,12 +2048,12 @@ def checkFoldGo (state : IO.Ref TestCollector) (label : String) (l : List Char) 
 /-- `foldBlockContent_eq_go` at one raw body. -/
 def checkFoldContent (state : IO.Ref TestCollector) (label : String) (raw : String) : IO Unit :=
   checkM state s!"foldBlockContent_eq_go/{label}"
-    (foldBlockContent raw == foldBlockContentGo raw.toList "" .start 0)
-    s!"foldl {repr (foldBlockContent raw)} go {repr (foldBlockContentGo raw.toList "" .start 0)}"
+    (Indexed.foldBlockContent raw == foldBlockContentGo raw.toList "" .start 0)
+    s!"foldl {repr (Indexed.foldBlockContent raw)} go {repr (foldBlockContentGo raw.toList "" .start 0)}"
 
 def testScalarFinishBridges (state : IO.Ref TestCollector) : IO Unit := do
-  let ws := isWhiteSpaceBool
-  let lf := isLineFeedBool
+  let ws := L4YAML.CharPredicates.isWhiteSpaceBool
+  let lf := L4YAML.CharPredicates.isLineFeedBool
   -- trimEndIx: empty, singleton match / non-match, all-match, trailing run, interior run kept.
   checkTrimEnd state "empty/ws" ws ""
   checkTrimEnd state "singleton/match" ws " "
@@ -2097,7 +2097,7 @@ def testScalarFinishBridges (state : IO.Ref TestCollector) : IO Unit := do
   checkFoldContent state "multibyte" "é\n😀\n"
   -- foldBlockContentGo_eq_foldl at non-initial accumulators: every FoldState × pending 0/1/2,
   -- with empty, newline-only, content-only, and mixed tails.
-  for st in [FoldState.start, .content, .empty, .more] do
+  for st in [Indexed.FoldState.start, .content, .empty, .more] do
     for pending in [0, 1, 2] do
       let tag := s!"{repr st}/pending={pending}"
       checkFoldGo state s!"{tag}/nil" [] "acc" st pending

@@ -2604,6 +2604,89 @@ def testHookCarrier (state : IO.Ref TestCollector) : IO Unit := do
     checkM state s!"parse/hook carrier — legacy: {label}" (accepts input == expected) ""
     checkM state s!"parse/hook carrier — indexed: {label}" (acceptsIx input == expected) ""
 
+/-- `PendingKeySound.Sound`, `Mono`, `SentinelBase` and `PreprocessFloor` as Booleans, so the
+    statement of `scanNextToken_sound` can be instantiated at the runtime: hypotheses on the
+    pre-state, conclusion on the post-state, at every token boundary of a walk. -/
+def soundB (s : ScannerState) : Bool :=
+  let inn := PendingKeys.innermost s.indentColumns s.pendingKeys
+  s.pendingKeys.size == s.indents.size
+    && (List.range s.pendingKeys.size).all (fun i =>
+          match s.pendingKeys[i]? with
+          | some (some _) => (s.indentColumns[i]?.getD (-1)) ≥ 0
+          | _ => true)
+    && (s.flowLevel != 0 || (s.explicitKeyLine, s.explicitKeyCol) == inn)
+    && (s.flowLevel == 0 || s.explicitKeyStack[0]? == some inn)
+    && s.explicitKeyStack.size == s.flowLevel
+
+def monoB (s : ScannerState) : Bool :=
+  (List.range (s.indents.size - 1)).all fun i =>
+    match s.indents[i]?, s.indents[i+1]? with
+    | some a, some b => a.column < b.column
+    | _, _ => true
+
+def sentinelB (s : ScannerState) : Bool :=
+  s.indents[0]? == some { column := -1, isSequence := false }
+
+def preprocessFloorB (s : ScannerState) : Bool :=
+  match scanNextToken_preprocess s with
+  | .ok (some (sp, _)) => sp.inFlow || sp.currentIndent ≤ (sp.col : Int)
+  | _ => true
+
+/-- Walk `scanNextToken` from `mk'`; at each step check the hypotheses of `scanNextToken_sound`
+    on the pre-state and its conclusion on the post-state.  Returns
+    `(steps, hypothesis failures, conclusion failures)`. -/
+def walkSound (input : String) : Nat × Nat × Nat := Id.run do
+  let mut s := ScannerState.mk' input
+  let mut steps := 0
+  let mut hypFail := 0
+  let mut concFail := 0
+  let mut fuel := input.length + 8
+  while fuel > 0 do
+    fuel := fuel - 1
+    let hyp := soundB s && monoB s && sentinelB s && preprocessFloorB s
+    match scanNextToken s with
+    | .ok (some s') =>
+      steps := steps + 1
+      if !hyp then hypFail := hypFail + 1
+      else if !soundB s' then concFail := concFail + 1
+      s := s'
+    | _ => fuel := 0
+  return (steps, hypFail, concFail)
+
+def testTokenCarrierWalk (state : IO.Ref TestCollector) : IO Unit := do
+  -- The seed satisfies every hypothesis.
+  let s0 := ScannerState.mk' "a"
+  checkM state "walk/seed: Sound ∧ Mono ∧ SentinelBase ∧ PreprocessFloor"
+    (soundB s0 && monoB s0 && sentinelB s0 && preprocessFloorB s0) ""
+  -- A state that REFUTES `Sound` (register alive, no marked slot) is reported as such.
+  checkM state "walk/soundB refutes a stale register"
+    (!soundB (staleStateAt "a" 0 0 0 (some 0) 2 0)) ""
+  for (label, input) in [
+      ("empty", ""),
+      ("scalar", "a\n"),
+      ("sibling explicit keys", "? a\n? b\n: c\n"),
+      ("explicit key, dedent to `-`", "- ? a\n- b\n"),
+      ("explicit key, non-key `?`", "- ? a\n?x\n"),
+      ("nested ? family (item 335)", "?\n  ? y\n  : z\n: w: x\n"),
+      ("? content at its own column", "?\n- a\n- b\n: v\n"),
+      ("flow inside ?", "?\n  ? {a: b}\n  : z\n: w: x\n"),
+      ("flow key with saved pair", "? [x]\n: b\n"),
+      ("nested flow", "[? a, {b: [1, {c: d}]}, ? e]\n"),
+      ("document markers", "? a\n---\nb\n...\n? c\n"),
+      ("directive", "%YAML 1.2\n---\n? a\n: b\n"),
+      ("compact in sequence", "- ? a\n  : b\n- c\n"),
+      ("misindented value (refused)", "- a\n- ? a\n: a\n"),
+      ("implicit then explicit", "a: 1\n? b\n: 2\n"),
+      ("block scalar under ?", "? |\n  x\n: y\n"),
+      ("quoted keys", "? \"q\"\n: 'v'\n"),
+      ("anchors and tags", "? &k !!str a\n: *k\n"),
+      ("comments", "? a # c\n# d\n: b\n"),
+      ("deep nesting", "- - - ? a\n      : b\n")] do
+    let (steps, hf, cf) := walkSound input
+    checkM state s!"walk/{label}: hypotheses hold at every boundary" (hf == 0)
+      s!"{hf} of {steps} boundaries"
+    checkM state s!"walk/{label}: Sound after every step" (cf == 0) s!"{cf} of {steps} steps"
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -2623,6 +2706,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testPendingKeys state
   testDedentHook state
   testHookCarrier state
+  testTokenCarrierWalk state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

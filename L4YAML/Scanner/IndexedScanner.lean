@@ -570,7 +570,7 @@ def trimEndIx (p : Char → Bool) (s : String) : String :=
 
 /-- List-level specification of `trimEndIx`: the reverse/dropWhile/reverse
     round trip the proofs reason about. -/
-theorem trimEndIx_eq (p : Char → Bool) (s : String) :
+lemma trimEndIx_eq (p : Char → Bool) (s : String) :
     trimEndIx p s = String.ofList ((s.toList.reverse.dropWhile p).reverse) := by
   have key : ∀ (a b : List Char), b.all p = true → a.getLast?.any p = false →
       ((a ++ b).reverse.dropWhile p).reverse = a := by
@@ -1405,7 +1405,7 @@ def foldBlockFinish : String × FoldState × Nat → String
 def foldBlockContent (raw : String) : String :=
   foldBlockFinish (raw.foldl foldBlockStep ("", .start, 0))
 
-theorem foldBlockContentGo_eq_foldl (l : List Char) (acc : String)
+lemma foldBlockContentGo_eq_foldl (l : List Char) (acc : String)
     (st : FoldState) (pending : Nat) :
     foldBlockContentGo l acc st pending =
       foldBlockFinish (l.foldl foldBlockStep (acc, st, pending)) := by
@@ -1429,7 +1429,7 @@ theorem foldBlockContentGo_eq_foldl (l : List Char) (acc : String)
         exact ih _ _ _
 
 /-- `foldBlockContent` agrees with the `List Char` specification. -/
-theorem foldBlockContent_eq_go (raw : String) :
+lemma foldBlockContent_eq_go (raw : String) :
     foldBlockContent raw = foldBlockContentGo raw.toList "" .start 0 := by
   rw [foldBlockContentGo_eq_foldl, foldBlockContent, String.foldl_eq_foldl_toList]
 

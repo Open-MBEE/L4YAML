@@ -175,7 +175,11 @@ def dump_configured(value: YamlValue, *, config_yaml: str) -> str:
         value._handle, cfg, len(cfg),
     )
     if raw is None:
-        raise ConfigError("dump_configured returned null")
+        err: bytes | None = lib.l4yaml_dump_configured_error(
+            value._handle, cfg, len(cfg),
+        )
+        msg: str = err.decode("utf-8") if err else "unknown config error"
+        raise ConfigError(msg)
     return raw.decode("utf-8")
 
 

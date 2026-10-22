@@ -17,13 +17,12 @@ public import L4YAML.Output.Emitter
 /-! # `IndexedEmitterScannability.ScanChain` — Phase 3 Step 6f.3b3
 
 **Status**: fully populated through §3. §1 ports the
-legacy §3 prelude *utility lemmas* (lines 842–1184 of
-`Proofs/Output/EmitterScannability.lean`); §2 ports the `ScanChain`
-inductive + helpers (legacy lines 1185–1232 + 1261–1280). §3 lifts
+legacy §3 prelude *utility lemmas* of
+`Proofs/Output/EmitterScannability.lean`; §2 ports the `ScanChain`
+inductive + helpers. §3 lifts
 the strict-progress capstone (`scanNextTokenIx_progress` from
 `Proofs/Scanner/IndexedScannerProgress.lean` §7) into the
-`ScanChainIx.bound_invariant` strict form and `ScanChainIx.fuel_bound`
-(legacy lines 1281–1303).
+`ScanChainIx.bound_invariant` strict form and `ScanChainIx.fuel_bound`.
 
 ## Scope of §1 (utility slice, landed 2026-05-24)
 
@@ -49,7 +48,7 @@ the strict-progress capstone (`scanNextTokenIx_progress` from
 
   - **§2.0** — `ScanChainIx` inductive: `n` consecutive successful
     `scanNextTokenIx` steps from `s` to `s'`. Twin of legacy
-    `ScanChain` (line 1185).
+    `ScanChain`.
   - **§2.1** — Combinators: `.trans` / `.single`.
   - **§2.2** — `scanLoopIx` connection: `.to_scanLoopIx` /
     `.to_scanLoopIx_exists`.
@@ -57,7 +56,7 @@ the strict-progress capstone (`scanNextTokenIx_progress` from
     `IxCursor.posBound` field subsumes legacy `inputEnd`/`input`/
     `IsValid` bookkeeping; `scanNextTokenIx_offset_monotonic`
     (`IndexedDispatch.lean:1608`) is the only "preservation"
-    needed. The legacy `scanNextToken_preserves_bound` (line 1251)
+    needed. The legacy `scanNextToken_preserves_bound`
     becomes vacuous — no theorem needed, replaced by direct
     `posBound` projection. `.offset_monotonic_weak` gives the
     `s_final.offset ≥ s₀.offset` form (no strict-progress needed).
@@ -379,7 +378,7 @@ lemma dispatchContentIx_quote (s : ScannerStateIx input) (c : Char) (hc : c = '"
 
 Pure facts about `Output.Emitter.emitScalar` — no scanner involvement.
 Ported verbatim from legacy `emitScalar_toList` /
-`emitScalar_utf8ByteSize_ge` (lines 1058–1070). -/
+`emitScalar_utf8ByteSize_ge`. -/
 
 /-- `emitScalar content` decomposes as `'"' :: escapeString content :: '"'`. -/
 lemma emitScalar_toList (content : String) :
@@ -399,8 +398,7 @@ lemma emitScalar_utf8ByteSize_ge (content : String) :
 
 /-! ## §2  `ScanChainIx` — n-step scan chains
 
-Indexed twin of legacy `ScanChain` (lines 1185–1232 + 1261–1280 of
-`Proofs/Output/EmitterScannability.lean`). Captures the fact that
+Indexed twin of legacy `ScanChain`. Captures the fact that
 `n` successive `scanNextTokenIx` calls each return `.ok (some ...)`,
 threading an intermediate state through to the final state `s'`.
 
@@ -433,7 +431,7 @@ inductive ScanChainIx {input : String} :
 /-! ### §2.1  Combinators (`.trans`, `.single`) -/
 
 /-- Transitivity: concatenate two scan chains. Mirrors legacy
-    `ScanChain.trans` (line 1193). -/
+    `ScanChain.trans`. -/
 lemma ScanChainIx.trans {s₁ s₂ s₃ : ScannerStateIx input} {n₁ n₂ : Nat}
     (h1 : ScanChainIx s₁ n₁ s₂) (h2 : ScanChainIx s₂ n₂ s₃) :
     ScanChainIx s₁ (n₁ + n₂) s₃ := by
@@ -446,7 +444,7 @@ lemma ScanChainIx.trans {s₁ s₂ s₃ : ScannerStateIx input} {n₁ n₂ : Nat
     exact .step h_snt h_ih
 
 /-- A single `scanNextTokenIx` step as a `ScanChainIx`. Mirrors
-    legacy `ScanChain.single` (line 1205). -/
+    legacy `ScanChain.single`. -/
 lemma ScanChainIx.single {s s' : ScannerStateIx input}
     (h : scanNextTokenIx s = .ok (some s')) :
     ScanChainIx s 1 s' :=
@@ -456,7 +454,7 @@ lemma ScanChainIx.single {s s' : ScannerStateIx input}
 
 /-- If `n` steps succeed reaching `s'`, and `scanLoopIx s' fuel`
     succeeds, then `scanLoopIx s (fuel + n)` succeeds with the same
-    result. Mirrors legacy `ScanChain.to_scanLoop` (line 1213). -/
+    result. Mirrors legacy `ScanChain.to_scanLoop`. -/
 lemma ScanChainIx.to_scanLoopIx {s s' : ScannerStateIx input}
     {n fuel : Nat} {ts : Indexed.TokenStream input}
     (h_chain : ScanChainIx s n s')
@@ -471,7 +469,7 @@ lemma ScanChainIx.to_scanLoopIx {s s' : ScannerStateIx input}
     exact scanLoopIx_step_eq h_snt h_ih
 
 /-- Existential variant of `.to_scanLoopIx`. Mirrors legacy
-    `ScanChain.to_scanLoop_exists` (line 1227). -/
+    `ScanChain.to_scanLoop_exists`. -/
 lemma ScanChainIx.to_scanLoopIx_exists {s s' : ScannerStateIx input}
     {n : Nat}
     (h_chain : ScanChainIx s n s')
@@ -482,7 +480,7 @@ lemma ScanChainIx.to_scanLoopIx_exists {s s' : ScannerStateIx input}
 
 /-! ### §2.3  Weak offset/bound invariants
 
-Legacy's `scanNextToken_preserves_bound` (line 1251) tracks
+Legacy's `scanNextToken_preserves_bound` tracks
 `offset ≤ inputEnd`, `inputEnd = input.utf8ByteSize`,
 `input = input`, and `IsValid`. In the indexed substrate:
   - `inputEnd` does not exist (replaced by `input.utf8ByteSize`).
@@ -500,7 +498,7 @@ inductively. -/
     `s_final.cursor.pos.offset ≥ s₀.cursor.pos.offset`.
 
     *Weak* form (no strict progress): the legacy
-    `bound_invariant` (line 1261) would give
+    `bound_invariant` would give
     `offset ≥ offset + n`, but that requires the strict-progress
     capstone `scanNextTokenIx_progress` which is not yet ported.
     See `.internals.progress` slice. -/

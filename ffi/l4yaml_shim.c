@@ -81,7 +81,10 @@ extern lean_obj_res l4yaml_parse_limits_yaml_impl(lean_obj_arg yaml);
 extern lean_obj_res l4yaml_parse_dump_config_yaml_impl(lean_obj_arg yaml);
 extern uint8_t      l4yaml_config_result_is_ok_impl(lean_obj_arg result);
 extern lean_obj_res l4yaml_config_result_get_error_impl(lean_obj_arg result);
-extern lean_obj_res l4yaml_config_result_get_limits_impl(lean_obj_arg result);
+extern lean_obj_res l4yaml_config_result_get_limits_or_default_impl(lean_obj_arg result);
+extern uint8_t      l4yaml_dump_result_is_ok_impl(lean_obj_arg result);
+extern lean_obj_res l4yaml_dump_result_get_error_impl(lean_obj_arg result);
+extern lean_obj_res l4yaml_dump_result_get_output_impl(lean_obj_arg result);
 extern lean_obj_res l4yaml_parse_with_yaml_config_impl(lean_obj_arg input,
                                                            lean_obj_arg config_yaml);
 
@@ -347,7 +350,7 @@ const char *l4yaml_config_error_message(void *r) {
 
 void *l4yaml_config_get_limits(void *r) {
     lean_inc((lean_object *)r);
-    return l4yaml_config_result_get_limits_impl((lean_object *)r);
+    return l4yaml_config_result_get_limits_or_default_impl((lean_object *)r);
 }
 
 void *l4yaml_parse_configured(const char *input, size_t len,
@@ -357,11 +360,35 @@ void *l4yaml_parse_configured(const char *input, size_t len,
     return l4yaml_parse_with_yaml_config_impl(lean_input, lean_config);
 }
 
-const char *l4yaml_dump_configured(void *v, const char *config_yaml,
-                                      size_t config_len) {
+/* Run the configured dump; returns an owned Except String String handle.
+ * Each dump_result_*_impl accessor consumes one reference to it. */
+static lean_object *dump_configured_result(void *v, const char *config_yaml,
+                                           size_t config_len) {
     lean_inc((lean_object *)v);
     lean_object *lean_config = lean_mk_string_from_bytes(config_yaml, config_len);
-    lean_object *s = l4yaml_dump_with_yaml_config_impl((lean_object *)v, lean_config);
+    return l4yaml_dump_with_yaml_config_impl((lean_object *)v, lean_config);
+}
+
+const char *l4yaml_dump_configured(void *v, const char *config_yaml,
+                                      size_t config_len) {
+    lean_object *r = dump_configured_result(v, config_yaml, config_len);
+    lean_inc(r);
+    if (!l4yaml_dump_result_is_ok_impl(r)) {
+        lean_dec(r);
+        return NULL;
+    }
+    lean_object *s = l4yaml_dump_result_get_output_impl(r);
+    return capture_string(s);
+}
+
+const char *l4yaml_dump_configured_error(void *v, const char *config_yaml,
+                                            size_t config_len) {
+    lean_object *r = dump_configured_result(v, config_yaml, config_len);
+    lean_object *s = l4yaml_dump_result_get_error_impl(r);
+    if (lean_string_size(s) <= 1) {
+        lean_dec(s);
+        return NULL;
+    }
     return capture_string(s);
 }
 

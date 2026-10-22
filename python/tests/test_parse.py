@@ -218,3 +218,33 @@ class TestTypeErrors:
         v = l4yaml.load("hello")
         with pytest.raises(l4yaml.L4YAMLError):
             len(v)
+
+
+# ── Equality / hashing / iteration ───────────────────────────────────
+
+@needs_lib
+class TestValueIdentity:
+    def test_eq_and_hash_are_structural(self) -> None:
+        a: YamlValue = l4yaml.load("{k: [1, 2], j: x}")
+        b: YamlValue = l4yaml.load("{k: [1, 2], j: x}")
+        c: YamlValue = l4yaml.load("{k: [1, 3], j: x}")
+        assert a == b and hash(a) == hash(b)
+        assert a != c
+        assert len({a, b, c}) == 2
+
+    def test_repr_is_cached_and_stable(self) -> None:
+        v: YamlValue = l4yaml.load("a: [1, 2]")
+        first: str = repr(v)
+        assert repr(v) is first
+        assert repr(l4yaml.load("a: [1, 2]")) == first
+
+    def test_mapping_iter_is_lazy(self) -> None:
+        v: YamlValue = l4yaml.load("a: 1\nb: 2\nc: 3")
+        it = iter(v)
+        k, val = next(it)
+        assert (k, val.as_str()) == ("a", "1")
+        assert [k for k, _ in it] == ["b", "c"]
+
+    def test_sequence_iter_matches_as_list(self) -> None:
+        v: YamlValue = l4yaml.load("[x, y, z]")
+        assert [i.as_str() for i in v] == [i.as_str() for i in v.as_list()]

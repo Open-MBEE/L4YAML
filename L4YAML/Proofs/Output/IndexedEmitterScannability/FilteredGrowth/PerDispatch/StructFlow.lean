@@ -13,13 +13,12 @@ public import L4YAML.Proofs.Production.IndexedScannerPlainScalarValid
 /-! # `FilteredGrowth.PerDispatch.StructFlow` — Phase 3 Step
 `6f.3b3.filteredgrowth.perdispatch.structflow`
 
-**Sub-session 1 of `.perdispatch`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 6071–6362, ~292 LOC).
+**Sub-session 1 of `.perdispatch`** (~292 legacy LOC).
 
 Per-dispatch-layer filtered growth lemmas for the **structural**
 (document markers + directives) and **flow-indicator** dispatchers.
 The companion sub-session `.blockcontent` will ship the block-
-indicator + content dispatcher lemmas (legacy 6364–6757).
+indicator + content dispatcher lemmas.
 
 Ships:
 
@@ -30,19 +29,19 @@ Ships:
     trailing `do`-block probe (each successful arm collapses by
     `rfl` after `subst`).
   * **§1 `scanDocumentStart_filtered_growsIx`** — `≥ +1` for
-    document-start (legacy 6075).
+    document-start.
   * **§2 `scanDocumentEnd_filtered_growsIx`** — `≥ +1` for document-
-    end (legacy 6092).
+    end.
   * **§3 `scanYamlDirective_new_token_eqIx`** — YAML directive emits
-    a non-`.placeholder` at the first new slot (legacy 6137).
+    a non-`.placeholder` at the first new slot.
   * **§4 `scanTagDirective_new_token_eqIx`** — TAG directive emits
-    a non-`.placeholder` at the first new slot (legacy 6184).
+    a non-`.placeholder` at the first new slot.
   * **§5 `scanDirective_filtered_growsIx`** — `≥ +1` under
-    `h_grew` (legacy 6232).
+    `h_grew`.
   * **§6 `dispatchStructural_filtered_monoIx`** — filter-monotone
-    across all three sub-cases (legacy 6293).
+    across all three sub-cases.
   * **§7 `dispatchFlowIndicators_filtered_growsIx`** — `≥ +1` for
-    each of `[`/`]`/`{`/`}`/`,` (legacy 6307).
+    each of `[`/`]`/`{`/`}`/`,`.
 
 ## Indexed simplification
 
@@ -129,7 +128,7 @@ lemma scanFlowEntryIx_tokens_eq {s s' : ScannerStateIx input}
 `scanDocumentStartIx` grows the filtered token count by `≥ 1`: it
 unwinds indents (`unwindIndentsIx_tokens_size_le`), then emits
 `.documentStart` (non-placeholder). Indexed twin of legacy
-`scanDocumentStart_filtered_grows` (line 6075). -/
+`scanDocumentStart_filtered_grows`. -/
 
 lemma scanDocumentStart_filtered_growsIx (s : ScannerStateIx input) :
     let p := fun (t : IxToken input) => t.token != .placeholder
@@ -160,7 +159,7 @@ lemma scanDocumentStart_filtered_growsIx (s : ScannerStateIx input) :
 `scanDocumentEndIx` grows the filtered token count by `≥ 1` when it
 succeeds: same structure as `scanDocumentStartIx`, with the
 trailing `do`-block probe (excluded by `h`). Indexed twin of legacy
-`scanDocumentEnd_filtered_grows` (line 6092). -/
+`scanDocumentEnd_filtered_grows`. -/
 
 lemma scanDocumentEnd_filtered_growsIx {s s' : ScannerStateIx input}
     (h : scanDocumentEndIx s = .ok s') :
@@ -188,7 +187,7 @@ lemma scanDocumentEnd_filtered_growsIx {s s' : ScannerStateIx input}
 
 `scanYamlDirectiveIx` (when successful) emits exactly one new
 `.versionDirective` token via `emitAt` at the saved `startPos`.
-Indexed analogue of legacy `scanYamlDirective_new_token_eq` (line 6137).
+Indexed analogue of legacy `scanYamlDirective_new_token_eq`.
 
 The legacy statement `∃ major minor, s'.tokens = s.tokens.push
   { pos := startPos, val := .versionDirective major minor }` is
@@ -233,7 +232,7 @@ lemma scanYamlDirective_new_token_eqIx {s : ScannerStateIx input}
 
 `scanTagDirectiveIx` (when successful) emits exactly one new
 `.tagDirective` token via `emitAt`. Indexed analogue of legacy
-`scanTagDirective_new_token_eq` (line 6184). Same flattened form
+`scanTagDirective_new_token_eq`. Same flattened form
 as §3. -/
 
 lemma scanTagDirective_new_token_eqIx {s : ScannerStateIx input}
@@ -272,7 +271,7 @@ grows the raw token count*. The reserved-directive branch (`%FOO`)
 emits no token (tokens unchanged), so under `h_grew : s'.tokens.size
 > s.tokens.size` the dispatch must have hit YAML or TAG — both of
 which emit a non-`.placeholder` token by §3/§4. Indexed twin of legacy
-`scanDirective_filtered_grows` (line 6232). -/
+`scanDirective_filtered_grows`. -/
 
 lemma scanDirective_filtered_growsIx {s s' : ScannerStateIx input}
     (h : scanDirectiveIx s = .ok s')
@@ -322,7 +321,7 @@ lemma scanDirective_filtered_growsIx {s s' : ScannerStateIx input}
 `scanNextTokenIx_dispatchStructural` is *filter-monotone*
 (`≥ +0`). The three sub-cases (document-start / document-end /
 directive) each preserve filtered prefix. Indexed twin of legacy
-`dispatchStructural_filtered_mono` (line 6293). -/
+`dispatchStructural_filtered_mono`. -/
 
 lemma dispatchStructural_filtered_monoIx {s s' : ScannerStateIx input} {c : Char}
     (h : scanNextTokenIx_dispatchStructural s c = .ok (some s')) :
@@ -349,7 +348,7 @@ lemma dispatchStructural_filtered_monoIx {s s' : ScannerStateIx input} {c : Char
 `scanNextTokenIx_dispatchFlowIndicators` strictly grows filtered
 count (`≥ +1`). Each of the five sub-cases (`[`, `]`, `{`, `}`, `,`)
 emits exactly one non-`.placeholder` token. Indexed twin of legacy
-`dispatchFlowIndicators_filtered_grows` (line 6307). -/
+`dispatchFlowIndicators_filtered_grows`. -/
 
 /-- Shared body for the 5 flow-indicator dispatch cases: given the
 post-state's `tokens` field equals `(s.emit tok).tokens` and `tok`

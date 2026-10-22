@@ -331,10 +331,10 @@ We use the first pattern below (less re-naming).
 /-! ## Layer E2 — double-quoted offset monotonicity & strict progress -/
 
 lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor input)
-    (content : String) (protectedLen : Nat) (fuel : Nat) {result : String × IxCursor input}
-    (h : collectDoubleQuotedLoopIx c content protectedLen fuel = some result) :
+    (content spaces : String) (fuel : Nat) {result : String × IxCursor input}
+    (h : collectDoubleQuotedLoopIx c content spaces fuel = some result) :
     c.pos.offset ≤ result.2.pos.offset := by
-  induction fuel generalizing c content protectedLen with
+  induction fuel generalizing c content spaces with
   | zero => unfold collectDoubleQuotedLoopIx at h; contradiction
   | succ fuel ih =>
     unfold collectDoubleQuotedLoopIx at h
@@ -342,7 +342,7 @@ lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
     · contradiction                                          -- peek? = none
     · -- some ch — cascade of nested ifs
       split at h
-      · -- isDoubleQuoteBool ch: h : some (content, c.advance) = some result
+      · -- isDoubleQuoteBool ch: h : some (content ++ spaces, c.advance) = some result
         simp only [Option.some.injEq] at h
         rw [← h]
         exact IxCursor.advance_offset_monotonic c
@@ -352,15 +352,15 @@ lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
           · -- some lbCh
             split at h
             · -- isLineBreakBool lbCh = true: line-continuation lands through
-              -- the fold (item 87)
+              -- the fold (item 87); both fold arms recurse on the same cursor
               have hAdv : c.pos.offset ≤ c.advance.pos.offset :=
                 IxCursor.advance_offset_monotonic c
               have hFold : c.advance.pos.offset ≤
                            (foldQuotedNewlinesIx c.advance).2.pos.offset :=
                 foldQuotedNewlinesIx_offset_monotonic c.advance
-              have hRec : (foldQuotedNewlinesIx c.advance).2.pos.offset ≤
-                          result.2.pos.offset := ih _ _ _ h
-              exact Nat.le_trans hAdv (Nat.le_trans hFold hRec)
+              split at h
+              · exact Nat.le_trans hAdv (Nat.le_trans hFold (ih _ _ _ h))
+              · exact Nat.le_trans hAdv (Nat.le_trans hFold (ih _ _ _ h))
             · -- isLineBreakBool lbCh = false: normal escape
               split at h
               · rename_i _ _ _ decodedCh cAfterEsc hEsc
@@ -373,15 +373,16 @@ lemma collectDoubleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
               · contradiction
           · contradiction
         · split at h
-          · -- isLineBreakBool ch = true: fold and recurse
+          · -- isLineBreakBool ch = true: fold and recurse (either fold arm)
             have hFoldMono : c.pos.offset ≤ (foldQuotedNewlinesIx c).2.pos.offset :=
               foldQuotedNewlinesIx_offset_monotonic c
-            have hRec : (foldQuotedNewlinesIx c).2.pos.offset ≤ result.2.pos.offset :=
-              ih _ _ _ h
-            exact Nat.le_trans hFoldMono hRec
-          · -- regular char: advance and recurse
-            have hRec : c.advance.pos.offset ≤ result.2.pos.offset := ih _ _ _ h
-            exact Nat.le_trans (IxCursor.advance_offset_monotonic c) hRec
+            split at h
+            · exact Nat.le_trans hFoldMono (ih _ _ _ h)
+            · exact Nat.le_trans hFoldMono (ih _ _ _ h)
+          · -- whitespace (buffered) or regular char: advance and recurse
+            split at h
+            · exact Nat.le_trans (IxCursor.advance_offset_monotonic c) (ih _ _ _ h)
+            · exact Nat.le_trans (IxCursor.advance_offset_monotonic c) (ih _ _ _ h)
 
 lemma scanDoubleQuotedIx_offset_lt {input : String} (c : IxCursor input)
     {result : String × IxCursor input}
@@ -411,10 +412,10 @@ lemma scanDoubleQuotedIx_offset_lt {input : String} (c : IxCursor input)
 /-! ## Layer E3 — single-quoted offset monotonicity & strict progress -/
 
 lemma collectSingleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor input)
-    (content : String) (fuel : Nat) {result : String × IxCursor input}
-    (h : collectSingleQuotedLoopIx c content fuel = some result) :
+    (content spaces : String) (fuel : Nat) {result : String × IxCursor input}
+    (h : collectSingleQuotedLoopIx c content spaces fuel = some result) :
     c.pos.offset ≤ result.2.pos.offset := by
-  induction fuel generalizing c content with
+  induction fuel generalizing c content spaces with
   | zero => unfold collectSingleQuotedLoopIx at h; contradiction
   | succ fuel ih =>
     unfold collectSingleQuotedLoopIx at h
@@ -431,9 +432,10 @@ lemma collectSingleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
               IxCursor.advance_offset_monotonic c
             have hAdv2 : c.advance.pos.offset ≤ c.advance.advance.pos.offset :=
               IxCursor.advance_offset_monotonic c.advance
-            have hRec : c.advance.advance.pos.offset ≤ result.2.pos.offset := ih _ _ h
+            have hRec : c.advance.advance.pos.offset ≤ result.2.pos.offset := ih _ _ _ h
             exact Nat.le_trans hAdv1 (Nat.le_trans hAdv2 hRec)
-          · -- closing quote (single `'` followed by non-`'`): h : some (content, c.advance) = some result
+          · -- closing quote (single `'` followed by non-`'`):
+            -- h : some (content ++ spaces, c.advance) = some result
             simp only [Option.some.injEq] at h
             rw [← h]
             exact IxCursor.advance_offset_monotonic c
@@ -442,15 +444,16 @@ lemma collectSingleQuotedLoopIx_offset_monotonic {input : String} (c : IxCursor 
           rw [← h]
           exact IxCursor.advance_offset_monotonic c
       · split at h
-        · -- isLineBreakBool ch = true: fold and recurse
+        · -- isLineBreakBool ch = true: fold and recurse (either fold arm)
           have hFoldMono : c.pos.offset ≤ (foldQuotedNewlinesIx c).2.pos.offset :=
             foldQuotedNewlinesIx_offset_monotonic c
-          have hRec : (foldQuotedNewlinesIx c).2.pos.offset ≤ result.2.pos.offset :=
-            ih _ _ h
-          exact Nat.le_trans hFoldMono hRec
-        · -- regular char: advance and recurse
-          have hRec : c.advance.pos.offset ≤ result.2.pos.offset := ih _ _ h
-          exact Nat.le_trans (IxCursor.advance_offset_monotonic c) hRec
+          split at h
+          · exact Nat.le_trans hFoldMono (ih _ _ _ h)
+          · exact Nat.le_trans hFoldMono (ih _ _ _ h)
+        · -- whitespace (buffered) or regular char: advance and recurse
+          split at h
+          · exact Nat.le_trans (IxCursor.advance_offset_monotonic c) (ih _ _ _ h)
+          · exact Nat.le_trans (IxCursor.advance_offset_monotonic c) (ih _ _ _ h)
 
 lemma scanSingleQuotedIx_offset_lt {input : String} (c : IxCursor input)
     {result : String × IxCursor input}
@@ -472,7 +475,7 @@ lemma scanSingleQuotedIx_offset_lt {input : String} (c : IxCursor input)
       have hAdv : c.pos.offset < c.advance.pos.offset :=
         IxCursor.advance_offset_lt_of_hasMore c hMore
       have hRec : c.advance.pos.offset ≤ result.2.pos.offset :=
-        collectSingleQuotedLoopIx_offset_monotonic c.advance "" _ h
+        collectSingleQuotedLoopIx_offset_monotonic c.advance "" "" _ h
       exact Nat.lt_of_lt_of_le hAdv hRec
     · contradiction
   · contradiction
@@ -994,87 +997,126 @@ lemma foldQuotedNewlinesIx_of_single_break {input : String} (c : IxCursor input)
   simp [h]
 
 lemma collectDoubleQuotedLoopIx_zero {input : String}
-    (c : IxCursor input) (content : String) (protectedLen : Nat) :
-    collectDoubleQuotedLoopIx c content protectedLen 0 = none :=
+    (c : IxCursor input) (content spaces : String) :
+    collectDoubleQuotedLoopIx c content spaces 0 = none :=
   rfl
 
+/-- Closing quote: the buffered trailing white run is content at the end
+    of the scalar (nothing folds it away), so it is emitted. -/
 lemma collectDoubleQuotedLoopIx_closing {input : String}
-    (c : IxCursor input) (content : String) (protectedLen : Nat) (fuel : Nat)
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hQuote : isDoubleQuoteBool ch = true) :
-    collectDoubleQuotedLoopIx c content protectedLen (fuel + 1)
-      = some (content, c.advance) := by
+    collectDoubleQuotedLoopIx c content spaces (fuel + 1)
+      = some (content ++ spaces, c.advance) := by
   unfold collectDoubleQuotedLoopIx
   rw [hPeek]
   simp [hQuote]
 
+/-- Line-break fold [74] `s-flow-folded`: the buffered `s-white*` run is
+    dropped (the legacy per-fold trim, paid in the buffer's length, not the
+    accumulator's); a `b-as-space` fold re-buffers its single space (still
+    layout), a `b-l-trimmed` fold appends its line feeds to the protected
+    content. -/
 lemma collectDoubleQuotedLoopIx_linebreak {input : String}
-    (c : IxCursor input) (content : String) (protectedLen : Nat) (fuel : Nat)
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hNotQuote : isDoubleQuoteBool ch = false)
     (hNotEscape : isEscapeBool ch = false)
     (hLineBreak : isLineBreakBool ch = true) :
-    collectDoubleQuotedLoopIx c content protectedLen (fuel + 1) =
-      collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2
-        (String.ofList (content.toList.take protectedLen) ++ (foldQuotedNewlinesIx c).1)
-        ((String.ofList (content.toList.take protectedLen)).length
-          + (if (foldQuotedNewlinesIx c).1 == " " then 0
-             else (foldQuotedNewlinesIx c).1.length))
-        fuel := by
+    collectDoubleQuotedLoopIx c content spaces (fuel + 1) =
+      (if (foldQuotedNewlinesIx c).1 == " " then
+        collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2 content " " fuel
+      else
+        collectDoubleQuotedLoopIx (foldQuotedNewlinesIx c).2
+          (content ++ (foldQuotedNewlinesIx c).1) "" fuel) := by
   conv => lhs; unfold collectDoubleQuotedLoopIx
   rw [hPeek]
   simp [hNotQuote, hNotEscape, hLineBreak]
 
+/-- Unescaped `s-white` is buffered, not pushed: `content` is untouched. -/
+lemma collectDoubleQuotedLoopIx_whitespace {input : String}
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
+    {ch : Char} (hPeek : c.peek? = some ch)
+    (hNotQuote : isDoubleQuoteBool ch = false)
+    (hNotEscape : isEscapeBool ch = false)
+    (hNotLineBreak : isLineBreakBool ch = false)
+    (hWhite : isWhiteSpaceBool ch = true) :
+    collectDoubleQuotedLoopIx c content spaces (fuel + 1) =
+      collectDoubleQuotedLoopIx c.advance content (spaces.push ch) fuel := by
+  conv => lhs; unfold collectDoubleQuotedLoopIx
+  rw [hPeek]
+  simp [hNotQuote, hNotEscape, hNotLineBreak, hWhite]
+
 lemma collectSingleQuotedLoopIx_zero {input : String}
-    (c : IxCursor input) (content : String) :
-    collectSingleQuotedLoopIx c content 0 = none :=
+    (c : IxCursor input) (content spaces : String) :
+    collectSingleQuotedLoopIx c content spaces 0 = none :=
   rfl
 
 lemma collectSingleQuotedLoopIx_doubled {input : String}
-    (c : IxCursor input) (content : String) (fuel : Nat)
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hQuote : isSingleQuoteBool ch = true)
     {next : Char} (hPeekAdv : c.advance.peek? = some next)
     (hNext : isSingleQuoteBool next = true) :
-    collectSingleQuotedLoopIx c content (fuel + 1) =
+    collectSingleQuotedLoopIx c content spaces (fuel + 1) =
       collectSingleQuotedLoopIx c.advance.advance
-        (content.push singleQuoteChar) fuel := by
+        ((content ++ spaces).push singleQuoteChar) "" fuel := by
   conv => lhs; unfold collectSingleQuotedLoopIx
   rw [hPeek]
   simp [hQuote, hPeekAdv, hNext]
 
 lemma collectSingleQuotedLoopIx_closing_some {input : String}
-    (c : IxCursor input) (content : String) (fuel : Nat)
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hQuote : isSingleQuoteBool ch = true)
     {next : Char} (hPeekAdv : c.advance.peek? = some next)
     (hNext : isSingleQuoteBool next = false) :
-    collectSingleQuotedLoopIx c content (fuel + 1) = some (content, c.advance) := by
+    collectSingleQuotedLoopIx c content spaces (fuel + 1) =
+      some (content ++ spaces, c.advance) := by
   unfold collectSingleQuotedLoopIx
   rw [hPeek]
   simp [hQuote, hPeekAdv, hNext]
 
 lemma collectSingleQuotedLoopIx_closing_none {input : String}
-    (c : IxCursor input) (content : String) (fuel : Nat)
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hQuote : isSingleQuoteBool ch = true)
     (hPeekAdv : c.advance.peek? = none) :
-    collectSingleQuotedLoopIx c content (fuel + 1) = some (content, c.advance) := by
+    collectSingleQuotedLoopIx c content spaces (fuel + 1) =
+      some (content ++ spaces, c.advance) := by
   unfold collectSingleQuotedLoopIx
   rw [hPeek]
   simp [hQuote, hPeekAdv]
 
+/-- Line-break fold [74]: the buffered white run is dropped; see
+    `collectDoubleQuotedLoopIx_linebreak`. -/
 lemma collectSingleQuotedLoopIx_linebreak {input : String}
-    (c : IxCursor input) (content : String) (fuel : Nat)
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
     {ch : Char} (hPeek : c.peek? = some ch)
     (hNotQuote : isSingleQuoteBool ch = false)
     (hLineBreak : isLineBreakBool ch = true) :
-    collectSingleQuotedLoopIx c content (fuel + 1) =
-      collectSingleQuotedLoopIx (foldQuotedNewlinesIx c).2
-        (trimTrailingWSIx content ++ (foldQuotedNewlinesIx c).1) fuel := by
+    collectSingleQuotedLoopIx c content spaces (fuel + 1) =
+      (if (foldQuotedNewlinesIx c).1 == " " then
+        collectSingleQuotedLoopIx (foldQuotedNewlinesIx c).2 content " " fuel
+      else
+        collectSingleQuotedLoopIx (foldQuotedNewlinesIx c).2
+          (content ++ (foldQuotedNewlinesIx c).1) "" fuel) := by
   conv => lhs; unfold collectSingleQuotedLoopIx
   rw [hPeek]
   simp [hNotQuote, hLineBreak]
+
+lemma collectSingleQuotedLoopIx_whitespace {input : String}
+    (c : IxCursor input) (content spaces : String) (fuel : Nat)
+    {ch : Char} (hPeek : c.peek? = some ch)
+    (hNotQuote : isSingleQuoteBool ch = false)
+    (hNotLineBreak : isLineBreakBool ch = false)
+    (hWhite : isWhiteSpaceBool ch = true) :
+    collectSingleQuotedLoopIx c content spaces (fuel + 1) =
+      collectSingleQuotedLoopIx c.advance content (spaces.push ch) fuel := by
+  conv => lhs; unfold collectSingleQuotedLoopIx
+  rw [hPeek]
+  simp [hNotQuote, hNotLineBreak, hWhite]
 
 /-! ## Layer F.4 — Plain multi-line content correctness (Step 5b.8)
 
@@ -1674,6 +1716,29 @@ lemma trimTrailingWSIx_append_whitespace (a b : String)
     rw [List.mem_reverse] at hx
     exact (isWhiteSpace_iff x).mpr (hb x hx)
   rw [dropWhile_append_all isWhiteSpaceBool b.toList.reverse a.toList.reverse hb']
+
+/-- The quoted loops' buffered fold is the legacy trim: when `spaces` is
+    all `s-white` and `content` does not end in `s-white` — the shape
+    `collectDoubleQuotedLoopIx`/`collectSingleQuotedLoopIx` maintain, since
+    `content` only ever receives `ns-*-char`s and folded line feeds —
+    dropping `spaces` is exactly `trimTrailingWSIx (content ++ spaces)`. -/
+lemma trimTrailingWSIx_append_spaces (content spaces : String)
+    (hsp : ∀ c ∈ spaces.toList, isWhiteSpaceProp c)
+    (hct : ∀ c, content.toList.getLast? = some c → isWhiteSpaceBool c = false) :
+    trimTrailingWSIx (content ++ spaces) = content := by
+  rw [trimTrailingWSIx_append_whitespace content spaces hsp]
+  unfold trimTrailingWSIx
+  cases hrev : content.toList.reverse with
+  | nil =>
+    have hnil : content.toList = [] := List.reverse_eq_nil_iff.mp hrev
+    rw [List.dropWhile_nil, List.reverse_nil, ← hnil, String.ofList_toList]
+  | cons x xs =>
+    have hx : isWhiteSpaceBool x = false := by
+      apply hct
+      rw [← List.head?_reverse, hrev]; rfl
+    rw [List.dropWhile_cons, hx]
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    rw [← hrev, List.reverse_reverse, String.ofList_toList]
 
 
 /-! ### Content-isPrefix lemma — `content` survives the loop

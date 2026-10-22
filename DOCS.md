@@ -43579,6 +43579,39 @@ the `PackAlt sc` disjunct item 329 left on the chain fields retires — the firs
 deletes.  Then step 4 (`IndentEntry.pendingKey`, the `?⏎  ? y⏎  : z⏎: w: x` over-refusal recorded in item 331),
 then the flip.
 
+### Item 335 (2026-10-22)
+
+**Row 12, step 4 of item 331's order — PAID, landed: the scanner keeps one pending explicit key per indentation level (`ScannerState.pendingKeys`, in lockstep with `indents`) and re-reads the register off that stack whenever a level's key closes.**  The conformance fix item 334 §3 priced: `?⏎  ? y⏎  : z⏎: w: x` and its `? q` variant are accepted (libyaml's reading); 306 frags³ acceptances the stale register was manufacturing are refused.
+
+**The mandate.**  Item 333's NEXT:
+
+> **NEXT — step 3 of item 331's order: the flow frame reads the pushed register pair.**  `PackAltG (e, ec) := e = none`
+
+Item 334 (PR #34, docs-only, not yet on this branch — declared gap) found step 3 has nothing to pay before the flip, and set step 4 next: "`IndentEntry.pendingKey` in both pipelines — the conformance fix for `?⏎  ? y⏎  : z⏎: w: x` and the retirement of the `ns` chains".  This item pays the scanner half; the `ns`-chain retirement is the proof half and stays with the flip (the invariant must READ `pendingKeys` before any chain can go — Rule 8 counts the field ghost until then).
+
+**Design (both pipelines, byte-identical shapes).**  `pendingKeys : Array (Option Nat) := #[none]`, pushed/popped wherever `indents` is (`pushMappingIndent`, `pushSequenceIndent`, `unwindIndentsLoop`, the flow push/pop paths).  `scanKey` marks the innermost level's slot in the same record write that arms the register.  `scanValue` settles `(pendingKeys, explicitKeyLine, explicitKeyCol)` through one named predicate `scanValueKeySurvives s s_kc` (flow: never; block: a dead register has nothing to close, a live one survives an implicit `:` deeper than its column) and one triple: survive → unchanged; otherwise `PendingKeys.close cols pks ekc` — close the level at the register's column, re-read the innermost pending key (`PendingKeys.innermost`, deepest `some`).  A flow `:` clears every slot.  `closeStaleExplicitKey(Ix)` (item 333) now re-reads instead of resetting, and its `:` exception is narrowed to the key's own column: a `:` strictly LEFT of a stale `?` closes it (the dedent already popped its level; the re-read hands the register to the outer `?`).  `-`/`?` keep item 333's exception wholesale (a `-` left of the key kept `- ? a⏎- : b`'s refusal pinned in `BlockDeferralClasses`).
+
+**Why a separate array and not `IndentEntry.pendingKey`.**  The probe on `IndentEntry` touched every `{ column := _, isSequence := _ }` literal in 44 guard files (item 332's P5 lesson); a lockstep array moves only the record writes that push/pop, and the `indentColumns` projection gives the proofs the pair.  Folding it into `IndentEntry` stays open for the flip, when `Covered` becomes an equality with `sc.indents`.
+
+**Predictions, scored.**
+
+| | predicted | read | verdict |
+|---|---|---|---|
+| P1 | both pipelines byte-identical on the 43 reference inputs and the 351 test-suite inputs | 0 pipeline differences on the 13-input probe; suiterunner and eventscore unchanged | HELD |
+| P2 | `ctrl_kc` and `ctrl_kc2` accepted | accepted, both pipelines | HELD |
+| P3 | suiterunner 869/0/151 or +1..+2 | 869/0/151 | HELD |
+| P4 | GhostIndexCensus pins unchanged | unchanged (no invariant index retired yet) | HELD |
+| P5 | NarrowingWorth moves; FreeSurface/DropDependents/ParkBill unchanged | NarrowingWorth 5520 → 5580 (+60: `PendingKeys.*`, `scanValueKeySurvives(Ix)`, restated lemmas), no closure census moved; **also** `nodes` 103335 → 103679 in CloseStackCover/PuntCoverInputs/PaidLeafDelta and `liteNodes` 529617 → 540245 in ValueLineOrigins (the lemma statements grew) | HELD (incomplete) |
+| P6 | frags³ movement confined to `:`/`-`/`?` strictly left of a stale `?`; direction: more acceptances | movement confined as predicted; **direction REFUTED**: 8648 → 8344 accepted — 306 refusals, 2 acceptances | REFUTED |
+
+What P6's refutation taught: the 306 are the `… - ? a⏎: Y` family (`:`/`: a`/`: b`/`: [1]` at column 0 after a `- ? a`/`- ? b` line).  They now refuse with `trailingContent 2 0` — the verdict of the SAME program without the `?` (`- a⏎: a` → `trailingContent 1 0`): the stale register was manufacturing those acceptances, and libyaml refuses every one.  Item 333 saw 18 of this family; the hook's wholesale `:` exception hid the other 306.  The 2 acceptances (`-⏎    ? a⏎- : a|b`) are the pre-existing `- : a` empty-key divergence (L4YAML accepts `- : a` standalone, libyaml does not) reached through a new path — recorded, not this item's.
+
+**Three lemmas were false under the new scanner and are restated** (`L4YAML/Proofs/Scanner/ExplicitKeyCoupling.lean`): `preprocess_explicitKey_cases`'s second arm is "the register was live and the state is a re-read" (`∃ t, s1 = (t.clearPendingKeyAt t.explicitKeyCol).readPendingKey`); `scanValue_ekl_none_of_col_le` and `scanValue_ekl_some_source` gain the arm `∃ cols pks, (s'.explicitKeyLine, s'.explicitKeyCol) = ((PendingKeys.close cols pks s.explicitKeyCol).2.1, ….2.2)`.  `closeStaleExplicitKey(Ix)_cases` likewise.  Rule 2: `Tests/AdversarialInstantiation.lean` Priority 10 instantiates the helpers on empty/all-dead/one/nested stacks, the hook on a two-level stack (register re-read to the OUTER key, inner slot closed, outer kept), the `:`-left/`:`-at distinction, and the item 334 §3 inputs end to end — 2581/2581.
+
+**Gates.**  Full `lake build` green after the base merge (487 jobs in the merge round, 31 pre-existing warnings); `check-theorem-keyword`, `check-import-closure`, `check-reflection-index`, `check-closure-log`, `check-serialization-proofs` green; `gate_vocab` DISAGREES (Lean 448 / script 453) identically on the base — pre-existing, not this item's; `run-all-tests` green; suiterunner 869 / 0 / 151; eventscore 347/358.  Pins: `NarrowingWorthCensus` 5520 → 5597 (this item +60, base +17); `CompactRouteCensus` `(35937, 8648, 232, 0, 916)` → `(35937, 8344, 232, 0, 938)` (the 306/2 above; the premise-reach rows unchanged); `BlockDeferralClasses` three pins — `- ? b⏎: a⏎- : b` accepted → refused `trailingContent 1 0` (prose amended where it lives), `classAReg "?⏎  ? a⏎: w"` and the three-deep variant `none` → `some (some 0, 0, 0)` (the outer key IS the register now — the fix made visible); `CloseStackCover`/`PuntCoverInputs`/`PaidLeafDelta` `nodes` 103335 → 103679; `ValueLineOrigins` `liteNodes` 529617 → 540245.  Axiom census of `PendingKeys.closeAt/innermost/close`, `scanValueKeySurvives(Ix)`, the four `closeStale*` lemmas and the four `ExplicitKeyCoupling` lemmas: `propext`, `Classical.choice`, `Quot.sound` only.
+
+**NEXT — the flip (item 331's order, after steps 1–4): `PackAlt sc := sc.explicitKeyLine = none` with lane (d) of item 334 folded in — the `FlowStackK` conjunct `(0 < fl → EkBase sc (fl-1))` replacing `PackAltG` and its `g` snapshot (`snapshot 9 → 8`), the `ns` chains retired by reading `pendingKeys` where the chain carried the pending node, and `Covered` restated as an equality with `sc.indents` so the `List FrameLevel` rows leave the ghost class.**  Price first with the flip census (83 `∨ PackAlt sc` / 16 `PackAltG` sites, item 334's `PACK-FLIP … stubs=8`) on the tree with items 332–335 merged; the flip is not buildable off a base missing any of them.
+
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 
 The [Next actions](#next-actions-in-order) row for β.5 carried the campaign's

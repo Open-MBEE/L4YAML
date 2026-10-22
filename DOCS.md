@@ -43459,11 +43459,32 @@ re-pins `GhostIndexCensus` downward.
 
 ### Item 333 (2026-10-21)
 
-**Row 12, step 2 of item 331's order: the scanner retires the explicit-key register when the `?` entry closes.
-`closeStaleExplicitKey` / `closeStaleExplicitKeyIx`, one pure state transformation at the end of
+**Row 12, step 2 of item 331's order — PAID, landed: the scanner retires the explicit-key register when the `?`
+entry closes.  `closeStaleExplicitKey` / `closeStaleExplicitKeyIx`, one pure state transformation at the end of
 `scanNextToken_preprocess` and its two indexed twins.  No token moves; both pipelines are byte-identical on the
 351 `yaml-test-suite/src` inputs and on the 43 reference inputs of items 317/320/325; one family of the frags³
-corpus moves (36 of 35937), each toward libyaml.**
+corpus moves (36 of 35937), each toward libyaml.  Two theorems were false under the new scanner and are restated;
+build 1267 jobs green; no new axiom; GhostIndexCensus unmoved by design.**
+
+**The mandate.**  Item 332's NEXT: "step 2 of item 331's order — the scanner clears the stale explicit-key
+register when the `?` entry closes (`? a⏎[1]: b`, item 317's move), then step 3 (the flow frame reads the pushed
+register pair) and step 4 (`IndentEntry.pendingKey`, the conformance fix for `?⏎  ? y⏎  : z⏎: w: x`), then the
+flip."  This entry takes step 2 exactly.  One departure from the usual chain: item 332 (step 1, the `FrameLevel`
+frame lists) is written up on its own branch and is not yet in this tree, so this entry follows item 331 here and
+`scripts/check_closure_log.py` declares 332 a gap until the two land together; the two steps touch disjoint
+files (step 1 the invariant's frame lists, step 2 the scanner and its preprocess lemmas), which is why neither
+waited for the other.
+
+**Predictions** (written before the build, from the §8.2.2 reading of item 317 and the reader audit of item 325):
+P1 — no `yaml-test-suite/src` input changes output or exit status in either pipeline, because every reader of
+the register (`scanValue`'s column test, the key reader's depth test) already refuses the stale pair.  P2 — the
+step-2 targets `? a⏎[1]: b` and `? &p⏎[1]: b` are unchanged (already `{a: null, [1]: b}`) and the sequence
+continuations `?⏎- a⏎- b⏎: v` stay `{[a, b]: v}` through the `-` exception.  P3 — the only frags³ movement is the
+`?` inside a `-` entry with a sibling `-` at the entry's column, and every movement is toward refusal.  P4 —
+GhostIndexCensus does not move: the invariant's indices are untouched; the `PackAlt` disjunct retires in step 3.
+P5 — exactly two statements become false (`preprocess_preserves_explicitKey`, `ekl_dis_eq_park`: both assert the
+register survives preprocess unconditionally) and every other site composes one projection lemma.  P6 — no new
+axiom: the hook is a `match`/`if` on five fields, its lemmas close by `split`.
 
 **The stale register.**  At `? a⏎[1]: b` the `?` entry is over when `[` starts line 2: libyaml reads
 `{a: null, [1]: b}`, and so did both pipelines — `scanValue` already refused to treat a later `:` as the explicit
@@ -43504,14 +43525,53 @@ else (ScannerCorrectness, the indent-stack tower, the emitter-scannability chain
 projection lemma per site.  `BlockDeferralClasses`: `?⏎a⏎: w` leaves class A — the sibling `a` ends the register
 before the `:` reads it.  `ExplicitKeyCouplingLadder`: `? [a]⏎z: v` reads `(none, -1, none)` at the flow open.
 
-**Pins moved** (all re-read from the build): CompactRouteCensus `(35937, 8648, 232, 0, 916)`; FreeSurfaceCensus
-`modulesSeen=244`; DropDependents closure 250; ParkBill closure 251; DispatchPrice `stepHolders=1720`,
-`scanNextToken_preprocess decls=219`; ParkGapWidth `holders=219`; HypothesisReaderCensus `RELAY=2346`;
-PremiseNecessityCensus `RELAY=2195`; NarrowingWorthCensus `theorems=5519`; ProducerDerivation `corrHyp=437`;
-ValueLineOrigins `alts=4492 liteNodes=529617`.  GhostIndexCensus unchanged — this step changes the scanner, not
-the invariant; step 3 (`PackAltG (e, ec) := e = none`) is where the register's disjunct retires.
+**Adversarial instantiation.**  `Tests/AdversarialInstantiation.lean` Priority 8 (`testCloseStaleExplicitKey`):
+17 hand-parked states — dead register ×2, live register in flow ×2, the reset arm ×5 (sibling at the `?` column:
+flow key, plain key, anchor, quoted; sibling left of the column), the three exceptions ×4 (`:`, `-` twice, `?`),
+deeper content ×2, same line, end of input — each run through BOTH hooks and checked for (a) the `_cases`
+dichotomy with every non-register projection equal (`nonRegisterView`), (b) the arm the input owes, (c) legacy /
+indexed agreement: 119 checks, 119 pass (`adversarialinstantiation` 2441 → 2560).  The lemmas hold for ANY
+exception set; only (b) sees a wrong one.
 
-NEXT: step 3, then step 4 (`IndentEntry.pendingKey`, item 331's over-refusal), then the flip.
+**Predictions, scored.**
+
+| P | said | result |
+|---|------|--------|
+| P1 | 351 suite inputs unchanged, both pipelines | HELD — 0 event / exit differences (`l4yaml-event`, `tryparse`) |
+| P2 | step-2 targets and seq continuations unchanged | HELD — all 43 matrix inputs unchanged in both pipelines |
+| P3 | frags³ moves only in `- ? a⏎- X⏎…`, all toward refusal | family HELD (36/36); direction REFUTED — 18 are new ACCEPTANCES of `- ? a⏎- X⏎- : Y`: the stale register had been manufacturing a refusal of `- : Y` that libyaml also makes, for the wrong reason; the empty-key divergence is pre-existing (`- : a` alone) and now unmasked |
+| P4 | GhostIndexCensus unmoved | HELD — `carriers=52 snapshot=9 ghost=73` on this tree, as before the item (72 once item 332's `FrameLevel` lists arrive from their branch) |
+| P5 | exactly two statements false, the rest one projection lemma per site | HELD — the two named; `EntryBoundaryLayout.preprocess_save_elim` changed SHAPE (now yields the hook applied to the save) but stayed true; ~25 StreamAccum / emitter-scannability sites each took one `closeStaleExplicitKeyIx_*` rewrite |
+| P6 | no new axiom | HELD — see the census below |
+
+**Pins moved** (old → new, all re-read from the build).  Behaviour: CompactRouteCensus accepted 8660 → 8648,
+`misindentedExplicitValue` 244 → 232 (the 36 programs above); BlockDeferralClasses `?⏎a⏎: w` `some (some 0, 0, 0)`
+→ `none` (the sibling `a` ends the register before the `:` reads it, class A → not class A); ExplicitKeyCouplingLadder
+`? [a]⏎z: v` at the flow open `(some 0, 0, none)` → `(none, -1, none)`.  Module/declaration counts, one new library
+definition per pipeline and two new proof modules: FreeSurfaceCensus `modulesSeen=242 → 244`; DropDependents
+closure 248 → 250; ParkBill closure 249 → 251; DispatchPrice `stepHolders=1719 → 1720`, `scanNextToken_preprocess
+decls=218 → 219`; ParkGapWidth `holders=218 → 219`; HypothesisReaderCensus `RELAY=2345 → 2346`;
+PremiseNecessityCensus `RELAY=2194 → 2195`; ProducerDerivation `corrHyp=436 → 437`; ValueLineOrigins `alts=4495
+→ 4492`, `liteNodes=529841 → 529617` (the restated `ekl_disp_none_of_park_none` is smaller than the theorem it
+replaces); NarrowingWorthCensus `theorems=5482 → 5520` (+37 this item: the two proof modules' lemma families; +1
+`scanBlockScalarIx_eq_impl` arriving from the base).  Unmoved: GhostIndexCensus, RelaySupply, ValueLinePacks.
+
+**Gates.**  Build **1267** jobs (1262 + 2 library-side `.olean`s for the new proof modules and their exe/test
+closure), 12 warnings, all pre-existing and none in a changed module (ScannerAcceptance ×4, SerializationWellFormed
+×3, SourceEvents ×3, CloseLandingWidth ×1, one hint).  `Verified: 4687/4687` (`scripts/run-all-tests.sh`);
+suiterunner **869 / 0 / 151** (1020); eventscore 347/358 CORRECT with 0 error-miss; `adversarialinstantiation`
+2560/2560.  Text gates: closure log (2 declared gaps: items 18, 332), import closure 247 library modules from 5
+default targets, reflection index 20 sub-themes / 230 demos / 249 reflections / 355 imports, 25 whitelisted
+`theorem` sites.  Axiom census (`#print axioms`): `closeStaleExplicitKey`, `closeStaleExplicitKey_cases`,
+`_of_inFlow`, `_of_ek_none`, their three `Ix` twins, `preprocess_explicitKey_cases`, `preprocess_explicitKeyLine_none`,
+`ekl_disp_none_of_park_none` — each `[propext, Classical.choice, Quot.sound]`, no `sorryAx`, no new axiom.
+
+**NEXT — step 3 of item 331's order: the flow frame reads the pushed register pair.**  `PackAltG (e, ec) := e = none`
+indexed by the `(explicitKeyLine, explicitKeyCol)` pair the scanner pushes on `explicitKeyStack` at the flow open
+(probe 1001 already transports it); with the register dead at every sibling, `main` / `slot_ride` pay `e = none` and
+the `PackAlt sc` disjunct item 329 left on the chain fields retires — the first GhostIndexCensus row this order
+deletes.  Then step 4 (`IndentEntry.pendingKey`, the `?⏎  ? y⏎  : z⏎: w: x` over-refusal recorded in item 331),
+then the flip.
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 

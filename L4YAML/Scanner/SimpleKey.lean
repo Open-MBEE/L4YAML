@@ -505,7 +505,7 @@ def closeStaleExplicitKey (s : ScannerState) : ScannerState :=
   else match s.explicitKeyLine, s.peek? with
     | some ekLine, some c =>
       if s.line != ekLine && (s.col : Int) ≤ s.explicitKeyCol
-          && c != '-' && c != '?' && !(c == ':' && (s.col : Int) == s.explicitKeyCol) then
+          && (c != '-' || (s.col : Int) < s.explicitKeyCol) && c != '?' && !(c == ':' && (s.col : Int) == s.explicitKeyCol) then
         (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey
       else s
     | _, _ => s

@@ -131,12 +131,21 @@ def census : Nat × Nat × Nat × Nat × Nat := Id.run do
     if hit && ok then noMidOk := noMidOk + 1
   return (total, accepted, reached, reachedOk, noMidOk)
 
-/-! **The measurement.**  35 937 programs, 8 660 accepted; 244 reach the
-    COMPACT premise and NONE of those is accepted; and the same discriminator
-    without the mid-line conjunct is accepted 916 times, which is what says the
-    zero belongs to `InlineResidue` and not to a discriminator that never
-    fires. -/
-#guard census == (35937, 8344, 232, 0, 938)
+/-! **The measurement (first reading).**  35 937 programs, 8 660 accepted; 244
+    reach the COMPACT premise and NONE of those is accepted; and the same
+    discriminator without the mid-line conjunct is accepted 916 times, which is
+    what says the zero belongs to `InlineResidue` and not to a discriminator
+    that never fires.  Items 333 and 335 (the stale-key hook, `pendingKeys`)
+    moved it to `(35937, 8344, 232, 0, 938)`: every stale-register acceptance
+    that reached the premise became a refusal. -/
+/-! **Re-read (item 337).**  With the `-` dedent arm of `closeStaleExplicitKey`
+    (a `-` strictly left of the pending `?` closes it), no frags³ program reaches
+    the COMPACT premise any more (232 → 0): every reach was a stale-register
+    `misindentedExplicitValue`.  Those 232 split 170 → accepted (8 344 → 8 514;
+    all `… - ? a⏎- : b` programs, i.e. the `- : b` empty-key divergence libyaml
+    refuses, recorded at item 333) and the rest → other refusals; `noMidOk`
+    938 → 934. -/
+#guard census == (35937, 8514, 0, 0, 934)
 
 /-- What refuses a program: the error's constructor name, or `ACCEPTED`. -/
 partial def refusal (input : String) : String :=
@@ -174,7 +183,7 @@ def refusalCensus : List (String × Nat) := Id.run do
     That single-cause histogram is what makes the emptiness a REFUTATION target
     rather than an accident of the corpus: the proof and the sweep are the same
     fact read two ways (`BlockDeferralClasses` §23). -/
-#guard refusalCensus == [("L4YAML.ScanError.misindentedExplicitValue", 232)]
+#guard refusalCensus == []
 
 end Tests.Guards.CompactRouteCensus
 

@@ -426,7 +426,7 @@ def closeStaleExplicitKeyIx {input : String} (s : ScannerStateIx input) :
   else match s.explicitKeyLine, s.peek? with
     | some ekLine, some c =>
       if s.cursor.pos.line != ekLine && (s.cursor.pos.col : Int) ≤ s.explicitKeyCol
-          && c != '-' && c != '?' && !(c == ':' && (s.cursor.pos.col : Int) == s.explicitKeyCol) then
+          && (c != '-' || (s.cursor.pos.col : Int) < s.explicitKeyCol) && c != '?' && !(c == ':' && (s.cursor.pos.col : Int) == s.explicitKeyCol) then
         (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey
       else s
     | _, _ => s

@@ -2447,6 +2447,63 @@ def testPendingKeys (state : IO.Ref TestCollector) : IO Unit := do
     checkM state s!"parse/flow inside a nested ? — legacy: {label}" (accepts input) ""
     checkM state s!"parse/flow inside a nested ? — indexed: {label}" (acceptsIx input) ""
 
+/-! ## Priority 14 — the `-` dedent arm of the stale-key hook (item 337, row 12)
+
+Item 333's hook exempted `-` so that `?⏎- a⏎- b⏎: v` keeps the `?` open while
+its block-sequence content runs at the key's own column.  The exemption was
+too wide: a `-` strictly LEFT of the pending `?` (`- ? a⏎- b`) pops the key's
+level in `unwindIndents` but left the register alive until the next content
+token, so "register = innermost pending key" was false between the two.
+
+**Risk:** HIGH on the boundary — `-` AT the key's column must stay the key's
+content (identity), `-` left of it must close the key; both pipelines must
+agree; and the parser movement this creates (`… - ? a⏎- : b`, previously
+`misindentedExplicitValue`) must be the known `- : b` empty-key divergence and
+nothing else.
+
+**Audit approach:** the hook on a parked `?` at column 2 with the `-` at 0 and
+at 2 (legacy and indexed); the three `BlockDeferralClasses` inputs that moved,
+through both parsers, beside the bare `- : b` control.
+-/
+
+def testDedentHook (state : IO.Ref TestCollector) : IO Unit := do
+  -- `- ? a⏎- b`: parked after the unwind to column 0, the `?`'s level (column 2) is gone.
+  let dedent := "- ? a\n- b"
+  let s := { staleStateAt dedent 6 1 0 (some 0) 2 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := true }],
+    pendingKeys := #[none, none] }
+  let s' := closeStaleExplicitKey s
+  checkM state "hook/`-` left of the key: register dies"
+    ((s'.explicitKeyLine, s'.explicitKeyCol) == (none, -1))
+    s!"({repr s'.explicitKeyLine}, {s'.explicitKeyCol})"
+  let t := { staleStateIxAt dedent 6 (some 0) 2 0 with
+    indents := #[{ column := -1, isSequence := false }, { column := 0, isSequence := true }],
+    pendingKeys := #[none, none] }
+  let t' := t.closeStaleExplicitKeyIx
+  checkM state "hook/`-` left of the key: register dies (indexed)"
+    ((t'.explicitKeyLine, t'.explicitKeyCol) == (none, -1)) ""
+  -- `?⏎- a`: the `-` AT the key's column is its content; the hook is the identity.
+  let same := staleStateAt "?\n- a" 2 1 0 (some 0) 0 0
+  checkM state "hook/`-` at the key's column: identity"
+    ((closeStaleExplicitKey same).explicitKeyLine == some 0) ""
+  checkM state "hook/`-` at the key's column: identity (indexed)"
+    ((staleStateIxAt "?\n- a" 2 (some 0) 0 0).closeStaleExplicitKeyIx.explicitKeyLine == some 0) ""
+  -- End to end: the movement is exactly the `- : b` divergence (libyaml refuses all four).
+  let accepts (input : String) : Bool := match parseYaml input with | .ok _ => true | .error _ => false
+  let acceptsIx (input : String) : Bool :=
+    match L4YAML.TokenParser.Indexed.parseYamlIx input with | .ok _ => true | .error _ => false
+  for (label, input) in [
+      ("control: bare empty key", "- : b\n"),
+      ("dedent past a compact ?", "- ? a\n- : b\n"),
+      ("dedent past a compact ? with a flow key", "- ? [x]\n- : b\n"),
+      ("dedent past a nested compact ?", "- - ? a\n- - : b\n"),
+      ("dedent to a plain entry", "- ? a\n- b\n"),
+      ("control: ? content at its own column", "?\n- a\n- b\n: v\n")] do
+    checkM state s!"parse/dedent hook — legacy: {label}" (accepts input) ""
+    checkM state s!"parse/dedent hook — indexed: {label}" (acceptsIx input) ""
+  checkM state "parse/dedent hook — value left of a dead key still refused"
+    (!accepts "- a\n- ? a\n: a\n") ""
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -2464,6 +2521,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testAnchorIndex state
   testFrameLevelKinds state
   testPendingKeys state
+  testDedentHook state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

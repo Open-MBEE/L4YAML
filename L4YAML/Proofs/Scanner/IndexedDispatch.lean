@@ -7,6 +7,7 @@ module
 
 public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -90,6 +91,7 @@ namespace L4YAML.Scanner.Indexed
 
 open L4YAML L4YAML.Indexed L4YAML.CharPredicates
 open L4YAML.Proofs.FlowAdjacencyIx
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 /-! ## `ScannerStateIx` — cursor-preservation lemmas
 
@@ -1156,7 +1158,7 @@ lemma scanNextTokenIx_preprocess_offset_monotonic {input : String}
           obtain ⟨hs, _⟩ := h
           subst hs
           show s.cursor.pos.offset ≤ _
-          simp only [saveSimpleKeyIx_cursor, unwindIndentsIx_cursor]
+          simp only [closeStaleExplicitKeyIx_cursor, saveSimpleKeyIx_cursor, unwindIndentsIx_cursor]
           exact skipToContentS_offset_monotonic s
 
 lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
@@ -1181,6 +1183,7 @@ lemma scanNextTokenIx_preprocess_tokens_size_le {input : String}
           subst hs
           show s.tokens.size ≤ _
           rw [← skipToContentS_tokens s]
+          rw [closeStaleExplicitKeyIx_tokens]
           refine Nat.le_trans ?_ (saveSimpleKeyIx_tokens_size_le _)
           first
             | exact Nat.le_refl _

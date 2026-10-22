@@ -420,6 +420,20 @@ namespace ScannerStateIx
 `scanValuePrepareIx` overwrites them with `blockMappingStart` + `key`
 when a `:` retroactively confirms the simple key. -/
 
+/-- Item 333, indexed twin of `closeStaleExplicitKey` (see its docstring): a
+    sibling entry at or left of the `?`'s column ends the pending explicit key. -/
+@[yaml_spec "8.2.2"]
+def closeStaleExplicitKeyIx {input : String} (s : ScannerStateIx input) :
+    ScannerStateIx input :=
+  if s.inFlow then s
+  else match s.explicitKeyLine, s.peek? with
+    | some ekLine, some c =>
+      if s.cursor.pos.line != ekLine && (s.cursor.pos.col : Int) ≤ s.explicitKeyCol
+          && c != ':' && c != '-' && c != '?' then
+        { s with explicitKeyLine := none, explicitKeyCol := -1 }
+      else s
+    | _, _ => s
+
 /-- Reserve placeholder slots and record the current cursor as a
     potential implicit key. -/
 def saveSimpleKeyIx {input : String} (s : ScannerStateIx input) :
@@ -1420,6 +1434,7 @@ def scanNextTokenIx_preprocess {input : String} (s : ScannerStateIx input) :
       .error (.trailingContent s.cursor.pos.line s.cursor.pos.col)
     else
       let s := saveSimpleKeyIx s
+      let s := closeStaleExplicitKeyIx s
       match s.peek? with
       | none => .ok none
       | some c => .ok (some (s, c))
@@ -2137,6 +2152,7 @@ def scanNextTokenIx_preprocessWC {input : String} (s : ScannerStateIx input) :
       .error (.trailingContent s.cursor.pos.line s.cursor.pos.col)
     else
       let s := saveSimpleKeyIx s
+      let s := closeStaleExplicitKeyIx s
       match s.peek? with
       | none => .ok none
       | some c => .ok (some (s, c))

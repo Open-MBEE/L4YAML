@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import L4YAML.Proofs.Scanner.ScannerCorrectness
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -32,6 +33,8 @@ public import L4YAML.Proofs.Scanner.ScannerCorrectness
     prefix is cloned — the scan-body collectors are not on this path. -/
 
 namespace L4YAML.Proofs.ScannerAllowDirectives
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Scanner
 
@@ -215,7 +218,7 @@ lemma preprocess_preserves_allowDirectives (s : ScannerState) (s1 : ScannerState
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_allowDirectives]
+            rw [closeStaleExplicitKey_allowDirectives, saveSimpleKey_preserves_allowDirectives]
             show (unwindIndents s_skip s_skip.col).allowDirectives = s.allowDirectives
             rw [unwindIndents_preserves_allowDirectives]; exact h_ad_skip
       · split at h
@@ -224,7 +227,7 @@ lemma preprocess_preserves_allowDirectives (s : ScannerState) (s1 : ScannerState
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨rfl, _⟩ := h
-            rw [saveSimpleKey_preserves_allowDirectives]; exact h_ad_skip
+            rw [closeStaleExplicitKey_allowDirectives, saveSimpleKey_preserves_allowDirectives]; exact h_ad_skip
 
 /-! ## No structural token succeeds inside an open flow (β.3)
 

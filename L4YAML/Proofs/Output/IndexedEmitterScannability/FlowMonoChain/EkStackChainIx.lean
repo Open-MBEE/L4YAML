@@ -7,6 +7,7 @@ module
 
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Preserve.Step
 public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Maintenance.Pipeline
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -44,6 +45,8 @@ balanced scan chains:
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.Indexed.EmitterScannability.FlowMonoChain
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.Indexed
@@ -323,7 +326,7 @@ lemma scanNextTokenIx_preprocess_preserves_explicitKeyStack {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_explicitKeyStack]
+          rw [closeStaleExplicitKeyIx_explicitKeyStack, saveSimpleKeyIx_explicitKeyStack]
           show (unwindIndentsIx _ _).explicitKeyStack = s.explicitKeyStack
           rw [unwindIndentsIx_explicitKeyStack, h_skip]
     · split at h
@@ -332,7 +335,7 @@ lemma scanNextTokenIx_preprocess_preserves_explicitKeyStack {input : String}
         · simp at h
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, _⟩ := h
-          rw [saveSimpleKeyIx_explicitKeyStack, h_skip]
+          rw [closeStaleExplicitKeyIx_explicitKeyStack, saveSimpleKeyIx_explicitKeyStack, h_skip]
 
 lemma scanNextTokenIx_dispatchStructural_preserves_explicitKeyStack
     (s : ScannerStateIx input) (c : Char) (s' : ScannerStateIx input)

@@ -11,6 +11,7 @@ public import L4YAML.Proofs.Scanner.ScannerCorrectness
 public import L4YAML.Proofs.Scanner.ScannerFlowCollection
 public import L4YAML.Proofs.Scanner.FlowAdjacency
 public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -47,6 +48,8 @@ Sorries in this file fall into two categories:
 -/
 
 namespace L4YAML.Proofs.ScannerPlainScalarValid
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML
 open L4YAML.Scanner
@@ -612,6 +615,9 @@ lemma preprocess_preserves_PlainScalarsValid
             · simp at h_ok
             · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
               obtain ⟨rfl, _⟩ := h_ok
+              have hj' : j < (saveSimpleKey { unwindIndents v v.col with needIndentCheck := false }).tokens.size := by
+                simpa only [closeStaleExplicitKey_tokens] using hj
+              simp only [closeStaleExplicitKey_tokens]
               by_cases h_lt : j < (unwindIndents v v.col).tokens.size
               · -- Token added by unwindIndents
                 rw [saveSimpleKey_preserves_prefix _ j
@@ -623,15 +629,18 @@ lemma preprocess_preserves_PlainScalarsValid
                 apply psv_of_not_plain
                 have : j ≥ ({ unwindIndents v v.col with needIndentCheck := false } : ScannerState).tokens.size := by
                   rw [h_ni_tok]; omega
-                exact saveSimpleKey_new_tokens_not_plain _ j hj this
+                exact saveSimpleKey_new_tokens_not_plain _ j hj' this
         · split at h_ok
           · contradiction
           · split at h_ok
             · simp at h_ok
             · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
               obtain ⟨rfl, _⟩ := h_ok
+              have hj' : j < (saveSimpleKey v).tokens.size := by
+                simpa only [closeStaleExplicitKey_tokens] using hj
+              simp only [closeStaleExplicitKey_tokens]
               apply psv_of_not_plain
-              exact saveSimpleKey_new_tokens_not_plain v j hj (by omega)
+              exact saveSimpleKey_new_tokens_not_plain v j hj' (by omega)
 
 lemma scanDocumentStart_new_tok_not_plain (s : ScannerState) (j : Nat)
     (hj : j < (scanDocumentStart s).tokens.size) (hge : j ≥ s.tokens.size) :
@@ -1777,6 +1786,11 @@ lemma saveSimpleKey_preserves_FlowNestingInv (s : ScannerState)
       (by rw [h_ph]; decide) (by rw [h_ph]; decide)]
     exact h_fni
 
+/-- Item 333: the stale-register reset keeps `FlowNestingInv`. -/
+lemma closeStaleExplicitKey_preserves_FlowNestingInv (s : ScannerState)
+    (h : FlowNestingInv s) : FlowNestingInv (closeStaleExplicitKey s) := by
+  rcases closeStaleExplicitKey_cases s with h_eq | h_eq <;> rw [h_eq] <;> exact h
+
 /-- Preprocessing preserves `FlowNestingInv`. -/
 lemma preprocess_preserves_FlowNestingInv
     (s s1 : ScannerState) (c : Char)
@@ -1803,7 +1817,7 @@ lemma preprocess_preserves_FlowNestingInv
           · simp at h_ok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
             obtain ⟨rfl, _⟩ := h_ok
-            exact saveSimpleKey_preserves_FlowNestingInv _
+            exact closeStaleExplicitKey_preserves_FlowNestingInv _ <| saveSimpleKey_preserves_FlowNestingInv _
               (unwindIndents_preserves_FlowNestingInv v v.col h_fni_v)
       · split at h_ok
         · contradiction
@@ -1811,7 +1825,7 @@ lemma preprocess_preserves_FlowNestingInv
           · simp at h_ok
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
             obtain ⟨rfl, _⟩ := h_ok
-            exact saveSimpleKey_preserves_FlowNestingInv v h_fni_v
+            exact closeStaleExplicitKey_preserves_FlowNestingInv _ (saveSimpleKey_preserves_FlowNestingInv v h_fni_v)
 
 /-- Preprocessing preserves `FlowContextPSV`. -/
 lemma preprocess_preserves_FlowContextPSV
@@ -1842,13 +1856,16 @@ lemma preprocess_preserves_FlowContextPSV
             · simp at h_ok
             · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
               obtain ⟨rfl, _⟩ := h_ok
+              have hj' : j < (saveSimpleKey { unwindIndents v v.col with needIndentCheck := false }).tokens.size := by
+                simpa only [closeStaleExplicitKey_tokens] using hj
+              simp only [closeStaleExplicitKey_tokens]
               by_cases h_lt : j < (unwindIndents v v.col).tokens.size
               · rw [saveSimpleKey_preserves_prefix _ j
                   (by show j < ({ unwindIndents v v.col with needIndentCheck := false } : ScannerState).tokens.size; exact h_lt)]
                 exact fpsv_of_not_plain _
                   (unwindIndents_new_tokens_not_plain v v.col j h_lt (by omega))
               · exact fpsv_of_not_plain _
-                  (saveSimpleKey_new_tokens_not_plain _ j hj (by
+                  (saveSimpleKey_new_tokens_not_plain _ j hj' (by
                     have : ({ unwindIndents v v.col with needIndentCheck := false } : ScannerState).tokens.size = (unwindIndents v v.col).tokens.size := rfl
                     show j ≥ ({ unwindIndents v v.col with needIndentCheck := false } : ScannerState).tokens.size
                     rw [this]; omega))
@@ -1858,8 +1875,11 @@ lemma preprocess_preserves_FlowContextPSV
             · simp at h_ok
             · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_ok
               obtain ⟨rfl, _⟩ := h_ok
+              have hj' : j < (saveSimpleKey v).tokens.size := by
+                simpa only [closeStaleExplicitKey_tokens] using hj
+              simp only [closeStaleExplicitKey_tokens]
               exact fpsv_of_not_plain _
-                (saveSimpleKey_new_tokens_not_plain v j hj (by omega))
+                (saveSimpleKey_new_tokens_not_plain v j hj' (by omega))
 
 /-- `allowDirectives` conditional preserves `FlowNestingInv` (tokens and flowLevel unchanged). -/
 lemma allowDir_ite_preserves_FlowNestingInv (s : ScannerState)
@@ -4572,6 +4592,11 @@ lemma saveSimpleKey_preserves_AllKeysPlaceholderInv (s : ScannerState)
         exact h_akpi.2.2.2 j hj h_poss_j k hk h_poss_k
     · exact h_akpi -- Branch 3: no-op
 
+/-- Item 333: the stale-register reset keeps `AllKeysPlaceholderInv`. -/
+lemma closeStaleExplicitKey_preserves_AllKeysPlaceholderInv (s : ScannerState)
+    (h : AllKeysPlaceholderInv s) : AllKeysPlaceholderInv (closeStaleExplicitKey s) := by
+  rcases closeStaleExplicitKey_cases s with h_eq | h_eq <;> rw [h_eq] <;> exact h
+
 /-- `preprocess` preserves `AllKeysPlaceholderInv`.
     `preprocess` = `skipToContent` → `unwindIndents` → `saveSimpleKey`.
     `skipToContent` and `unwindIndents` preserve simpleKey and extend tokens as prefix.
@@ -4603,6 +4628,7 @@ lemma preprocess_preserves_AllKeysPlaceholderInv
           · simp at h_pre
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
             obtain ⟨rfl, _⟩ := h_pre
+            apply closeStaleExplicitKey_preserves_AllKeysPlaceholderInv
             apply saveSimpleKey_preserves_AllKeysPlaceholderInv
             show AllKeysPlaceholderInv { unwindIndents s_skip s_skip.col with needIndentCheck := false }
             exact AllKeysPlaceholderInv_mono s_skip _ h_akpi_skip
@@ -4617,7 +4643,7 @@ lemma preprocess_preserves_AllKeysPlaceholderInv
           · simp at h_pre
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
             obtain ⟨rfl, _⟩ := h_pre
-            exact saveSimpleKey_preserves_AllKeysPlaceholderInv s_skip h_akpi_skip
+            exact closeStaleExplicitKey_preserves_AllKeysPlaceholderInv _ (saveSimpleKey_preserves_AllKeysPlaceholderInv s_skip h_akpi_skip)
 
 /-- `dispatchStructural` preserves `AllKeysPlaceholderInv`.
     Each structural sub-scanner either clears `possible` (making current key vacuous)

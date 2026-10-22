@@ -8,6 +8,7 @@ module
 public import L4YAML.Proofs.Parser.IndexedWellBehaved
 public import L4YAML.Proofs.Scanner.IndexedDispatch
 public import L4YAML.Proofs.Scanner.FlowAdjacencyIx
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
@@ -156,6 +157,8 @@ rescoping into 6d.1e.1 (foundation, this commit) + 6d.1e.2+ (chain,
 Guardrail 1. See Blueprint Reflection 68. -/
 
 namespace L4YAML.Proofs.Indexed.ScannerPlainScalarValid
+
+open L4YAML.Proofs.CloseStaleExplicitKeyIx
 
 open L4YAML
 open L4YAML.Grammar
@@ -3592,6 +3595,7 @@ lemma scanNextTokenIx_preprocess_preserves_PlainScalarsValidIx
                               reduceCtorEq] at h_ok))
   all_goals (try (obtain ⟨hs, _⟩ := h_ok; subst hs))
   all_goals (
+    rw [closeStaleExplicitKeyIx_tokens]
     apply saveSimpleKeyIx_preserves_PlainScalarsValidIx
     first
     | exact unwindIndentsIx_preserves_PlainScalarsValidIx _ _ h_psv_skip
@@ -3611,10 +3615,18 @@ lemma scanNextTokenIx_preprocess_preserves_FlowContextPSVIx
                               reduceCtorEq] at h_ok))
   all_goals (try (obtain ⟨hs, _⟩ := h_ok; subst hs))
   all_goals (
+    rw [closeStaleExplicitKeyIx_tokens]
     apply saveSimpleKeyIx_preserves_FlowContextPSVIx
     first
     | exact unwindIndentsIx_preserves_FlowContextPSVIx _ _ h_fpsv_skip
     | exact h_fpsv_skip)
+
+/-- Item 333: the stale-key hook reads neither `tokens` nor `flowLevel`. -/
+lemma closeStaleExplicitKeyIx_preserves_FlowNestingInvIx {input : String}
+    (s : ScannerStateIx input) (h : FlowNestingInvIx s) :
+    FlowNestingInvIx s.closeStaleExplicitKeyIx := by
+  unfold FlowNestingInvIx at h ⊢
+  rw [closeStaleExplicitKeyIx_tokens, closeStaleExplicitKeyIx_flowLevel]; exact h
 
 /-- `FlowNestingInvIx` is preserved by the `needIndentCheck := false`
     setter (the record update doesn't change `tokens` or `flowLevel`).
@@ -3639,6 +3651,7 @@ lemma scanNextTokenIx_preprocess_preserves_FlowNestingInvIx
                               reduceCtorEq] at h_ok))
   all_goals (try (obtain ⟨hs, _⟩ := h_ok; subst hs))
   all_goals (
+    apply closeStaleExplicitKeyIx_preserves_FlowNestingInvIx
     apply saveSimpleKeyIx_preserves_FlowNestingInvIx
     first
     | exact FlowNestingInvIx_setNeedIndentCheck_false
@@ -3697,7 +3710,9 @@ lemma scanNextTokenIx_preprocess_peek_eq
     | (obtain ⟨hs, hc⟩ := h_ok
        subst hs; subst hc
        rename_i hpk
-       exact hpk)
+       first
+       | exact hpk
+       | simpa [ScannerStateIx.peek?, closeStaleExplicitKeyIx_cursor] using hpk)
     | (-- branches where h_ok contradicts (e.g., `.ok none = .ok (some _)`)
        exact absurd h_ok (by intro; contradiction)))
 
@@ -5643,6 +5658,15 @@ lemma saveSimpleKeyIx_preserves_AllKeysPlaceholderInvIx {input : String}
       rw [h_get_j, h_get_k]
       exact h_akpi.2.2.2 j hj_s h_poss_j k hk h_poss_k
 
+/-- Item 333: the stale-key hook writes neither keys nor tokens. -/
+lemma closeStaleExplicitKeyIx_preserves_AllKeysPlaceholderInvIx {input : String}
+    (s : ScannerStateIx input) (h : AllKeysPlaceholderInvIx s) :
+    AllKeysPlaceholderInvIx s.closeStaleExplicitKeyIx :=
+  AllKeysPlaceholderInvIx_mono s _ h (closeStaleExplicitKeyIx_simpleKey s)
+    (closeStaleExplicitKeyIx_simpleKeyStack s)
+    (by rw [closeStaleExplicitKeyIx_tokens]; exact Nat.le_refl _)
+    (fun i hi => by simp only [closeStaleExplicitKeyIx_tokens])
+
 /-- `scanNextTokenIx_preprocess` preserves `AllKeysPlaceholderInvIx`.
     Composes `skipToContentS` (cursor-only update) with the conditional
     `unwindIndentsIx` and the final `saveSimpleKeyIx`. -/
@@ -5696,7 +5720,8 @@ lemma scanNextTokenIx_preprocess_preserves_AllKeysPlaceholderInvIx {input : Stri
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
           obtain ⟨hs, _⟩ := h_pre
           subst hs
-          exact saveSimpleKeyIx_preserves_AllKeysPlaceholderInvIx _ h_akpi_unwind
+          exact closeStaleExplicitKeyIx_preserves_AllKeysPlaceholderInvIx _
+            (saveSimpleKeyIx_preserves_AllKeysPlaceholderInvIx _ h_akpi_unwind)
     · -- without indent check: s1 = s.skipToContentS
       split at h_pre
       · simp at h_pre
@@ -5705,7 +5730,8 @@ lemma scanNextTokenIx_preprocess_preserves_AllKeysPlaceholderInvIx {input : Stri
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h_pre
           obtain ⟨hs, _⟩ := h_pre
           subst hs
-          exact saveSimpleKeyIx_preserves_AllKeysPlaceholderInvIx _ h_akpi_skip
+          exact closeStaleExplicitKeyIx_preserves_AllKeysPlaceholderInvIx _
+            (saveSimpleKeyIx_preserves_AllKeysPlaceholderInvIx _ h_akpi_skip)
 
 /-- `scanNextTokenIx_dispatchStructural` preserves `AllKeysPlaceholderInvIx`.
     Each of the three productions (`scanDocumentStartIx`,

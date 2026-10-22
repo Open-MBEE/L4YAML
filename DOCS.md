@@ -43457,6 +43457,62 @@ none`, lane (d); (4) the per-level pending `?` field, which retires the chains a
 and repairs the over-refusal above; then `PackAlt sc := ExplicitValueRefused sc`, 12.3.4.3, 12.4–12.6.  Each step
 re-pins `GhostIndexCensus` downward.
 
+### Item 333 (2026-10-21)
+
+**Row 12, step 2 of item 331's order: the scanner retires the explicit-key register when the `?` entry closes.
+`closeStaleExplicitKey` / `closeStaleExplicitKeyIx`, one pure state transformation at the end of
+`scanNextToken_preprocess` and its two indexed twins.  No token moves; both pipelines are byte-identical on the
+351 `yaml-test-suite/src` inputs and on the 43 reference inputs of items 317/320/325; one family of the frags³
+corpus moves (36 of 35937), each toward libyaml.**
+
+**The stale register.**  At `? a⏎[1]: b` the `?` entry is over when `[` starts line 2: libyaml reads
+`{a: null, [1]: b}`, and so did both pipelines — `scanValue` already refused to treat a later `:` as the explicit
+value unless it stood at `explicitKeyCol`, and the key reader already kept the register only for keys deeper than
+that column.  But the register itself (`explicitKeyLine`/`explicitKeyCol`) stayed LIVE until that `:`, so the flow
+collection opening the sibling parked a live pair on `explicitKeyStack` and the close restored it — item 325's
+"comes back live", item 329's `PackAlt` disjunct.  Item 331's Rule 8 reading: the proof was about to carry a fact
+("that register is stale") that the scanner's own readers decide but its state does not say.
+
+**The rule the hook implements** (`L4YAML/Scanner/SimpleKey.lean`, `IndexedDispatch.lean`; `@[yaml_spec "8.2.2"]`):
+in block context, with `explicitKeyLine = some l`, when the next token starts a line other than `l` at a column
+`≤ explicitKeyCol` and is not `:` (the explicit value, [197]), `-` (a compact sequence continuing the key node —
+`?⏎- a⏎- b⏎: v` is `{[a, b]: v}`, item 320) or `?` (the next explicit key, which `scanKey` re-arms), the register
+becomes `none`/`-1`.  Markers start with `-` and were already cleared by item 317.  The hook runs AFTER
+`saveSimpleKey(Ix)`: the save's only register read is flow-side and the hook is block-only, so the order is
+immaterial to behaviour, and placing it outside lets every preprocess lemma peel it as one layer.
+
+**Measured.**  Before and after, `l4yaml-event` (indexed) and `tryparse` (legacy) on `yaml-test-suite/src/*.yaml`
+(351): no output or exit-status change.  The 43-input matrix (step-2 targets `? a⏎[1]: b`, `? &p⏎[1]: b`, the
+seq-continuation controls, items 317 and 325's sets): no change in either pipeline; its five pre-existing libyaml
+differences (`ctrl_kc` — item 331's `pendingKey` bug; items 317's two deliberate refusals; item 325's `i325_8`,
+`i325_12`) are untouched.  The `CompactRouteCensus` frags³ corpus moved 8660 → 8648 accepted, 244 → 232
+`misindentedExplicitValue` refusals: all 36 differences are `- ? a⏎- X⏎…` (the `?` at column 2 inside a sequence
+entry, the sibling `- X` at column 0 — the hook fires at `X`).  18× `- ? a⏎- X⏎: Y`: accepted before through the
+stale register, now refused (trailing content) — libyaml refuses.  18× `- ? a⏎- X⏎- : Y`: refused before by the
+stale register, now `[{a: null}, X, {"": Y}]` — libyaml refuses `- : Y` in every context, including `- : a` alone,
+which both pipelines accepted before this item; the stale register no longer manufactures that one refusal, and the
+empty-key divergence stays recorded as pre-existing.
+
+**Proof side.**  Two new modules, `L4YAML/Proofs/Scanner/CloseStaleExplicitKey.lean` and `…Ix.lean`: a
+`_cases` lemma (identity, or exactly the two register fields reset), `_of_inFlow` / `_of_ek_none` identities, and
+a projection lemma per other field, folded into `peel_stale` / `peel_stale_ix`.  Two theorems were FALSE under the
+new scanner and were restated as what is true: `ExplicitKeyCoupling.preprocess_preserves_explicitKey` →
+`preprocess_explicitKey_cases` (preserved, or `none ∧ -1`) plus `preprocess_explicitKeyLine_none` (dead stays
+dead); `StreamAccum.ekl_dis_eq_park` → `ekl_disp_none_of_park_none`.  `EntryBoundaryLayout.preprocess_save_elim`
+now yields `closeStaleExplicitKey (saveSimpleKey s_u)`; its StreamAccum consumers peel the layer.  Everything
+else (ScannerCorrectness, the indent-stack tower, the emitter-scannability chains, the indexed twins) composes one
+projection lemma per site.  `BlockDeferralClasses`: `?⏎a⏎: w` leaves class A — the sibling `a` ends the register
+before the `:` reads it.  `ExplicitKeyCouplingLadder`: `? [a]⏎z: v` reads `(none, -1, none)` at the flow open.
+
+**Pins moved** (all re-read from the build): CompactRouteCensus `(35937, 8648, 232, 0, 916)`; FreeSurfaceCensus
+`modulesSeen=244`; DropDependents closure 250; ParkBill closure 251; DispatchPrice `stepHolders=1720`,
+`scanNextToken_preprocess decls=219`; ParkGapWidth `holders=219`; HypothesisReaderCensus `RELAY=2346`;
+PremiseNecessityCensus `RELAY=2195`; NarrowingWorthCensus `theorems=5519`; ProducerDerivation `corrHyp=437`;
+ValueLineOrigins `alts=4492 liteNodes=529617`.  GhostIndexCensus unchanged — this step changes the scanner, not
+the invariant; step 3 (`PackAltG (e, ec) := e = none`) is where the register's disjunct retires.
+
+NEXT: step 3, then step 4 (`IndentEntry.pendingKey`, item 331's over-refusal), then the flip.
+
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 
 The [Next actions](#next-actions-in-order) row for β.5 carried the campaign's

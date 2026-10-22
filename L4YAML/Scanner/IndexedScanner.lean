@@ -563,9 +563,24 @@ def processEscapeIx {input : String} (c : IxCursor input) :
       else if isNsEsc32BitBool ch then parseHexEscapeIx c.advance 8
       else none
 
+/-- Runtime body of `trimTrailingWSIx`: O(trailing white) instead of O(|s|). The `List Char`
+    spec stays proof-facing; `Tests/Guards/Parity/ScalarTrimImpl.lean` checks they agree. -/
+def trimTrailingWSIxImpl (s : String) : String :=
+  (s.dropEndWhile isWhiteSpaceBool).copy
+
 /-- Trim trailing space/tab from a string. -/
+@[implemented_by trimTrailingWSIxImpl]
 def trimTrailingWSIx (s : String) : String :=
   String.ofList ((s.toList.reverse.dropWhile isWhiteSpaceBool).reverse)
+
+/-- Runtime body of `takeCharsIx`: no `List Char` round trip. -/
+def takeCharsIxImpl (s : String) (n : Nat) : String :=
+  (s.dropEnd (s.length - n)).copy
+
+/-- The first `n` characters of `s` (all of `s` when `n ≥ s.length`). -/
+@[implemented_by takeCharsIxImpl]
+def takeCharsIx (s : String) (n : Nat) : String :=
+  String.ofList (s.toList.take n)
 
 /-! ### Layer F1 — multi-line quoted scalar folding helpers
 
@@ -1183,7 +1198,7 @@ def collectPlainScalarLoopIx {input : String} (c : IxCursor input)
         (content, c)
       else if isMappingValueBool ch then
         collectPlainScalarLoopIx c.advance
-          (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel
+          ((content ++ spaces).push ch) "" inFlow contentIndent fuel
       else if inFlow && isFlowIndicatorBool ch then
         (content, c)
       else if isLineBreakBool ch then
@@ -1209,7 +1224,7 @@ def collectPlainScalarLoopIx {input : String} (c : IxCursor input)
         (content, c)
       else
         collectPlainScalarLoopIx c.advance
-          (content ++ spaces ++ String.singleton ch) "" inFlow contentIndent fuel
+          ((content ++ spaces).push ch) "" inFlow contentIndent fuel
 
 /-- Scan a plain scalar starting at the cursor's current character.
     The caller is responsible for enforcing the
@@ -1480,7 +1495,12 @@ def parseBlockHeaderLoopIx {input : String} (c : IxCursor input)
         (chomp, explicitOffset, c)
     | none => (chomp, explicitOffset, c)
 
+/-- Runtime body of `stripTrailingNewlines`: O(trailing line feeds), see `trimTrailingWSIxImpl`. -/
+def stripTrailingNewlinesImpl (s : String) : String :=
+  (s.dropEndWhile isLineFeedBool).copy
+
 /-- Strip trailing `\n` characters from `s`. -/
+@[implemented_by stripTrailingNewlinesImpl]
 def stripTrailingNewlines (s : String) : String :=
   String.ofList ((s.toList.reverse.dropWhile isLineFeedBool).reverse)
 

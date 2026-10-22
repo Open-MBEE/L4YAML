@@ -43463,6 +43463,88 @@ none`, lane (d); (4) the per-level pending `?` field, which retires the chains a
 and repairs the over-refusal above; then `PackAlt sc := ExplicitValueRefused sc`, 12.3.4.3, 12.4–12.6.  Each step
 re-pins `GhostIndexCensus` downward.
 
+### Item 332 (2026-10-21)
+
+**Row 12, step 1 of item 331's order — PAID, landed: the frame lists carry each level's KIND.  `List Nat` →
+`List FrameLevel` (`{width : Nat, isSeq : Bool}`, the scanner's `IndentEntry` with its column a `Nat`) on
+`ResumeFrames`, `KeyFrames`, `ResumeWidths`, `Covered`, `Floor` and every field that holds a frame list; `KeyFrames`
+has ONE level constructor whose tail its kind selects, so `KeyFrames.resumeAt` returns the tail the LEVEL owes and the
+"mapping tail OR sequence tail" disjunct item 302 left to the consumer is gone.  No scanner change; no new axiom;
+GhostIndexCensus 73 → 72; build 1263 jobs green.**
+
+**The mandate.**  Item 331's NEXT, step (1): "the frame lists carry the kind (`List Nat` → the scanner's
+`IndentEntry`, `Covered` as membership; item 320's (B), with the premise on the list's own kind, no new disjunct),
+which pays the side-condition rows of items 320/323 and unblocks 12.3.5's two `h_kslot` applications".  Taken as
+written, with one reading: the list element is `FrameLevel` (width as `Nat`, kind as `Bool`), not `IndentEntry`
+itself — `IndentEntry.column` is an `Int` carrying the scanner's `-1` sentinel that no frame ever holds, and
+`FrameLevel.ofEntry` is the projection the census rule asks for.
+
+**Predictions** (written before the retyping, from the probe `Scratch/Probe332.lean` and the site count in the
+strategy's §4): P1 — GhostIndexCensus moves 73 → 72 and no further: `KeyFrames`' two `List Nat` constructor rows become
+one `List FrameLevel` row, which stays classified GHOST because `Covered` is still a membership, not an equality with
+`sc.indents`.  P2 — the eleven consumer sites that case-split the old `∨` and refuted the wrong kind by `Or.inr trivial`
+disappear, and the held-`∨` censuses (RelaySupply `DECLINE`, ValueLinePacks `held`, ValueLineOrigins `heldOrigins`)
+move down by those sites.  P3 — no behaviour change: both pipelines byte-identical, CompactRouteCensus and
+BlockDeferralClasses unmoved.  P4 — no new axiom; `resumeAt` closes with `propext` only (the probe's census).
+P5 — every retyping site is mechanical (a width bound `k < n` becomes `fr.width < n`, a cons `k :: ks` becomes
+`FrameLevel.map k :: ks`), so no theorem is restated.
+
+**What changed.**  `IndentStackCover.FrameLevel` with `FrameLevel.ofEntry`, `.map k := ⟨k, false⟩`, `.seq k := ⟨k, true⟩`;
+`Covered lo ks s := ∀ e ∈ s.indents, e.isSequence = false → lo ≤ e.column → FrameLevel.map e.column.toNat ∈ ks` (the
+sequence exemption stays — the stream lane does not track sequence levels, item 167 — so the cover says exactly what it
+said, on the kinded list); `Floor lo n ks := lo ≤ n ∧ ∀ fr ∈ ks, lo ≤ fr.width`; `ResumeFrames.level k` conses
+`FrameLevel.map k`; `KeyFrames.level (e : FrameLevel)` with `e.tail` (`SCompactSeqTail` if `e.isSeq`, else
+`SCompactMapTail`), `KeyFrames.mapLevel`/`seqLevel` kept as smart constructors so the producers' shape is unchanged;
+`ResumeWidths ks ks' j := ∀ fr, fr ∈ ks' ↔ (fr ∈ ks ∧ fr.width < j)`; `ResumeFrames.resumeAt` takes `FrameLevel.map j ∈ ks`,
+`KeyFrames.resumeAt` takes `e ∈ ks` and returns `e.tail`'s continuation, with `resumeAtMap`/`resumeAtSeq` for a landing
+known to be a mapping/sequence level.  ~350 sites in `StreamAccum` and `IndentStackCover`; 44 guards touched (retyped where they name a frame list,
+re-pinned where they count one — 19 census pins moved).
+
+**The (B2) payoff, in the guards' numbers.**  Eleven consumer sites that case-split the old `∨` and refuted the arm they
+could not take (`rcases cont with contM | _ … · exact Or.inr trivial`; `| ⟨_, _, Or.inr _⟩ => Or.inr trivial`) now take
+`resumeAtMap`'s single continuation; the sequence face of `accum_block_on_closeThenBlock` tests `FrameLevel.seq k ∈ ks`
+and takes `resumeAtSeq` — the arm that declined a mapping level at a `-` is not written, because membership of the
+kinded level says there is none.  `RelaySupplyCensus`: `leaves` 364 → 359, `DECLINE` 186 → 181 (`DECLINE-closed` 86 → 81);
+`ConclusionCensus`: `flowKeyRoute_of_root` `un=3,6` → `un=3,5`; `GhostIndexCensus`: 73 → 72 ghost binders, 82 → 81 rows
+(`KeyFrames`' two `List Nat` constructor rows are one `List FrameLevel` row) — and `List FrameLevel` is classified
+GHOST, as §7 of the strategy said it must be: the list is a mirror of `sc.indents` until `Covered` is an equality, so
+step 1 converts the kind problem, not the rows.  `prods` 129 → 130 (`FrameLevel.tail`) in `DispatchPrice`,
+`ParkGapProduction`, `CarrierArmPrice`; `ValueLinePacks` `held` 11 → 8, `ValueLineOrigins` `heldOrigins` 40 → 23
+(the held `∨` arms were the kind refutations); the module censuses move by the new declarations.
+
+**What it does not do.**  The `ns` value-line chains stay `List Nat` (step 4, `IndentEntry.pendingKey`, deletes them);
+`g`, `km`, `tl` stay (after 12.6); `PackAlt` is untouched.  `BlockDeferralClasses`' pinned strings still print the old
+`List Nat` shapes where they quote item-era statements — they are prose pins, not census output.
+
+**Predictions, scored.**
+
+| P | said | result |
+|---|------|--------|
+| P1 | GhostIndexCensus 73 → 72, `List FrameLevel` still ghost | HELD — `carriers=52 snapshot=9 ghost=72`, 82 → 81 rows |
+| P2 | the eleven kind refutations vanish, held-`∨` censuses drop by them | HELD in kind, split across three instruments: RelaySupply `DECLINE` 186 → 181 (`DECLINE-closed` 86 → 81), ValueLinePacks `held` 11 → 8, ValueLineOrigins `heldOrigins` 40 → 23 — the eleven sites were counted by three censuses, not one |
+| P3 | no behaviour change | HELD — CompactRouteCensus and BlockDeferralClasses unmoved; no library file outside the two proof modules changed |
+| P4 | no new axiom, `resumeAt` by `propext` only | HELD — census below |
+| P5 | every site mechanical, no restatement | HELD for the library (2 files, 586+/542−); REFUTED for the guards: 44 guard files moved, and the list pins of `PuntCoverInputs` / `ValueLinePacks` / `ValueLineOrigins` / `PaidLeafDelta` / `CloseSplitFrames` had to be re-read one build at a time (fifteen full builds, full-build33 … 47), because each pins the frame terms literally (`frames(nv :: ks)` → `frames(map(…) :: ks)`) |
+
+**Pins moved** (old → new, all re-read from the build).  GhostIndexCensus `ghost=73 → 72`; RelaySupplyCensus leaves
+364 → 359, `DECLINE` 186 → 181; ValueLinePacks `held=11 → 8`, `none=23 → 26`; ValueLineOrigins `heldOrigins=40 → 23`;
+`prodTyped=129 → 130` (`FrameLevel.tail`) in DispatchPrice / ParkGapProduction / CarrierArmPrice; ledger `res=57 → 55`;
+PuntCoverInputs `expectedLine` nodes 103335 → 104226 and its `expectedSites` / `expectedShapes` / `expectedCallers` /
+`expectedLack` / `expectedBottoms` lists retyped; CloseSplitFrames `expectedSpends`, PaidLeafDelta `expectedFloorLits`,
+ValueLinePacks `expectedWriters` / `expectedPerPos`, ValueLineOrigins `expectedOrigins` / `expectedRows` / `expectedPerPos`
+retyped; NarrowingWorthCensus `theorems=5482 → 5495` (+12 this item: `FrameLevel` lemmas, `resumeAtMap` / `resumeAtSeq`
+and the cover-lemma split; +1 `scanBlockScalarIx_eq_impl` from the base).  44 guard files in all.
+
+**Gates.**  Build **1263** jobs; 7 warnings, all pre-existing and none in a changed module.  `Verified: 4568/4568` (`scripts/run-all-tests.sh`); suiterunner **869 / 0 / 151** (1020); eventscore 347/358 CORRECT with 0 error-miss; `adversarialinstantiation` 2578/2578 after the base merge, Priority 9 added for the `FrameLevel` family (Rule 2: `ofEntry` projected on five scanner stacks — bottom first, innermost last — the membership gate `FrameLevel.map j ∈ ks` that `KeyFrames.resumeAt` / `resumeAtMap` / `resumeAtSeq` spend, decided on empty / singleton-map / singleton-seq / mixed frames, `map k ≠ seq k`, and `Floor` on the same lists).  Text gates: closure
+log, import closure, reflection index, 25 whitelisted `theorem` sites, gate vocabulary (`unresolved=0`), serialization hygiene (46
+profiles, no placeholders).  Axiom census (`#print axioms`): `IndentStackCover.FrameLevel.tail` does not depend on any axioms; `StreamAccum.KeyFrames.resumeAt` → [propext]; `StreamAccum.KeyFrames.resumeAtMap` → [propext]; `StreamAccum.KeyFrames.resumeAtSeq` → [propext] — no
+`sorryAx`, no new axiom.
+
+**NEXT — step 2 of item 331's order: the scanner clears the stale explicit-key register when the `?` entry closes**
+(`? a⏎[1]: b`, item 317's move), measured on the reference inputs before and after; then step 3 (the flow frame reads
+the pushed register pair) and step 4 (`IndentEntry.pendingKey`, the conformance fix for `?⏎  ? y⏎  : z⏎: w: x`), then
+the flip.
+
 ### Item 333 (2026-10-21)
 
 **Row 12, step 2 of item 331's order — PAID, landed: the scanner retires the explicit-key register when the `?`

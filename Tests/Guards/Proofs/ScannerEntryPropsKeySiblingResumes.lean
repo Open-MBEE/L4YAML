@@ -44,6 +44,7 @@ namespace L4YAML.Tests.Guards.ScannerEntryPropsKeySiblingResumes
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
   L4YAML.Proofs.NodeProduction
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -143,14 +144,14 @@ mapping the caller's node awaits (`nestedBlockMap` over the compact tail),
 and the caller's frames carry on below it.  The strictly-deeper landing
 re-bounds the stack under `w`, which is the pack's own side condition. -/
 
-example {sp_start sp_scan sp_mid sp_prep : SurfPos} {n w : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_mid sp_prep : SurfPos} {n w : Nat} {ks : List FrameLevel}
     (hnw : n ≤ w) (hlt : n < w)
     (h_ssl : SSLComments sp_scan sp_mid)
     (h_ind : SIndent w sp_mid sp_prep)
-    (h_le : ∀ k' ∈ ks, k' ≤ n)
+    (h_le : ∀ fr ∈ ks, fr.width ≤ n)
     (nodeF : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) :
-    (∀ k' ∈ ks, k' < w) ∧
+    (∀ fr ∈ ks, fr.width < w) ∧
     (∀ sp_v : SurfPos, SBlockMapEntry w sp_prep sp_v →
      ∀ sp_e : SurfPos, SCompactMapTail w sp_v sp_e →
      ResumeFrames (SLYamlStream sp_start) ks sp_e) :=
@@ -168,14 +169,14 @@ the pop below is stated over any `P`, so instantiating it at
 lemma's dedent branch are this example twice. -/
 
 example {P : SurfPos → Prop} {sp_scan sp_mid sp_prep : SurfPos}
-    {w : Nat} {ks : List Nat}
-    (hmem : w ∈ ks)
+    {w : Nat} {ks : List FrameLevel}
+    (hmem : FrameLevel.map w ∈ ks)
     (h_ssl : SSLComments sp_scan sp_mid)
     (h_ind : SIndent w sp_mid sp_prep)
     (dframes : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames P ks sp_m) :
     (∀ sp_v, SBlockMapEntry w sp_prep sp_v → P sp_v) ∧
-    ∃ ks' : List Nat, (∀ k' ∈ ks', k' < w) ∧
+    ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < w) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry w sp_prep sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail w sp_v sp_e →
       ResumeFrames P ks' sp_e := by

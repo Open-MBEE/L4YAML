@@ -45,6 +45,7 @@ continues.  `pendingBlockContent`'s family is the one below. -/
 namespace L4YAML.Tests.Guards.ScannerEntryContentSiblingResumes
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open L4YAML.Proofs.CouplingBridge
 
 private def emits (input : String) (expected : List String) : Bool :=
@@ -104,7 +105,7 @@ private def refuses (input : String) : Bool :=
 content scan just completed — the SAME wrap the park's `h_closable_entry`
 already makes, so the field is free wherever that closure is. -/
 
-example {sp_start sp_scan sp_park : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_park : SurfPos} {n : Nat} {ks : List FrameLevel}
     -- Item 179: the completed node reads at the SHIFTED index; the entry
     -- slot and the tail stay at the raw column.
     (build : ∀ sp_mid, SSLComments sp_park sp_mid → SBlockNode (n + 1) .blockIn sp_scan sp_mid)
@@ -124,7 +125,7 @@ is left standing is exactly the skeleton's `h_fS` — the shape item 109 gave
 `h_defer_split`.  This is the whole reason the field did not have to be
 re-sized: an entry-level face is a landing-level face at the empty tail. -/
 
-example {sp_start sp_park : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_park : SurfPos} {n : Nat} {ks : List FrameLevel}
     (closeF : ∀ sp_mid, SSLComments sp_park sp_mid →
       ∀ sp_end, SCompactSeqTail n sp_mid sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
@@ -138,7 +139,7 @@ example {sp_start sp_park : SurfPos} {n : Nat} {ks : List Nat}
 that pays the frames owes nothing new, and the two that still punt lose
 nothing. -/
 
-example {sp_start sp_park : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_park : SurfPos} {n : Nat} {ks : List FrameLevel}
     (closeF : ∀ sp_mid, SSLComments sp_park sp_mid →
       ∀ sp_end, SCompactSeqTail n sp_mid sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
@@ -155,7 +156,7 @@ value-parked one does.  That the informative disjunct is REACHABLE is what a
 (proof irrelevance, CLAUDE.md §7). -/
 
 example {sc s_prep : ScannerState} {c : Char}
-    {sp_start sp_park sp_mid sp_prep : SurfPos} {n : Nat} {ks : List Nat}
+    {sp_start sp_park sp_mid sp_prep : SurfPos} {n : Nat} {ks : List FrameLevel}
     (hcol_mid : sp_mid.col = 0)
     (h_ws : GStar SSWhite sp_mid sp_prep)
     (h_ssl : SSLComments sp_park sp_mid)

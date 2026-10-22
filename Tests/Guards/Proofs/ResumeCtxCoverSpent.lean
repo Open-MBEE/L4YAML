@@ -24,7 +24,7 @@ spends them into the two pack fields the dispatch builds.
 value lane stops mirroring its parks.  A park's value-line frames exclude the
 `?`'s own level, so their cover stands one column above the park (item 150); the
 key this landing heads is a mapping level of EITHER stack, so nothing is
-excluded here and `Floor lo k (k :: ks)` is what both faces carry.
+excluded here and `Floor lo k (FrameLevel.map k :: ks)` is what both faces carry.
 
 **The index on the way IN is forgotten.**  The two incoming faces are bounded at
 different indices — `n` on the stream lane, `n + 1` on the value lane — and the
@@ -67,7 +67,7 @@ example : inKey.currentIndent = 2 := by
 /-- **The key's own level is NOT exempt on the value lane.**  At the `?`'s floor
     plus one, the empty list no longer covers: the key at 2 is an open mapping
     level and nothing names it.  So the list the pack carries has to be
-    `k :: ks`, which is exactly the shape `ResumeKeyCtx` states. -/
+    `FrameLevel.map k :: ks`, which is exactly the shape `ResumeKeyCtx` states. -/
 example : ¬ Covered 1 [] inKey := by
   intro h
   have hm : ({ column := 2, isSequence := false } : IndentEntry) ∈ inKey.indents := by
@@ -75,7 +75,7 @@ example : ¬ Covered 1 [] inKey := by
   exact absurd (h _ hm rfl (by decide)) (by simp)
 
 /-- …and with it named, the value lane's cover stands at the PACK's index. -/
-example : Covered 1 [2] inKey := by
+example : Covered 1 [FrameLevel.map 2] inKey := by
   intro e he _ hlo
   have : e = { column := -1, isSequence := false } ∨
       e = { column := 0, isSequence := false } ∨
@@ -86,13 +86,13 @@ example : Covered 1 [2] inKey := by
   · exact absurd hlo (by decide)
   · simp
 
-example : Floor 1 2 (2 :: ([] : List Nat)) :=
-  ⟨by omega, fun k' hk' => by simp at hk'; omega⟩
+example : Floor 1 2 [FrameLevel.map 2] :=
+  ⟨by omega, fun k' hk' => by simp at hk'; subst hk'; decide⟩
 
 /-- The stream lane reads the same stack from the bottom, so its floor is 0 and
     its list names the `?`'s level too — the two lanes agree on the INDEX here
     and differ, as they always have, in what they are bottomed at. -/
-example : Covered 0 [0, 2] inKey := by
+example : Covered 0 [FrameLevel.map 0, FrameLevel.map 2] inKey := by
   intro e he _ hlo
   have : e = { column := -1, isSequence := false } ∨
       e = { column := 0, isSequence := false } ∨
@@ -113,31 +113,31 @@ discharged both wants the payment itself, and this lemma is that payment. -/
 /-- The hop, at its own type: no disjunct to case on, and the floor VALUE
     travels unchanged — `w` was one of the frames, so the bound already reached
     it. -/
-example {s : ScannerState} {lo n w : Nat} {ks ks' : List Nat}
+example {s : ScannerState} {lo n w : Nat} {ks ks' : List FrameLevel}
     (h_mono : Mono s) (h_top : s.currentIndent ≤ (w : Int))
     (h_fl : Floor lo n ks) (h_cv : Covered lo ks s)
-    (hmem : w ∈ ks) (h_w' : ResumeWidths ks ks' w) :
-    ∃ lo : Nat, Floor lo w (w :: ks') ∧ Covered lo (w :: ks') s :=
+    (hmem : FrameLevel.map w ∈ ks) (h_w' : ResumeWidths ks ks' w) :
+    ∃ lo : Nat, Floor lo w (FrameLevel.map w :: ks') ∧ Covered lo (FrameLevel.map w :: ks') s :=
   dedent_cover_of_floor h_mono h_top h_fl h_cv hmem h_w'
 
 /-- **The index on the incoming face is forgotten.**  The same conclusion
     follows from a face bounded at the park's index and from one bounded a
     column above it, which is why ONE payer serves the stream lane and the value
     lane whose floors item 150 deliberately staggered. -/
-example {s : ScannerState} {lo n w : Nat} {ks ks' : List Nat}
+example {s : ScannerState} {lo n w : Nat} {ks ks' : List FrameLevel}
     (h_mono : Mono s) (h_top : s.currentIndent ≤ (w : Int))
-    (h_cv : Covered lo ks s) (hmem : w ∈ ks) (h_w' : ResumeWidths ks ks' w)
+    (h_cv : Covered lo ks s) (hmem : FrameLevel.map w ∈ ks) (h_w' : ResumeWidths ks ks' w)
     (h_stream : Floor lo n ks) (h_value : Floor lo (n + 1) ks) :
-    (∃ lo : Nat, Floor lo w (w :: ks') ∧ Covered lo (w :: ks') s) ∧
-    (∃ lo : Nat, Floor lo w (w :: ks') ∧ Covered lo (w :: ks') s) :=
+    (∃ lo : Nat, Floor lo w (FrameLevel.map w :: ks') ∧ Covered lo (FrameLevel.map w :: ks') s) ∧
+    (∃ lo : Nat, Floor lo w (FrameLevel.map w :: ks') ∧ Covered lo (FrameLevel.map w :: ks') s) :=
   ⟨dedent_cover_of_floor h_mono h_top h_stream h_cv hmem h_w',
    dedent_cover_of_floor h_mono h_top h_value h_cv hmem h_w'⟩
 
 /-- Run at a stack, so the payment is a value and not only a type: a landing at
     width 2 off a stack popped to it, with the frames `[2, 4]` the park carried.
     The floor comes out at 1 and the list at `[2]`. -/
-example : ∃ lo : Nat, Floor lo 2 (2 :: ([] : List Nat)) ∧ Covered lo (2 :: []) inKey := by
-  refine dedent_cover_of_floor (s := inKey) (lo := 1) (n := 5) (ks := [2, 4]) ?_ ?_ ?_ ?_
+example : ∃ lo : Nat, Floor lo 2 [FrameLevel.map 2] ∧ Covered lo [FrameLevel.map 2] inKey := by
+  refine dedent_cover_of_floor (s := inKey) (lo := 1) (n := 5) (ks := [FrameLevel.map 2, FrameLevel.map 4]) ?_ ?_ ?_ ?_
     (by simp) ?_
   · -- `Mono` on a stack whose columns increase: three entries, two steps.
     intro i hi
@@ -150,7 +150,7 @@ example : ∃ lo : Nat, Floor lo 2 (2 :: ([] : List Nat)) ∧ Covered lo (2 :: [
   · show inKey.currentIndent ≤ ((2 : Nat) : Int)
     show (match inKey.indents.back? with | some x => x.column | none => -1) ≤ 2
     decide
-  · exact ⟨by omega, fun k' hk' => by simp at hk'; omega⟩
+  · exact ⟨by omega, fun k' hk' => by simp at hk'; rcases hk' with rfl | rfl <;> decide⟩
   · intro e he _ hlo
     have : e = { column := -1, isSequence := false } ∨
         e = { column := 0, isSequence := false } ∨
@@ -163,7 +163,7 @@ example : ∃ lo : Nat, Floor lo 2 (2 :: ([] : List Nat)) ∧ Covered lo (2 :: [
   · intro k'
     constructor
     · intro h; exact absurd h (List.not_mem_nil)
-    · rintro ⟨h1, h2⟩; simp at h1; omega
+    · rintro ⟨h1, h2⟩; simp at h1; rcases h1 with rfl | rfl <;> (dsimp only at h2; omega)
 
 /-- **The escapes are about REACHING the floor, not about the hop.**
     `dedent_cover_of_landing` is this lemma behind `landing_floor_of_arm`, and a
@@ -189,7 +189,7 @@ dispatch's, which moves it from the landing's state to the park's. -/
 
 /-- The lift.  A content dispatch writes no indent level, so the two states'
     stacks are equal and the cover is carried by that equation alone. -/
-example {s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List Nat}
+example {s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List FrameLevel}
     (h_dispatch : scanNextToken_dispatchContent s_prep c = .ok s')
     (h : Covered lo ks s_prep) : Covered lo ks s' :=
   dispatchContent_cover h_dispatch h
@@ -199,10 +199,10 @@ example {s_prep s' : ScannerState} {c : Char} {lo : Nat} {ks : List Nat}
     that the paying disjunct is reachable from exactly the data a paying park
     has: the landing's line start, `[63]`'s spaces, a fresh at-position save, a
     stack whose widths include the landing's — and now the cover over them. -/
-example {sp_start sp_land sp_prep : SurfPos} {k lo : Nat} {ks : List Nat}
+example {sp_start sp_land sp_prep : SurfPos} {k lo : Nat} {ks : List FrameLevel}
     {s_prep : ScannerState}
     (hcol0 : sp_land.col = 0) (h_ind : SIndent k sp_land sp_prep)
-    (h_fr : ResumeFrames (SLYamlStream sp_start) ks sp_land) (hmem : k ∈ ks)
+    (h_fr : ResumeFrames (SLYamlStream sp_start) ks sp_land) (hmem : FrameLevel.map k ∈ ks)
     (h_mono : Mono s_prep) (h_top : s_prep.currentIndent ≤ (k : Int))
     (h_fl : Floor lo k ks) (h_cv : Covered lo ks s_prep)
     (h_poss : s_prep.simpleKey.possible = true)
@@ -295,7 +295,7 @@ The context accepts the punt on either lane, which is what lets those three
 sites keep compiling while the slot exists. -/
 
 example {sc s_prep : ScannerState} {c : Char}
-    {sp_start sp_scan sp_mid sp_prep : SurfPos} {ks : List Nat}
+    {sp_start sp_scan sp_mid sp_prep : SurfPos} {ks : List FrameLevel}
     (hcol_mid : sp_mid.col = 0)
     (h_ws : GStar SSWhite sp_mid sp_prep)
     (h_ssl : SSLComments sp_scan sp_mid)

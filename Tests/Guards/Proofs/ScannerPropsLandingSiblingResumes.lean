@@ -40,6 +40,7 @@ namespace L4YAML.Tests.Guards.ScannerPropsLandingSiblingResumes
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
   L4YAML.Proofs.NodeProduction
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -99,11 +100,11 @@ fields are THERE, only whether a producer could pay them. -/
 example {sc : ScannerState} {sp_start sp_p sp_scan : SurfPos}
     (h : PropsKeyPack sc sp_start sp_p sp_scan) :
     ∃ k : Nat,
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True) := by
@@ -121,7 +122,7 @@ names; `resumeMapRouteF` is the same cons read at the entries level, the
 levels below left standing for the park this run opens.  One `cont` funds
 both — which is why `h_props_key`'s resume branch costs no new lemma. -/
 
-example {sp_start sp_land sp_prep : SurfPos} {k : Nat} {ks : List Nat}
+example {sp_start sp_land sp_prep : SurfPos} {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_prep)
     (cont : ∀ sp_end, SCompactMapTail k sp_land sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
@@ -156,8 +157,8 @@ conses onto the resumed level and this entry's own level goes on top.  The
 `SImplicitKey` here is `[161]`'s props-only node, `[193]`'s key with no
 content at all. -/
 
-example {sp_start sp_p sp_prep sp_scan' : SurfPos} {k : Nat} {ks : List Nat}
-    (h_lt : ∀ k' ∈ ks, k' < k)
+example {sp_start sp_p sp_prep sp_scan' : SurfPos} {k : Nat} {ks : List FrameLevel}
+    (h_lt : ∀ fr ∈ ks, fr.width < k)
     (routeF : ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e)
@@ -165,7 +166,7 @@ example {sp_start sp_p sp_prep sp_scan' : SurfPos} {k : Nat} {ks : List Nat}
     (h_lit : GLit ':' sp_prep sp_scan') :
     -- Item 179: the entry's value reads at the SHIFTED index.
     ∀ sp_mid : SurfPos, SBlockNode (k + 1) .blockIn sp_scan' sp_mid →
-    ResumeFrames (SLYamlStream sp_start) (k :: ks) sp_mid :=
+    ResumeFrames (SLYamlStream sp_start) (FrameLevel.map k :: ks) sp_mid :=
   fun sp_mid h_node =>
     ResumeFrames.level k ks sp_mid h_lt
       (fun sp_end h_tail =>

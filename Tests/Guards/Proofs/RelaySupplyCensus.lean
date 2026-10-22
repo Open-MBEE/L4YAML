@@ -1049,11 +1049,14 @@ Or.imp⇒SPLIT=4, Or.imp⇒VIA=3, dite⇒SPLIT=4]"
 -- 2026-10-21 (item 320): `leaves` 363 → 364, `DECLINE` 185 → 186, one vector `DECLINE|DECLINE|PAY` → `DECLINE|DECLINE|DECLINE|PAY`
 -- (3 → 2 and 4 → 5) — a catch-all of `accum_block_on_closeThenBlock` split into its inner-alternative arm, which this
 -- census reads as one more leaf on that split's vector; the paid arm is a PAY it already counted.
+-- 2026-10-21 (item 332): `leaves` 364 → 359, `DECLINE` 186 → 181 — the key-stack resume no longer returns
+-- "a mapping tail OR a sequence tail" (`KeyFrames.resumeAtMap`/`resumeAtSeq` by the level's own kind), so the five
+-- `Or.inr trivial` arms that refuted the kind it could not take are gone with the `∨`.
 def expectedSplitLanding : String :=
-  "survived=166 collapsed=1 leaves=364 elsewhere=1 [DECLINE=186, PAY=177, VIA=1] \
-[DECLINE|DECLINE|DECLINE|DECLINE|DECLINE|DECLINE|PAY|PAY|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|DECLINE|PAY=5, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
-DECLINE|DECLINE|PAY=2, DECLINE|DECLINE|PAY|PAY|PAY=2, DECLINE|PAY=153, \
+  "survived=166 collapsed=1 leaves=359 elsewhere=1 [DECLINE=181, PAY=177, VIA=1] \
+[DECLINE|DECLINE|DECLINE|DECLINE|PAY|PAY|PAY|PAY|PAY=1, \
+DECLINE|DECLINE|DECLINE|PAY=2, DECLINE|DECLINE|DECLINE|PAY|PAY|PAY=1, \
+DECLINE|DECLINE|PAY=5, DECLINE|DECLINE|PAY|PAY|PAY=2, DECLINE|PAY=153, \
 DECLINE|PAY|PAY=1, PAY|VIA=1]"
 
 /-- **Which BRANCH is taken (DOCS item 217).**  Item 216 resolved what a split
@@ -1138,8 +1141,8 @@ DECLINE|PAY|PAY=1, PAY|VIA=1]"
 -- `pendingMapValue` catch arms hand their hypothesis back (`Or.inr h_alt`) where they closed with `trivial`; leaves, roots and the
 -- agreement stand.
 def expectedSplitBranch : String :=
-  "splits=166 leaves=364 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
-agree=110/110 disagree=0 [DECLINE-closed=86, DECLINE-free=100, PAY-free=177, VIA \
+  "splits=166 leaves=359 relayRooted=156 siteDecided=10 optionalRoot=106 plainRoot=50 \
+agree=110/110 disagree=0 [DECLINE-closed=81, DECLINE-free=100, PAY-free=177, VIA \
 L4YAML.Proofs.StreamAccum.flowKeyRoute_of_root-=1]"
 
 /-- **The ten splits the site decides for itself**, which is the whole residue

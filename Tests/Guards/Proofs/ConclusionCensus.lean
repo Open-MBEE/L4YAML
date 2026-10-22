@@ -283,7 +283,7 @@ def expected : List String :=
    "dedent_cover_of_landing inl=1,inr=3 | un=0,0",
    "flowKeyHead inl=0,inr=0 | un=0,0",
    "flowKeyRoute_of_open inl=2,inr=4 inl=0,inr=0 inl=1,inr=2 inl=2,inr=0 inl=1,inr=2 | un=3,3",
-   "flowKeyRoute_of_root inl=2,inr=2 inl=0,inr=0 inl=1,inr=2 inl=5,inr=0 inl=1,inr=2 | un=3,6",
+   "flowKeyRoute_of_root inl=2,inr=2 inl=0,inr=0 inl=1,inr=2 inl=5,inr=0 inl=1,inr=2 | un=3,5",
    "flowOpen_floor_at_prep inl=1,inr=1 | un=0,0",
    "flowOpen_marker inl=1,inr=2 | un=1,1",
    "flowOpen_stamp inl=1,inr=2 | un=1,1",

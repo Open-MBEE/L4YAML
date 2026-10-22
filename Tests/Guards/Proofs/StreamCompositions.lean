@@ -627,12 +627,12 @@ def expectedSites : List String :=
    "question_open_map:pendingMapValue.h_ivl [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] segments=2 comps=1",
    "question_open_map:pendingMapValue.h_expl [SBlockMapEntry(_) ⇒ Stream] segments=2 comps=1",
    "question_open_map:pendingMapValue.h_vslot [[col(_)=_+1] SBlockIndented(_,blockOut) ⇒ Stream] segments=2 comps=1",
-   "question_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] segments=2 comps=1 NEW",
+   "question_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(map(_)::_)▹Stream] segments=2 comps=1 NEW",
    "question_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] segments=2 comps=1 NEW",
    "question_open_map:pendingMapValue.h_closeFV [SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_)] segments=2 comps=1",
    "question_open_map:pendingMapValue.h_framesV [SSLComments ⇒ Key(_)▹ExplValueLine(_)] segments=2 comps=1",
    "colon_open_map:pendingMapValue.h_close [SBlockNode(_+1,blockIn) ⇒ Stream] segments=2 comps=1",
-   "colon_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream] segments=2 comps=1 NEW",
+   "colon_open_map:pendingMapValue.h_closeF [SBlockNode(_+1,blockIn) ⇒ Resume(map(_)::_)▹Stream] segments=2 comps=1 NEW",
    "colon_open_map:pendingMapValue.h_frames [SSLComments ⇒ Resume(_)▹Stream] segments=2 comps=1 NEW",
    "content_dispatch_after_close→content_dispatch_routed.h_route [SBlockNode(0,blockIn) ⇒ Stream] segments=1 comps=1",
    "accum_content_pending→keyctx_of_preprocess.h_close [SSLComments ⇒ Stream] segments=3 comps=3",
@@ -721,7 +721,7 @@ def expectedShapeComps : List String :=
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.scannerDrop[S,prem:SSLComments] ▹ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SBlockNode(0,blockIn) ⇒ Stream ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.none,GStar.nil] ▹ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SBlockNode(_+1,blockIn) ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
-   "SBlockNode(_+1,blockIn) ⇒ Resume(_::_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
+   "SBlockNode(_+1,blockIn) ⇒ Resume(map(_)::_)▹Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ ResumeFrames.bottom[S] ▹ ResumeFrames.level[var:∀→lt,S]",
    "SBlockNode(_+1,blockIn) ⇒ Stream ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil]",
    "SLDirectiveDocument ⇒ Stream ⟶ SLYamlStream.suffixContinue[S,GPlus.mk(SLDocumentSuffix.mk,GStar.nil),GStar.nil,GOpt.some(SLAnyDocument.directive(prem:SLDirectiveDocument)),GStar.nil]",
    "SSLComments ⇒ Key(_)▹ExplValueLine(_) ⟶ SLYamlStream.implicitContinue[S,GStar.nil,GOpt.some(SLAnyDocument.bare(SLBareDocument.mk)),GStar.nil] ▹ KeyFrames.bottom[S]",
@@ -790,7 +790,11 @@ def expectedShapeComps : List String :=
     point, deleted with the constructor (both pack exits key a fresh document,
     so `dedent` has no production). -/
 def expectedLine : String :=
-  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 approxSites=0 prev=21 new=4 missing=2 prevStyle=21 prevStyleOff=0 newVsStyle=4 styleOnly=2 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 approx=37 dead=6 opaque=0 unmarked=198 reach=38"
+  "sites=23 genuine=23 pairs=21 viaSites=0 segments=52 genuineSegs=51 facts=1 stacked=6 \
+comps=15 byCtor=12 byFull=51 shapes=12 shapeComps=21 shapeCompsNoDrop=18 obtainedSites=4 \
+approxSites=0 prev=20 new=4 missing=1 prevStyle=20 prevStyleOff=0 newVsStyle=4 \
+styleOnly=1 segHops=9 segAbsorb=3 single=0 dropClose=0 directive=1 hops=11 hopMax=3 \
+approx=37 dead=6 opaque=0 unmarked=198 reach=38"
 
 /-! ## §5 The reading -/
 

@@ -104,6 +104,7 @@ open L4YAML.Proofs.NodeProduction
 open L4YAML.CharPredicates
 open L4YAML.Proofs.FlowAdjacency
 open L4YAML.Proofs.PropsRunLineCoupling
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 /-! ## §0a PendingNode — Immediate Pending State
 
@@ -291,6 +292,22 @@ lemma props_linesLift {n : Nat} {s s' : SurfPos}
     sequence level it crosses can only close — the producers fold sequence
     closes into the enclosing continuation. -/
 
+/-- The level's own tail, by its kind: a sequence level owes `SCompactSeqTail`,
+    a mapping level `SCompactMapTail`. -/
+def _root_.L4YAML.Proofs.IndentStackCover.FrameLevel.tail (e : FrameLevel) (sp sp_end : SurfPos) : Prop :=
+  if e.isSeq then SCompactSeqTail e.width sp sp_end else SCompactMapTail e.width sp sp_end
+
+lemma _root_.L4YAML.Proofs.IndentStackCover.FrameLevel.tail_nil (e : FrameLevel) (sp : SurfPos) : e.tail sp sp := by
+  unfold FrameLevel.tail; split
+  · exact SCompactSeqTail.nil _ _
+  · exact SCompactMapTail.nil _ _
+
+@[simp] lemma _root_.L4YAML.Proofs.IndentStackCover.FrameLevel.tail_map (k : Nat) (sp sp_end : SurfPos) :
+    (FrameLevel.map k).tail sp sp_end = SCompactMapTail k sp sp_end := rfl
+
+@[simp] lemma _root_.L4YAML.Proofs.IndentStackCover.FrameLevel.tail_seq (k : Nat) (sp sp_end : SurfPos) :
+    (FrameLevel.seq k).tail sp sp_end = SCompactSeqTail k sp sp_end := rfl
+
 /-- The still-open block-mapping levels at a park, innermost first: each level
     is its entries-level continuation (the level's remaining tail, then the
     next level out), the bottom is whatever the OUTERMOST level still owes.
@@ -303,179 +320,198 @@ lemma props_linesLift {n : Nat} {s s' : SurfPos}
     the `?` entry to its `e-node` value.  Taking `P` as a parameter states both
     with one inductive: `ResumeFrames (SLYamlStream sp_start)` is item 99's, and
     `KeyFrames (ExplValueLine sp_start nv)` is the same stack with the `?`'s
-    `s-indent(nv) ':'` value line still owed underneath it. -/
-inductive ResumeFrames (P : SurfPos → Prop) : List Nat → SurfPos → Prop where
+    `s-indent(nv) ':'` value line still owed underneath it.
+
+    The list carries each level's KIND (item 332, `FrameLevel`); this lane holds
+    mapping levels only, so every element is `FrameLevel.map k`. -/
+inductive ResumeFrames (P : SurfPos → Prop) : List FrameLevel → SurfPos → Prop where
   | bottom (sp : SurfPos) (h_bot : P sp) :
       ResumeFrames P [] sp
-  | level (k : Nat) (ks : List Nat) (sp : SurfPos)
-      (h_lt : ∀ k' ∈ ks, k' < k)
+  | level (k : Nat) (ks : List FrameLevel) (sp : SurfPos)
+      (h_lt : ∀ fr ∈ ks, fr.width < k)
       (h_cont : ∀ sp_end, SCompactMapTail k sp sp_end →
         ResumeFrames P ks sp_end) :
-      ResumeFrames P (k :: ks) sp
+      ResumeFrames P (FrameLevel.map k :: ks) sp
 
 /-- Close every level with its empty tail, reaching whatever the bottom owes —
     the fused stream the pendings' existing closures end in, or the explicit
     frame's value line. -/
 lemma ResumeFrames.close {P : SurfPos → Prop} :
-    ∀ {ks : List Nat} {sp : SurfPos},
+    ∀ {ks : List FrameLevel} {sp : SurfPos},
       ResumeFrames P ks sp → P sp
   | [], _, h => by cases h with | bottom _ h_bot => exact h_bot
-  | k :: ks, sp, h => by
-      cases h; rename_i h_cont
-      exact (h_cont sp (SCompactMapTail.nil k sp)).close
+  | _ :: _, sp, h => by
+      cases h with
+      | level k _ _ _ h_cont => exact (h_cont sp (SCompactMapTail.nil k sp)).close
 
 /-- **What a landing at `j` leaves of the frames** (item 149): exactly the
-    widths `j` stands above.  `resumeAt` used to report only the BOUND — every
+    levels `j` stands above.  `resumeAt` used to report only the BOUND — every
     surviving width is below `j` — which is what the surface side spends, and
     the scanner side cannot use: a cover over the incoming widths has to be
     re-listed over the surviving ones, and for that the missing direction is
-    COMPLETENESS, that a width below `j` survived at all.  The frames are
+    COMPLETENESS, that a level below `j` survived at all.  The frames are
     strictly decreasing, so both directions hold of the same list and one
     equation states them together. -/
-def ResumeWidths (ks ks' : List Nat) (j : Nat) : Prop :=
-  ∀ k', k' ∈ ks' ↔ (k' ∈ ks ∧ k' < j)
+def ResumeWidths (ks ks' : List FrameLevel) (j : Nat) : Prop :=
+  ∀ fr, fr ∈ ks' ↔ (fr ∈ ks ∧ fr.width < j)
 
 /-- The bound, which is what `ResumeFrames`' own `h_lt` slot asks for. -/
-lemma ResumeWidths.lt {ks ks' : List Nat} {j : Nat} (h : ResumeWidths ks ks' j) :
-    ∀ k' ∈ ks', k' < j := fun k' hk' => ((h k').mp hk').2
+lemma ResumeWidths.lt {ks ks' : List FrameLevel} {j : Nat} (h : ResumeWidths ks ks' j) :
+    ∀ fr ∈ ks', fr.width < j := fun fr hk' => ((h fr).mp hk').2
 
-/-- The surviving widths were frames already — so a floor that bounded the
+/-- The surviving levels were frames already — so a floor that bounded the
     incoming list bounds this one (`IndentStackCover.Floor.pop_to`). -/
-lemma ResumeWidths.sub {ks ks' : List Nat} {j : Nat} (h : ResumeWidths ks ks' j) :
-    ∀ k' ∈ ks', k' ∈ ks := fun k' hk' => ((h k').mp hk').1
+lemma ResumeWidths.sub {ks ks' : List FrameLevel} {j : Nat} (h : ResumeWidths ks ks' j) :
+    ∀ fr ∈ ks', fr ∈ ks := fun fr hk' => ((h fr).mp hk').1
 
 /-- …and nothing below `j` was dropped, which is what re-lists a carried cover
     over the popped stack (`IndentStackCover.Covered.pop_to`). -/
-lemma ResumeWidths.keep {ks ks' : List Nat} {j : Nat} (h : ResumeWidths ks ks' j) :
-    ∀ k' ∈ ks, k' < j → k' ∈ ks' := fun k' hk' hlt => (h k').mpr ⟨hk', hlt⟩
+lemma ResumeWidths.keep {ks ks' : List FrameLevel} {j : Nat} (h : ResumeWidths ks ks' j) :
+    ∀ fr ∈ ks, fr.width < j → fr ∈ ks' := fun fr hk' hlt => (h fr).mpr ⟨hk', hlt⟩
 
 /-- **The dedent's spend**: pop the levels strictly above `j` (their tails are
     empty — the landing ended them) and hand back the `j` level's own
-    continuation, with the popped stack's widths named exactly (`ResumeWidths`).
-    The landing width is a member by the scanner's own unwind — a width
+    continuation, with the popped stack's levels named exactly (`ResumeWidths`).
+    The landing level is a member by the scanner's own unwind — a width
     matching no open level is `trailingContent`, refused before any dispatch
     runs — so the arm decides membership per input and defers the
     non-member case it can no longer receive. -/
 lemma ResumeFrames.resumeAt {P : SurfPos → Prop} {sp : SurfPos} :
-    ∀ {ks : List Nat}, ResumeFrames P ks sp → ∀ {j : Nat}, j ∈ ks →
+    ∀ {ks : List FrameLevel}, ResumeFrames P ks sp → ∀ {j : Nat}, FrameLevel.map j ∈ ks →
       ∃ ks', ResumeWidths ks ks' j ∧
         (∀ sp_end, SCompactMapTail j sp sp_end → ResumeFrames P ks' sp_end)
   | [], _, _, hmem => absurd hmem (List.not_mem_nil)
-  | k :: ks, h, j, hmem => by
-      cases h; rename_i h_lt h_cont
-      by_cases hj : j = k
-      · subst hj
-        refine ⟨ks, fun k' => ⟨fun hk' => ⟨List.mem_cons_of_mem _ hk', h_lt k' hk'⟩, ?_⟩,
-          h_cont⟩
-        rintro ⟨hm, hlt⟩
-        rcases List.mem_cons.mp hm with rfl | h'
-        · exact absurd hlt (Nat.lt_irrefl _)
-        · exact h'
-      · have hmem' : j ∈ ks := by
-          cases List.mem_cons.mp hmem with
-          | inl h_eq => exact absurd h_eq hj
-          | inr h_in => exact h_in
-        obtain ⟨ks', h_w, cont⟩ := (h_cont sp (SCompactMapTail.nil k sp)).resumeAt hmem'
-        refine ⟨ks', fun k' => ⟨fun hk' =>
-          ⟨List.mem_cons_of_mem _ (h_w.sub k' hk'), h_w.lt k' hk'⟩, ?_⟩, cont⟩
-        rintro ⟨hm, hlt⟩
-        rcases List.mem_cons.mp hm with rfl | h'
-        · exact absurd (Nat.lt_trans (h_lt j hmem') hlt) (Nat.lt_irrefl _)
-        · exact h_w.keep k' h' hlt
-
-/-- **The value-line stack of a park inside a `?` frame's KEY, over MIXED
-    levels** (item 302).  `ResumeFrames` records the still-open MAPPING levels
-    above a park.  A park deep inside the frame's key sequence stands inside
-    SEQUENCE levels too — `?⏎-⏎  - a⏎- b⏎: w` lands two levels out, and
-    `?⏎- k:⏎    - a⏎- b⏎: w` has a mapping level between the sequence levels —
-    and the dedenting `-` must cons its entry onto the level at its own width
-    before the frame's `[190] s-indent(nv) ':'` line is reached.  Item 167
-    carried the sequence lane's tail as ONE width (`SeqEntryTail`) because the
-    STREAM has the document reading to fall back on; the frame's value line has
-    none, so this is the stack `ResumeFrames` is, with a sequence level beside
-    the mapping one.  `P` is the bottom, as there:
-    `KeyFrames (ExplValueLine sp_start nv)`.  Every `ResumeFrames` embeds
-    (`KeyFrames.ofResumeFrames`), so what the mapping lane pays rides unchanged. -/
-inductive KeyFrames (P : SurfPos → Prop) : List Nat → SurfPos → Prop where
-  | bottom (sp : SurfPos) (h_bot : P sp) :
-      KeyFrames P [] sp
-  | mapLevel (k : Nat) (ks : List Nat) (sp : SurfPos)
-      (h_lt : ∀ k' ∈ ks, k' < k)
-      (h_cont : ∀ sp_end, SCompactMapTail k sp sp_end →
-        KeyFrames P ks sp_end) :
-      KeyFrames P (k :: ks) sp
-  | seqLevel (k : Nat) (ks : List Nat) (sp : SurfPos)
-      (h_lt : ∀ k' ∈ ks, k' < k)
-      (h_cont : ∀ sp_end, SCompactSeqTail k sp sp_end →
-        KeyFrames P ks sp_end) :
-      KeyFrames P (k :: ks) sp
-
-/-- Close every level with its empty tail, reaching the bottom —
-    `ResumeFrames.close` with the sequence arm beside the mapping one. -/
-lemma KeyFrames.close {P : SurfPos → Prop} :
-    ∀ {ks : List Nat} {sp : SurfPos},
-      KeyFrames P ks sp → P sp
-  | [], _, h => by cases h with | bottom _ h_bot => exact h_bot
-  | k :: ks, sp, h => by
+  | _ :: ks, h, j, hmem => by
       cases h with
-      | mapLevel _ _ _ _ h_cont => exact (h_cont sp (SCompactMapTail.nil k sp)).close
-      | seqLevel _ _ _ _ h_cont => exact (h_cont sp (SCompactSeqTail.nil k sp)).close
+      | level k _ _ h_lt h_cont =>
+          by_cases hj : j = k
+          · subst hj
+            refine ⟨ks, fun fr => ⟨fun hk' => ⟨List.mem_cons_of_mem _ hk', h_lt fr hk'⟩, ?_⟩,
+              h_cont⟩
+            rintro ⟨hm, hlt⟩
+            rcases List.mem_cons.mp hm with rfl | h'
+            · exact absurd hlt (Nat.lt_irrefl _)
+            · exact h'
+          · have hmem' : FrameLevel.map j ∈ ks := by
+              cases List.mem_cons.mp hmem with
+              | inl h_eq => exact absurd (FrameLevel.map_inj.mp h_eq) hj
+              | inr h_in => exact h_in
+            obtain ⟨ks', h_w, cont⟩ := (h_cont sp (SCompactMapTail.nil k sp)).resumeAt hmem'
+            refine ⟨ks', fun fr => ⟨fun hk' =>
+              ⟨List.mem_cons_of_mem _ (h_w.sub fr hk'), h_w.lt fr hk'⟩, ?_⟩, cont⟩
+            rintro ⟨hm, hlt⟩
+            rcases List.mem_cons.mp hm with rfl | h'
+            · exact absurd (Nat.lt_trans (h_lt _ hmem') hlt) (Nat.lt_irrefl _)
+            · exact h_w.keep fr h' hlt
 
-/-- Every mapping-lane stack is a key stack, level for level. -/
-lemma KeyFrames.ofResumeFrames {P : SurfPos → Prop} :
-    ∀ {ks : List Nat} {sp : SurfPos},
-      ResumeFrames P ks sp → KeyFrames P ks sp
-  | [], _, h => by cases h with | bottom _ h_bot => exact .bottom _ h_bot
-  | k :: ks, sp, h => by
-      cases h with
-      | level _ _ _ h_lt h_cont =>
-        exact .mapLevel k ks sp h_lt
-          (fun sp_end h_tail => KeyFrames.ofResumeFrames (h_cont sp_end h_tail))
+  /-- **The value-line stack of a park inside a `?` frame's KEY, over MIXED
+      levels** (item 302).  `ResumeFrames` records the still-open MAPPING levels
+      above a park.  A park deep inside the frame's key sequence stands inside
+      SEQUENCE levels too — `?⏎-⏎  - a⏎- b⏎: w` lands two levels out, and
+      `?⏎- k:⏎    - a⏎- b⏎: w` has a mapping level between the sequence levels —
+      and the dedenting `-` must cons its entry onto the level at its own width
+      before the frame's `[190] s-indent(nv) ':'` line is reached.  Item 167
+      carried the sequence lane's tail as ONE width (`SeqEntryTail`) because the
+      STREAM has the document reading to fall back on; the frame's value line has
+      none, so this is the stack `ResumeFrames` is, with a sequence level beside
+      the mapping one.  `P` is the bottom, as there:
+      `KeyFrames (ExplValueLine sp_start nv)`.  Every `ResumeFrames` embeds
+      (`KeyFrames.ofResumeFrames`), so what the mapping lane pays rides unchanged.
 
-/-- **The dedent's spend, by KIND**: pop the levels strictly above `j` (their
-    tails are empty — the landing ended them) and hand back the `j` level's own
-    continuation, a MAPPING tail or a SEQUENCE tail, with the popped stack's
-    widths named exactly (`ResumeWidths`).  `ResumeFrames.resumeAt`'s proof,
-    the two constructors' arms sharing the bookkeeping. -/
-lemma KeyFrames.resumeAt {P : SurfPos → Prop} {sp : SurfPos} :
-    ∀ {ks : List Nat}, KeyFrames P ks sp → ∀ {j : Nat}, j ∈ ks →
-      ∃ ks', ResumeWidths ks ks' j ∧
-        ((∀ sp_end, SCompactMapTail j sp sp_end → KeyFrames P ks' sp_end) ∨
-         (∀ sp_end, SCompactSeqTail j sp sp_end → KeyFrames P ks' sp_end))
-  | [], _, _, hmem => absurd hmem (List.not_mem_nil)
-  | k :: ks, h, j, hmem => by
-      -- the landing is strictly below the top level: pop it (its tail is empty)
-      have top : ∀ (h_lt : ∀ k' ∈ ks, k' < k) (h_rest : KeyFrames P ks sp),
-          j ∈ ks → ∃ ks', ResumeWidths (k :: ks) ks' j ∧
-            ((∀ sp_end, SCompactMapTail j sp sp_end → KeyFrames P ks' sp_end) ∨
-             (∀ sp_end, SCompactSeqTail j sp sp_end → KeyFrames P ks' sp_end)) := by
-        intro h_lt h_rest hmem'
-        obtain ⟨ks', h_w, cont⟩ := h_rest.resumeAt hmem'
-        refine ⟨ks', fun k' => ⟨fun hk' =>
-          ⟨List.mem_cons_of_mem _ (h_w.sub k' hk'), h_w.lt k' hk'⟩, ?_⟩, cont⟩
-        rintro ⟨hm, hlt⟩
-        rcases List.mem_cons.mp hm with rfl | h'
-        · exact absurd (Nat.lt_trans (h_lt j hmem') hlt) (Nat.lt_irrefl _)
-        · exact h_w.keep k' h' hlt
-      -- the landing IS the top level: hand back its continuation
-      have here : ∀ (h_lt : ∀ k' ∈ ks, k' < k), j = k → ResumeWidths (k :: ks) ks j := by
-        intro h_lt hj; subst hj
-        exact fun k' => ⟨fun hk' => ⟨List.mem_cons_of_mem _ hk', h_lt k' hk'⟩, by
+      One constructor (item 332): the level's kind selects its tail
+      (`FrameLevel.tail`), so a resume at a level resumes the tail THAT level
+      owes, and the two-arm `mapLevel`/`seqLevel` reading survives as the smart
+      constructors below. -/
+  inductive KeyFrames (P : SurfPos → Prop) : List FrameLevel → SurfPos → Prop where
+    | bottom (sp : SurfPos) (h_bot : P sp) :
+        KeyFrames P [] sp
+    | level (e : FrameLevel) (ks : List FrameLevel) (sp : SurfPos)
+        (h_lt : ∀ fr ∈ ks, fr.width < e.width)
+        (h_cont : ∀ sp_end, e.tail sp sp_end →
+          KeyFrames P ks sp_end) :
+        KeyFrames P (e :: ks) sp
+
+  /-- A mapping level on the key stack. -/
+  lemma KeyFrames.mapLevel {P : SurfPos → Prop} (k : Nat) (ks : List FrameLevel) (sp : SurfPos)
+      (h_lt : ∀ fr ∈ ks, fr.width < k)
+      (h_cont : ∀ sp_end, SCompactMapTail k sp sp_end → KeyFrames P ks sp_end) :
+      KeyFrames P (FrameLevel.map k :: ks) sp :=
+    .level (FrameLevel.map k) ks sp h_lt h_cont
+
+  /-- A sequence level on the key stack. -/
+  lemma KeyFrames.seqLevel {P : SurfPos → Prop} (k : Nat) (ks : List FrameLevel) (sp : SurfPos)
+      (h_lt : ∀ fr ∈ ks, fr.width < k)
+      (h_cont : ∀ sp_end, SCompactSeqTail k sp sp_end → KeyFrames P ks sp_end) :
+      KeyFrames P (FrameLevel.seq k :: ks) sp :=
+    .level (FrameLevel.seq k) ks sp h_lt h_cont
+
+  /-- Close every level with its empty tail, reaching the bottom —
+      `ResumeFrames.close` over the kind-selected tail. -/
+  lemma KeyFrames.close {P : SurfPos → Prop} :
+      ∀ {ks : List FrameLevel} {sp : SurfPos},
+        KeyFrames P ks sp → P sp
+    | [], _, h => by cases h with | bottom _ h_bot => exact h_bot
+    | e :: _, sp, h => by
+        cases h with
+        | level _ _ _ _ h_cont => exact (h_cont sp (e.tail_nil sp)).close
+
+  /-- Every mapping-lane stack is a key stack, level for level. -/
+  lemma KeyFrames.ofResumeFrames {P : SurfPos → Prop} :
+      ∀ {ks : List FrameLevel} {sp : SurfPos},
+        ResumeFrames P ks sp → KeyFrames P ks sp
+    | [], _, h => by cases h with | bottom _ h_bot => exact .bottom _ h_bot
+    | _ :: ks, sp, h => by
+        cases h with
+        | level k _ _ h_lt h_cont =>
+          exact .mapLevel k ks sp h_lt
+            (fun sp_end h_tail => KeyFrames.ofResumeFrames (h_cont sp_end h_tail))
+
+  /-- **The dedent's spend, by the level's OWN kind**: pop the levels strictly
+      above the landing (their tails are empty — the landing ended them) and hand
+      back the landing level's continuation — the tail ITS kind owes — with the
+      popped stack's levels named exactly (`ResumeWidths`).  Item 302's version
+      returned "a mapping tail OR a sequence tail" and left the consumer to refute
+      the arm it could not take; membership of the LEVEL (kind included) says
+      which arm, so there is nothing to refute (item 332). -/
+  lemma KeyFrames.resumeAt {P : SurfPos → Prop} {sp : SurfPos} :
+      ∀ {ks : List FrameLevel}, KeyFrames P ks sp → ∀ {e : FrameLevel}, e ∈ ks →
+        ∃ ks', ResumeWidths ks ks' e.width ∧
+          (∀ sp_end, e.tail sp sp_end → KeyFrames P ks' sp_end)
+    | [], _, _, hmem => absurd hmem (List.not_mem_nil)
+    | k :: ks, h, e, hmem => by
+        cases h with
+        | level _ _ _ h_lt h_cont =>
+        by_cases he : e = k
+        · subst he
+          refine ⟨ks, fun fr => ⟨fun hk' => ⟨List.mem_cons_of_mem _ hk', h_lt fr hk'⟩, ?_⟩,
+            h_cont⟩
           rintro ⟨hm, hlt⟩
           rcases List.mem_cons.mp hm with rfl | h'
           · exact absurd hlt (Nat.lt_irrefl _)
-          · exact h'⟩
-      cases h with
-      | mapLevel _ _ _ h_lt h_cont =>
-        by_cases hj : j = k
-        · exact ⟨ks, here h_lt hj, Or.inl (hj ▸ h_cont)⟩
-        · exact top h_lt (h_cont sp (SCompactMapTail.nil k sp))
-            ((List.mem_cons.mp hmem).elim (fun h => absurd h hj) id)
-      | seqLevel _ _ _ h_lt h_cont =>
-        by_cases hj : j = k
-        · exact ⟨ks, here h_lt hj, Or.inr (hj ▸ h_cont)⟩
-        · exact top h_lt (h_cont sp (SCompactSeqTail.nil k sp))
-            ((List.mem_cons.mp hmem).elim (fun h => absurd h hj) id)
+          · exact h'
+        · have hmem' : e ∈ ks := (List.mem_cons.mp hmem).elim (fun h => absurd h he) id
+          obtain ⟨ks', h_w, cont⟩ := (h_cont sp (k.tail_nil sp)).resumeAt hmem'
+          refine ⟨ks', fun fr => ⟨fun hk' =>
+            ⟨List.mem_cons_of_mem _ (h_w.sub fr hk'), h_w.lt fr hk'⟩, ?_⟩, cont⟩
+          rintro ⟨hm, hlt⟩
+          rcases List.mem_cons.mp hm with rfl | h'
+          · exact absurd (Nat.lt_trans (h_lt e hmem') hlt) (Nat.lt_irrefl _)
+          · exact h_w.keep fr h' hlt
+
+/-- The mapping-level spend of the key stack, in the shape item 302's
+    consumers hold: a landing width known to be a MAPPING level. -/
+lemma KeyFrames.resumeAtMap {P : SurfPos → Prop} {sp : SurfPos} {ks : List FrameLevel}
+    (h : KeyFrames P ks sp) {j : Nat} (hmem : FrameLevel.map j ∈ ks) :
+    ∃ ks', ResumeWidths ks ks' j ∧
+      (∀ sp_end, SCompactMapTail j sp sp_end → KeyFrames P ks' sp_end) :=
+  h.resumeAt hmem
+
+/-- The sequence-level spend of the key stack. -/
+lemma KeyFrames.resumeAtSeq {P : SurfPos → Prop} {sp : SurfPos} {ks : List FrameLevel}
+    (h : KeyFrames P ks sp) {j : Nat} (hmem : FrameLevel.seq j ∈ ks) :
+    ∃ ks', ResumeWidths ks ks' j ∧
+      (∀ sp_end, SCompactSeqTail j sp sp_end → KeyFrames P ks' sp_end) :=
+  h.resumeAt hmem
 
 /-- **The explicit frame's value line**, named (item 108).  `[186]`'s key is
     complete at `sp_e`, and what the `[188]` entry still owes is `[190]
@@ -652,7 +688,7 @@ def ImplicitKeyPack (sc : ScannerState) (sp_start sp_scan : SurfPos) : Prop :=
     -- SCANNER holds no open mapping level at or right of the floor that those
     -- widths miss.  A park gets one from `pendingMapValue.h_frames` (item 147)
     -- and a pack is how it crosses to the NEXT park, so the two fields have
-    -- the same shape.  The list is `k :: ks` — this entry's own level
+    -- the same shape.  The list is `FrameLevel.map k :: ks` — this entry's own level
     -- included — because the two branches that pay reach it differently: a
     -- key NESTED below the park opens its level at the `:` still to come and
     -- conses the width for free (`Covered.cons`), while a key that LANDED on
@@ -662,9 +698,9 @@ def ImplicitKeyPack (sc : ScannerState) (sp_start sp_scan : SurfPos) : Prop :=
     -- only be read as a frame at or right of it, so a floor that climbed with
     -- the widths would be spendable nowhere.  Optional on its own, so a
     -- producer whose stack it cannot measure keeps the route it already pays.
-    ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) sc) ∨ True) ∧
+    ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
@@ -678,13 +714,13 @@ def ImplicitKeyPack (sc : ScannerState) (sp_start sp_scan : SurfPos) : Prop :=
     -- what keeps `?⏎  a:⏎    b:⏎  c: 2⏎: - w`'s `c` a sibling of `a` with the
     -- `?`'s value line still owed.  Producers with no explicit frame — every
     -- root and every `[189]` slot — pass `Or.inr trivial`.
-    ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       -- Item 150: the value-line face's own cover, the item-148 field's twin.
       -- The stack is the same one the stream face reads — what differs is
       -- where the frames BOTTOM, and a dedent inside an explicit key pops this
       -- list.
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt sc) ∧
@@ -711,7 +747,7 @@ def ImplicitKeyPack (sc : ScannerState) (sp_start sp_scan : SurfPos) : Prop :=
     -- (`ResumeFrames.close`) is what a dedenting `-` does.  No cover rides
     -- here — item 148's cover funds a membership test (`resumeAt`), and this
     -- lane's landing never resumes a mapping level, it closes every one.
-    ((∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    ((∃ (ke : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
@@ -1072,11 +1108,11 @@ lemma flowKeyPack_of_close {sc : ScannerState} {g : Option ScannerState} {n kc :
         ∀ sp_w : SurfPos, SBlockIndented nv .blockOut sp_c sp_w →
         SLYamlStream sp_start sp_w) ∨ PackAltG g) ∧
       -- Item 120: the resume twins ride the frame beside the pair.
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAltG g)) ∨ True)
@@ -1273,17 +1309,17 @@ def PropsKeyPack (sc : ScannerState) (sp_start sp_p sp_scan : SurfPos) : Prop :=
     -- Item 111: the route's RESUME twin (item 99's shape).  Item 148: with
     -- the scanner stack under it, the same way — a props-headed key is a hop
     -- in the same chain, and `colon_open_map_props` spends it identically.
-    ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) sc) ∨ True) ∧
+    ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
     -- Item 111: …and the value-line-bottomed one (item 108's shape).
-    ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       -- Item 150: the value-line face's cover, as at `ImplicitKeyPack`.
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt sc)) ∧
@@ -1584,12 +1620,12 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- stagger), and `IndentStackCover.Floor.pop_to` spends the WIDTHS half
       -- alone.  So the index is carried and forgotten, and the landing's hop
       -- costs the same at either face.
-      (h_framesS : (∃ ks : List Nat,
+      (h_framesS : (∃ ks : List FrameLevel,
         ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
         ResumeFrames (SLYamlStream sp_start) ks sp_mid) ∨ True)
-      (h_framesV : (∃ (nv : Nat) (ks : List Nat),
+      (h_framesV : (∃ (nv : Nat) (ks : List FrameLevel),
         ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
@@ -1651,7 +1687,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- here and no width is ever tested for membership.  Paid by the value
       -- completion of a `pendingMapValue` that carries one; every other
       -- producer punts.
-      (h_seqF : (∃ (ke kk : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < kk) ∧
+      (h_seqF : (∃ (ke kk : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < kk) ∧
         ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
         ∀ sp_e : SurfPos, SCompactMapTail kk sp_mid sp_e →
         ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
@@ -1829,7 +1865,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- having.**  Its one payer relays `pendingBlock.h_closeF`, and that
       -- field now carries one — so the entry face joins the other two lanes
       -- and the landing's face preference stops discarding a reading.
-      (h_closeFE : (∃ (ne : Nat) (ks : List Nat), n = ne + 1 ∧ (∀ k' ∈ ks, k' < ne) ∧
+      (h_closeFE : (∃ (ne : Nat) (ks : List FrameLevel), n = ne + 1 ∧ (∀ fr ∈ ks, fr.width < ne) ∧
         ((∃ lo : Nat, IndentStackCover.Floor lo ne ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
@@ -1840,17 +1876,17 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- reads it.  The index is existential for item 152's reason and buys the
       -- same thing here: the three mapping producers that pay bound their
       -- lists at DIFFERENT levels — the stream face at the entry's own index
-      -- (`n :: ks` floored at `n`), the value face one column above the `?`
+      -- (`FrameLevel.map n :: ks` floored at `n`), the value face one column above the `?`
       -- (item 150's stagger) — and `IndentStackCover.Floor.pop_to` spends the
       -- WIDTHS half alone.  `h_closeFE` gets none: its one payer relays
       -- `pendingBlock.h_closeF`, which carries no cover either, so the
       -- sequence lane stays a chain (item 152's third residue).
-      (h_closeF : (∃ ks : List Nat,
+      (h_closeF : (∃ ks : List FrameLevel,
         ((∃ lo m : Nat, IndentStackCover.Floor lo m ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
         ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
-      (h_closeFV : (∃ (nv : Nat) (ks : List Nat),
+      (h_closeFV : (∃ (nv : Nat) (ks : List FrameLevel),
         ((∃ lo m : Nat, IndentStackCover.Floor lo m ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
@@ -1882,7 +1918,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- punted `pendingBlockContent.h_closeFV` at all three entry-content
       -- producers for want of exactly this. ═══
       -- Item 305: …and the levels above stand strictly left of the entry (`pendingBlock.h_closeFV`'s note).
-      (h_closeFEV : (∃ (ne nv : Nat) (ks : List Nat), n = ne + 1 ∧ (∀ k' ∈ ks, k' < ne) ∧
+      (h_closeFEV : (∃ (ne nv : Nat) (ks : List FrameLevel), n = ne + 1 ∧ (∀ fr ∈ ks, fr.width < ne) ∧
         ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
         ∀ sp_end : SurfPos, SCompactSeqTail ne sp_m sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
@@ -2156,7 +2192,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- **Item 155: the cover, relayed from `pendingBlock.h_closeF`.**  Both
       -- of this field's payers step that one, so the lane's single source is
       -- the mapping value the sequence fills, and it arrives here unchanged.
-      (h_closeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+      (h_closeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
         ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
@@ -2229,7 +2265,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- Item 305: the levels above stand strictly LEFT of the entry — the bound
       -- item 198 left out because nothing read it; `KeyFrames.seqLevel` reads it
       -- when the nested `-` pushes this entry's own level on the stack.
-      (h_closeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+      (h_closeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
         ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
@@ -2355,7 +2391,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- existential for item 152's reason — the payer bounds its list at the
       -- level the collection FILLS, not at the collection's own — and
       -- `IndentStackCover.Floor.pop_to` spends the widths half alone.
-      (h_closeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+      (h_closeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
         ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
@@ -2409,7 +2445,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- neither, and a field that asks its payer for more than its consumer
       -- reads is a field nobody can pay. ═══
       -- Item 305: the levels above stand strictly LEFT of the entry (`pendingBlockContent`'s note).
-      (h_closeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+      (h_closeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
         ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
@@ -2616,7 +2652,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- entry, and the still-open mapping levels — this entry's own at `n`,
       -- tail-open behind it, then the levels below — stand ready.  It is
       -- what a DEEPER producer chains its own frames down to (the landed
-      -- `:` at `w > n` builds `(w :: n :: ks)` from it).
+      -- `:` at `w > n` builds `(w :: FrameLevel.map n :: ks)` from it).
       --
       -- `h_frames` is the spend face: the awaited entry closes EMPTY on the
       -- landing's comments (only the producer holds that entry's shape —
@@ -2624,17 +2660,17 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- levels stand ready for the landing width to pop to
       -- (`k:⏎  :⏎b: 2`).  Producers whose enclosing levels are fused pass
       -- `Or.inr trivial` for both.
-      (h_closeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+      (h_closeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
         -- **Item 148: the cover rides this face too.**  The key dispatch's
         -- NESTED branch reads the frames here and its DEDENT branch reads
         -- them at `h_frames`; two existentials cannot be identified after
         -- the fact, so the scanner reading each branch needs has to stand
         -- beside the widths that branch names.
-        ((∃ lo : Nat, IndentStackCover.Floor lo n (n :: ks) ∧
-          IndentStackCover.Covered lo (n :: ks) sc) ∨ True) ∧
+        ((∃ lo : Nat, IndentStackCover.Floor lo n (FrameLevel.map n :: ks) ∧
+          IndentStackCover.Covered lo (FrameLevel.map n :: ks) sc) ∨ True) ∧
         ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
-        ResumeFrames (SLYamlStream sp_start) (n :: ks) sp_mid) ∨ True)
-      (h_frames : (∃ ks : List Nat,
+        ResumeFrames (SLYamlStream sp_start) (FrameLevel.map n :: ks) sp_mid) ∨ True)
+      (h_frames : (∃ ks : List FrameLevel,
         -- **Item 147: the frames' own COVER**, beside them rather than over
         -- them.  `ResumeFrames` says what the SURFACE can resume at each width;
         -- the cover says the SCANNER has no open mapping level at or right of
@@ -2664,10 +2700,10 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- a dedent landing pops.  Payers are the `?` producer (`ks = []`, the
       -- bottom read straight off `h_expl`) and every implicit `:` beneath one;
       -- the rest pass `Or.inr trivial`.
-      (h_closeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ n) ∧
+      (h_closeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width ≤ n) ∧
         -- **Item 150: the cover rides the VALUE-LINE face too**, over the list
         -- this face already names — `h_closeFV`'s widths run to `n` INCLUSIVE,
-        -- so `ks` here is what `h_closeF` writes as `n :: ks`.  The FLOOR is
+        -- so `ks` here is what `h_closeF` writes as `FrameLevel.map n :: ks`.  The FLOOR is
         -- the one thing that does not mirror: the stream faces bottom at the
         -- stream and carry `Floor lo n ks`, while these bottom at the `?`,
         -- whose own level is deliberately NOT a frame (resuming there is the
@@ -2679,7 +2715,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
         KeyFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ PackAlt sc)
-      (h_framesV : (∃ (nv : Nat) (ks : List Nat),
+      (h_framesV : (∃ (nv : Nat) (ks : List FrameLevel),
         -- Item 150: and the dedent face's own, which is the one the landing
         -- spends — same list, same floor one column above the `?`.
         ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
@@ -2702,7 +2738,7 @@ inductive PendingNode (sc : ScannerState) : Bool → SurfPos → SurfPos → Sur
       -- own key conses `n` onto this list (`entryKeyPack_of_dispatch`'s landed
       -- branch), so a mapping two deep inside the entry reaches the collection
       -- the same way one deep does.
-      (h_seqF : (∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+      (h_seqF : (∃ (ke : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
         ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
         ∀ sp_e : SurfPos, SCompactMapTail n sp_mid sp_e →
         ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
@@ -3113,7 +3149,7 @@ lemma props_couplings_of_push {s_ad s' : ScannerState} {tok : YamlToken}
     no witness.  The floor each could name from what it holds is its own
     index at eight — the dispatch column, off the top bound or the landed arm
     — and zero at the root alone; three hold a relay's floor beside it: the
-    compact fill's `h_valF` (`Floor lo nv (nv :: ks)`), the content park's
+    compact fill's `h_valF` (`Floor lo nv (FrameLevel.map nv :: ks)`), the content park's
     sibling's `h_closeF_old` at the index it re-parks at, and the mapping
     value content's four faces, one of which (`h_frames99`, `Floor lo n ks`)
     has the entry face's own shape — a relay's floor being its source's,
@@ -3121,12 +3157,12 @@ lemma props_couplings_of_push {s_ad s' : ScannerState} {tok : YamlToken}
     The entry park's and the content park's frames are all below `n` and the
     `Floor` stands at `n`, so an own-index payment there is
     `Floor n n [] ∧ Covered n [] s'`; a top bound with `Mono` gives
-    `Covered n [n] s'` (`covered_singleton_of_top_le`) and
+    `Covered n [FrameLevel.map n] s'` (`covered_singleton_of_top_le`) and
     `Covered (n + 1) [] s'` (`covered_nil_of_top_le`) and neither of those,
     because the level at `n` may be a mapping the `-` shares — the runtime
     accepts `k:⏎- a` and `- k:⏎  - a`, the sequence at its key's own column.
-    The mapping value park's list is `n :: ks`, so `Covered n (n :: ks) s'`
-    does follow from the top and `Mono`, and `Floor n n (n :: ks)` needs
+    The mapping value park's list is `FrameLevel.map n :: ks`, so `Covered n (FrameLevel.map n :: ks) s'`
+    does follow from the top and `Mono`, and `Floor n n (FrameLevel.map n :: ks)` needs
     `ks = []` — the root openers' literal, not the explicit or compact
     openers' nested frames.  So a floor below the park's index is in hand at
     the root from its own stack, at three sites as a relay, and at no other;
@@ -3249,7 +3285,7 @@ lemma props_couplings_of_push {s_ad s' : ScannerState} {tok : YamlToken}
     the slot's index from the top pinned on both sides, `h_top_in` above and
     the park's own `h_floor` below.  The field's list is `[n + 1 + m]` under
     `Floor (n + 1) (n + 1 + m) [n + 1 + m]`, the one level the mapping value
-    park's `n :: ks` shape names for an empty `ks`, and the closure is
+    park's `FrameLevel.map n :: ks` shape names for an empty `ks`, and the closure is
     `[195]`'s compact mapping with its tail.  Of the six punts item 258
     left, this is the one whose callers hold what its slot lacks; the other
     three that lack `Mono` are called with a state no caller bounds below
@@ -5693,11 +5729,11 @@ structure FlowBaseRoutes (sp_start : SurfPos) (n : Nat) (sp_br : SurfPos)
     -- somewhere (`k:⏎  m:⏎    - a⏎  &p [1]:⏎    x: 1⏎  n: 2` pops to the
     -- resumed level).  Producers whose enclosing levels are already fused
     -- pass `Or.inr trivial`; the props arm passes its pack's own.
-    ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+    ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
-    ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAltG g)) ∨ True
@@ -6663,7 +6699,7 @@ lemma preprocess_indents_or_underIndent {sc s_prep : ScannerState} {c : Char}
 
     `ResumeFrames.resumeAt` asks only for MEMBERSHIP of the landing width in the
     frames; this says the scanner knows something stronger.  What is still
-    missing to refute the pack producers' `w ∉ ks` exit where the frames cover
+    missing to refute the pack producers' `FrameLevel.map w ∉ ks` exit where the frames cover
     the stack (~~`KeyPackPunt.dedent`~~ until item 297; the exit keys a fresh
     document since, row 19's over-approximation) is the surface direction —
     that every open mapping level of `sc.indents` is one of the frames — which
@@ -7811,7 +7847,7 @@ lemma propsSeqRoute {sp_start sp_land : SurfPos} {k : Nat}
     and what is reached is the frame's unpaid value line rather than the
     finished stream. -/
 lemma resumeFrameRoute {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
-    {k : Nat} {ks : List Nat}
+    {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end → ResumeFrames P ks sp_end) :
     ∀ sp_v, SBlockMapEntry k sp_key sp_v → P sp_v :=
@@ -7820,7 +7856,7 @@ lemma resumeFrameRoute {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
       h_ind h_entry (SCompactMapTail.nil k sp_v))).close
 
 /-- `resumeFrameRoute` at the stream bottom — item 109's route, unchanged. -/
-lemma resumeMapRoute {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Nat}
+lemma resumeMapRoute {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end) :
@@ -7839,7 +7875,7 @@ lemma resumeMapRoute {sp_start sp_land sp_key : SurfPos} {k : Nat} {ks : List Na
     (`seqEntryTail_mapCons`), which is this one with `ks = []` and the bottom
     unwrapped; framing the lane leaves nothing for it to say. -/
 lemma resumeMapRouteF {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
-    {k : Nat} {ks : List Nat}
+    {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end → ResumeFrames P ks sp_end) :
     ∀ sp_v, SBlockMapEntry k sp_key sp_v →
@@ -7850,7 +7886,7 @@ lemma resumeMapRouteF {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
 /-- `resumeFrameRoute` over the value-line stack `KeyFrames` (item 304): the
     same cons and the same close, with the sequence level beside the mapping one. -/
 lemma resumeFrameRouteK {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
-    {k : Nat} {ks : List Nat}
+    {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end → KeyFrames P ks sp_end) :
     ∀ sp_v, SBlockMapEntry k sp_key sp_v → P sp_v :=
@@ -7860,7 +7896,7 @@ lemma resumeFrameRouteK {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
 
 /-- `resumeMapRouteF` over `KeyFrames` (item 304). -/
 lemma resumeMapRouteK {P : SurfPos → Prop} {sp_land sp_key : SurfPos}
-    {k : Nat} {ks : List Nat}
+    {k : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (h_frames : ∀ sp_end, SCompactMapTail k sp_land sp_end → KeyFrames P ks sp_end) :
     ∀ sp_v, SBlockMapEntry k sp_key sp_v →
@@ -8256,13 +8292,13 @@ lemma preprocess_some_separate_0_anyCol (sc : ScannerState) (sp : SurfPos)
     caller for: the landing has to sit at or right of it, since below the floor
     the frames say nothing.  At `lo = 0` the hypothesis is free. -/
 lemma preprocess_landing_mem_or_seq {sc s_prep : ScannerState} {c : Char}
-    {lo : Nat} {ks : List Nat}
+    {lo : Nat} {ks : List FrameLevel}
     (hok : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_pop : s_prep.indents ≠ sc.indents)
     (h_base : IndentStackBase.SentinelBase sc)
     (h_floor : lo ≤ s_prep.col)
     (h_cov : IndentStackCover.Covered lo ks sc) :
-    s_prep.col ∈ ks ∨
+    FrameLevel.map s_prep.col ∈ ks ∨
       ∃ e, s_prep.indents.back? = some e ∧ e.isSequence = true ∧
         e.column = (s_prep.col : Int) := by
   obtain ⟨e, h_back, h_mem, h_col⟩ := preprocess_landing_at_level hok h_pop h_base
@@ -11064,7 +11100,7 @@ lemma flowKeyRoute_of_open {n nc m : Nat} {g : Option ScannerState} {cc : YamlCo
       -- complete, so there is nothing below it, and what the payment buys is
       -- the sibling after the flow key (`k:⏎  [1]: b⏎  c: 2`, `- [1]: b⏎  c: 2`
       -- — ONE inner mapping with two entries).
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
@@ -11089,7 +11125,7 @@ lemma flowKeyRoute_of_open {n nc m : Nat} {g : Option ScannerState} {cc : YamlCo
       -- INHABITATION on the premise, and both callers that pay it hand a
       -- one-element chain — so `h_compact_pair` says `nv0 :: ns` now and this
       -- conjunct is paid on the compact arm.
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAltG g)) ∨ True := by
@@ -11259,7 +11295,7 @@ lemma flowKeyRoute_of_root {m : Nat} {g : Option ScannerState} {sp_start sp_scan
     -- a bare document over the folded stream.  The payers are
     -- `pendingContent.h_framesS` and `pendingBlockContent.h_closeF` (read at
     -- the empty tail); every other caller punts.
-    (h_mapF : (∃ ks : List Nat,
+    (h_mapF : (∃ ks : List FrameLevel,
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
     -- **Item 201: and the VALUE-LINE-bottomed twin beside it, which is what
@@ -11273,7 +11309,7 @@ lemma flowKeyRoute_of_root {m : Nat} {g : Option ScannerState} {sp_start sp_scan
     -- stand inside a `?` frame (`?⏎  a: 1⏎  [1]: b⏎: w`, accepted).  The
     -- payers are `pendingContent.h_framesV` and `pendingBlockContent.h_closeFV`
     -- (read at the empty tail), exactly as `h_mapF`'s are their stream twins.
-    (h_mapFV : (∃ (nv : Nat) (ks : List Nat),
+    (h_mapFV : (∃ (nv : Nat) (ks : List FrameLevel),
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc) :
     (∃ (k : Nat) (sp_key : SurfPos),
@@ -11296,11 +11332,11 @@ lemma flowKeyRoute_of_root {m : Nat} {g : Option ScannerState} {sp_start sp_scan
       -- names the landing's width, `ks = []` under the suffix, head or root
       -- reading otherwise.  The value-line twin is the landing arm's, off
       -- `h_mapFV`, as the pair above is.
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAltG g)) ∨ True := by
@@ -11331,11 +11367,11 @@ lemma flowKeyRoute_of_root {m : Nat} {g : Option ScannerState} {sp_start sp_scan
       -- next entry (`a: 1⏎[1]: b` is ONE mapping), the sibling reading item
       -- 172's deferred floor accepts.  Membership decides, as at
       -- `resumectx_of_landing` and the `:`/`?` openers (item 173). ═══
-      have h_res_land : (∃ ks' : List Nat, (∀ k' ∈ ks', k' < w) ∧
+      have h_res_land : (∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < w) ∧
           ∀ sp_end : SurfPos, SCompactMapTail w sp_mid sp_end →
             ResumeFrames (SLYamlStream sp_start) ks' sp_end) ∨ True := by
         rcases h_mapF with ⟨ks, fS⟩ | _
-        · by_cases hmem : w ∈ ks
+        · by_cases hmem : FrameLevel.map w ∈ ks
           · obtain ⟨ks', h_w, cont⟩ := (fS sp_mid h_land.1).resumeAt hmem
             exact Or.inl ⟨ks', h_w.lt, cont⟩
           · exact Or.inr trivial
@@ -11346,15 +11382,13 @@ lemma flowKeyRoute_of_root {m : Nat} {g : Option ScannerState} {sp_start sp_scan
       -- `h_res_land` verbatim at `ExplValueLine sp_start nv`, and the frame
       -- that survives the landing is the `?` the collection's level stands
       -- inside. ═══
-      have h_resV_land : (∃ (nv : Nat) (ks' : List Nat), (∀ k' ∈ ks', k' < w) ∧
+      have h_resV_land : (∃ (nv : Nat) (ks' : List FrameLevel), (∀ fr ∈ ks', fr.width < w) ∧
           ∀ sp_end : SurfPos, SCompactMapTail w sp_mid sp_end →
             KeyFrames (ExplValueLine sp_start nv) ks' sp_end) ∨ PackAlt sc := by
         rcases h_mapFV with ⟨nv, ks, fV⟩ | h_alt
-        · by_cases hmem : w ∈ ks
-          · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_land.1).resumeAt hmem
-            rcases cont with contM | _
-            · exact Or.inl ⟨nv, ks', h_w.lt, contM⟩
-            · exact Or.inr trivial
+        · by_cases hmem : FrameLevel.map w ∈ ks
+          · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_land.1).resumeAtMap hmem
+            exact Or.inl ⟨nv, ks', h_w.lt, cont⟩
           · exact Or.inr trivial
         · exact Or.inr h_alt
       refine Or.inl ⟨w, sp_prep,
@@ -12480,7 +12514,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- landing's width names (`a: 1⏎[1]: b`, item 172's key half).  The two
       -- content parks pay (`h_framesS`, `h_closeF` at the empty tail); the
       -- marker parks take their own arms and `pendingFlow` has nothing.
-      ((∃ ks : List Nat,
+      ((∃ ks : List FrameLevel,
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True) →
       -- **Item 201: the same levels under an open `[186]` explicit key.**  The
@@ -12489,7 +12523,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- frame's value line across the bracket (`?⏎  a: 1⏎  [1]: b⏎: w`).  The
       -- two content parks pay (`h_framesV`, `h_closeFV` at the empty tail);
       -- the marker parks take their own arms and `pendingFlow` has nothing.
-      ((∃ (nv : Nat) (ks : List Nat),
+      ((∃ (nv : Nat) (ks : List FrameLevel),
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc) →
       ∃ sp_gram' sp_block' sp_flow' sp_scan',
@@ -12822,7 +12856,7 @@ lemma accum_flow_open_depth0 (sc : ScannerState)
       -- a flow key landing at the entry's own column is payable here and not
       -- yet informative.
       (h_cFV201.imp (fun ⟨nv, ks, h_ltk, closeFV⟩ =>
-        ⟨nv, n176 :: ks, fun sp_m h_ssl =>
+        ⟨nv, FrameLevel.seq n176 :: ks, fun sp_m h_ssl =>
           KeyFrames.seqLevel n176 ks sp_m h_ltk (fun sp_end h_tail =>
             closeFV sp_m h_ssl sp_end h_tail)⟩) id)
   | pendingFlow _ _ _ _ _ _ _ h_live0F =>
@@ -19231,7 +19265,7 @@ lemma scanValue_prod (sc : ScannerState) (sp : SurfPos)
       `ResumeFrames.resumeAt` matches by popping the widths above it.
 
     The two are not yet coupled, and that gap is what the pack producers'
-    `w ∉ ks` exit stands at (~~`KeyPackPunt.dedent`~~, deleted at item 297; the
+    `FrameLevel.map w ∉ ks` exit stands at (~~`KeyPackPunt.dedent`~~, deleted at item 297; the
     exit keys a fresh document): `resumeAt` needs the landing width to be a
     MEMBER of the frames,
     and only `sc.indents` knows that it is (item 127's §1c pins the scanner
@@ -21193,7 +21227,7 @@ lemma indicator_cover_at_col {sc s_prep s' : ScannerState} {sp_prep : SurfPos}
     (h_dispatch : scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep) c = .ok (some s')) :
-    IndentStackCover.Covered k [k] s' ∧ IndentStackCover.Covered (k + 1) [] s' := by
+    IndentStackCover.Covered k [FrameLevel.map k] s' ∧ IndentStackCover.Covered (k + 1) [] s' := by
   have h_upd_ind : (if s_prep.allowDirectives then
       { s_prep with allowDirectives := false, documentEverStarted := true }
     else s_prep).indents = s_prep.indents := by split <;> rfl
@@ -21308,7 +21342,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
     -- appending a bare document over the folded stream.  `ks` is the levels
     -- still open below the resumed one, carried into the new park's frames so
     -- the NEXT landing can resume too.
-    (h_res_land : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+    (h_res_land : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         ResumeFrames (SLYamlStream sp_start) ks sp_end) ∨ True)
     -- Item 142: §9.2's landing refusal, the sixth arm.  `Or.inl` says the
@@ -21319,7 +21353,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
     -- Item 147: the landing's own cover, measured by `indicator_cover_at_col`
     -- at the caller (which holds the walk that armed the unwind) and handed to
     -- the frames field below.
-    (h_cov_in : IndentStackCover.Covered k [k] s' ∨ True)
+    (h_cov_in : IndentStackCover.Covered k [FrameLevel.map k] s' ∨ True)
     -- **Item 175 (LAST, so the existing argument order stands): the landing's
     -- PROPS arm** — when the park behind this landing is a sentinel-level
     -- `[96]` run, the entry this `:` opens heads the RUN's own collection
@@ -21337,7 +21371,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
     -- one level DOWN does: once the enclosing `?`'s value line has been spent,
     -- a second `:` at the same column is that level's next entry and the
     -- OUTER frame's line is still owed (`?⏎  ?⏎    - a⏎  : b⏎  : c⏎: w`).
-    (h_resV_land : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (h_resV_land : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
     -- **Item 322 (LAST): the alternative's TRANSPORT across the `:`.**  This lemma states its
@@ -21391,9 +21425,9 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
   -- PUNTS it — a second dedent from the re-parked state keeps the fallback,
   -- the recorded residue (DOCS item 173).
   obtain ⟨ksF, h_ltF, h_covF, h_routeF⟩ :
-      ∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-          IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
+      ∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+          IndentStackCover.Covered lo (FrameLevel.map k :: ks) s') ∨ True) ∧
         ∀ sp_v, SBlockMapEntry k sp_ind sp_v →
         ∀ sp_e, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e :=
@@ -21466,7 +21500,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
                  (h_routeF sp_v
                    (SBlockMapEntry.emptyKeyNode k sp_ind sp_scan' sp_v h_lit
                      (SBlockNode_blockIn_to_blockOut h_node)))⟩)
-           (Or.inl ⟨k :: ksF,
+           (Or.inl ⟨FrameLevel.map k :: ksF,
              -- Item 147: and the stack under it — the landing floored the top
              -- and the `:` pushed at the same column, so the open mapping
              -- levels at or right of the floor are exactly this list's.
@@ -21486,7 +21520,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
            -- a DEEPER landing chains onto this bottom instead of dropping it.
            (match h_resV_land with
             | Or.inl ⟨nv, ksV, h_ltV, contV⟩ =>
-                Or.inl ⟨nv, k :: ksV,
+                Or.inl ⟨nv, FrameLevel.map k :: ksV,
                   (by
                     rintro k' hk'
                     rcases List.mem_cons.mp hk' with rfl | h'
@@ -21501,7 +21535,7 @@ lemma colon_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) (k 
             | Or.inr h_alt => Or.inr (h_alt_step h_alt))
            (match h_resV_land with
             | Or.inl ⟨nv, ksV, h_ltV, contV⟩ =>
-                Or.inl ⟨nv, k :: ksV, Or.inr trivial,
+                Or.inl ⟨nv, FrameLevel.map k :: ksV, Or.inr trivial,
                   fun sp_m h_ssl =>
                     KeyFrames.mapLevel k ksV sp_m h_ltV
                       (resumeMapRouteK h_ind contV sp_m
@@ -21571,13 +21605,13 @@ lemma question_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) 
     -- **Item 173: the landing's RESUME arm**, as at `colon_open_map` — the
     -- sibling explicit entry continues the still-open level
     -- (`? a⏎: 1⏎? b⏎: 2` is ONE mapping, the parser's own reading).
-    (h_res_land : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+    (h_res_land : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         ResumeFrames (SLYamlStream sp_start) ks sp_end) ∨ True)
     -- Item 142: §9.2's landing refusal, as at `colon_open_map`.
     (h_ref_land : BareLandingFacts sc s_prep '?' ∨ True)
     -- Item 147: the landing's own cover, as at `colon_open_map`.
-    (h_cov_in : IndentStackCover.Covered k [k] s' ∨ True)
+    (h_cov_in : IndentStackCover.Covered k [FrameLevel.map k] s' ∨ True)
     -- **Item 150: the value-line stack's own seed.**  Below the `?` there is no
     -- open mapping level — `ks = []` — and a cover over that empty list is a
     -- statement about the stack rather than a vacuity: it says the `?`'s push
@@ -21634,7 +21668,7 @@ lemma question_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) 
     -- and the frame's value line is what stands underneath.  Both readings end
     -- in the same body, and this lemma unions them — which is why the park
     -- carries one chain and the landed `:` still picks by column.
-    (h_resV_land : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (h_resV_land : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
     -- **Item 209 (LAST): the `?`'s own stack TOP**, the slot's half of the
@@ -21686,9 +21720,9 @@ lemma question_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) 
   -- `ks` and the root arms' cover — as at `colon_open_map` (the resume arm
   -- punts the cover; the recorded residue).
   obtain ⟨ksF, h_ltF, h_covF, h_routeF⟩ :
-      ∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-          IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
+      ∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+          IndentStackCover.Covered lo (FrameLevel.map k :: ks) s') ∨ True) ∧
         ∀ sp_v, SBlockMapEntry k sp_ind sp_v →
         ∀ sp_e, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e :=
@@ -21800,7 +21834,7 @@ lemma question_open_map {sc : ScannerState} (sp_start sp_land sp_ind : SurfPos) 
                    (SBlockMapEntry.explicitEmpty k sp_ind sp_scan' sp_v h_lit
                      (SBlockIndented.node k .blockOut sp_scan' sp_v
                        (SBlockNode_blockIn_to_blockOut h_node))))⟩)
-           (Or.inl ⟨k :: ksF,
+           (Or.inl ⟨FrameLevel.map k :: ksF,
              -- Item 147: the `?`'s own `[187]` push stands at its column too.
              h_covF,
              fun sp_m h_ssl =>
@@ -22260,11 +22294,11 @@ lemma compact_open_map (sp_start sp_entry sp_ind : SurfPos) (n m : Nat)
              -- indicator; and the level resumes on `[195]`'s compact mapping
              -- with its TAIL, the same frame `h_close` writes with a `nil` one.
              -- The list is `[n + 1 + m]`, the one level the mapping value
-             -- park's `n :: ks` shape names for an empty `ks`. ═══
+             -- park's `FrameLevel.map n :: ks` shape names for an empty `ks`. ═══
              (Or.inl ⟨[], fun _ h => absurd h List.not_mem_nil,
                Or.inl ⟨n + 1,
                  ⟨Nat.le_add_right (n + 1) m, fun k' hk => by
-                   rw [List.mem_singleton] at hk; omega⟩,
+                   rw [List.mem_singleton] at hk; subst hk; dsimp only; omega⟩,
                  IndentStackCover.CoverStep.cons_of_top_eq
                    (IndentStackCover.dispatchBlockIndicators_cover h_dispatch
                      ((IndentStackCover.preprocess_cover h_preprocess
@@ -22359,7 +22393,7 @@ lemma indicator_open_map {sc : ScannerState}
     -- Item 173: the landing's RESUME arm, handed through to whichever opener
     -- the indicator selects — the sibling entry continues the still-open
     -- level the landing's width names.
-    (h_res_land : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+    (h_res_land : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         ResumeFrames (SLYamlStream sp_start) ks sp_end) ∨ True)
     -- Item 142: §9.2's landing refusal, handed through to whichever opener
@@ -22401,7 +22435,7 @@ lemma indicator_open_map {sc : ScannerState}
     -- value, the second a sibling entry).  `h_res_land` is the same stack at
     -- the stream bottom; item 194 named this one and could not pay it because
     -- the arm it would have paid did not exist.
-    (h_resV_land : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (h_resV_land : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
     -- **Item 209 (LAST): the DISPATCH's floor**, required rather than
@@ -22426,7 +22460,7 @@ lemma indicator_open_map {sc : ScannerState}
       scanNextToken_dispatchBlockIndicators (if s_prep.allowDirectives then
         { s_prep with allowDirectives := false, documentEverStarted := true }
       else s_prep) c' = .ok (some s') →
-      (IndentStackCover.Covered k [k] s' ∧
+      (IndentStackCover.Covered k [FrameLevel.map k] s' ∧
         IndentStackCover.Covered (k + 1) [] s') ∨ True := by
     intro c' hc' hpre' hdis'
     rcases h_cov with ⟨hm, hb, hf⟩ | _
@@ -22518,19 +22552,19 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
     -- preprocessing (`IndentStackCover.preprocess_cover`, which only pops);
     -- the `:` below is the writer, and it writes at the KEY's column, which
     -- the list already names.
-    (h_routeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) s_prep) ∨ True) ∧
+    (h_routeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True)
     -- Item 108: the pack's value-line-bottomed twin, handed on the same way —
     -- this is the hop that carries an enclosing `?` frame down one mapping
     -- level, so a landing deeper inside the key can still pop back to it.
-    (h_routeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (h_routeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       -- Item 150: the value-line pack field's cover, handed across the `:`.
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) s_prep) ∨ True) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ alt)
@@ -22572,7 +22606,7 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
     -- is how `- sku: BL394D⏎  quantity: 4⏎- sku: BL4438H` keeps the second `-`
     -- inside the sequence it stands in.
     -- Item 169: the levels between the entry and the collection ride with it.
-    (h_routeS : (∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (h_routeS : (∃ (ke : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
@@ -22610,9 +22644,9 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
   -- **Item 148: the cover crosses the `:`.**  `scanValuePrepare` opens at the
   -- KEY's column, which the pack's list already names, so the step adds a
   -- width the frames have and the cover comes out over the same list.
-  have h_cov_step : ∀ (lo : Nat) (ks : List Nat),
-      IndentStackCover.Covered lo (k :: ks) s_prep →
-      IndentStackCover.Covered lo (k :: ks) s' := fun lo ks hc =>
+  have h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
+      IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep →
+      IndentStackCover.Covered lo (FrameLevel.map k :: ks) s' := fun lo ks hc =>
     (IndentStackCover.scanValue_cover_key (k := k)
       (dispatchBlock_colon_scanValue h_dispatch)
       (by split <;> exact h_poss_pp) (by split <;> exact h_kcol_pp)
@@ -22661,7 +22695,7 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
                           sp_end h_tail)⟩
               | Or.inr _ => Or.inr trivial)
              (match h_routeF with
-              | Or.inl ⟨ks, h_lt, h_cov, routeF⟩ => Or.inl ⟨k :: ks,
+              | Or.inl ⟨ks, h_lt, h_cov, routeF⟩ => Or.inl ⟨FrameLevel.map k :: ks,
                   -- **Item 148: the chain's own hop.**  The widths grow by this
                   -- entry's level and the floor does not move, which is the
                   -- pack's field spent: a cover seeded at a root reaches a park
@@ -22681,10 +22715,10 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
              -- that pops to `k` here is a SIBLING inside the explicit key and
              -- the key is still open when its `:` line arrives.
              (match h_routeFV with
-              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, k :: ks,
+              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, FrameLevel.map k :: ks,
                   fun k' hk' => by
                     rcases List.mem_cons.mp hk' with h | h
-                    · omega
+                    · subst h; dsimp only; omega
                     · exact Nat.le_of_lt (h_lt k' h),
                   -- Item 150: the value-line chain's own hop — the widths grow by
                   -- this entry's level, and the floor climbs only as far as the
@@ -22700,7 +22734,7 @@ lemma colon_open_map_implicit {alt : Prop} (sp_start sp_block sp_key sp_gram sp_
                           sp_end h_tail)⟩
               | Or.inr h_alt => Or.inr (h_alt_step h_alt))
              (match h_routeFV with
-              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, k :: ks,
+              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, FrameLevel.map k :: ks,
                   -- Item 150: the value-line chain's own hop — the widths grow by
                   -- this entry's level, and the floor climbs only as far as the
                   -- park's index demands (`n + 1` here, `n` at the pack).
@@ -22758,16 +22792,16 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
     -- Item 148: and the scanner stack under them, as at
     -- `colon_open_map_implicit` — this producer reads the key off `sc` and
     -- `h_inh`, so the transport across the `:` is its own.
-    (h_routeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) s_prep) ∨ True) ∧
+    (h_routeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True)
-    (h_routeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (h_routeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       -- Item 150: the value-line pack field's cover, handed across the `:`.
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) s_prep) ∨ True) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep) ∨ True) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry k sp_p sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt sc)
@@ -22834,9 +22868,9 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
       (by split <;> exact h_kline)
   -- Item 148: the same hop as at `colon_open_map_implicit` — the key this
   -- producer resolves is `sc`'s, inherited across the no-break landing.
-  have h_cov_step : ∀ (lo : Nat) (ks : List Nat),
-      IndentStackCover.Covered lo (k :: ks) s_prep →
-      IndentStackCover.Covered lo (k :: ks) s' := fun lo ks hc =>
+  have h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
+      IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep →
+      IndentStackCover.Covered lo (FrameLevel.map k :: ks) s' := fun lo ks hc =>
     (IndentStackCover.scanValue_cover_key (k := k)
       (dispatchBlock_colon_scanValue h_dispatch)
       (by split <;> (rw [h_inh]; exact h_poss))
@@ -22887,7 +22921,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                           sp_end h_tail)⟩
               | Or.inr _ => Or.inr trivial)
              (match h_routeF with
-              | Or.inl ⟨ks, h_lt, h_cov, routeF⟩ => Or.inl ⟨k :: ks,
+              | Or.inl ⟨ks, h_lt, h_cov, routeF⟩ => Or.inl ⟨FrameLevel.map k :: ks,
                   -- Item 148: the anchored null key is a hop like any other.
                   h_cov.imp (fun ⟨lo, hb, hc⟩ => ⟨lo, hb, h_cov_step lo ks hc⟩) id,
                   fun sp_mid h_ssl =>
@@ -22899,10 +22933,10 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                           sp_end h_tail)⟩
               | Or.inr _ => Or.inr trivial)
              (match h_routeFV with
-              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, k :: ks,
+              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, FrameLevel.map k :: ks,
                   fun k' hk' => by
                     rcases List.mem_cons.mp hk' with h | h
-                    · omega
+                    · subst h; dsimp only; omega
                     · exact Nat.le_of_lt (h_lt k' h),
                   -- Item 150: the value-line chain's own hop — the widths grow by
                   -- this entry's level, and the floor climbs only as far as the
@@ -22918,7 +22952,7 @@ lemma colon_open_map_props (sp_start sp_block sp_p sp_scan : SurfPos) (k : Nat)
                           sp_end h_tail)⟩
               | Or.inr h_alt => Or.inr (PackAlt.step_value h_preprocess h_dispatch h_noflow h_alt))
              (match h_routeFV with
-              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, k :: ks,
+              | Or.inl ⟨nv, ks, h_lt, h_covV, routeFV⟩ => Or.inl ⟨nv, FrameLevel.map k :: ks,
                   -- Item 150: the value-line chain's own hop — the widths grow by
                   -- this entry's level, and the floor climbs only as far as the
                   -- park's index demands (`n + 1` here, `n` at the pack).
@@ -24062,11 +24096,11 @@ lemma accum_block_on_closeThenBlock
     -- a park with no awaited node has nothing to pay it with.
     -- Item 179: the awaited node reads at the SHIFTED index; the frame widths
     -- stay raw — they name scanner levels, not node indices.
-    (h_valF : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < nv) ∧
-      ((∃ lo : Nat, IndentStackCover.Floor lo nv (nv :: ks) ∧
-        IndentStackCover.Covered lo (nv :: ks) sc) ∨ True) ∧
+    (h_valF : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < nv) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo nv (FrameLevel.map nv :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map nv :: ks) sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SBlockNode (nv + 1) .blockIn sp_scan sp_mid →
-      ResumeFrames (SLYamlStream sp_start) (nv :: ks) sp_mid) ∨ True)
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map nv :: ks) sp_mid) ∨ True)
     -- **Item 167 (LAST): the closed park's ENCLOSING collection.**  Item 166
     -- measured this lemma's `-` arm and found the surviving branch is not
     -- refutable: behind a completed node a landed `-` stands on a `[183]` that
@@ -24088,7 +24122,7 @@ lemma accum_block_on_closeThenBlock
     -- `pendingContent.h_framesS` and `pendingMapValue.h_frames` (the cover
     -- those fields carry is forgotten at this door — the resume arm's park
     -- punts its cover, the recorded residue); every other caller punts.
-    (h_mapF : (∃ ks : List Nat,
+    (h_mapF : (∃ ks : List FrameLevel,
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
     -- **Item 175 (LAST): the closed park's held `[96]` RUN, read as the landed
@@ -24114,7 +24148,7 @@ lemma accum_block_on_closeThenBlock
     -- leaves the frame's line owed.  The payer is `pendingContent.h_framesV`,
     -- which has carried this stack since item 108 and had no arm to spend it
     -- into; every other caller punts.
-    (h_mapFV : (∃ (nv : Nat) (ks : List Nat),
+    (h_mapFV : (∃ (nv : Nat) (ks : List FrameLevel),
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc)
     -- ═══ **Item 198 (LAST): `h_valF`'s twin at the VALUE-LINE bottom.**  Item
@@ -24132,7 +24166,7 @@ lemma accum_block_on_closeThenBlock
     -- none of its own); `nv` is the FRAME's index and is a different number —
     -- `h_closeFV`'s widths already run to the park's own level inclusive, so
     -- nothing is consed on the way across. ═══
-    (h_valFV : (∃ (nn nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ nn) ∧
+    (h_valFV : (∃ (nn nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width ≤ nn) ∧
       ∀ sp_mid : SurfPos, SBlockNode (nn + 1) .blockIn sp_scan sp_mid →
       KeyFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ PackAlt sc)
     -- **Item 208 (LAST): the park's own INDENT CHECK where it stands AT a line
@@ -24290,7 +24324,7 @@ lemma accum_block_on_closeThenBlock
                  -- written directly above.  It is payable and NOT informative —
                  -- the empty stack is the park's own `h_kslot` restated, and the
                  -- two doors that spend a value-line stack both gate on
-                 -- `ResumeFrames.resumeAt`'s `k ∈ ks`, which no empty list
+                 -- `ResumeFrames.resumeAt`'s `FrameLevel.map k ∈ ks`, which no empty list
                  -- satisfies (item 155's sentence, machine-checked in
                  -- `BlockDeferralClasses` §19.2).  The punt stays, because a
                  -- restatement hides the gap from the census that found it; what
@@ -24468,11 +24502,11 @@ lemma accum_block_on_closeThenBlock
   -- `resumectx_of_landing`: a width in the list resumes that level (the
   -- sibling reading — `a: 1⏎: 2` is ONE mapping), and a width outside it
   -- keeps the routes the opener already has. ═══
-  have h_res_land : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+  have h_res_land : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
         ResumeFrames (SLYamlStream sp_start) ks sp_end) ∨ True := by
     rcases h_mapF with ⟨ks, fS⟩ | _
-    · by_cases hmem : k ∈ ks
+    · by_cases hmem : FrameLevel.map k ∈ ks
       · obtain ⟨ks', h_w, cont⟩ := (fS sp_mid h_ssl).resumeAt hmem
         exact Or.inl ⟨ks', h_w.lt, cont⟩
       · exact Or.inr trivial
@@ -24481,15 +24515,13 @@ lemma accum_block_on_closeThenBlock
   -- already indifferent to what the stack stands on (item 108's parameter), so
   -- the term is item 173's verbatim; what differs is which face the opener
   -- spends it on — the chain rather than the route. ═══
-  have h_resV_land : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+  have h_resV_land : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc := by
     rcases h_mapFV with ⟨nv, ks, fV⟩ | h_alt
-    · by_cases hmem : k ∈ ks
-      · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_ssl).resumeAt hmem
-        rcases cont with contM | _
-        · exact Or.inl ⟨nv, ks', h_w.lt, contM⟩
-        · exact Or.inr trivial
+    · by_cases hmem : FrameLevel.map k ∈ ks
+      · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_ssl).resumeAtMap hmem
+        exact Or.inl ⟨nv, ks', h_w.lt, cont⟩
       · exact Or.inr trivial
     · exact Or.inr h_alt
   by_cases hc : c = '-'
@@ -24548,9 +24580,9 @@ lemma accum_block_on_closeThenBlock
     -- honest statement when the park this landing closed awaited no node.
     -- Where one did, `h_valF` says the mapping level the park stands in is
     -- still open UNDERNEATH the collection this `-` opens, and the frames are
-    -- `nv :: ks` rather than empty.  That is the one place on the sequence
+    -- `FrameLevel.map nv :: ks` rather than empty.  That is the one place on the sequence
     -- lane where a non-empty list exists, and without it the lane's cover is
-    -- unspendable: `ResumeFrames.resumeAt` gates on `j ∈ ks`, so a landing can
+    -- unspendable: `ResumeFrames.resumeAt` gates on `FrameLevel.map j ∈ ks`, so a landing can
     -- pop to no width an empty list names.
     --
     -- The side condition is `nv < k`, and it is `[183]`'s `m` read as a bound:
@@ -24584,7 +24616,7 @@ lemma accum_block_on_closeThenBlock
     -- The `-` opens a SEQUENCE level, and the frames record mapping levels
     -- only — so the cover crosses this step untouched, and the lift is the
     -- stack equation and nothing else.
-    have h_cov_step : ∀ (lo : Nat) (ksx : List Nat),
+    have h_cov_step : ∀ (lo : Nat) (ksx : List FrameLevel),
         IndentStackCover.Covered lo ksx sc → IndentStackCover.Covered lo ksx s' :=
       fun lo ksx hc =>
         IndentStackCover.scanBlockEntry_cover
@@ -24597,7 +24629,7 @@ lemma accum_block_on_closeThenBlock
         ResumeFrames (SLYamlStream sp_start) [] sp_end :=
       fun sp_final h_indented sp_end h_tail =>
         ResumeFrames.bottom sp_end (h_entryTail sp_final h_indented sp_end h_tail)
-    have h_seqFrames : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+    have h_seqFrames : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ((∃ lo : Nat, IndentStackCover.Floor lo k ks ∧
           IndentStackCover.Covered lo ks s') ∨ True) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
@@ -24605,7 +24637,7 @@ lemma accum_block_on_closeThenBlock
         ResumeFrames (SLYamlStream sp_start) ks sp_end) ∨ True := by
       rcases h_valF with ⟨nv, ksv, h_ltv, h_cvv, closeF⟩ | _
       · by_cases hnv : nv < k
-        · exact Or.inl ⟨nv :: ksv, (fun k' hk' => by
+        · exact Or.inl ⟨FrameLevel.map nv :: ksv, (fun k' hk' => by
               rcases List.mem_cons.mp hk' with rfl | h'
               · exact hnv
               · exact Nat.lt_trans (h_ltv k' h') hnv),
@@ -24624,7 +24656,7 @@ lemma accum_block_on_closeThenBlock
     -- stands on, so the term is the branch above verbatim with two things
     -- gone: there is no cover to carry (the field asks for none) and there is
     -- nothing to CONS — `h_closeFV`'s widths already run to the park's own
-    -- level inclusive (item 150's stagger), where `h_closeF` writes `n :: ks`.
+    -- level inclusive (item 150's stagger), where `h_closeF` writes `FrameLevel.map n :: ks`.
     -- The fallback is `Or.inr trivial` rather than a bottomed stack: this
     -- face's bottom is an enclosing frame's unpaid line, and a park with no
     -- frame has no such line to stand on. ═══
@@ -24634,7 +24666,7 @@ lemma accum_block_on_closeThenBlock
     -- `:` line — the same term item 188 pays `h_kslot` with, under
     -- `KeyFrames.bottom`.  This is the first entry's stack, which the entries
     -- inside it push onto and the dedent back to this column resumes. ═══
-    have h_slotV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    have h_slotV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc :=
@@ -24658,18 +24690,16 @@ lemma accum_block_on_closeThenBlock
     -- and, closed, its own `h_kslot`.  A mapping level at `k` declines here (a `-` at a
     -- mapping's width is refuted elsewhere).  `h_vslot`'s bottom (item 305) stays
     -- first; this is the fallback behind it. ═══
-    have h_resSeqV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    have h_resSeqV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc := by
       rcases h_mapFV with ⟨nv, ks, fV⟩ | h_alt
-      · by_cases hmem : k ∈ ks
-        · obtain ⟨ks', h_w, cont⟩ := (fV sp_mid h_ssl).resumeAt hmem
-          rcases cont with _ | contS
-          · exact Or.inr trivial
-          · exact Or.inl ⟨nv, ks', h_w.lt, fun sp_m h_node sp_e h_tail =>
-              contS sp_e (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_m sp_e
-                h_ind h_dash h_gnot h_node h_tail)⟩
+      · by_cases hmem : FrameLevel.seq k ∈ ks
+        · obtain ⟨ks', h_w, contS⟩ := (fV sp_mid h_ssl).resumeAtSeq hmem
+          exact Or.inl ⟨nv, ks', h_w.lt, fun sp_m h_node sp_e h_tail =>
+            contS sp_e (SCompactSeqTail.cons k sp_mid _ sp_scan' sp_m sp_e
+              h_ind h_dash h_gnot h_node h_tail)⟩
         · exact Or.inr trivial
       · exact Or.inr h_alt
     -- The same resume, CLOSED: the new park's own value line (`h_kslot`).
@@ -24682,14 +24712,14 @@ lemma accum_block_on_closeThenBlock
       | Or.inl ⟨nv, _, _, cont⟩ => Or.inl ⟨nv, fun sp_m h_node sp_e h_tail =>
           (cont sp_m h_node sp_e h_tail).close⟩
       | Or.inr h_alt => Or.inr h_alt
-    have h_slotV' : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    have h_slotV' : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc :=
       match h_slotV with
       | Or.inl x => Or.inl x
       | Or.inr _ => h_resSeqV
-    have h_seqFramesV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    have h_seqFramesV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_mid : SurfPos, SBlockIndented k .blockIn sp_scan' sp_mid →
         ∀ sp_end : SurfPos, SCompactSeqTail k sp_mid sp_end →
         KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc := by
@@ -25495,7 +25525,7 @@ lemma accum_block_on_pendingContent
     -- tail, which is what turns the park's face into
     -- `accum_block_on_closeThenBlock`'s — the collection's remaining tail owed
     -- at the landing's comments, and nothing else.
-    (h_seqF168 : (∃ (ke kk : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < kk) ∧
+    (h_seqF168 : (∃ (ke kk : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < kk) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ∀ sp_e : SurfPos, SCompactMapTail kk sp_mid sp_e →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
@@ -25503,7 +25533,7 @@ lemma accum_block_on_pendingContent
     -- still-open MAPPING levels** (`pendingContent.h_framesS`, item 109), on
     -- their way to the landed `:`/`?` — the sibling entry resumes the level
     -- the landing's width names (`a: 1⏎: 2`, `? a⏎: 1⏎? b⏎: 2`).
-    (h_mapF109 : (∃ ks : List Nat,
+    (h_mapF109 : (∃ ks : List FrameLevel,
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
     -- **Item 197 (LAST): the same levels at the VALUE-LINE bottom**
@@ -25513,7 +25543,7 @@ lemma accum_block_on_pendingContent
     -- landing opens resumes the level and the frame's `:` line is what the
     -- level closes onto (`?⏎  ?⏎    a: b⏎  ? c⏎: w`) — the residue item 194
     -- named as a BOTTOM.
-    (h_mapFV108 : (∃ (nv : Nat) (ks : List Nat),
+    (h_mapFV108 : (∃ (nv : Nat) (ks : List FrameLevel),
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc)
     -- **Item 208 (LAST): the park's own INDENT CHECK**, item 154's field made
@@ -25693,7 +25723,7 @@ lemma accum_block_on_pendingBlockContent
     -- only thing between the two was this parameter list.  The landing's own
     -- width decides membership, exactly as at the `_stamp_offcol` branch, and
     -- `ResumeFrames.resumeAt` pops the levels the dedent ended.
-    (h_closeF_old : (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+    (h_closeF_old : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
       ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
@@ -25704,7 +25734,7 @@ lemma accum_block_on_pendingBlockContent
     -- what it stands on, and that is the whole difference between a dedent that
     -- closes the enclosing `?` with an `e-node` and one that leaves its line
     -- owed.  Spent at the `:`/`?` arm's `h_mapFV` (item 197).
-    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+    (h_closeFV_old : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
@@ -25956,7 +25986,7 @@ lemma accum_block_on_pendingBlockContent
             -- not a missing field. ═══
             (by
               rcases h_closeF_old with ⟨ks, _, _, closeF⟩ | _
-              · by_cases hmem : k ∈ ks
+              · by_cases hmem : FrameLevel.map k ∈ ks
                 · obtain ⟨ks', hw, cont⟩ :=
                     (closeF sp_mid h_ssl sp_mid (SCompactSeqTail.nil n sp_mid)).resumeAt hmem
                   exact Or.inl ⟨ks', hw.lt, cont⟩
@@ -26011,11 +26041,9 @@ lemma accum_block_on_pendingBlockContent
             (by
               rcases h_closeFV_old with ⟨nv, ks, _, closeFV⟩ | h_alt
               · have fV := closeFV sp_mid h_ssl sp_mid (SCompactSeqTail.nil n sp_mid)
-                by_cases hmem : k ∈ ks
-                · obtain ⟨ks', h_w, cont⟩ := fV.resumeAt hmem
-                  rcases cont with contM | _
-                  · exact Or.inl ⟨nv, ks', h_w.lt, contM⟩
-                  · exact Or.inr trivial
+                by_cases hmem : FrameLevel.map k ∈ ks
+                · obtain ⟨ks', h_w, cont⟩ := fV.resumeAtMap hmem
+                  exact Or.inl ⟨nv, ks', h_w.lt, cont⟩
                 · exact Or.inr trivial
               · exact Or.inr h_alt)
             -- Item 209: the dispatch's floor, required now — item 208's `h_nic0`
@@ -26212,7 +26240,7 @@ lemma accum_block_on_pendingBlock
     -- that opens a sibling entry in an intervening mapping can resume it and
     -- still leave the frame's line owed.  Spent at the `:`/`?` arm's `h_mapFV`,
     -- the door item 197 built and this lane could not reach.
-    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+    (h_closeFV_old : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
@@ -26459,7 +26487,7 @@ lemma accum_block_on_pendingBlock
                  -- the `-` that lands back at `n` conses onto THIS level's tail, and
                  -- `KeyFrames.resumeAt` finds it only if the stack names it. ═══
                  (match h_closeFV_old with
-                  | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                  | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks,
                       fun k' hk' => by
                         rcases List.mem_cons.mp hk' with rfl | h'
                         · exact hlt
@@ -26610,11 +26638,9 @@ lemma accum_block_on_pendingBlock
             · have fV := closeFV sp_mid
                 (SBlockIndented.empty n .blockIn sp_scan sp_mid h_ssl)
                 sp_mid (SCompactSeqTail.nil n sp_mid)
-              by_cases hmem : k ∈ ks
-              · obtain ⟨ks', h_w, cont⟩ := fV.resumeAt hmem
-                rcases cont with contM | _
-                · exact Or.inl ⟨nv, ks', h_w.lt, contM⟩
-                · exact Or.inr trivial
+              by_cases hmem : FrameLevel.map k ∈ ks
+              · obtain ⟨ks', h_w, cont⟩ := fV.resumeAtMap hmem
+                exact Or.inl ⟨nv, ks', h_w.lt, cont⟩
               · exact Or.inr trivial
             · exact Or.inr h_alt)
           -- Item 209: the dispatch's floor.  This park stands at `n + 1`, never
@@ -26843,10 +26869,10 @@ lemma accum_block_on_pendingBlock
                -- `resumeAt`'s membership gate (item 155). ═══
                -- Item 305: the outer entry's level PUSHED, as at the landed nested arm.
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with rfl | h'
-                      · omega
+                      · dsimp only; omega
                       · exact Nat.lt_trans (h_ltk k' h') (by omega),
                     fun sp_m h_bi sp_e h_tail =>
                       KeyFrames.seqLevel n ks sp_e h_ltk (fun sp_end h_tail' =>
@@ -27225,7 +27251,7 @@ lemma accum_block_pending (sc : ScannerState)
         (Or.inr trivial)
         -- **Item 155: the awaited value's own frames, handed past the close.**
         -- This park's transport face IS the reading the landed `-` needs: the
-        -- collection it opens fills the node, and `n :: ks` are the mapping
+        -- collection it opens fills the node, and `FrameLevel.map n :: ks` are the mapping
         -- levels still open underneath.  The index goes existential and
         -- nothing else moves — cover included (`k:⏎  - a⏎b: 2`).
         (h_closeF155.imp (fun h => ⟨nmv, h⟩) id) (Or.inr trivial)
@@ -29601,7 +29627,7 @@ lemma nodocctx_of_preprocess (sc : ScannerState) (sp sp_prep : SurfPos)
     **Item 151: each face carries the landing's own cover.**  The two lists
     below are what the landing RESUMES on, and the pack the consumer builds
     wants exactly those lists covered — so the conjunct stands here in the
-    shape the pack field takes, `k :: ks` at a floor bounded by every width in
+    shape the pack field takes, `FrameLevel.map k :: ks` at a floor bounded by every width in
     it.  It is stated at `s_prep` because that is the only state this context
     names; the consumer lifts it across the content dispatch, which writes no
     level.  **Both lanes take the pack's own index `k`**, which is where the
@@ -29609,16 +29635,16 @@ lemma nodocctx_of_preprocess (sc : ScannerState) (sp sp_prep : SurfPos)
     mapping level of EITHER stack, so nothing is excluded here, where at the
     parks the `?`'s own level is not one of its value-line frames. -/
 def ResumeKeyCtx (s_prep : ScannerState) (sp_start sp_prep : SurfPos) : Prop :=
-  ((∃ (k : Nat) (ks : List Nat) (sp_land : SurfPos),
+  ((∃ (k : Nat) (ks : List FrameLevel) (sp_land : SurfPos),
       sp_land.col = 0 ∧ SIndent k sp_land sp_prep ∧
-      (∀ k' ∈ ks, k' < k) ∧
-      ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-        IndentStackCover.Covered lo (k :: ks) s_prep) ∨ True) ∧
+      (∀ fr ∈ ks, fr.width < k) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map k :: ks) s_prep) ∨ True) ∧
       (∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         ResumeFrames (SLYamlStream sp_start) ks sp_end) ∧
-      ((∃ (nv : Nat) (ksv : List Nat), (∀ k' ∈ ksv, k' < k) ∧
-        ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ksv) ∧
-          IndentStackCover.Covered lo (k :: ksv) s_prep) ∨ True) ∧
+      ((∃ (nv : Nat) (ksv : List FrameLevel), (∀ fr ∈ ksv, fr.width < k) ∧
+        ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ksv) ∧
+          IndentStackCover.Covered lo (FrameLevel.map k :: ksv) s_prep) ∨ True) ∧
         ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
           KeyFrames (ExplValueLine sp_start nv) ksv sp_end) ∨ PackAlt s_prep) ∧
       -- **Item 168: the same landing, bottomed at the enclosing `[183]`.**  A
@@ -29634,7 +29660,7 @@ def ResumeKeyCtx (s_prep : ScannerState) (sp_start sp_prep : SurfPos) : Prop :=
       -- mapping level it crosses — so the landing's own width still has to
       -- MATCH the park's innermost (`resumectx_of_landing` decides it by
       -- equality), and what the list buys is the levels underneath that one.
-      ((∃ (ke : Nat) (ksq : List Nat), (∀ k' ∈ ksq, k' < k) ∧
+      ((∃ (ke : Nat) (ksq : List FrameLevel), (∀ fr ∈ ksq, fr.width < k) ∧
         ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
           ResumeFrames (SeqEntryTail sp_start ke) ksq sp_end) ∨ True)) ∧
     s_prep.simpleKey.possible = true ∧
@@ -29674,22 +29700,22 @@ lemma resumectx_of_landing {sc s_prep : ScannerState} {c : Char}
     (h_ssl : SSLComments sp_scan sp_mid)
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (hcorr_prep : ScannerSurfCorr s_prep sp_prep)
-    (h_fS : (∃ ks : List Nat,
+    (h_fS : (∃ ks : List FrameLevel,
         ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
-    (h_fV : (∃ (nv : Nat) (ks : List Nat),
+    (h_fV : (∃ (nv : Nat) (ks : List FrameLevel),
         ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) ∧
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc)
-    (h_pay : ∀ (w : Nat) (ks ks' : List Nat),
+    (h_pay : ∀ (w : Nat) (ks ks' : List FrameLevel),
         ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
           IndentStackCover.Covered lo ks sc) ∨ True) →
-        w ∈ ks → ResumeWidths ks ks' w → s_prep.col = w →
-        ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-          IndentStackCover.Covered lo (w :: ks') s_prep) ∨ True))
+        FrameLevel.map w ∈ ks → ResumeWidths ks ks' w → s_prep.col = w →
+        ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+          IndentStackCover.Covered lo (FrameLevel.map w :: ks') s_prep) ∨ True))
     -- **Item 168 — the park's SEQUENCE face, taken to the landing** (LAST, so
     -- the existing call sites keep their argument order).  The test this lane
     -- runs is not membership but EQUALITY: the face names ONE open level, so
@@ -29697,7 +29723,7 @@ lemma resumectx_of_landing {sc s_prep : ScannerState} {c : Char}
     -- somewhere else and the collection is out of reach.  Deciding it here is
     -- what lets the context below be unconditional.
     -- Item 169: the levels below `kk` ride across the test untouched.
-    (h_fQ : (∃ (ke kk : Nat) (ksq : List Nat), (∀ k' ∈ ksq, k' < kk) ∧
+    (h_fQ : (∃ (ke kk : Nat) (ksq : List FrameLevel), (∀ fr ∈ ksq, fr.width < kk) ∧
         ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
         ∀ sp_e : SurfPos, SCompactMapTail kk sp_m sp_e →
         ResumeFrames (SeqEntryTail sp_start ke) ksq sp_e) ∨ True) :
@@ -29713,7 +29739,7 @@ lemma resumectx_of_landing {sc s_prep : ScannerState} {c : Char}
       | inr _ => exact Or.inr trivial
       | inl h_fS0 =>
         obtain ⟨ks, h_cvS, fS⟩ := h_fS0
-        by_cases hmem : k ∈ ks
+        by_cases hmem : FrameLevel.map k ∈ ks
         · obtain ⟨ks', h_w, cont⟩ := (fS sp_mid h_ssl).resumeAt hmem
           -- Item 151: the landing's width at the SCANNER, which is what the
           -- payer measures its floor against.  `[63] s-indent(k)` off a
@@ -29731,14 +29757,12 @@ lemma resumectx_of_landing {sc s_prep : ScannerState} {c : Char}
           -- explicit frame, or carry one whose stack this width misses.
           · match h_fV with
             | Or.inl ⟨nv, ksv, h_cvV, fV⟩ =>
-              by_cases hmemV : k ∈ ksv
-              · obtain ⟨ksv', h_wv, contv⟩ := (fV sp_mid h_ssl).resumeAt hmemV
+              by_cases hmemV : FrameLevel.map k ∈ ksv
+              · obtain ⟨ksv', h_wv, contv⟩ := (fV sp_mid h_ssl).resumeAtMap hmemV
                 -- Item 151: the membership test and the payment are both taken a
                 -- SECOND time, for item 108's reason — the two stacks are
                 -- different, so a width can name a level in one and not the other.
-                rcases contv with contM | _
-                · exact Or.inl ⟨nv, ksv', h_wv.lt, h_pay k ksv ksv' h_cvV hmemV h_wv h_scol, contM⟩
-                · exact Or.inr trivial
+                exact Or.inl ⟨nv, ksv', h_wv.lt, h_pay k ksv ksv' h_cvV hmemV h_wv h_scol, contv⟩
               · exact Or.inr trivial
             | Or.inr h_alt => exact Or.inr (PackAlt.step_preprocess h_preprocess h_alt)
           -- **Item 168: the sequence face, and its own test.**  The park names
@@ -29950,22 +29974,22 @@ lemma implicitKeyHead_of_dispatch
     in, and gets the payment with no disjunct to case on — which is what the
     resuming key context wants, since a landing that reaches it came off a park
     OFF a line start by that park's own field. -/
-lemma dedent_cover_of_floor {s : ScannerState} {lo n w : Nat} {ks ks' : List Nat}
+lemma dedent_cover_of_floor {s : ScannerState} {lo n w : Nat} {ks ks' : List FrameLevel}
     (h_mono : IndentStackMono.Mono s)
     (h_top : s.currentIndent ≤ (w : Int))
     (h_fl : IndentStackCover.Floor lo n ks)
     (h_cv : IndentStackCover.Covered lo ks s)
-    (hmem : w ∈ ks)
+    (hmem : FrameLevel.map w ∈ ks)
     (h_w' : ResumeWidths ks ks' w) :
-    ∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-      IndentStackCover.Covered lo (w :: ks') s :=
+    ∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+      IndentStackCover.Covered lo (FrameLevel.map w :: ks') s :=
   ⟨lo, h_fl.pop_to hmem h_w'.sub, h_cv.pop_to h_mono h_top h_w'.keep⟩
 
 /-- **The dedent landing's hop on the cover** (item 149) — the payment both
     pack lemmas make at the branch item 148 left punting, written once.
 
     The park's frames cover the park's stack over the whole of `ks`; the pack
-    the landing opens carries the widths the landing RESUMES on, `w :: ks'`,
+    the landing opens carries the widths the landing RESUMES on, `FrameLevel.map w :: ks'`,
     and `ks'` holds none of the levels above `w`.  Reading the one list as the
     other is not a list fact — it is the landing's own floor: preprocessing's
     unwind stopped at `w`, so the stack it hands the dispatch has nothing above
@@ -29980,11 +30004,11 @@ lemma dedent_cover_of_floor {s : ScannerState} {lo n w : Nat} {ks ks' : List Nat
     armed no unwind (`hc0` — item 147's own residue, at the lane's other
     consumer as well). -/
 lemma dedent_cover_of_landing {sc s_prep s' : ScannerState} {c : Char}
-    {sp_scan : SurfPos} {n w : Nat} {ks : List Nat}
+    {sp_scan : SurfPos} {n w : Nat} {ks : List FrameLevel}
     (h_cov : (IndentStackMono.Mono sc ∧ IndentStackBase.SentinelBase sc) ∨ True)
     (h_dcov : (∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
       IndentStackCover.Covered lo ks sc) ∨ True)
-    (hmem : w ∈ ks)
+    (hmem : FrameLevel.map w ∈ ks)
     (h_larm : sp_scan.col ≠ 0 → s_prep.inFlow = false →
       s_prep.simpleKey.possible = true ∧ s_prep.simpleKey.pos.col = s_prep.col ∧
       s_prep.simpleKeyAllowed = true ∧
@@ -29993,11 +30017,11 @@ lemma dedent_cover_of_landing {sc s_prep s' : ScannerState} {c : Char}
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_ind_eq : s'.indents = s_prep.indents)
     (h_noflow : s_prep.inFlow = false)
-    (h_cov_step : ∀ (lo : Nat) (ks : List Nat),
+    (h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
       IndentStackCover.Covered lo ks sc → IndentStackCover.Covered lo ks s') :
-    ∀ ks' : List Nat, ResumeWidths ks ks' w →
-      ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-        IndentStackCover.Covered lo (w :: ks') s') ∨ True) := by
+    ∀ ks' : List FrameLevel, ResumeWidths ks ks' w →
+      ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+        IndentStackCover.Covered lo (FrameLevel.map w :: ks') s') ∨ True) := by
   intro ks' h_w'
   rcases h_cov with ⟨h_mono, h_base⟩ | _
   · rcases h_dcov with ⟨lo, h_fl, h_cv⟩ | _
@@ -30146,7 +30170,7 @@ lemma entryKeyPack_of_dispatch
     -- it whenever the landing is strictly deeper (`n < w`; at `w = n` the
     -- sibling belongs to the level itself, R4's rewiring).  Callers without
     -- frames pass `Or.inr trivial`.
-    (h_nodeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' ≤ n) ∧
+    (h_nodeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width ≤ n) ∧
       -- Item 148: the scanner stack under those levels, which the NESTED
       -- branch conses the landed key's own level onto and hands to the pack.
       ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
@@ -30159,7 +30183,7 @@ lemma entryKeyPack_of_dispatch
     -- dedent branch below spends: the landing width pops to its level and
     -- the landed key conses there, which is the parser's own sibling
     -- reading.  Callers without frames pass `Or.inr trivial`.
-    (h_dframes : (∃ ks : List Nat,
+    (h_dframes : (∃ ks : List FrameLevel,
       -- **Item 149: the cover rides this face too** — `pendingMapValue`'s
       -- `h_frames` verbatim, where item 148 stopped at the relay.  The DEDENT
       -- branch reads its frames here, so this is the only face that can fund
@@ -30175,13 +30199,13 @@ lemma entryKeyPack_of_dispatch
     -- branch pops, and popping it is what lets that branch hand the pack a
     -- real value-line twin instead of the `Or.inr trivial` item 99 left.
     -- Callers without an explicit frame pass `Or.inr trivial`.
-    (h_nodeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ n) ∧
+    (h_nodeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width ≤ n) ∧
       -- Item 150: the NESTED branch's value-line cover.
       ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_m →
       KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc)
-    (h_dframesV : (∃ (nv : Nat) (ks : List Nat),
+    (h_dframesV : (∃ (nv : Nat) (ks : List FrameLevel),
       -- Item 150: the DEDENT branch's value-line cover — the face whose
       -- landing pays.
       ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
@@ -30244,10 +30268,10 @@ lemma entryKeyPack_of_dispatch
     --
     -- The frames are what make it one parameter instead of two: a park at the
     -- entry's own level pays `ks = []` off its `h_close_entry`, and a
-    -- `pendingMapValue` at level `n` pays `n :: ks` off its `h_seqF` — the
+    -- `pendingMapValue` at level `n` pays `FrameLevel.map n :: ks` off its `h_seqF` — the
     -- level its own entry leaves tail-open behind the value.  `≤ n` (not
     -- `< n`) because that list includes `n` itself.
-    (h_nodeSF : (∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ n) ∧
+    (h_nodeSF : (∃ (ke : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width ≤ n) ∧
       ∀ sp_m : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_m →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_m) ∨ True) :
     s'.simpleKey.possible = true → s'.simpleKey.pos.line = s'.line →
@@ -30277,7 +30301,7 @@ lemma entryKeyPack_of_dispatch
   -- **Item 148: the caller's stack, stepped to this park.**  Preprocessing
   -- only pops and a content dispatch writes no indent, so a cover of the
   -- incoming stack is a cover of the key's.
-  have h_cov_step : ∀ (lo : Nat) (ks : List Nat),
+  have h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
       IndentStackCover.Covered lo ks sc → IndentStackCover.Covered lo ks s' :=
     fun lo ks hc =>
       IndentStackCover.dispatchContent_cover h_dispatch
@@ -30450,7 +30474,7 @@ lemma entryKeyPack_of_dispatch
           -- that landing as `trailingContent`), as does a caller without
           -- frames (item 296).
           rcases h_dframes with ⟨ks, h_dcov, dframes⟩ | _
-          · by_cases hmem : w ∈ ks
+          · by_cases hmem : FrameLevel.map w ∈ ks
             · have h_ind' : SIndent w sp_mid sp_prep := h_ind
               have h_scol : s_prep.col = w := by
                 rw [← hcorr_prep.col_eq]
@@ -30465,9 +30489,9 @@ lemma entryKeyPack_of_dispatch
               -- pack's field wants it over the list the landing resumes on.
               -- `dedent_cover_of_landing` carries the whole cost; the pack's
               -- resume twin below is the one field that spends it.
-              have h_pay : ∀ ks' : List Nat, ResumeWidths ks ks' w →
-                  ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-                    IndentStackCover.Covered lo (w :: ks') s') ∨ True) :=
+              have h_pay : ∀ ks' : List FrameLevel, ResumeWidths ks ks' w →
+                  ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+                    IndentStackCover.Covered lo (FrameLevel.map w :: ks') s') ∨ True) :=
                 dedent_cover_of_landing h_cov h_dcov hmem h_land.2.2 h_scol
                   h_preprocess
                   (by
@@ -30480,12 +30504,12 @@ lemma entryKeyPack_of_dispatch
               -- higher floor index rides through untouched — and the list is
               -- bound inside the match below, so the payment is taken as a
               -- function OF it.
-              have h_payV : ∀ ksV : List Nat,
+              have h_payV : ∀ ksV : List FrameLevel,
                   ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ksV ∧
-                    IndentStackCover.Covered lo ksV sc) ∨ True) → w ∈ ksV →
-                  ∀ ks' : List Nat, ResumeWidths ksV ks' w →
-                    ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-                      IndentStackCover.Covered lo (w :: ks') s') ∨ True) :=
+                    IndentStackCover.Covered lo ksV sc) ∨ True) → FrameLevel.map w ∈ ksV →
+                  ∀ ks' : List FrameLevel, ResumeWidths ksV ks' w →
+                    ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+                      IndentStackCover.Covered lo (FrameLevel.map w :: ks') s') ∨ True) :=
                 fun _ h_cv hmemV =>
                   dedent_cover_of_landing h_cov h_cv hmemV h_land.2.2 h_scol
                     h_preprocess
@@ -30519,20 +30543,19 @@ lemma entryKeyPack_of_dispatch
                 -- second member for.
                 (match h_dframesV with
                  | Or.inl ⟨nv, ksV, h_covV, dframesV⟩ =>
-                     if hmemV : w ∈ ksV then
-                       match (dframesV sp_mid h_land.1).resumeAt hmemV with
-                       | ⟨_, _, Or.inl contV⟩ => Or.inl ⟨[nv], frameChainOne (a := nv)
+                     if hmemV : FrameLevel.map w ∈ ksV then
+                       match (dframesV sp_mid h_land.1).resumeAtMap hmemV with
+                       | ⟨_, _, contV⟩ => Or.inl ⟨[nv], frameChainOne (a := nv)
                            (fun sp_v h_entry sp_e h_tail sp_i sp_c h_iv h_lit sp_w h_sbi =>
                              (contV sp_e (SCompactMapTail.cons w sp_mid sp_prep sp_v sp_e
                                h_ind' h_entry h_tail)).close sp_i sp_c h_iv h_lit sp_w h_sbi)⟩
-                       | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                      else Or.inr trivial
                  | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
                 Or.inl ⟨ks', h_w'.lt,
                   -- ~~Item 148: the landing's own hop is the one that does not
                   -- come free.~~  **Item 149 pays it.**  The level the landing
                   -- popped TO is still on the scanner's stack, so the cover
-                  -- here is over `w :: ks'` while the caller's is over the
+                  -- here is over `FrameLevel.map w :: ks'` while the caller's is over the
                   -- whole of `ks` — and `ks'` drops every width above `w`.
                   -- What reads the one as the other is the landing's own
                   -- FLOOR: the unwind stopped at `w`, so nothing above it is
@@ -30545,9 +30568,9 @@ lemma entryKeyPack_of_dispatch
                 -- SECOND dedent sibling at the same level composes the same way.
                 (match h_dframesV with
                  | Or.inl ⟨nv, ksV, h_covV, dframesV⟩ =>
-                     if hmemV : w ∈ ksV then
-                       match (dframesV sp_mid h_land.1).resumeAt hmemV with
-                       | ⟨ksV', h_wV', Or.inl contV⟩ => Or.inl ⟨nv, ksV', h_wV'.lt,
+                     if hmemV : FrameLevel.map w ∈ ksV then
+                       match (dframesV sp_mid h_land.1).resumeAtMap hmemV with
+                       | ⟨ksV', h_wV', contV⟩ => Or.inl ⟨nv, ksV', h_wV'.lt,
                            -- **Item 150: the value lane's landing pays too.**
                            -- The same pop, the same floor, the same lemma — what
                            -- the two lanes do NOT share is the list, so the
@@ -30557,7 +30580,6 @@ lemma entryKeyPack_of_dispatch
                            fun sp_v h_entry sp_e h_tail =>
                              contV sp_e (SCompactMapTail.cons w sp_mid sp_prep sp_v sp_e
                                h_ind' h_entry h_tail)⟩
-                       | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                      else Or.inr trivial
                  | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)), Or.inr trivial⟩
             · -- **Item 297: a width naming no frame keys a fresh document at the
@@ -30793,14 +30815,14 @@ lemma entryPropsKeyPack_of_dispatch
     -- pops the comment-domain pair, so a props-headed sibling conses onto
     -- the level its width names instead of deferring.  Callers without
     -- frames pass `Or.inr trivial`. ═══
-    (h_nodeF : (∃ ks : List Nat, (∀ k' ∈ ks, k' ≤ n) ∧
+    (h_nodeF : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width ≤ n) ∧
       -- Item 148: the scanner stack under those levels, which the NESTED
       -- branch conses the landed key's own level onto and hands to the pack.
       ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
-    (h_dframes : (∃ ks : List Nat,
+    (h_dframes : (∃ ks : List FrameLevel,
       -- **Item 149: the cover rides this face too** — `pendingMapValue`'s
       -- `h_frames` verbatim, where item 148 stopped at the relay.  The DEDENT
       -- branch reads its frames here, so this is the only face that can fund
@@ -30810,13 +30832,13 @@ lemma entryPropsKeyPack_of_dispatch
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
-    (h_nodeFV : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ n) ∧
+    (h_nodeFV : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width ≤ n) ∧
       -- Item 150: the NESTED branch's value-line cover.
       ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_m : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_m →
       KeyFrames (ExplValueLine sp_start nv) ks sp_m) ∨ PackAlt sc)
-    (h_dframesV : (∃ (nv : Nat) (ks : List Nat),
+    (h_dframesV : (∃ (nv : Nat) (ks : List FrameLevel),
       -- Item 150: the DEDENT branch's value-line cover — the face whose
       -- landing pays.
       ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
@@ -30889,7 +30911,7 @@ lemma entryPropsKeyPack_of_dispatch
   -- Item 148: the caller's stack, stepped to this park (see
   -- `entryKeyPack_of_dispatch`) — here off `h_indents` rather than off a
   -- dispatch, because this lemma does not take one.
-  have h_cov_step : ∀ (lo : Nat) (ks : List Nat),
+  have h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
       IndentStackCover.Covered lo ks sc → IndentStackCover.Covered lo ks s' :=
     fun lo ks hc =>
       (IndentStackCover.preprocess_cover h_preprocess hc).of_indents_eq
@@ -31026,7 +31048,7 @@ lemma entryPropsKeyPack_of_dispatch
         -- `entryKeyPack_of_dispatch`'s dedent (item 108) —
         -- `?⏎  a:⏎    b:⏎  &p c: 2⏎: - w` keeps the `?` open.
         rcases h_dframes with ⟨ks, h_dcov, dframes⟩ | _
-        · by_cases hmem : w ∈ ks
+        · by_cases hmem : FrameLevel.map w ∈ ks
           · have h_ind' : SIndent w sp_mid sp_prep := by rw [h_pe]; exact h_ind
             have h_scol : s_prep.col = w := by
               rw [← hcorr_prep.col_eq]
@@ -31038,19 +31060,19 @@ lemma entryPropsKeyPack_of_dispatch
               exact h_scol
             -- Item 149: the landing's hop, paid exactly as at
             -- `entryKeyPack_of_dispatch`'s own dedent branch.
-            have h_pay : ∀ ks' : List Nat, ResumeWidths ks ks' w →
-                ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-                  IndentStackCover.Covered lo (w :: ks') s') ∨ True) :=
+            have h_pay : ∀ ks' : List FrameLevel, ResumeWidths ks ks' w →
+                ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+                  IndentStackCover.Covered lo (FrameLevel.map w :: ks') s') ∨ True) :=
               dedent_cover_of_landing h_cov h_dcov hmem h_land.2.2 h_scol
                 h_preprocess (h_indents.trans (by split <;> rfl)) h_noflow h_cov_step
             -- Item 150: and the value-line stack's, as at
             -- `entryKeyPack_of_dispatch`'s own dedent branch.
-            have h_payV : ∀ ksV : List Nat,
+            have h_payV : ∀ ksV : List FrameLevel,
                 ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ksV ∧
-                  IndentStackCover.Covered lo ksV sc) ∨ True) → w ∈ ksV →
-                ∀ ks' : List Nat, ResumeWidths ksV ks' w →
-                  ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ks') ∧
-                    IndentStackCover.Covered lo (w :: ks') s') ∨ True) :=
+                  IndentStackCover.Covered lo ksV sc) ∨ True) → FrameLevel.map w ∈ ksV →
+                ∀ ks' : List FrameLevel, ResumeWidths ksV ks' w →
+                  ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ks') ∧
+                    IndentStackCover.Covered lo (FrameLevel.map w :: ks') s') ∨ True) :=
               fun _ h_cv hmemV =>
                 dedent_cover_of_landing h_cov h_cv hmemV h_land.2.2 h_scol
                   h_preprocess (h_indents.trans (by split <;> rfl)) h_noflow h_cov_step
@@ -31064,13 +31086,12 @@ lemma entryPropsKeyPack_of_dispatch
               -- Item 196: the one-element chain, as at the implicit twin.
               (match h_dframesV with
                | Or.inl ⟨nv, ksV, h_covV, dframesV⟩ =>
-                   if hmemV : w ∈ ksV then
-                     match (dframesV sp_mid h_land.1).resumeAt hmemV with
-                     | ⟨_, _, Or.inl contV⟩ => Or.inl ⟨[nv], frameChainOne (a := nv)
+                   if hmemV : FrameLevel.map w ∈ ksV then
+                     match (dframesV sp_mid h_land.1).resumeAtMap hmemV with
+                     | ⟨_, _, contV⟩ => Or.inl ⟨[nv], frameChainOne (a := nv)
                          (fun sp_v h_entry sp_e h_tail sp_i sp_c h_iv h_lit sp_w h_sbi =>
                            (contV sp_e (SCompactMapTail.cons w sp_mid sp_prep sp_v sp_e
                              h_ind' h_entry h_tail)).close sp_i sp_c h_iv h_lit sp_w h_sbi)⟩
-                     | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                    else Or.inr trivial
                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h)),
               Or.inl ⟨ks', h_w'.lt,
@@ -31082,16 +31103,15 @@ lemma entryPropsKeyPack_of_dispatch
                     h_ind' h_entry h_tail)⟩,
               (match h_dframesV with
                | Or.inl ⟨nv, ksV, h_covV, dframesV⟩ =>
-                   if hmemV : w ∈ ksV then
-                     match (dframesV sp_mid h_land.1).resumeAt hmemV with
-                     | ⟨ksV', h_wV', Or.inl contV⟩ => Or.inl ⟨nv, ksV', h_wV'.lt,
+                   if hmemV : FrameLevel.map w ∈ ksV then
+                     match (dframesV sp_mid h_land.1).resumeAtMap hmemV with
+                     | ⟨ksV', h_wV', contV⟩ => Or.inl ⟨nv, ksV', h_wV'.lt,
                          -- Item 150: the value lane's landing pays, as at
                          -- `entryKeyPack_of_dispatch`'s own dedent branch.
                          h_payV ksV h_covV hmemV ksV' h_wV',
                          fun sp_v h_entry sp_e h_tail =>
                            contV sp_e (SCompactMapTail.cons w sp_mid sp_prep sp_v sp_e
                              h_ind' h_entry h_tail)⟩
-                     | ⟨_, _, Or.inr _⟩ => Or.inr trivial
                    else Or.inr trivial
                | Or.inr h => Or.inr (PackAlt.step_content h_preprocess h_dispatch h))⟩,
               h_props, h_sk_line,
@@ -31372,7 +31392,7 @@ lemma content_dispatch_routed
   -- context states its cover at the landing's own state, and the pack this
   -- dispatch builds wants it at the park's; a content dispatch writes no
   -- level, so the two states' stacks are equal and the lift is that equation.
-  have h_cov_lift : ∀ (lo : Nat) (ks : List Nat),
+  have h_cov_lift : ∀ (lo : Nat) (ks : List FrameLevel),
       IndentStackCover.Covered lo ks s_prep → IndentStackCover.Covered lo ks s' :=
     fun lo ks hc => IndentStackCover.dispatchContent_cover h_dispatch
       (hc.of_indents_eq (by split <;> rfl))
@@ -31407,18 +31427,18 @@ lemma content_dispatch_routed
           s_prep.simpleKey.possible = true →
           s_prep.simpleKey.pos = s_prep.currentPos →
           (∀ sp_v, SBlockMapEntry k sp_prep sp_v → SLYamlStream sp_start sp_v) →
-          ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+          ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
             -- Item 148: the pack's cover, at the park this build reaches.
-            ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-              IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
+            ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+              IndentStackCover.Covered lo (FrameLevel.map k :: ks) s') ∨ True) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
             ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) →
-          ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+          ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
             -- Item 150: the value-line pack field's cover, at the park this
             -- build reaches.
-            ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-              IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
+            ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+              IndentStackCover.Covered lo (FrameLevel.map k :: ks) s') ∨ True) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
             KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt s') →
@@ -31464,13 +31484,13 @@ lemma content_dispatch_routed
           -- index, so neither floor moves on the way in.
           (Or.inl ⟨ks, h_lt,
             h_cov_res.imp (fun ⟨lo, hb, hc⟩ =>
-              ⟨lo, hb, h_cov_lift lo (k :: ks) hc⟩) id,
+              ⟨lo, hb, h_cov_lift lo (FrameLevel.map k :: ks) hc⟩) id,
             resumeMapRouteF h_ind cont⟩)
           (match hresV with
            | Or.inl ⟨nv, ksv, h_ltv, h_covv, contv⟩ =>
                Or.inl ⟨nv, ksv, h_ltv,
                  h_covv.imp (fun ⟨lo, hb, hc⟩ =>
-                   ⟨lo, hb, h_cov_lift lo (k :: ksv) hc⟩) id,
+                   ⟨lo, hb, h_cov_lift lo (FrameLevel.map k :: ksv) hc⟩) id,
                  resumeMapRouteK h_ind contv⟩
            | Or.inr h => Or.inr (PackAlt.step_dispatch h_dispatch h))
       | inr _ =>
@@ -31656,25 +31676,25 @@ lemma content_dispatch_routed
           sp_land.col = 0 → SIndent k sp_land sp_prep →
           s_prep.simpleKey.pos = s_prep.currentPos →
           (∀ sp_v, SBlockMapEntry k sp_prep sp_v → SLYamlStream sp_start sp_v) →
-          ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+          ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
             -- Item 148: the pack's cover, at the park this build reaches.
-            ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-              IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
+            ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+              IndentStackCover.Covered lo (FrameLevel.map k :: ks) s') ∨ True) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
             ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) →
-          ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+          ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
             -- Item 150: the value-line pack field's cover, at the park this
             -- build reaches.
-            ((∃ lo : Nat, IndentStackCover.Floor lo k (k :: ks) ∧
-              IndentStackCover.Covered lo (k :: ks) s') ∨ True) ∧
+            ((∃ lo : Nat, IndentStackCover.Floor lo k (FrameLevel.map k :: ks) ∧
+              IndentStackCover.Covered lo (FrameLevel.map k :: ks) s') ∨ True) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
             KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ PackAlt s') →
           -- Item 168: and the sequence face, which only the RESUMING context
           -- can have — the other three open a document, a suffix's document or
           -- the stream's first one, and no sequence entry encloses any of them.
-          ((∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+          ((∃ (ke : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
             ∀ sp_v : SurfPos, SBlockMapEntry k sp_prep sp_v →
             ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
             ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True) →
@@ -31725,13 +31745,13 @@ lemma content_dispatch_routed
           -- index, so neither floor moves on the way in.
           (Or.inl ⟨ks, h_lt,
             h_cov_res.imp (fun ⟨lo, hb, hc⟩ =>
-              ⟨lo, hb, h_cov_lift lo (k :: ks) hc⟩) id,
+              ⟨lo, hb, h_cov_lift lo (FrameLevel.map k :: ks) hc⟩) id,
             resumeMapRouteF h_ind cont⟩)
           (match hresV with
            | Or.inl ⟨nv, ksv, h_ltv, h_covv, contv⟩ =>
                Or.inl ⟨nv, ksv, h_ltv,
                  h_covv.imp (fun ⟨lo, hb, hc⟩ =>
-                   ⟨lo, hb, h_cov_lift lo (k :: ksv) hc⟩) id,
+                   ⟨lo, hb, h_cov_lift lo (FrameLevel.map k :: ksv) hc⟩) id,
                  resumeMapRouteK h_ind contv⟩
            | Or.inr h => Or.inr (PackAlt.step_dispatch h_dispatch h))
           -- **Item 168: the sequence face, spent.**  Same cons as the two lanes
@@ -32607,7 +32627,7 @@ lemma accum_content_on_pendingBlock_indented
     -- so the pack lemmas can pay their resume twins.
     -- **Item 155: and the cover the field now carries** — the sequence lane's
     -- first, and the reason the lane's landings can read the scanner at all.
-    (h_closeF_old : (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+    (h_closeF_old : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
       ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
@@ -32666,7 +32686,7 @@ lemma accum_content_on_pendingBlock_indented
     -- **Item 198 (LAST): the park's value-line stack** (`pendingBlock.h_closeFV`),
     -- relayed onto whatever this content step parks exactly as `h_closeF_old`
     -- is — the same fold, one bottom over.
-    (h_closeFV_old : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+    (h_closeFV_old : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc)
@@ -32682,7 +32702,7 @@ lemma accum_content_on_pendingBlock_indented
   -- Item 155: a content dispatch writes no level, so the park's carried cover
   -- reaches every park this step builds by the stack equation alone — item
   -- 152's lift, read on the sequence lane's own field.
-  have h_cov_step : ∀ (lo : Nat) (ksx : List Nat),
+  have h_cov_step : ∀ (lo : Nat) (ksx : List FrameLevel),
       IndentStackCover.Covered lo ksx sc → IndentStackCover.Covered lo ksx s' :=
     fun lo ksx hc =>
       IndentStackCover.dispatchContent_cover h_dispatch
@@ -32781,7 +32801,7 @@ lemma accum_content_on_pendingBlock_indented
                -- The dedent face is the same push over the EMPTY entry.  No
                -- cover: the entry park carries none on this lane (item 149).
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with rfl | h'
                       · exact Nat.le_refl _
@@ -32793,7 +32813,7 @@ lemma accum_content_on_pendingBlock_indented
                           sp_end h_tail)⟩
                 | Or.inr h => Or.inr h)
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks, Or.inr trivial,
                     fun sp_m h_ssl =>
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
@@ -32960,7 +32980,7 @@ lemma accum_content_on_pendingBlock_indented
                -- implicit twin** — the entry's level pushed on `h_closeFV_old`'s
                -- stack, over the node and over the empty entry.
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with rfl | h'
                       · exact Nat.le_refl _
@@ -32972,7 +32992,7 @@ lemma accum_content_on_pendingBlock_indented
                           sp_end h_tail)⟩
                 | Or.inr h => Or.inr h)
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks, Or.inr trivial,
                     fun sp_m h_ssl =>
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
@@ -33237,7 +33257,7 @@ lemma accum_content_on_pendingBlock_indented
                -- The dedent face is the same push over the EMPTY entry.  No
                -- cover: the entry park carries none on this lane (item 149).
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with rfl | h'
                       · exact Nat.le_refl _
@@ -33249,7 +33269,7 @@ lemma accum_content_on_pendingBlock_indented
                           sp_end h_tail)⟩
                 | Or.inr h => Or.inr h)
                (match h_closeFV_old with
-                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, n :: ks, Or.inr trivial,
+                | Or.inl ⟨nv, ks, h_ltk, closeFV⟩ => Or.inl ⟨nv, FrameLevel.seq n :: ks, Or.inr trivial,
                     fun sp_m h_ssl =>
                       KeyFrames.seqLevel n ks sp_m h_ltk (fun sp_end h_tail =>
                         closeFV sp_m (SBlockIndented.empty n .blockIn sp_scan sp_m h_ssl)
@@ -33367,12 +33387,12 @@ lemma accum_content_on_pendingBlock_indented
       revert h_flow_disp; split <;> (intro h; exact h)
     obtain ⟨_, _, _, h_disj_land, _, _, _, _, _⟩ :=
       preprocess_some_ssl_comments_anyCol sc sp_scan s_prep c h_corr h_preprocess
-    have h_pay_seq : ∀ (w : Nat) (ksw ksw' : List Nat),
+    have h_pay_seq : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
         ((∃ lo m : Nat, IndentStackCover.Floor lo m ksw ∧
           IndentStackCover.Covered lo ksw sc) ∨ True) →
-        w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-        ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ksw') ∧
-          IndentStackCover.Covered lo (w :: ksw') s_prep) ∨ True) := by
+        FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+        ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ksw') ∧
+          IndentStackCover.Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True) := by
       intro w ksw ksw' h_cv hmemw h_ww h_scolw
       rcases h_cv with ⟨lo, _, h_fl, h_cv0⟩ | _
       · rcases h_disj_land with ⟨_, _, h_larm⟩ | _
@@ -33460,13 +33480,13 @@ lemma accum_content_on_pendingMapValue_indented
       SLYamlStream sp_start sp_v) ∨ PackAlt sc)
     -- Item 99: the park's resume frames, both faces (`pendingMapValue`'s
     -- `h_closeF`/`h_frames`), threaded for the pack lemmas' resume twins.
-    (h_closeF99 : (∃ ks : List Nat, (∀ k' ∈ ks, k' < n) ∧
+    (h_closeF99 : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < n) ∧
       -- Item 148: the cover rides this face, which is the one the pack
       -- lemma's NESTED branch reads.
-      ((∃ lo : Nat, IndentStackCover.Floor lo n (n :: ks) ∧
-        IndentStackCover.Covered lo (n :: ks) sc) ∨ True) ∧
+      ((∃ lo : Nat, IndentStackCover.Floor lo n (FrameLevel.map n :: ks) ∧
+        IndentStackCover.Covered lo (FrameLevel.map n :: ks) sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
-      ResumeFrames (SLYamlStream sp_start) (n :: ks) sp_mid) ∨ True)
+      ResumeFrames (SLYamlStream sp_start) (FrameLevel.map n :: ks) sp_mid) ∨ True)
     -- Item 147: the field's shape, cover included — this relay carries the
     -- park's `h_frames` verbatim, and ~~projects the ROUTE at the pack lemma,
     -- whose `h_dframes` is still the widths alone~~ **since item 149 hands it
@@ -33476,20 +33496,20 @@ lemma accum_content_on_pendingMapValue_indented
     -- `resumectx_of_landing`, which has no cover slot on either lane.~~
     -- **Item 151 gave it one on each**, and the face goes through whole —
     -- index included, which the payer then forgets.
-    (h_frames99 : (∃ ks : List Nat,
+    (h_frames99 : (∃ ks : List FrameLevel,
       ((∃ lo : Nat, IndentStackCover.Floor lo n ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (SLYamlStream sp_start) ks sp_mid) ∨ True)
     -- Item 108: the same two faces bottomed at the enclosing `?` frame's
     -- value line, threaded for the pack lemma's dedent branch.
-    (h_closeFV108 : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' ≤ n) ∧
+    (h_closeFV108 : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width ≤ n) ∧
       -- Item 150: the value-line faces carry the cover too.
       ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
       KeyFrames (ExplValueLine sp_start nv) ks sp_mid) ∨ PackAlt sc)
-    (h_framesV108 : (∃ (nv : Nat) (ks : List Nat),
+    (h_framesV108 : (∃ (nv : Nat) (ks : List FrameLevel),
       ((∃ lo : Nat, IndentStackCover.Floor lo (n + 1) ks ∧
         IndentStackCover.Covered lo ks sc) ∨ True) ∧
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
@@ -33537,7 +33557,7 @@ lemma accum_content_on_pendingMapValue_indented
     -- then the enclosing `[183]`'s tail.  The ROOT arm has no such parameter —
     -- a `pendingMapValue` at index 0 is the root mapping's value, and no
     -- sequence entry encloses it.
-    (h_seqF168 : (∃ (ke : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < n) ∧
+    (h_seqF168 : (∃ (ke : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < n) ∧
       ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
       ∀ sp_e : SurfPos, SCompactMapTail n sp_mid sp_e →
       ResumeFrames (SeqEntryTail sp_start ke) ks sp_e) ∨ True)
@@ -33555,7 +33575,7 @@ lemma accum_content_on_pendingMapValue_indented
   -- on the two close faces reaches the park those faces fund unchanged — which
   -- is what lets the park's own resume frames carry it without re-deriving
   -- anything.  Same chain as `accum_content_pending`'s `h_cov_step`.
-  have h_cov_step : ∀ (lo : Nat) (ks : List Nat),
+  have h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
       IndentStackCover.Covered lo ks sc → IndentStackCover.Covered lo ks s' :=
     fun lo ks hc =>
       IndentStackCover.dispatchContent_cover h_dispatch
@@ -33639,10 +33659,10 @@ lemma accum_content_on_pendingMapValue_indented
                -- rides on top for the transport face, and the spend face is
                -- the park's own `h_frames`.
                (match h_closeF99 with
-                | Or.inl ⟨ks, h_lt, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+                | Or.inl ⟨ks, h_lt, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with h | h
-                      · omega
+                      · subst h; dsimp only; omega
                       · exact Nat.le_of_lt (h_lt k' h),
                     -- Item 148: the stack, unchanged — the list is the same one.
                     h_cov,
@@ -33662,10 +33682,10 @@ lemma accum_content_on_pendingMapValue_indented
                -- (`- step:⏎    instrument: x⏎- …`).
                (match h_seqF168 with
                 | Or.inl ⟨ke, ks, h_ltq, seqF⟩ =>
-                    Or.inl ⟨ke, n :: ks, by
+                    Or.inl ⟨ke, FrameLevel.map n :: ks, by
                       intro k' hk'
                       rcases List.mem_cons.mp hk' with h | h
-                      · omega
+                      · subst h; dsimp only; omega
                       · exact Nat.le_of_lt (h_ltq k' h),
                       fun sp_m h_bn =>
                         ResumeFrames.level n ks sp_m h_ltq
@@ -33720,9 +33740,9 @@ lemma accum_content_on_pendingMapValue_indented
              -- this one, and the value face's is the `?`'s own (item 150's
              -- stagger), which is why the park's slot forgets the index.
              (match h_closeF99 with
-              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                   h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                    ⟨lo, _, hb, h_cov_step lo (n :: ks) hc⟩) id,
+                    ⟨lo, _, hb, h_cov_step lo (FrameLevel.map n :: ks) hc⟩) id,
                   fun sp_mid h_ssl =>
                   closeF sp_mid (SBlockNode.flowInBlock (n + 1) .blockIn sp_scan sp_prep sp_gram
                     sp_mid h_sep_all (h_flow_all (n + 1))
@@ -33780,10 +33800,10 @@ lemma accum_content_on_pendingMapValue_indented
                -- arms beside this one, so `k:⏎  a:⏎&p b: 2` pops and
                -- `k:⏎  a:⏎    &p b: c⏎    d: e⏎  f: 2` resumes then pops.
                (match h_closeF99 with
-                | Or.inl ⟨ks, h_lt, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+                | Or.inl ⟨ks, h_lt, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with h | h
-                      · omega
+                      · subst h; dsimp only; omega
                       · exact Nat.le_of_lt (h_lt k' h),
                     -- Item 148: the stack, unchanged — the list is the same one.
                     h_cov,
@@ -33829,9 +33849,9 @@ lemma accum_content_on_pendingMapValue_indented
              -- face's list is floored at `n` and the value face's at `n + 1`,
              -- which is why the slot they land in forgets the index.
              (match h_closeF99 with
-              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                   h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                    ⟨lo, _, hb, h_cov_step lo (n :: ks) hc⟩) id,
+                    ⟨lo, _, hb, h_cov_step lo (FrameLevel.map n :: ks) hc⟩) id,
                   closeF⟩
               | Or.inr _ => Or.inr trivial)
              (match h_closeFV108 with
@@ -33900,9 +33920,9 @@ lemma accum_content_on_pendingMapValue_indented
              -- transport, so `k:⏎  a: |⏎    x⏎  c: d` resumes its level.
              -- Item 152: with the cover, as at the arm above.
              (match h_closeF99 with
-              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                   h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                    ⟨lo, _, hb, h_cov_step lo (n :: ks) hc⟩) id,
+                    ⟨lo, _, hb, h_cov_step lo (FrameLevel.map n :: ks) hc⟩) id,
                   fun sp_mid h_ssl =>
                   closeF sp_mid (h_nodeAt sp_mid h_ssl)⟩
               | Or.inr _ => Or.inr trivial)
@@ -33944,10 +33964,10 @@ lemma accum_content_on_pendingMapValue_indented
                -- rides on top for the transport face, and the spend face is
                -- the park's own `h_frames`.
                (match h_closeF99 with
-                | Or.inl ⟨ks, h_lt, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+                | Or.inl ⟨ks, h_lt, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                     fun k' hk' => by
                       rcases List.mem_cons.mp hk' with h | h
-                      · omega
+                      · subst h; dsimp only; omega
                       · exact Nat.le_of_lt (h_lt k' h),
                     -- Item 148: the stack, unchanged — the list is the same one.
                     h_cov,
@@ -33967,10 +33987,10 @@ lemma accum_content_on_pendingMapValue_indented
                -- (`- step:⏎    instrument: x⏎- …`).
                (match h_seqF168 with
                 | Or.inl ⟨ke, ks, h_ltq, seqF⟩ =>
-                    Or.inl ⟨ke, n :: ks, by
+                    Or.inl ⟨ke, FrameLevel.map n :: ks, by
                       intro k' hk'
                       rcases List.mem_cons.mp hk' with h | h
-                      · omega
+                      · subst h; dsimp only; omega
                       · exact Nat.le_of_lt (h_ltq k' h),
                       fun sp_m h_bn =>
                         ResumeFrames.level n ks sp_m h_ltq
@@ -34010,9 +34030,9 @@ lemma accum_content_on_pendingMapValue_indented
              -- as both closures fold it.
              -- Item 152: with the cover, as at the arms above.
              (match h_closeF99 with
-              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨n :: ks,
+              | Or.inl ⟨ks, _, h_cov, closeF⟩ => Or.inl ⟨FrameLevel.map n :: ks,
                   h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                    ⟨lo, _, hb, h_cov_step lo (n :: ks) hc⟩) id,
+                    ⟨lo, _, hb, h_cov_step lo (FrameLevel.map n :: ks) hc⟩) id,
                   fun sp_mid h_ssl =>
                   closeF sp_mid (SBlockNode.flowInBlock (n + 1) .blockIn sp_scan sp_prep sp_gramf
                     sp_mid h_sep_all h_node_f (white_prepend_SSLComments h_tws_f h_ssl))⟩
@@ -34076,12 +34096,12 @@ lemma accum_content_on_pendingMapValue_indented
       revert h_flow_disp; split <;> (intro h; exact h)
     obtain ⟨_, _, _, h_disj_land, _, _, _, _, _⟩ :=
       preprocess_some_ssl_comments_anyCol sc sp_scan s_prep c h_corr h_preprocess
-    have h_pay_res : ∀ (w : Nat) (ksw ksw' : List Nat),
+    have h_pay_res : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
         ((∃ lo m : Nat, IndentStackCover.Floor lo m ksw ∧
           IndentStackCover.Covered lo ksw sc) ∨ True) →
-        w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-        ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ksw') ∧
-          IndentStackCover.Covered lo (w :: ksw') s_prep) ∨ True) := by
+        FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+        ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ksw') ∧
+          IndentStackCover.Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True) := by
       intro w ksw ksw' h_cv hmemw h_ww h_scolw
       rcases h_cv with ⟨lo, _, h_fl, h_cv0⟩ | _
       · rcases h_disj_land with ⟨_, _, h_larm⟩ | _
@@ -34180,7 +34200,7 @@ lemma accum_content_pending (sc : ScannerState)
     dispatchContent_corr _ sp_prep c (corr_of_allowDirectives_update hcorr_prep) h_dispatch
   -- Item 148: the incoming stack, stepped to the park — preprocessing pops
   -- and a content dispatch writes no level, so a carried cover survives both.
-  have h_cov_step : ∀ (lo : Nat) (ks : List Nat),
+  have h_cov_step : ∀ (lo : Nat) (ks : List FrameLevel),
       IndentStackCover.Covered lo ks sc → IndentStackCover.Covered lo ks s' :=
     fun lo ks hc =>
       IndentStackCover.dispatchContent_cover h_dispatch
@@ -34246,12 +34266,12 @@ lemma accum_content_pending (sc : ScannerState)
       -- does — index existential, forgotten at the hop — and the PAYMENT is the
       -- skeleton's own (`h_pay_res` below), off the `SentinelBase` and `Mono`
       -- this lemma already carries.  So a park has only to say what it kept.
-      ∀ (h_fS : (∃ ks : List Nat,
+      ∀ (h_fS : (∃ ks : List FrameLevel,
             ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
               IndentStackCover.Covered lo ks sc) ∨ True) ∧
             ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
             ResumeFrames (SLYamlStream sp_start) ks sp_m) ∨ True)
-        (h_fV : (∃ (nv : Nat) (ks : List Nat),
+        (h_fV : (∃ (nv : Nat) (ks : List FrameLevel),
             ((∃ lo n : Nat, IndentStackCover.Floor lo n ks ∧
               IndentStackCover.Covered lo ks sc) ∨ True) ∧
             ∀ sp_m : SurfPos,
@@ -34307,7 +34327,7 @@ lemma accum_content_pending (sc : ScannerState)
         -- sibling landing before the `-` arrives.
         -- Item 169: with the levels below `kk` listed, so a park two mapping
         -- levels inside the entry reaches the collection the same way.
-        (h_fQ : (∃ (ke kk : Nat) (ksq : List Nat), (∀ k' ∈ ksq, k' < kk) ∧
+        (h_fQ : (∃ (ke kk : Nat) (ksq : List FrameLevel), (∀ fr ∈ ksq, fr.width < kk) ∧
             ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
             ∀ sp_e : SurfPos, SCompactMapTail kk sp_m sp_e →
             ResumeFrames (SeqEntryTail sp_start ke) ksq sp_e) ∨ True),
@@ -34370,12 +34390,12 @@ lemma accum_content_pending (sc : ScannerState)
       -- `preprocess_top_le_col_of_armed` reads the floor off it with no arm at
       -- all.  The sentinel disjunct falls to `h_base` exactly as it does in
       -- `landing_floor_of_arm`, and the hop is item 151's, unchanged.
-      have h_pay_col0 : ∀ (w : Nat) (ksw ksw' : List Nat),
+      have h_pay_col0 : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
           ((∃ lo m : Nat, IndentStackCover.Floor lo m ksw ∧
             IndentStackCover.Covered lo ksw sc) ∨ True) →
-          w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-          ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ksw') ∧
-            IndentStackCover.Covered lo (w :: ksw') s_prep) ∨ True) := by
+          FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+          ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ksw') ∧
+            IndentStackCover.Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True) := by
         intro w ksw ksw' h_cv hmemw h_ww h_scolw
         -- Item 207: the floor this branch computed inline is `park_col0_floor`,
         -- which item 205 lifted OUT of here so the block landings could spend
@@ -34498,12 +34518,12 @@ lemma accum_content_pending (sc : ScannerState)
         -- widths half alone, so this ONE payer serves both the stream face and
         -- the value face, whose lists are bounded at different indices.  Stated
         -- once here for the two landing routes below.
-        have h_pay_res : ∀ (w : Nat) (ksw ksw' : List Nat),
+        have h_pay_res : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
             ((∃ lo m : Nat, IndentStackCover.Floor lo m ksw ∧
               IndentStackCover.Covered lo ksw sc) ∨ True) →
-            w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-            ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ksw') ∧
-              IndentStackCover.Covered lo (w :: ksw') s_prep) ∨ True) := by
+            FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+            ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ksw') ∧
+              IndentStackCover.Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True) := by
           intro w ksw ksw' h_cv hmemw h_ww h_scolw
           rcases h_cv with ⟨lo, _, h_fl, h_cv0⟩ | _
           · have h_floor := landing_floor_of_arm h_noflow_prep hcol_mid.2 hcol
@@ -34831,7 +34851,7 @@ lemma accum_content_pending (sc : ScannerState)
       -- producer pays both lanes (the sequence arm pays the entry face and
       -- punts these two; the three mapping arms do the reverse), so the
       -- preference never costs a cover that was there to spend.
-      have h_fS : (∃ ks : List Nat,
+      have h_fS : (∃ ks : List FrameLevel,
           ((∃ lo m : Nat, IndentStackCover.Floor lo m ks ∧
             IndentStackCover.Covered lo ks sc) ∨ True) ∧
           ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
@@ -34844,7 +34864,7 @@ lemma accum_content_pending (sc : ScannerState)
         | _, Or.inl ⟨ks, h_cov, closeFS⟩ => Or.inl ⟨ks, h_cov, fun sp_m h_ssl' =>
             closeFS sp_m (h_nodeAt sp_m h_ssl')⟩
         | _, _ => Or.inr trivial
-      have h_fV : (∃ (nv : Nat) (ks : List Nat),
+      have h_fV : (∃ (nv : Nat) (ks : List FrameLevel),
           ((∃ lo m : Nat, IndentStackCover.Floor lo m ks ∧
             IndentStackCover.Covered lo ks sc) ∨ True) ∧
           ∀ sp_m : SurfPos,
@@ -34860,12 +34880,12 @@ lemma accum_content_pending (sc : ScannerState)
       -- inputs and item 147's escape is not taken here — the obstacle item 152
       -- left at this site was the FACES, not the payer.  The index is forgotten
       -- on the way in for the usual reason: `Floor.pop_to` reads the widths.
-      have h_pay_props : ∀ (w : Nat) (ksw ksw' : List Nat),
+      have h_pay_props : ∀ (w : Nat) (ksw ksw' : List FrameLevel),
           ((∃ lo m : Nat, IndentStackCover.Floor lo m ksw ∧
             IndentStackCover.Covered lo ksw sc) ∨ True) →
-          w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
-          ((∃ lo : Nat, IndentStackCover.Floor lo w (w :: ksw') ∧
-            IndentStackCover.Covered lo (w :: ksw') s_prep) ∨ True) := by
+          FrameLevel.map w ∈ ksw → ResumeWidths ksw ksw' w → s_prep.col = w →
+          ((∃ lo : Nat, IndentStackCover.Floor lo w (FrameLevel.map w :: ksw') ∧
+            IndentStackCover.Covered lo (FrameLevel.map w :: ksw') s_prep) ∨ True) := by
         intro w ksw ksw' h_cv hmemw h_ww h_scolw
         rcases h_cv with ⟨lo, _, h_fl, h_cv0⟩ | _
         · have h_floor := landing_floor_of_arm h_noflow_prep hcol_mid.2
@@ -35104,11 +35124,11 @@ lemma accum_content_pending (sc : ScannerState)
                          -- Item 148: the cover rides the property transport too.
                          (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                            h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id),
+                             ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) id),
                          -- Item 150: and the value-line twin's, the same step.
                          (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                            h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch))⟩,
+                             ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch))⟩,
                        h_run.blockKey_addAnchor
                          (GStar_SSWhite_to_SSeparateInLine sp_scan sp_prep h_ws) h_prop, ?_,
                        by
@@ -35250,11 +35270,11 @@ lemma accum_content_pending (sc : ScannerState)
                            -- Item 148: the cover rides the property transport too.
                            (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                              h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                               ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id),
+                               ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) id),
                            -- Item 150: and the value-line twin's, the same step.
                          (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                            h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                             ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch))⟩,
+                             ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch))⟩,
                          h_run.blockKey_addTag
                            (GStar_SSWhite_to_SSeparateInLine sp_scan sp_prep h_ws) h_prop, ?_,
                          by
@@ -35464,11 +35484,11 @@ lemma accum_content_pending (sc : ScannerState)
                       -- Item 148: the cover rides the property transport too.
                       (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                         h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                          ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id),
+                          ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) id),
                       -- Item 150: and the value-line twin's, the same step.
                       (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                         h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                          ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
+                          ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
                   · by_cases hsq : c = '\''
                     · subst hsq
                       obtain ⟨h_pp, h_cond⟩ :=
@@ -35486,11 +35506,11 @@ lemma accum_content_pending (sc : ScannerState)
                         -- Item 148: the cover rides the property transport too.
                         (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id),
+                            ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) id),
                         -- Item 150: and the value-line twin's, the same step.
                         (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
+                            ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
                     · obtain ⟨h_sk_pres, h_cond⟩ :=
                         dispatchContent_plainScalar_key_prod _ sp_prep
                           (corr_of_allowDirectives_update hcorr_prep) hpeek_disp h_flow_disp
@@ -35508,11 +35528,11 @@ lemma accum_content_pending (sc : ScannerState)
                         -- Item 148: the cover rides the property transport too.
                         (h_resF_pk.imp (fun ⟨ks, h_lt, h_cov, r⟩ => ⟨ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) id),
+                            ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) id),
                         -- Item 150: and the value-line twin's, the same step.
                         (h_resFV_pk.imp (fun ⟨nv, ks, h_lt, h_cov, r⟩ => ⟨nv, ks, h_lt,
                           h_cov.imp (fun ⟨lo, hb, hc⟩ =>
-                            ⟨lo, hb, h_cov_step lo (k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
+                            ⟨lo, hb, h_cov_step lo (FrameLevel.map k :: ks) hc⟩) id, r⟩) (PackAlt.step_content h_preprocess h_dispatch)), Or.inr trivial⟩
             -- Item 24: the run's route index decides which readings of the
             -- decorated value are available.  At 0 the whole of
             -- `dispatchContent_evidence_content` is — including `[198]`'s
@@ -35696,7 +35716,7 @@ lemma accum_content_pending (sc : ScannerState)
                 · obtain rfl : ne = k := by omega
                   exact Or.inl ⟨nv, r⟩
                 · exact Or.inr h_alt
-              have h_closeFE_k : (∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+              have h_closeFE_k : (∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
                   ((∃ lo : Nat, IndentStackCover.Floor lo k ks ∧
                     IndentStackCover.Covered lo ks sc) ∨ True) ∧
                   ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
@@ -35710,7 +35730,7 @@ lemma accum_content_pending (sc : ScannerState)
               -- The park's `ne` is the enclosing collection's width and the
               -- landing names it; the field carries no cover, so `ne = k` is
               -- the whole step.
-              have h_closeFEV_k : (∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+              have h_closeFEV_k : (∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
                   ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
                   ∀ sp_end : SurfPos, SCompactSeqTail k sp_m sp_end →
                   KeyFrames (ExplValueLine sp_start nv) ks sp_end) ∨ PackAlt sc := by

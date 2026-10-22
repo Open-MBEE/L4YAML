@@ -43839,6 +43839,53 @@ What P6's refutation taught: the 306 are the `… - ? a⏎: Y` family (`:`/`: a`
 
 **NEXT — item 338, the carrier PAID then the flip step (i) on it: `PendingKeysSound sc` (register = `PendingKeys.innermost` outside flow, marked slots on columns ≥ 0) as a `ScannerSurfCorr` field beside `indent_cols_nonneg`, one preservation lemma per writer (`scanKey`, `scanValue` via `scanValueKeySurvives`/`PendingKeys.close`, `closeStaleExplicitKey`, the flow open/close pair through `explicitKeyStack`, `scanDocumentStart`/`End` after `unwindIndents (-1)`), `PendingKeys.innermost_closeAt_of_marked_at` landed with its first consumer, then `PackAlt sc := ExplicitValueRefused sc` with `content_dispatch_routed`'s 23 sites paid off the field; (ii)–(iv) as item 336 ordered them.  Predictions to carry: `PACK-FLIP decline 119 → 0` at step (i)'s end, `GhostIndexCensus` unchanged until (ii).**
 
+### Item 338 (2026-10-22)
+
+**The flip's carrier PAID at the token level — `PendingKeySound.Sound` proved through every `scanNextToken` arm (BUILT, `sorryAx`-free), the `ScannerSurfCorr`-field design REFUTED by the build, the stale-key hook's same-line and `?` exemptions dropped in both pipelines (no proof broke, no conformance pin moved), and ONE premise STARVED: the cursor floor after preprocess.**
+
+**The mandate.**  Item 337: "**NEXT — item 338, the carrier PAID then the flip step (i) on it: `PendingKeysSound sc` (register = `PendingKeys.innermost` outside flow, marked slots on columns ≥ 0) as a `ScannerSurfCorr` field beside `indent_cols_nonneg`, one preservation lemma per writer …**".  Departed from in ONE respect, by refutation: the field design is false on the intermediate states `ScannerSurfCorr` is stated on (below), so the carrier is a per-token invariant beside the scan loop's lagging quad — the `IndentStackMono.Mono` / `IndentStackBase.SentinelBase` shape — and the flip step (i) waits for one more carrier (the `**NEXT**`).
+
+**The carrier** (`L4YAML/Proofs/Scanner/PendingKeySound.lean`, new; `PendingKeysStable.lean`, new, the 69 `pendingKeys` twins of the `_preserves_indents` lemmas):
+
+```
+Sound sc := SlotsOk sc ∧ RegOk sc ∧ BaseOk sc ∧ StackOk sc
+  SlotsOk : pendingKeys.size = indents.size ∧ every marked slot sits on a level of column ≥ 0
+  RegOk   : flowLevel = 0 → (explicitKeyLine, explicitKeyCol) = PendingKeys.innermost indentColumns pendingKeys
+  BaseOk  : 0 < flowLevel → explicitKeyStack[0]? = some (PendingKeys.innermost …)      -- lane (d)'s `EkBase`
+  StackOk : explicitKeyStack.size = flowLevel
+```
+
+`BaseOk` is item 334's `EkBase` conjunct: the flow frame's register pair is slot 0 of the saved stack, so lane (d) falls out of the same invariant instead of a new index.  Seed `mk'_sound`; writers `pushSequenceIndent`/`pushMappingIndent`/`unwindIndentsLoop` (slots, and `innermost` through a pop of an unmarked top), `scanKey` (marks the top it stands on — `innermost_set_top`), `scanValue` (`scanValueKeySurvives` arm keeps the pair, the close arm re-reads through `PendingKeys.closeAt` — `closeAt_marked`/`closeAt_size`), `closeStaleExplicitKey`, `scanBlockEntry`, the four flow open/close writers (`Array.getElem?_push`/`getElem?_pop` on the saved stack), `scanFlowEntry`, both document markers (`unwindIndents_neg_innermost`: unwinding to the sentinel on a monotone stack leaves no marked slot), `scanDirective`; transport `preprocess_sound`, the four dispatchers, `scanNextToken_sound`.  Axiom profile of `scanNextToken_sound`, `preprocess_sound`, `mk'_sound`: `propext`, `Classical.choice`, `Quot.sound`.
+
+**Predictions first.**
+| # | prediction |
+|---|---|
+| P1 | the carrier lands as a `ScannerSurfCorr` field with one preservation lemma per writer (item 337's price) |
+| P2 | `preprocess_sound` is provable from `Sound` alone, with `RegOk` concluded for `c ≠ '?'` only (the hook exempts `?`; `scanKey` overwrites) |
+| P3 | no scanner change is needed beyond item 337's |
+| P4 | the runtime walk's exception (`- ? a⏎? b`, register stale between preprocess and `scanKey`) is the only intermediate failure |
+| P5 | `scanKey_sound` needs no premise beyond `Sound` |
+| P6 | if the hook's condition changes, no proof breaks (`closeStaleExplicitKey_cases` says "preserved ∨ re-read") and no conformance pin moves |
+
+**The reading.**  P1 REFUTED by the build at `unwindIndentsLoop_corr` (`StructureCoupling`, "writer pop"): popping a level that holds a pending `?` moves `PendingKeys.innermost` while the register is untouched, and `unwindIndents_corr`/`scanDocumentStart_corr` state the correspondence on exactly those states (the register is reset at the END of `scanDocumentStart`, item 317).  The field design's price was read to a fixpoint before abandoning it: 171 mechanical transfers and 47 stubs, 24 of them real writer sites.  A runtime walk of the token-level `Sound` over 35 probe inputs (every `scanNextToken` boundary) HELD everywhere; the only intermediate exception was P4's.  P2 then REFUTED at the proof: with the hook's `s.line != ekLine` guard a same-line register can outlive an unwind that pops its level (unreachable while scanning — on the `?`'s own line the cursor is right of its column — but `Sound` cannot say so, and saying so is a line/`needIndentCheck` invariant over every writer, i.e. more ghost-flavoured state).  Per the campaign's rule the API moved instead of the ghost: the hook now fires on `col ≤ ekCol` alone (plus the `-`/`:` arms), in `closeStaleExplicitKey` and `closeStaleExplicitKeyIx`.  The `?` exemption went with it: `scanKey` never reads the register, so under a key `?` the re-read is invisible, and under a NON-key `?` (`?x`) it is needed — P4's exception is gone, `preprocess_sound` concludes the whole of `Sound`.  P5 REFUTED: when `scanKey` does not push (`a: 1⏎? b`), it marks the top level, and `RegOk` needs that level's column to be the `?`'s — `currentIndent ≤ col` at the dispatch, which the unwind supplies when it ran (`IndentStackCover.unwindIndents_top_le`) and nothing supplies when no indent check was pending.  That is the STARVED premise: `PreprocessFloor s` (after preprocess, outside flow, `currentIndent ≤ col`), a hypothesis of `scanNextToken_sound`; probe p3 holds it after every preprocess on 18 inputs.  `StreamAccum` imports the module but does not thread `Sound` yet — it cannot discharge the premise.
+
+**Predictions, scored.**
+| # | verdict | what it taught |
+|---|---|---|
+| P1 | REFUTED | per-step structures are stated on intermediate states; a per-token invariant rides the scan loop, not `ScannerSurfCorr` |
+| P2 | REFUTED | a guard in the scanner that only an unstated invariant justifies is ghost state in disguise; the API lost the guard |
+| P3 | REFUTED | two exemptions dropped, both pipelines |
+| P4 | HELD, then made moot | the exception was the `?` exemption itself |
+| P5 | REFUTED | the no-push `?` reads the floor; one premise STARVED, named, measured |
+| P6 | HELD | library build green with no proof change; `CompactRouteCensus` `(35937, 8514, 0, 0, 934)`, `refusalCensus = []`, suiterunner and eventscore unmoved |
+
+**Conformance.**  `- ? a⏎?x` and `- ? a⏎? b` (the inputs the `?` arm can touch) are refused by libyaml and by both pipelines before and after; `? a⏎? b` is two null-valued keys in all three.  Priority 15 (`testHookCarrier` + `testTokenCarrierWalk`, 67 instantiations — the walk instantiates `scanNextToken_sound` itself: `Sound`/`Mono`/`SentinelBase`/`PreprocessFloor` as Booleans checked on the pre-state and `Sound` on the post-state at every token boundary of 20 inputs — empty, nested, every indicator, flow-in-`?`, document markers, a directive, a refused input — with a stale-register control that `soundB` refutes): the hook under a non-key `?`, under a key `?` at its own column, with a same-line register (synthetic, the dropped guard), right of the key; `PendingKeys.innermost` picking the DEEPEST marked slot and `closeAt` erasing one column; both parsers on six inputs.  The item-333 stale case `next-explicit-key` flips from identity to re-read.
+
+**Gates.**  Pins moved, with cause: `Tests/Guards/Proofs/FreeSurfaceCensus.lean` `modulesSeen=246 → 248`, `DropDependents.lean` `expectedClosure 252 → 254`, `ParkBill.lean` `253 → 255` (two library modules added), `NarrowingWorthCensus.lean` `theorems=5625 → 5892` (the carrier's lemmas), `DispatchPrice.lean` `stepHolders=1723 → 1765`, `dispHolders=314 → 323` and its per-function reading `scanNextToken_dispatchContent decls=140 → 144`, `scanNextToken_preprocess decls=219 → 220` and `ParkGapWidth.lean`'s ladder to `holders=106 → 108` (`dispatchBlockIndicators`), `140 → 144`, `219 → 220` (the carrier's per-writer and per-dispatcher lemmas join the step population; `dispTwoCorr`/`fns`/`fnsIx`/edges/chains unmoved).  No conformance pin moved.  Full `lake build` 373 jobs exit 0, 30 warnings; suiterunner 869/0/151; eventscore 347/358; adversarial 3083/3083; all text gates green (`gate_vocab.py`'s pre-existing 448/453 disagreement reproduces on the base).  Axiom census above.
+
+**NEXT — item 339, the floor carried: `ColFloor sc := sc.inFlow = false → sc.needIndentCheck = false → sc.currentIndent ≤ sc.col` as a third per-token invariant beside `Sound`, with `ColFloor sc → PreprocessFloor sc` as its bridge (the unwind arm by `unwindIndents_top_le`, the no-check arm by the cursor only moving right within a line — `skipToContent_line_eq_of_needIndentCheck`, `skipToContent_needIndentCheck_mono`), one preservation lemma per writer (the pushes push at the cursor; `advance` moves right; every newline path sets `needIndentCheck`).  Then `Sound`/`ColFloor` threaded through `StreamAccum.scanNextToken_accum_step` and the four `accum_step_*` lemmas beside `h_mono`/`h_base`, and the flip step (i) — `PackAlt sc := ExplicitValueRefused sc` — with the 23 `content_dispatch_routed` roots paid by `RegOk` + `PendingKeys.innermost_closeAt_of_marked_at`; lane (d) is `BaseOk`, so `PackAltG`/`g` go in the same build (snapshot 9 → 8).**
+
+
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 

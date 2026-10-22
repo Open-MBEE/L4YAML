@@ -43529,7 +43529,7 @@ ValueLinePacks `expectedWriters` / `expectedPerPos`, ValueLineOrigins `expectedO
 retyped; NarrowingWorthCensus `theorems=5482 → 5495` (+12 this item: `FrameLevel` lemmas, `resumeAtMap` / `resumeAtSeq`
 and the cover-lemma split; +1 `scanBlockScalarIx_eq_impl` from the base).  44 guard files in all.
 
-**Gates.**  Build **1263** jobs; 7 warnings, all pre-existing and none in a changed module.  `Verified: 4568/4568` (`scripts/run-all-tests.sh`); suiterunner **869 / 0 / 151** (1020); eventscore 347/358 CORRECT with 0 error-miss; `adversarialinstantiation` 2441/2441.  Text gates: closure
+**Gates.**  Build **1263** jobs; 7 warnings, all pre-existing and none in a changed module.  `Verified: 4568/4568` (`scripts/run-all-tests.sh`); suiterunner **869 / 0 / 151** (1020); eventscore 347/358 CORRECT with 0 error-miss; `adversarialinstantiation` 2578/2578 after the base merge, Priority 9 added for the `FrameLevel` family (Rule 2: `ofEntry` projected on five scanner stacks — bottom first, innermost last — the membership gate `FrameLevel.map j ∈ ks` that `KeyFrames.resumeAt` / `resumeAtMap` / `resumeAtSeq` spend, decided on empty / singleton-map / singleton-seq / mixed frames, `map k ≠ seq k`, and `Floor` on the same lists).  Text gates: closure
 log, import closure, reflection index, 25 whitelisted `theorem` sites, gate vocabulary (`unresolved=0`), serialization hygiene (46
 profiles, no placeholders).  Axiom census (`#print axioms`): `IndentStackCover.FrameLevel.tail` does not depend on any axioms; `StreamAccum.KeyFrames.resumeAt` → [propext]; `StreamAccum.KeyFrames.resumeAtMap` → [propext]; `StreamAccum.KeyFrames.resumeAtSeq` → [propext] — no
 `sorryAx`, no new axiom.

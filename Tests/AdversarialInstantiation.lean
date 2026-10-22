@@ -5,6 +5,7 @@ public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Output.Emitter
 public import L4YAML.Parser.Composition
 public import L4YAML.Proofs.Parser.ParserGrammableBase
+public import L4YAML.Proofs.Scanner.IndentStackCover
 public import Tests.VerifiedResult
 
 @[expose] public section Blanket
@@ -1906,6 +1907,91 @@ def testCloseStaleExplicitKey (state : IO.Ref TestCollector) : IO Unit := do
   checkStaleCase state "same-line" "? a b" 4 0 4 (some 0) 0 0 false
   checkStaleCase state "end-of-input" "? a\n" 4 1 0 (some 0) 0 0 false
 
+/-! ## Priority 9 — `FrameLevel` and the kind-selected tail (item 332)
+
+Item 332 retyped the proof-side frame lists from `List Nat` to
+`List FrameLevel {width, isSeq}`.  The lemma family claims (i) `FrameLevel.ofEntry`
+is the scanner's own `IndentEntry` read as a frame (so `Covered` is literal
+membership of the scanner's stack), (ii) `KeyFrames.resumeAt` / `resumeAtMap` /
+`resumeAtSeq` gate on membership of the LEVEL — kind included — so a mapping
+obligation at a width the list holds as a sequence is refused by membership,
+never by a disjunct, and (iii) `Floor` bounds every width the frames name.
+
+**Risk:** LOW on `width_map`/`width_seq`/`map_inj` (by `rfl`/`cases`).  MEDIUM on
+the gate: if `FrameLevel.map k` and `FrameLevel.seq k` ever decided equal, or if
+`ofEntry` dropped the kind, every (B2) refutation would silently become an
+admission and the proofs would still compile (the kind is data the lemmas quantify
+over).  Only an instantiation sees it.
+
+**Audit approach:** scan reference inputs, project `s.indents.map FrameLevel.ofEntry`
+at the deepest point and compare with the stack the input owes; decide the
+membership gate on empty / singleton-map / singleton-seq / mixed frame lists; and
+decide `Floor` on the same lists.
+-/
+
+open L4YAML.Proofs.IndentStackCover in
+/-- The deepest frame stack the scanner holds while scanning `input`, as `FrameLevel`s —
+    in the scanner's own order, bottom (the `-1` sentinel) first, innermost last. -/
+def deepestFrames (input : String) (fuel : Nat := 64) : List FrameLevel := Id.run do
+  let mut s := ScannerState.mk' input
+  let mut best : List FrameLevel := []
+  for _ in [:fuel] do
+    match scanNextToken s with
+    | .error _ => return best
+    | .ok none => return best
+    | .ok (some s') =>
+      s := s'
+      let fr := s.indents.toList.map FrameLevel.ofEntry
+      if fr.length > best.length then best := fr
+  return best
+
+open L4YAML.Proofs.IndentStackCover in
+def frameLabel (ks : List FrameLevel) : String :=
+  String.intercalate ", " (ks.map fun e => s!"{if e.isSeq then "seq" else "map"} {e.width}")
+
+open L4YAML.Proofs.IndentStackCover in
+def checkFrames (state : IO.Ref TestCollector) (label input : String)
+    (expected : List FrameLevel) : IO Unit := do
+  let got := deepestFrames input
+  checkM state s!"{label}: ofEntry projects the scanner's stack as [{frameLabel expected}]"
+    (got == expected) s!"got [{frameLabel got}]"
+
+open L4YAML.Proofs.IndentStackCover in
+/-- `Floor` unfolded, so an instantiation can decide it. -/
+instance (lo n : Nat) (ks : List FrameLevel) : Decidable (Floor lo n ks) :=
+  inferInstanceAs (Decidable (lo ≤ n ∧ ∀ e ∈ ks, lo ≤ e.width))
+
+open L4YAML.Proofs.IndentStackCover in
+def testFrameLevelKinds (state : IO.Ref TestCollector) : IO Unit := do
+  setCategory state "Priority 9: FrameLevel kinds and the membership gate (item 332)"
+  -- (i) `ofEntry`: the scanner's own entries, kind included (`mk'` seeds the `-1` sentinel,
+  -- a mapping entry whose width `toNat` clamps to 0).
+  checkFrames state "block map" "a:\n  b: c\n"
+    [FrameLevel.map 0, FrameLevel.map 0, FrameLevel.map 2]
+  checkFrames state "block seq" "- a\n- b\n" [FrameLevel.map 0, FrameLevel.seq 0]
+  checkFrames state "map over seq" "a:\n  - b\n" [FrameLevel.map 0, FrameLevel.map 0, FrameLevel.seq 2]
+  checkFrames state "seq over map" "- a: b\n  c: d\n" [FrameLevel.map 0, FrameLevel.seq 0, FrameLevel.map 2]
+  checkFrames state "flow only" "[a, b]\n" [FrameLevel.map 0]
+  -- (ii) the gate `FrameLevel.map j ∈ ks` that `KeyFrames.resumeAt` / `resumeAtMap` spend,
+  -- and `FrameLevel.seq j ∈ ks` for `resumeAtSeq`: decided on the boundary stacks.
+  let m2 := FrameLevel.map 2; let s2 := FrameLevel.seq 2; let m0 := FrameLevel.map 0
+  checkM state "empty: no level resumes" (decide (m2 ∈ ([] : List FrameLevel)) == false) "map 2 ∈ []"
+  checkM state "singleton map: its own width resumes" (decide (m2 ∈ [m2]) == true) "map 2 ∉ [map 2]"
+  checkM state "singleton map: another width does not" (decide (m0 ∈ [m2]) == false) "map 0 ∈ [map 2]"
+  checkM state "singleton seq: the mapping gate is refused at the same width"
+    (decide (m2 ∈ [s2]) == false) "map 2 ∈ [seq 2] — the (B2) refutation would be an admission"
+  checkM state "singleton seq: the sequence gate admits it" (decide (s2 ∈ [s2]) == true) "seq 2 ∉ [seq 2]"
+  checkM state "mixed: map gate finds the map level below a seq" (decide (m0 ∈ [s2, m0]) == true) "map 0 ∉ [seq 2, map 0]"
+  checkM state "mixed: map gate refuses the seq level's width" (decide (m2 ∈ [s2, m0]) == false) "map 2 ∈ [seq 2, map 0]"
+  checkM state "mixed: seq gate refuses the map level's width" (decide (FrameLevel.seq 0 ∈ [s2, m0]) == false) "seq 0 ∈ [seq 2, map 0]"
+  checkM state "map k ≠ seq k" (decide (m2 = s2) == false) "map 2 = seq 2"
+  checkM state "map_inj" (decide (FrameLevel.map 3 = FrameLevel.map 3) && !(decide (FrameLevel.map 3 = FrameLevel.map 4))) "map_inj"
+  -- (iii) `Floor lo n ks`: `lo ≤ n` and `lo` at or below every width named, whatever the kind.
+  checkM state "Floor: empty frames bound by the index alone" (decide (Floor 2 3 []) && !(decide (Floor 4 3 []))) "Floor on []"
+  checkM state "Floor: a named width below lo refutes" (decide (Floor 2 5 [FrameLevel.map 1]) == false) "Floor 2 5 [map 1]"
+  checkM state "Floor: a seq width counts like a map width"
+    (decide (Floor 2 5 [s2, m2]) && !(decide (Floor 3 5 [s2, FrameLevel.map 4]))) "Floor on mixed kinds"
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -1918,6 +2004,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testFlowParserHelpers state
   testHandleBlockMappingKeyEntryMono state
   testCloseStaleExplicitKey state
+  testFrameLevelKinds state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

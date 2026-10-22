@@ -319,11 +319,15 @@ instance : ToString LimitError where toString := LimitError.toString
 inductive ParseError where
   | scanError (err : ScanError)
   | limitError (err : LimitError)
+  /-- The YAML describing the `ParserLimits` themselves failed to parse
+      (`parseConfigYaml`); the message is the config reader's. -/
+  | configError (msg : String)
   deriving Repr, BEq, Inhabited
 
 def ParseError.toString : ParseError → String
   | .scanError err => s!"{err}"
   | .limitError err => s!"{err}"
+  | .configError msg => s!"config error: {msg}"
 
 instance : ToString ParseError where toString := ParseError.toString
 

@@ -13,9 +13,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Flow
 /-! # `FlowMonoChain.Sync.Scenarios.FlowClose` — Phase 3 Step
 `6f.3b3.flowmono.sync.scenarios.flowclose`
 
-**Sub-session 2 of `.flowmono.sync.scenarios`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 4793–4908, 5141–5245,
-5329–5420).
+**Sub-session 2 of `.flowmono.sync.scenarios`**.
 
 Three mid-chain scenario theorems, each following the same skeleton
 established by `_flow_comma` in `.preflow`:
@@ -91,7 +89,7 @@ variable {input : String}
 `]` at flowLevel ≥ 2 inside an existing flow context. -/
 
 /-- Full `scanNextTokenIx` for `']'` at flowLevel ≥ 2.
-    Indexed twin of `scanNextToken_flow_close_seq_nested` (legacy 4793). -/
+    Indexed twin of `scanNextToken_flow_close_seq_nested`. -/
 lemma scanNextTokenIx_flow_close_seq_nested (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨']' :: rest, s.cursor.pos.col⟩)
@@ -297,8 +295,7 @@ lemma scanNextTokenIx_flow_close_seq_nested (s : ScannerStateIx input)
 with `scanFlowMappingEndIx` and `.flowMappingEnd`. -/
 
 /-- Full `scanNextTokenIx` for `'}'` at flowLevel ≥ 2.
-    Indexed twin of `scanNextToken_flow_close_mapping_nested`
-    (legacy 5141). -/
+    Indexed twin of `scanNextToken_flow_close_mapping_nested`. -/
 lemma scanNextTokenIx_flow_close_mapping_nested (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'}' :: rest, s.cursor.pos.col⟩)
@@ -488,8 +485,7 @@ increment `flowLevel`, yield `StackEndLineOnLineIx s' s'.line`
 inheriting the prior `EndLineOnLineIx s`. -/
 
 /-- Full `scanNextTokenIx` for `'{'` inside an existing flow context.
-    Indexed twin of `scanNextToken_flow_open_mapping_nested`
-    (legacy 5329). -/
+    Indexed twin of `scanNextToken_flow_open_mapping_nested`. -/
 lemma scanNextTokenIx_flow_open_mapping_nested (s : ScannerStateIx input)
     (rest : List Char)
     (hcorr : ScannerSurfCorrIx s ⟨'{' :: rest, s.cursor.pos.col⟩)

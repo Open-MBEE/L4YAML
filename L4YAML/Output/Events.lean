@@ -133,21 +133,28 @@ def styleChar : ScalarStyle → String
 
 /-! ## Value emission -/
 
-/-- Emit the event lines for a single `YamlValue`. -/
-partial def emitValue (v : YamlValue) : Array String :=
+/-- Push the event lines for a single `YamlValue` onto `acc`.  One accumulator is
+    threaded through the whole tree, so each line is written exactly once. -/
+partial def emitInto (acc : Array String) (v : YamlValue) : Array String :=
   match v with
   | .scalar s =>
-    #[s!"=VAL{anchorStr s.anchor}{tagStr s.tag} {styleChar s.style}{escapeEventValue s.content}"]
+    acc.push s!"=VAL{anchorStr s.anchor}{tagStr s.tag} {styleChar s.style}{escapeEventValue s.content}"
   | .alias name =>
-    #[s!"=ALI *{name}"]
+    acc.push s!"=ALI *{name}"
   | .sequence style items tag anchor =>
     let flow := if style == .flow then " []" else ""
-    let body := items.foldl (fun acc it => acc ++ emitValue it) #[]
-    #[s!"+SEQ{flow}{anchorStr anchor}{tagStr tag}"] ++ body ++ #["-SEQ"]
+    let acc := acc.push s!"+SEQ{flow}{anchorStr anchor}{tagStr tag}"
+    let acc := items.foldl emitInto acc
+    acc.push "-SEQ"
   | .mapping style pairs tag anchor =>
     let flow := if style == .flow then " {}" else ""
-    let body := pairs.foldl (fun acc kv => acc ++ emitValue kv.1 ++ emitValue kv.2) #[]
-    #[s!"+MAP{flow}{anchorStr anchor}{tagStr tag}"] ++ body ++ #["-MAP"]
+    let acc := acc.push s!"+MAP{flow}{anchorStr anchor}{tagStr tag}"
+    let acc := pairs.foldl (fun acc kv => emitInto (emitInto acc kv.1) kv.2) acc
+    acc.push "-MAP"
+
+/-- Emit the event lines for a single `YamlValue`. -/
+def emitValue (v : YamlValue) : Array String :=
+  emitInto #[] v
 
 /-! ## Document markers (additive parallel path)
 
@@ -223,15 +230,19 @@ def parseYamlRawMarked (input : String) : Except ScanError (Array MarkedDoc) := 
 
 /-! ## Stream emission -/
 
-/-- Emit the event lines for one marked document. -/
-def emitDoc (md : MarkedDoc) : Array String :=
+/-- Push the event lines for one marked document onto `acc`. -/
+def emitDocInto (acc : Array String) (md : MarkedDoc) : Array String :=
   let startLine := if md.explicitStart then "+DOC ---" else "+DOC"
   let endLine := if md.explicitEnd then "-DOC ..." else "-DOC"
-  #[startLine] ++ emitValue md.doc.value ++ #[endLine]
+  (emitInto (acc.push startLine) md.doc.value).push endLine
+
+/-- Emit the event lines for one marked document. -/
+def emitDoc (md : MarkedDoc) : Array String :=
+  emitDocInto #[] md
 
 /-- Emit the full event stream for a list of marked documents (no trailing newline). -/
 def emitStream (docs : Array MarkedDoc) : String :=
-  let lines := #["+STR"] ++ docs.foldl (fun acc d => acc ++ emitDoc d) #[] ++ #["-STR"]
+  let lines := (docs.foldl emitDocInto #["+STR"]).push "-STR"
   String.intercalate "\n" lines.toList
 
 /-- Parse `input` and produce its test-suite event stream (with trailing newline),

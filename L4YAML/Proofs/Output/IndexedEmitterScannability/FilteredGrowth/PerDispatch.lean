@@ -21,7 +21,7 @@ is preserved.
 ## Sub-sessions (Phase 3 Step 6f.3b3.filteredgrowth.perdispatch)
 
   - `PerDispatch/StructFlow.lean` — structural + flow-indicator
-    per-dispatch filtered growth (legacy lines 6071–6362). Ships
+    per-dispatch filtered growth. Ships
     `scanDocumentStart_filtered_growsIx`,
     `scanDocumentEnd_filtered_growsIx`,
     `scanYamlDirective_new_token_eqIx`,
@@ -30,7 +30,7 @@ is preserved.
     `dispatchStructural_filtered_monoIx`,
     `dispatchFlowIndicators_filtered_growsIx`.
   - `PerDispatch/BlockContent.lean` — block-indicator + content
-    per-dispatch filtered growth (legacy lines 6364–6757). Ships
+    per-dispatch filtered growth. Ships
     `scanBlockEntry_filtered_growsIx`, `scanKey_filtered_growsIx`,
     `scanValue_filtered_growsIx`,
     `dispatchBlockIndicators_filtered_growsIx`,

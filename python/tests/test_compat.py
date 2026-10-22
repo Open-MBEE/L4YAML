@@ -188,6 +188,14 @@ class TestSafeLoadLimits:
         result = safe_load("hello", limits=cfg_file)
         assert result == "hello"
 
+    def test_bad_limits_config_raises_config_error(self) -> None:
+        # "hello" parses under default limits; a bad config must not
+        # silently fall back to them.
+        with pytest.raises(l4yaml.ConfigError):
+            safe_load("hello", limits="{unclosed")
+        with pytest.raises(l4yaml.ConfigError):
+            safe_load("hello", limits="structural:\n  maxDepth: banana")
+
 
 # ── safe_load_all ─────────────────────────────────────────────────────
 

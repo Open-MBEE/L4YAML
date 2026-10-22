@@ -13,37 +13,36 @@ public import L4YAML.Proofs.Scanner.IndexedScannerCorrectness.StreamStart
 /-! # `FilteredGrowth.PerDispatch.BlockContent` — Phase 3 Step
 `6f.3b3.filteredgrowth.perdispatch.blockcontent`
 
-**Sub-session 2 of `.perdispatch`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 6364–6757, ~395 LOC).
+**Sub-session 2 of `.perdispatch`** (~395 legacy LOC).
 
 Per-dispatch-layer filtered growth lemmas for the **block-indicator**
 (`-`/`?`/`:`) and **content** (`&`/`*`/`!`/`|`/`>`/`"`/`'`/plain)
 dispatchers. The companion sub-session `.structflow` ships the
-structural + flow-indicator dispatcher lemmas (legacy 6071–6362).
+structural + flow-indicator dispatcher lemmas.
 
 Ships:
 
-  * **§1 `scanBlockEntry_filtered_growsIx`** — `≥ +1` for `-`
-    (legacy 6368). Push-sequence-indent (monotone) then emit
+  * **§1 `scanBlockEntry_filtered_growsIx`** — `≥ +1` for `-`.
+    Push-sequence-indent (monotone) then emit
     `.blockEntry` (the new token at the first new slot).
-  * **§2 `scanKey_filtered_growsIx`** — `≥ +1` for `?` (legacy
-    6389). Same skeleton with `pushMappingIndentIx` + emit `.key`.
-  * **§3 `scanValue_filtered_growsIx`** — `≥ +1` for `:` (legacy
-    6432). The only `_filtered_growsIx` consumer of
+  * **§2 `scanKey_filtered_growsIx`** — `≥ +1` for `?`.
+    Same skeleton with `pushMappingIndentIx` + emit `.key`.
+  * **§3 `scanValue_filtered_growsIx`** — `≥ +1` for `:`.
+    The only `_filtered_growsIx` consumer of
     `Array_setIfInBounds_filter_monoIx` (`.infra` §2): the
     `scanValuePrepareIx` placeholder-to-real overwrite path is
     filter-monotone (`≥ +0`), then the `.value` emit adds `+1`.
   * **§4 `dispatchBlockIndicators_filtered_growsIx`** — `≥ +1` for
-    the block dispatcher (legacy 6515); `rcases` on the
+    the block dispatcher; `rcases` on the
     `_ok_some_cases` enumerator delegates to §1/§2/§3.
   * **§5 `dispatchContent_new_not_placeholderIx`** — the newly-added
-    token at index `s.tokens.size` is non-`.placeholder` (legacy
-    6539, the heavy one). Pattern-matches `dispatchContent`'s arms:
+    token at index `s.tokens.size` is non-`.placeholder`
+    (the heavy one). Pattern-matches `dispatchContent`'s arms:
     `.anchor`/`.alias`/`.tag` emit inside the cursor-level scanner,
     `.scalar` (block/double/single/plain) emit at dispatch level
     via `emitAt`.
   * **§6 `dispatchContent_filtered_growsIx`** — `≥ +1` for the
-    content dispatcher (legacy 6725); composes the exact `+1` raw
+    content dispatcher; composes the exact `+1` raw
     growth, dispatch prefix preservation, and §5.
 
 ## Indexed simplification
@@ -239,7 +238,7 @@ lemma scanValuePrepareIx_filtered_monoIx (s : ScannerStateIx input) :
       · -- inFlow: identity
         omega
 
-/-! ## §1  `scanBlockEntry_filtered_growsIx` (legacy 6368) -/
+/-! ## §1  `scanBlockEntry_filtered_growsIx` -/
 
 lemma scanBlockEntry_filtered_growsIx {s s' : ScannerStateIx input}
     (h : scanBlockEntryIx s = .ok s') :
@@ -262,7 +261,7 @@ lemma scanBlockEntry_filtered_growsIx {s s' : ScannerStateIx input}
   · rw [h_arr, Array.size_push]; omega
   · simp only [h_arr, Array.getElem_push_eq, IxToken.mk']; rfl
 
-/-! ## §2  `scanKey_filtered_growsIx` (legacy 6389) -/
+/-! ## §2  `scanKey_filtered_growsIx` -/
 
 lemma scanKey_filtered_growsIx {s s' : ScannerStateIx input}
     (h : scanKeyIx s = .ok s') :
@@ -285,7 +284,7 @@ lemma scanKey_filtered_growsIx {s s' : ScannerStateIx input}
   · rw [h_arr, Array.size_push]; omega
   · simp only [h_arr, Array.getElem_push_eq, IxToken.mk']; rfl
 
-/-! ## §3  `scanValue_filtered_growsIx` (legacy 6432) -/
+/-! ## §3  `scanValue_filtered_growsIx` -/
 
 set_option maxHeartbeats 400000 in
 lemma scanValue_filtered_growsIx {s s' : ScannerStateIx input}
@@ -325,7 +324,7 @@ lemma scanValue_filtered_growsIx {s s' : ScannerStateIx input}
       rw [h_ck] at h_prep
       omega
 
-/-! ## §4  `dispatchBlockIndicators_filtered_growsIx` (legacy 6515) -/
+/-! ## §4  `dispatchBlockIndicators_filtered_growsIx` -/
 
 lemma dispatchBlockIndicators_filtered_growsIx {s s' : ScannerStateIx input} {c : Char}
     (h : scanNextTokenIx_dispatchBlockIndicators s c = .ok (some s')) :
@@ -336,7 +335,7 @@ lemma dispatchBlockIndicators_filtered_growsIx {s s' : ScannerStateIx input} {c 
   · exact scanKey_filtered_growsIx hOk
   · exact scanValue_filtered_growsIx hOk
 
-/-! ## §5  `dispatchContent_new_not_placeholderIx` (legacy 6539)
+/-! ## §5  `dispatchContent_new_not_placeholderIx`
 
 The new token added by each content scanner is non-`.placeholder`.
 For `.anchor`/`.alias`/`.tag` the emit lives inside the scanner
@@ -500,7 +499,7 @@ lemma dispatchContent_new_not_placeholderIx {s s' : ScannerStateIx input} {c : C
               · rw [ite_eq_right hg7] at h
                 cases h
 
-/-! ## §6  `dispatchContent_filtered_growsIx` (legacy 6725)
+/-! ## §6  `dispatchContent_filtered_growsIx`
 
 The content dispatcher always adds exactly one token, the dispatch
 prefix is preserved, and the new token is non-`.placeholder` (§5). -/

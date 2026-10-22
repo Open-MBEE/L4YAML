@@ -261,10 +261,12 @@ lemma parseStream_three_tokens_scalar (content : String)
   have h_pd : parseDirectives ps1 = (#[], ps1) := parseDirectives_skip ps1 h_peek_not_dir
   have h_pds : prepareDocumentState ps1 = .ok (#[], ps1) := by
     unfold prepareDocumentState
-    simp only [bind, Except.bind, h_pd, Array.filterMap_empty]
+    rw [h_pd]
+    simp only [bind, Except.bind, Array.filterMap_empty]
     have h_th : { ps1 with tagHandles := #[] } = ps1 := by
       simp [ps1, ParseState.advance]
-    rw [h_th, h_peek1]
+    simp only [h_th]
+    rw [h_peek1]
     unfold ParseState.tryConsume
     rw [h_peek1]; simp
   -- parseNodeProperties skip
@@ -478,10 +480,12 @@ lemma parseStream_emitSequence (style : CollectionStyle) (items : Array YamlValu
     have h_pd : parseDirectives ps1 = (#[], ps1) := parseDirectives_skip ps1 h_peek_not_dir
     have h_pds : prepareDocumentState ps1 = .ok (#[], ps1) := by
       unfold prepareDocumentState
-      simp only [bind, Except.bind, h_pd, Array.filterMap_empty]
+      rw [h_pd]
+      simp only [bind, Except.bind, Array.filterMap_empty]
       have h_th : { ps1 with tagHandles := #[] } = ps1 := by
         simp [ps1, ParseState.advance]
-      rw [h_th, h_peek1]
+      simp only [h_th]
+      rw [h_peek1]
       unfold ParseState.tryConsume
       rw [h_peek1]; simp
     -- parseNodeProperties skip
@@ -711,10 +715,12 @@ lemma parseStream_emitMapping (style : CollectionStyle) (pairs : Array (YamlValu
     have h_pd : parseDirectives ps1 = (#[], ps1) := parseDirectives_skip ps1 h_peek_not_dir
     have h_pds : prepareDocumentState ps1 = .ok (#[], ps1) := by
       unfold prepareDocumentState
-      simp only [bind, Except.bind, h_pd, Array.filterMap_empty]
+      rw [h_pd]
+      simp only [bind, Except.bind, Array.filterMap_empty]
       have h_th : { ps1 with tagHandles := #[] } = ps1 := by
         simp [ps1, ParseState.advance]
-      rw [h_th, h_peek1]
+      simp only [h_th]
+      rw [h_peek1]
       unfold ParseState.tryConsume
       rw [h_peek1]; simp
     -- parseNodeProperties skip

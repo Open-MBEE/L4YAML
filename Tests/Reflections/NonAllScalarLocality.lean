@@ -327,14 +327,14 @@ theorem p2_axisA_value_invariant_state_not :
     boundary (`p2b_*` below); NOT proved here, NO `sorry`. -/
 def ParseNodeValueSpanLocal : Prop :=
   ∀ (t1 t2 : Array (Positioned YamlToken)) (p1 p2 f n : Nat)
-    (anch : Array (String × YamlValue)),
+    (anch : Array (String × YamlValue)) (idx : AnchorIndex anch),
     (∀ k, k < n → (t1[p1 + k]?.map (·.val)) = (t2[p2 + k]?.map (·.val))) →
-    (∀ v ps', parseNode { tokens := t1, pos := p1, anchors := anch } f = .ok (v, ps') →
+    (∀ v ps', parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
       ps'.pos ≤ p1 + n) →
-    (∀ v ps', parseNode { tokens := t2, pos := p2, anchors := anch } f = .ok (v, ps') →
+    (∀ v ps', parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
       ps'.pos ≤ p2 + n) →
-    (parseNode { tokens := t1, pos := p1, anchors := anch } f).toOption.map (·.1)
-      = (parseNode { tokens := t2, pos := p2, anchors := anch } f).toOption.map (·.1)
+    (parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).toOption.map (·.1)
+      = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).toOption.map (·.1)
 
 /-! ### P2b projection CORRECTION (inhabitation-debt Rule 2 — the FAILING boundary was never probed)
 
@@ -361,16 +361,16 @@ def p2b_errLine : Except ScanError YamlValue → Option Nat
     vacuous (no `.ok` on failure), yet the two `Except`-mapped conclusions carry different error lines. -/
 theorem p2b_map_form_false :
     ¬ (∀ (t1 t2 : Array (Positioned YamlToken)) (p1 p2 f n : Nat)
-        (anch : Array (String × YamlValue)),
+        (anch : Array (String × YamlValue)) (idx : AnchorIndex anch),
         (∀ k, k < n → (t1[p1 + k]?.map (·.val)) = (t2[p2 + k]?.map (·.val))) →
-        (∀ v ps', parseNode { tokens := t1, pos := p1, anchors := anch } f = .ok (v, ps') →
+        (∀ v ps', parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
           ps'.pos ≤ p1 + n) →
-        (∀ v ps', parseNode { tokens := t2, pos := p2, anchors := anch } f = .ok (v, ps') →
+        (∀ v ps', parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
           ps'.pos ≤ p2 + n) →
-        (parseNode { tokens := t1, pos := p1, anchors := anch } f).map (·.1)
-          = (parseNode { tokens := t2, pos := p2, anchors := anch } f).map (·.1)) := by
+        (parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).map (·.1)
+          = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).map (·.1)) := by
   intro H
-  have hcon := H (p2b_tokL 0) (p2b_tokL 1) 0 0 0 1 #[]
+  have hcon := H (p2b_tokL 0) (p2b_tokL 1) 0 0 0 1 #[] .empty
     (by intro k hk; rcases k with _ | m
         · decide
         · omega)
@@ -440,8 +440,8 @@ theorem parseNode_scalar_toOption_value (ps : ParseState) (f : Nat)
     (`getElem!` in `peek?` ↔ bounded `getElem?`).  Converts the bounded-`.val`-agreement HYPOTHESIS of
     `ParseNodeValueSpanLocal` into a `peek?` equality. -/
 theorem peek_eq_getElem_map (t : Array (Positioned YamlToken)) (p : Nat)
-    (a : Array (String × YamlValue)) :
-    ({ tokens := t, pos := p, anchors := a } : ParseState).peek? = t[p]?.map (·.val) := by
+    (a : Array (String × YamlValue)) (ia : AnchorIndex a) :
+    ({ tokens := t, pos := p, anchors := a, anchorIndex := ia } : ParseState).peek? = t[p]?.map (·.val) := by
   unfold ParseState.peek?
   by_cases h : p < t.size
   · simp only [ite_eq_left h, getElem?_pos t p h, getElem!_pos t p h, Option.map_some]
@@ -455,18 +455,18 @@ theorem peek_eq_getElem_map (t : Array (Positioned YamlToken)) (p : Nat)
     the P2b crux will consume the frame. -/
 theorem parseNodeValueSpanLocal_scalar_branch
     (t1 t2 : Array (Positioned YamlToken)) (p1 p2 f n : Nat)
-    (anch : Array (String × YamlValue)) (content : String) (style : ScalarStyle)
+    (anch : Array (String × YamlValue)) (idx : AnchorIndex anch) (content : String) (style : ScalarStyle)
     (hn : 0 < n)
     (h_head : t1[p1]?.map (·.val) = some (.scalar content style))
     (h_agree : ∀ k, k < n → (t1[p1 + k]?.map (·.val)) = (t2[p2 + k]?.map (·.val))) :
-    (parseNode { tokens := t1, pos := p1, anchors := anch } f).toOption.map (·.1)
-      = (parseNode { tokens := t2, pos := p2, anchors := anch } f).toOption.map (·.1) := by
+    (parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).toOption.map (·.1)
+      = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).toOption.map (·.1) := by
   have hk0 := h_agree 0 hn
   rw [Nat.add_zero, Nat.add_zero] at hk0
   have h_head2 : t2[p2]?.map (·.val) = some (.scalar content style) := by rw [← hk0]; exact h_head
-  have hpk1 : ({ tokens := t1, pos := p1, anchors := anch } : ParseState).peek?
+  have hpk1 : ({ tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } : ParseState).peek?
       = some (.scalar content style) := by rw [peek_eq_getElem_map]; exact h_head
-  have hpk2 : ({ tokens := t2, pos := p2, anchors := anch } : ParseState).peek?
+  have hpk2 : ({ tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } : ParseState).peek?
       = some (.scalar content style) := by rw [peek_eq_getElem_map]; exact h_head2
   rcases Nat.eq_zero_or_pos f with hf | hf
   · subst hf; simp [parseNode, Except.toOption]
@@ -501,7 +501,7 @@ theorem plsc_boundary_f0 :
 theorem plsc_leaf_fires :
     (parseNode { tokens := plsc_std, pos := 1, anchors := #[] } 8).toOption.map (·.1)
       = (parseNode { tokens := plsc_ctx, pos := 4, anchors := #[] } 8).toOption.map (·.1) := by
-  apply parseNodeValueSpanLocal_scalar_branch plsc_std plsc_ctx 1 4 8 1 #[] "x" .doubleQuoted
+  apply parseNodeValueSpanLocal_scalar_branch plsc_std plsc_ctx 1 4 8 1 #[] .empty "x" .doubleQuoted
   · decide
   · native_decide
   · intro k hk
@@ -549,16 +549,16 @@ theorem parseNode_scalar_toOption_advance (ps : ParseState) (f : Nat)
     a real collection (`jvadv_*`) and the FAILING boundary (`f = 0`); NOT proved as a whole, NO `sorry`. -/
 def ParseNodeValueAdvanceLocal : Prop :=
   ∀ (t1 t2 : Array (Positioned YamlToken)) (p1 p2 f n : Nat)
-    (anch : Array (String × YamlValue)),
+    (anch : Array (String × YamlValue)) (idx : AnchorIndex anch),
     (∀ k, k < n → (t1[p1 + k]?.map (·.val)) = (t2[p2 + k]?.map (·.val))) →
-    (∀ v ps', parseNode { tokens := t1, pos := p1, anchors := anch } f = .ok (v, ps') →
+    (∀ v ps', parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
       ps'.pos ≤ p1 + n) →
-    (∀ v ps', parseNode { tokens := t2, pos := p2, anchors := anch } f = .ok (v, ps') →
+    (∀ v ps', parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
       ps'.pos ≤ p2 + n) →
-    ((parseNode { tokens := t1, pos := p1, anchors := anch } f).toOption.map (·.1)
-      = (parseNode { tokens := t2, pos := p2, anchors := anch } f).toOption.map (·.1))
-    ∧ ((parseNode { tokens := t1, pos := p1, anchors := anch } f).toOption.map (fun r => r.2.pos - p1)
-      = (parseNode { tokens := t2, pos := p2, anchors := anch } f).toOption.map (fun r => r.2.pos - p2))
+    ((parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).toOption.map (·.1)
+      = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).toOption.map (·.1))
+    ∧ ((parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).toOption.map (fun r => r.2.pos - p1)
+      = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).toOption.map (fun r => r.2.pos - p2))
 
 /-- **The JOINT SCALAR LEAF** — the scalar-head branch of `ParseNodeValueAdvanceLocal`, `sorry`-free.
     Combines the value leaf (`parseNode_scalar_toOption_value`) with the advance leaf
@@ -569,20 +569,20 @@ def ParseNodeValueAdvanceLocal : Prop :=
     value + advance TOGETHER, keeping the two runs in lockstep. -/
 theorem parseNodeValueAdvanceLocal_scalar_branch
     (t1 t2 : Array (Positioned YamlToken)) (p1 p2 f n : Nat)
-    (anch : Array (String × YamlValue)) (content : String) (style : ScalarStyle)
+    (anch : Array (String × YamlValue)) (idx : AnchorIndex anch) (content : String) (style : ScalarStyle)
     (hn : 0 < n)
     (h_head : t1[p1]?.map (·.val) = some (.scalar content style))
     (h_agree : ∀ k, k < n → (t1[p1 + k]?.map (·.val)) = (t2[p2 + k]?.map (·.val))) :
-    ((parseNode { tokens := t1, pos := p1, anchors := anch } f).toOption.map (·.1)
-      = (parseNode { tokens := t2, pos := p2, anchors := anch } f).toOption.map (·.1))
-    ∧ ((parseNode { tokens := t1, pos := p1, anchors := anch } f).toOption.map (fun r => r.2.pos - p1)
-      = (parseNode { tokens := t2, pos := p2, anchors := anch } f).toOption.map (fun r => r.2.pos - p2)) := by
+    ((parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).toOption.map (·.1)
+      = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).toOption.map (·.1))
+    ∧ ((parseNode { tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } f).toOption.map (fun r => r.2.pos - p1)
+      = (parseNode { tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } f).toOption.map (fun r => r.2.pos - p2)) := by
   have hk0 := h_agree 0 hn
   rw [Nat.add_zero, Nat.add_zero] at hk0
   have h_head2 : t2[p2]?.map (·.val) = some (.scalar content style) := by rw [← hk0]; exact h_head
-  have hpk1 : ({ tokens := t1, pos := p1, anchors := anch } : ParseState).peek?
+  have hpk1 : ({ tokens := t1, pos := p1, anchors := anch, anchorIndex := idx } : ParseState).peek?
       = some (.scalar content style) := by rw [peek_eq_getElem_map]; exact h_head
-  have hpk2 : ({ tokens := t2, pos := p2, anchors := anch } : ParseState).peek?
+  have hpk2 : ({ tokens := t2, pos := p2, anchors := anch, anchorIndex := idx } : ParseState).peek?
       = some (.scalar content style) := by rw [peek_eq_getElem_map]; exact h_head2
   refine ⟨?_, ?_⟩
   · rcases Nat.eq_zero_or_pos f with hf | hf
@@ -622,7 +622,7 @@ theorem jvadv_scalar_leaf_fires :
       = (parseNode { tokens := plsc_ctx, pos := 4, anchors := #[] } 8).toOption.map (·.1))
     ∧ ((parseNode { tokens := plsc_std, pos := 1, anchors := #[] } 8).toOption.map (fun r => r.2.pos - 1)
       = (parseNode { tokens := plsc_ctx, pos := 4, anchors := #[] } 8).toOption.map (fun r => r.2.pos - 4)) := by
-  apply parseNodeValueAdvanceLocal_scalar_branch plsc_std plsc_ctx 1 4 8 1 #[] "x" .doubleQuoted
+  apply parseNodeValueAdvanceLocal_scalar_branch plsc_std plsc_ctx 1 4 8 1 #[] .empty "x" .doubleQuoted
   · decide
   · native_decide
   · intro k hk
@@ -642,7 +642,7 @@ positions, sharing an accumulator, produce EQUAL items AND advance EQUALLY (rela
 recursive induction, we read the one-step reduction it must consume — `parseFlowSequenceLoop_step_push`
 (ContentFidelity.lean:1438): a successful `(fuel+1)` loop reduces to `∃ v ps'', parseFlowSequenceLoop ps''
 fuel (acc.push v) = .ok result`, where `ps''` is EXISTENTIAL.  The 9th-pass loop-joint fixed the two states
-to the LITERAL form `{ tokens := t, pos := p, anchors := anch }` — pinning 3 of `ParseState`'s 7 fields and
+to the LITERAL form `{ tokens := t, pos := p, anchors := anch, anchorIndex := idx }` — pinning 3 of `ParseState`'s 7 fields and
 DEFAULTING the 4 position-tracking fields (`tagHandles`/`trackPositions`/`currentPath`/`nodePositions`).
 Feeding the existential `ps''` to a literal-form IH would require proving `ps''` matches ALL 7 fields,
 including the 4 tracking fields — for which NO preservation lemmas exist, and which are IRRELEVANT to value
@@ -830,8 +830,8 @@ theorem loop_close_fires :
     ∧ ((parseFlowSequenceLoop { tokens := lj_nested, pos := 3, anchors := #[] } 100 #[]).toOption.map (fun r => r.2.pos - 3)
       = (parseFlowSequenceLoop { tokens := lj_empty, pos := 2, anchors := #[] } 100 #[]).toOption.map (fun r => r.2.pos - 2)) := by
   apply parseFlowSeqLoop_joint_close
-    { tokens := lj_nested, pos := 3, anchors := #[] }
-    { tokens := lj_empty, pos := 2, anchors := #[] } 100 1 #[]
+    { tokens := lj_nested, pos := 3, anchors := #[], anchorIndex := .empty, declaredIndex := .empty }
+    { tokens := lj_empty, pos := 2, anchors := #[], anchorIndex := .empty, declaredIndex := .empty } 100 1 #[]
   · omega
   · native_decide
   · intro k hk
@@ -907,9 +907,11 @@ theorem parseNode_scalar_anchors_preserved (ps : ParseState) (fuel : Nat)
     = `plsc_std`) parsed with a NON-empty inherited anchors table leaves that table UNCHANGED, and the
     parse SUCCEEDS (non-vacuous — the scalar branch really fires, not a fuel-0 failure). -/
 theorem al_anchors_probe :
-    ( ((parseNode { tokens := plsc_std, pos := 1, anchors := #[("x", sc "y")] } 8).toOption.map (·.2.anchors)
+    ( ((parseNode { tokens := plsc_std, pos := 1, anchors := #[].push ("x", sc "y"),
+                    anchorIndex := AnchorIndex.empty.push "x" (sc "y") } 8).toOption.map (·.2.anchors)
         == some #[("x", sc "y")])
-      && (parseNode { tokens := plsc_std, pos := 1, anchors := #[("x", sc "y")] } 8).toOption.isSome ) = true := by
+      && (parseNode { tokens := plsc_std, pos := 1, anchors := #[].push ("x", sc "y"),
+                      anchorIndex := AnchorIndex.empty.push "x" (sc "y") } 8).toOption.isSome ) = true := by
   native_decide
 
 /-- **Frame-tail threading (pure arithmetic + the step reduction).**  In the recursive loop step, after
@@ -1410,11 +1412,11 @@ GENUINE separate leaf, NOT absorbed into P1. -/
     `p2a_*` below; the parseNode side is NOT proved, NO `sorry`. -/
 def ParseNodeFrameWithinSpan : Prop :=
   ∀ (t : Array (Positioned YamlToken)) (p n f : Nat) (v : YamlValue) (ps' : ParseState)
-    (anch : Array (String × YamlValue)),
+    (anch : Array (String × YamlValue)) (idx : AnchorIndex anch),
     0 < n →
     flowBracketBalance t p (p + n) = 0 →
     (∀ i, p < i → i < p + n → flowBracketBalance t p i ≥ 1) →
-    parseNode { tokens := t, pos := p, anchors := anch } f = .ok (v, ps') →
+    parseNode { tokens := t, pos := p, anchors := anch, anchorIndex := idx } f = .ok (v, ps') →
     ps'.pos = p + n
 
 /-! ### P2a target CORRECTION (inhabitation-debt Rule 2 — the `n = 0` boundary)
@@ -1785,7 +1787,7 @@ eventual P1/P2a/P2b/Bridge proofs must satisfy. -/
 #guard_msgs (whitespace := lax) in
 #print axioms parseNode_scalar_toOption_value
 
-/-- info: 'NonAllScalarLocality.peek_eq_getElem_map' depends on axioms: [propext] -/
+/-- info: 'NonAllScalarLocality.peek_eq_getElem_map' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms peek_eq_getElem_map
 
@@ -1859,7 +1861,7 @@ eventual P1/P2a/P2b/Bridge proofs must satisfy. -/
 #guard_msgs (whitespace := lax) in
 #print axioms parseFlowSeqLoop_close_step
 
-/-- info: 'NonAllScalarLocality.peek_eq_getElem_map'' depends on axioms: [propext] -/
+/-- info: 'NonAllScalarLocality.peek_eq_getElem_map'' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms peek_eq_getElem_map'
 
@@ -1940,7 +1942,7 @@ eventual P1/P2a/P2b/Bridge proofs must satisfy. -/
     `peek_currentPath` is pure `rfl` (`does not depend on any axioms`); the descent reductions and the two
     joint re-arm steps inherit the standard `[propext, Classical.choice, Quot.sound]`; the real-emission
     descent probe adds only its per-declaration reflected-`decide` axiom. -/
-/-- info: 'NonAllScalarLocality.peek_currentPath' does not depend on any axioms -/
+/-- info: 'NonAllScalarLocality.peek_currentPath' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms peek_currentPath
 
@@ -1972,7 +1974,7 @@ eventual P1/P2a/P2b/Bridge proofs must satisfy. -/
     arithmetic goal ([[ref_omega_nonarith_goal_pulls_classical]]).  The combinator, the function-level
     reduce, and the two producers inherit `Classical.choice` from the parser leaves / pos-mono clique
     (`[propext, Classical.choice, Quot.sound]`).  No `sorryAx`. -/
-/-- info: 'NonAllScalarLocality.option_advance_shift' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'NonAllScalarLocality.option_advance_shift' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms option_advance_shift
 

@@ -2108,8 +2108,81 @@ def testScalarFinishBridges (state : IO.Ref TestCollector) : IO Unit := do
       checkFoldGo state s!"{tag}/space-char" [' ', 'x'] "acc" st pending
       checkFoldGo state s!"{tag}/char-lf-char" ['x', '\n', 'y'] "" st pending
       checkFoldGo state s!"{tag}/lf-space-char-lf" ['\n', ' ', 'x', '\n'] "acc" st pending
+/-! ## Priority 11 — `AnchorIndex`: `push_inv`, `find?_eq`, `resolveAliasesWith_find?` (PR: hash-indexed anchors)
 
-/-! ## Priority 11 — `PendingKeys` and the re-read register (item 335, row 12 step 4)
+The index is built the way the parser builds it — `AnchorIndex.empty` then one
+`push` per binding — and each intermediate `(map, anchors)` pair is checked
+against the two conjuncts of `push_inv` for the next binding and against
+`find?_eq` for every bound name, a missing name and the empty name.  Tables:
+empty, singleton, the same name bound twice (first binding wins, the map keeps
+the first position), two names, and a value that is itself an alias / nests
+aliases, so `resolveAliasesWith idx.find?` is exercised through the index. -/
+
+/-- Fold a table into its index, recording every intermediate pair. -/
+def anchorIndexSteps (tbl : List (String × YamlValue)) :
+    List ((anchors : Array (String × YamlValue)) × AnchorIndex anchors) :=
+  let rec go (acc : (anchors : Array (String × YamlValue)) × AnchorIndex anchors) :
+      List (String × YamlValue) → List ((anchors : Array (String × YamlValue)) × AnchorIndex anchors)
+    | [] => [acc]
+    | (n, v) :: rest => acc :: go ⟨acc.1.push (n, v), acc.2.push n v⟩ rest
+  go ⟨#[], AnchorIndex.empty⟩ tbl
+
+/-- The two conjuncts of `push_inv`, evaluated for `(m, anchors)` and the binding `(name, v)`
+    over the query names `qs`: every mapped index is in bounds, and lookup through the
+    updated map is the first-match scan of the pushed array. -/
+def pushInvHolds (m : Std.HashMap String Nat) (anchors : Array (String × YamlValue))
+    (name : String) (v : YamlValue) (qs : List String) : Bool :=
+  let m' := if m.contains name then m else m.insert name anchors.size
+  let pushed := anchors.push (name, v)
+  qs.all fun n =>
+    (match m'[n]? with | some i => decide (i < pushed.size) | none => true) &&
+    (AnchorIndex.lookup m' pushed n == anchorsLookup pushed n)
+
+def checkAnchorTable (state : IO.Ref TestCollector) (label : String)
+    (tbl : List (String × YamlValue)) (probe : YamlValue) : IO Unit := do
+  let qs : List String := (tbl.map (·.1)) ++ ["missing", ""]
+  let steps := anchorIndexSteps tbl
+  -- `push_inv` at every prefix, for the binding the prefix is about to receive.
+  for (step, (n, v)) in steps.zip tbl do
+    checkM state s!"AnchorIndex.push_inv/{label}/prefix={step.1.size}/push {n}"
+      (pushInvHolds step.2.map step.1 n v qs)
+      s!"map {repr step.2.map} anchors {repr step.1}"
+  -- `find?_eq` and `bound` on the finished index and every prefix.
+  for step in steps do
+    for n in qs do
+      checkM state s!"AnchorIndex.find?_eq/{label}/prefix={step.1.size}/{repr n}"
+        (step.2.find? n == anchorsLookup step.1 n)
+        s!"find? {repr (step.2.find? n)} scan {repr (anchorsLookup step.1 n)}"
+      checkM state s!"AnchorIndex.bound/{label}/prefix={step.1.size}/{repr n}"
+        (match step.2.map[n]? with | some i => decide (i < step.1.size) | none => true) ""
+  -- `resolveAliasesWith_find?`: resolving through the finished index is resolving against the array.
+  match steps.getLast? with
+  | some fin =>
+    checkM state s!"resolveAliasesWith_find?/{label}"
+      (probe.resolveAliasesWith fin.2.find? == probe.resolveAliases fin.1)
+      s!"via index {repr (probe.resolveAliasesWith fin.2.find?)} via array {repr (probe.resolveAliases fin.1)}"
+  | none => pure ()
+
+def testAnchorIndex (state : IO.Ref TestCollector) : IO Unit := do
+  setCategory state "Priority 11: AnchorIndex push_inv / find?_eq (hash-indexed anchors)"
+  let a := sv "a"
+  let b := sv "b"
+  let probe := mapv [(sv "k", seqv [.alias "x", .alias "y", .alias "missing", mapv [(a, .alias "x")]])]
+  checkAnchorTable state "empty" [] probe
+  checkAnchorTable state "singleton" [("x", a)] probe
+  checkAnchorTable state "duplicate name (first wins)" [("x", a), ("x", b)] probe
+  checkAnchorTable state "two names" [("x", a), ("y", b)] probe
+  checkAnchorTable state "three with a duplicate in the middle" [("x", a), ("y", b), ("x", seqv [a, b])] probe
+  checkAnchorTable state "alias-valued binding" [("x", a), ("y", .alias "x")] probe
+  checkAnchorTable state "nested alias values" [("x", seqv [a, .alias "q"]), ("y", mapv [(b, .alias "x")])] probe
+  checkAnchorTable state "empty name bound" [("", a), ("x", b)] probe
+  -- The index of the empty table answers `none` for every name; `empty` is irreducible,
+  -- so this is a run-time fact about the record, not an unfolding.
+  for n in ["", "x", "missing"] do
+    checkM state s!"AnchorIndex.empty/find? {repr n} = none"
+      ((AnchorIndex.empty.find? n).isNone) ""
+
+/-! ## Priority 12 — `PendingKeys` and the re-read register (item 335, row 12 step 4)
 
 `ScannerState.pendingKeys` runs in lockstep with `indents`: one slot per level,
 `some line` while that level's explicit key is open.  The register
@@ -2208,6 +2281,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testCloseStaleExplicitKey state
   testCleanedResolveAliases state
   testScalarFinishBridges state
+  testAnchorIndex state
   testPendingKeys state
   let results ← finish state
   return { name := "adversarialinstantiation",

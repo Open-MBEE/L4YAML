@@ -488,7 +488,7 @@ lemma parser_alias_guard_runtime (ps : ParseState) (name : String) (pos : YamlPo
   unfold parseNode
   cases hd : ps.declaredAnchors.any (fun n => n == name) <;>
     simp [ParseState.peek?, ParseState.peekPos?, ParseState.advance,
-      parserAliasGuard, hd, Except.isOk, Except.toBool,
+      parserAliasGuard, DeclaredIndex.contains_eq_any, hd, Except.isOk, Except.toBool,
       bind, Except.bind, pure, Except.pure, throw, throwThe, MonadExceptOf.throw]
 
 end L4YAML.Proofs.Serialization.SerializationWellFormed

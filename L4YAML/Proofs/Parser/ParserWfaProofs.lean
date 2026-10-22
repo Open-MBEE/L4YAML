@@ -1659,11 +1659,13 @@ lemma parseStreamLoop_wfa
             apply ih
             · -- tokens preserved
               exact (tryConsume_tokens_wfa
-                { ps_doc with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
+                { ps_doc with anchors := #[], anchorIndex := .empty, declaredAnchors := #[],
+                              declaredIndex := .empty, nodePositions := #[], currentPath := #[] }
                 .documentEnd).trans h_tok_doc
             · -- well-formed anchors after reset + tryConsume
               have h_eq := tryConsume_anchors_wfa
-                { ps_doc with anchors := #[], declaredAnchors := #[], nodePositions := #[], currentPath := #[] }
+                { ps_doc with anchors := #[], anchorIndex := .empty, declaredAnchors := #[],
+                              declaredIndex := .empty, nodePositions := #[], currentPath := #[] }
                 .documentEnd
               simp only [h_eq]; exact WFA_empty
             · exact h_acc'

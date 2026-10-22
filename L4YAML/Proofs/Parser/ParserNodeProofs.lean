@@ -245,8 +245,8 @@ lemma applyNodeFinalization_ag
     -- skips) leaves the goal ill-typed at reducible transparency and `split` refuses.
     simp only [applyNodeFinalization]
     refine ⟨⟨i, ?_⟩, ?_⟩
-    · split <;> split <;> (simp [ParseState.addAnchor, Array.size_push]; omega)
-    · split <;> split <;>
+    · split <;> (simp [ParseState.addAnchor, Array.size_push]; omega)
+    · split <;>
         (simp [ParseState.addAnchor, Array.getElem_push, show i < ps.anchors.size from hi])
 
 /-- G5c position tracking writes `nodePositions` and reads no anchor register,
@@ -1993,9 +1993,7 @@ lemma parseNode_aad_all : ∀ n, ParseNodeAAD n := by
           rename_i _ h_any _
           refine AllAliasesDeclared.alias _ _ (mem_of_any_beq ?_)
           show ps.declaredAnchors.any _ = true
-          cases hb : ps.declaredAnchors.any _ with
-          | true => rfl
-          | false => simp [hb] at h_any)
+          simpa [DeclaredIndex.contains_eq_any] using h_any)
       · -- non-alias: properties → validate → content → finalize
         split at h_ok
         · simp at h_ok

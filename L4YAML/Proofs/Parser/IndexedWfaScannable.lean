@@ -38,8 +38,7 @@ lemma addAnchor_wfaS (ps : ParseStateIx input) (name : String) (val : YamlValue)
       Scannable (((val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors).stripAnchors)
         inFlow) :
     WellFormedAnchorsS (ps.addAnchor name val).anchors := by
-  unfold ParseStateIx.addAnchor
-  dsimp only []
+  rw [ParseStateIx.addAnchor_anchors]
   exact WFAS_of_push _ _ h_wfa h_scan
 
 /-- Node finalization preserves `WellFormedAnchorsS` — indexed twin.  As in the

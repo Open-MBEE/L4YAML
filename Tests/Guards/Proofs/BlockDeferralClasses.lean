@@ -4503,8 +4503,11 @@ script, as `expectedInlineArms` is. -/
 -- (`accum_flow_open_depth0`'s `noPending`, `...` and `---` arms hand their parks' dead register to the flow opener) and its
 -- same-state identities (`pendingBlock`/`pendingMapValue` arms, `flowKeyRoute_of_root`'s have) and `resumectx_of_landing`'s
 -- `PackAlt.step_preprocess` (the one transport the family lacked; `stubs` 7 → 8 is its wrapper); roots and leaves as read.
+-- 2026-10-22 (item 336): `sites` 129 → 119, `decline` 129 → 119, `leaf` 42 → 32 — item 332's ten
+--   `Or.inr trivial` kind-refutation leaves on the family are gone (the residue moves the same way,
+--   111/110/32 → 101/100/22); `uncond` and `stubs` unchanged.
 def expectedPackFlip : String :=
-  "sites=129 decls=23 rounds=2 decline=129 relay=0 leaf=42 uncond=87 stubs=8"
+  "sites=119 decls=23 rounds=2 decline=119 relay=0 leaf=32 uncond=87 stubs=8"
 
 /-- **The RESIDUE** (item 312): the same census with `PackAlt sc := ExplicitValueRefused sc` — the
     predicate the family will carry — in place of `False`.  A bare `trivial` still fails (an unpaid
@@ -4543,7 +4546,7 @@ def expectedPackFlip : String :=
 -- 2026-10-21 (item 324): `decline` 117 → 110 — the same seven sites; `relayState` 1 (the resume-context arm read
 -- RELAY-STATE as an identity and is a transport now); `promised` 5 → 6 for `PackAlt.step_preprocess`.
 def expectedPackResidue : String :=
-  "sites=111 decls=21 rounds=2 decline=110 relayTrue=0 relayState=1 leaf=32 uncond=78 stubs=1 promised=6"
+  "sites=101 decls=21 rounds=2 decline=100 relayTrue=0 relayState=1 leaf=22 uncond=78 stubs=1 promised=6"
 
 /-! **The 32 roots (29 since item 307), by what the register does there** — a READING of each site
 (the compiler prices it when the construction is attempted, §1):

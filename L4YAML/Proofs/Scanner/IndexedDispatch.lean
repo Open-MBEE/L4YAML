@@ -11,10 +11,7 @@ public import L4YAML.Proofs.Scanner.CloseStaleExplicitKeyIx
 
 @[expose] public section Blanket
 
-/-! # `IndexedDispatch` — Phase 3 dispatcher-layer proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedDispatch` — Phase 3 dispatcher-layer proofs
 
 ## Scope (Step 5b.1b.i–iv, partial)
 

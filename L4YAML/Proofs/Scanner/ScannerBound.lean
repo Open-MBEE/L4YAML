@@ -155,10 +155,6 @@ lemma fieldUpdate_BoundInv {s₀ : ScannerState} (s : ScannerState)
 These are the simplest: each is `pushIndent.saveKey.emit.advance`
 or `flowPop.emit.advance`, with no loops. -/
 
--- Helper: the result of a flow open/close function has the same
--- offset/inputEnd/input as advance applied to an intermediate state
--- that preserves BoundInv.
-
 lemma scanFlowSequenceStart_BoundInv (s : ScannerState)
     (h : BoundInv s s) (hend : s.inputEnd = s.input.utf8ByteSize) :
     BoundInv s (scanFlowSequenceStart s) := by

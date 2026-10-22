@@ -11,8 +11,7 @@ public import L4YAML.Proofs.Output.IndexedEmitterScannability.FlowMonoChain.Pres
 
 /-! # `FlowMonoChain.Sync.Invariant` — Phase 3 Step 6f.3b3.flowmono.sync.invariant
 
-**Sub-session 1 of `.flowmono.sync`** (legacy
-`Proofs/Output/EmitterScannability.lean` lines 1886–2160, ~280 LOC).
+**Sub-session 1 of `.flowmono.sync`** (~280 legacy LOC).
 
 The scanner-global sync invariant `simpleKeyStack.size ≥ flowLevel`,
 its chain-level lift through `FlowMonoChainIx`, the raw-token-prefix
@@ -65,15 +64,15 @@ feed the chain-level sync proofs here.
 
 ## Legacy mapping
 
-  | Section | Legacy lines     | Indexed counterpart                |
-  | ------- | ---------------- | ---------------------------------- |
-  | §1      | 1886–1948        | `scanNextTokenIx_dispatchFlowIndicators_preserves_sync` |
-  | §2      | 1950–2015        | `scanNextTokenIx_preserves_sync`   |
-  | §3      | 1817             | `scanNextTokenIx_preserves_prefix_of_simpleKey` |
-  | §4      | 2022–2040        | `FlowMonoChainIx_preserves_raw_prefix` |
-  | §5      | 2046–2101        | `scanFilteredIx_of_chain[_eq]`     |
-  | §6      | 2107–2134        | `scanNextTokenIx_eq_of_preprocess`, `ScanChainIx_of_scanNextTokenIx_eq`, `FlowMonoChainIx_of_scanNextTokenIx_eq` |
-  | §7      | 2147–2160        | `scanNextTokenIx_via_flow_dispatch` |
+  | Section | Indexed counterpart |
+  | ------- | ------------------- |
+  | §1      | `scanNextTokenIx_dispatchFlowIndicators_preserves_sync` |
+  | §2      | `scanNextTokenIx_preserves_sync`   |
+  | §3      | `scanNextTokenIx_preserves_prefix_of_simpleKey` |
+  | §4      | `FlowMonoChainIx_preserves_raw_prefix` |
+  | §5      | `scanFilteredIx_of_chain[_eq]`     |
+  | §6      | `scanNextTokenIx_eq_of_preprocess`, `ScanChainIx_of_scanNextTokenIx_eq`, `FlowMonoChainIx_of_scanNextTokenIx_eq` |
+  | §7      | `scanNextTokenIx_via_flow_dispatch` |
 -/
 
 set_option autoImplicit false
@@ -251,8 +250,8 @@ lemma scanNextTokenIx_preserves_sync
 
 /-! ## §3  Per-step prefix preservation under the SKAF simpleKey bound
 
-Indexed twin of legacy `scanNextToken_preserves_prefix_of_skFloor`
-(line 1817). Mirrors `scanNextTokenIx_preserves_prefix` in
+Indexed twin of legacy `scanNextToken_preserves_prefix_of_skFloor`.
+Mirrors `scanNextTokenIx_preserves_prefix` in
 `IndexedScannerCorrectness/StreamStart.lean` §7.7' but takes only the
 `.1` (simpleKey) conjunct of `SimpleKeyAboveFloorIx` instead of the
 full `SimpleKeyAboveIx`. This is enough because the only sub-dispatcher
@@ -429,7 +428,7 @@ lemma scanNextTokenIx_preserves_prefix_of_simpleKey
 
 /-- Bundle: per-step prefix preservation + `SimpleKeyAboveFloorIx`
     maintenance through one `scanNextTokenIx` call. Indexed twin of
-    legacy `scanNextToken_prefix_and_skFloor_inv` (line 1866). -/
+    legacy `scanNextToken_prefix_and_skFloor_inv`. -/
 lemma scanNextTokenIx_prefix_and_SKAFIx_inv
     (s s' : ScannerStateIx input)
     (h_next : scanNextTokenIx s = .ok (some s'))
@@ -448,8 +447,8 @@ lemma scanNextTokenIx_prefix_and_SKAFIx_inv
 /-! ## §4  `FlowMonoChainIx_preserves_raw_prefix` — chain theorem
 
 Token-prefix preservation through a `FlowMonoChainIx`, under
-`SimpleKeyAboveFloorIx`. Mirrors legacy `FlowMonoChain_preserves_raw_prefix`
-(line 2022) — induct on the chain, threading the SKAFIx invariant and
+`SimpleKeyAboveFloorIx`. Mirrors legacy `FlowMonoChain_preserves_raw_prefix` —
+induct on the chain, threading the SKAFIx invariant and
 the sync invariant through each step. -/
 
 lemma FlowMonoChainIx_preserves_raw_prefix
@@ -479,8 +478,7 @@ lemma FlowMonoChainIx_preserves_raw_prefix
 /-! ## §5  `scanFilteredIx_of_chain` — top-level connection
 
 Connect a `ScanChainIx` ending at EOF to `scanFilteredIx`. Mirrors
-legacy `scanFiltered_of_chain` (line 2046) and the `_eq` variant
-(line 2079).
+legacy `scanFiltered_of_chain` and the `_eq` variant.
 
 The BOM precondition `(ScannerStateIx.mk' input).peek? ≠ some '﻿'`
 is needed to skip the optional advance in `scanIx`. -/
@@ -523,7 +521,7 @@ lemma scanFilteredIx_of_chain (input : String)
   exact ⟨_, rfl⟩
 
 /-- **Equality version**: gives the exact filtered token array from a
-    `ScanChainIx`. Mirrors legacy `scanFiltered_of_chain_eq` (line 2079). -/
+    `ScanChainIx`. Mirrors legacy `scanFiltered_of_chain_eq`. -/
 lemma scanFilteredIx_of_chain_eq (input : String)
     (s₀ s_final : ScannerStateIx input) (n : Nat)
     (h_s0 : s₀ = (ScannerStateIx.mk' input).emit YamlToken.streamStart)
@@ -617,8 +615,7 @@ lemma scanNextTokenIx_eq_of_preprocess (s₁ s₂ : ScannerStateIx input)
 
 /-- If `scanNextTokenIx` gives the same result for two states and the
     second has a `ScanChainIx` of length ≥ 1, then the first does
-    too. Indexed twin of legacy `ScanChain_of_scanNextToken_eq`
-    (line 2116). -/
+    too. Indexed twin of legacy `ScanChain_of_scanNextToken_eq`. -/
 lemma ScanChainIx_of_scanNextTokenIx_eq {s₁ s₂ s' : ScannerStateIx input} {n : Nat}
     (h_eq : scanNextTokenIx s₁ = scanNextTokenIx s₂)
     (h_chain : ScanChainIx s₂ (n + 1) s') :
@@ -628,8 +625,7 @@ lemma ScanChainIx_of_scanNextTokenIx_eq {s₁ s₂ s' : ScannerStateIx input} {n
     exact .step (by rw [h_eq]; exact h_snt) h_rest
 
 /-- `FlowMonoChainIx` version of `ScanChainIx_of_scanNextTokenIx_eq`.
-    Indexed twin of legacy `FlowMonoChain_of_scanNextToken_eq`
-    (line 2127). -/
+    Indexed twin of legacy `FlowMonoChain_of_scanNextToken_eq`. -/
 lemma FlowMonoChainIx_of_scanNextTokenIx_eq {fl₀ : Nat}
     {s₁ s₂ s' : ScannerStateIx input} {n : Nat}
     (h_eq : scanNextTokenIx s₁ = scanNextTokenIx s₂)
@@ -650,7 +646,7 @@ single `scanNextTokenIx = .ok (some s_result)` conclusion. -/
 /-- When preprocessing succeeds, structural dispatch returns `none`
     and the flow indicator dispatch
     produces a result, then `scanNextTokenIx` returns that result.
-    Indexed twin of legacy `scanNextToken_via_flow_dispatch` (line 2147). -/
+    Indexed twin of legacy `scanNextToken_via_flow_dispatch`. -/
 lemma scanNextTokenIx_via_flow_dispatch
     (s s_pp s_ad s_result : ScannerStateIx input) (c : Char)
     (h_pp : scanNextTokenIx_preprocess s = .ok (some (s_pp, c)))

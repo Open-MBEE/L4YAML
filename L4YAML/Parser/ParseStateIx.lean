@@ -11,10 +11,7 @@ public import L4YAML.Spec.YamlSpec
 public meta import L4YAML.Spec.YamlSpec
 @[expose] public section Blanket
 
-/-! # `ParseStateIx` — Phase 3 Step 6a indexed parser state (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 Step 6f cutover commit.
+/-! # `ParseStateIx` — Phase 3 Step 6a indexed parser state
 
 ## Role
 
@@ -229,14 +226,22 @@ def ParseStateIx.declareAnchorOpt {input : String} (ps : ParseStateIx input) :
 
 /-- Register an anchor definition `&name` with its resolved value for alias lookup.
 
-    The value is resolved (aliases expanded from the current anchor map)
-    and stripped (anchor annotation removed) before storing.  This ensures:
+    The value is stripped (anchor annotation removed), adapted for any flow
+    context, and then resolved (aliases expanded from the current anchor map)
+    before storing.  This ensures:
     - Transitive alias chains resolve correctly (`*b → [*a, world] → [hello, world]`)
     - Anchor map values compare equal to plain values (no stale `anchor := some name`)
+
+    Cleaning runs on the raw value, *before* alias substitution, so it costs
+    O(size of the anchor's own syntax) and the substituted anchor values stay
+    shared rather than being rebuilt node by node.  Every stored value is
+    already a fixed point of `stripAnchors ∘ adaptForFlowContext`, so this is
+    the same value the resolve-first order produced
+    (`Algebra.Value.cleaned_resolveAliases_comm`); only the cost differs.
 -/
 def ParseStateIx.addAnchor {input : String} (ps : ParseStateIx input)
     (name : String) (val : YamlValue) : ParseStateIx input :=
-  let cleaned := ((val.resolveAliases ps.anchors).stripAnchors).adaptForFlowContext
+  let cleaned := (val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors
   { ps with anchors := ps.anchors.push (name, cleaned) }
 
 /-! ## Node Properties -/

@@ -313,10 +313,11 @@ def configResultGetError (result : @& Except String ParserLimits) : String :=
   | .error e => e
   | .ok _ => ""
 
-/-- Extract ParserLimits from a successful config parse.
-    Returns default limits if the result is an error. -/
-@[export l4yaml_config_result_get_limits_impl]
-def configResultGetLimits (result : @& Except String ParserLimits) : ParserLimits :=
+/-- Extract ParserLimits from a config parse result, or the default limits
+    when it is an error.  This cannot distinguish the two: check
+    `configResultIsOk` first. -/
+@[export l4yaml_config_result_get_limits_or_default_impl]
+def configResultGetLimitsOrDefault (result : @& Except String ParserLimits) : ParserLimits :=
   match result with
   | .ok v => v
   | .error _ => {}
@@ -325,25 +326,48 @@ def configResultGetLimits (result : @& Except String ParserLimits) : ParserLimit
     Two-step bootstrap: first parse the config YAML into ParserLimits,
     then parse the input YAML with those limits.
 
-    Config parse errors are surfaced as scan errors with the config
-    error message embedded.
+    A config parse error is returned as `ParseError.configError` carrying
+    the config reader's message; the input is not parsed.
 
     Returns `Except ParseError (Array YamlDocument)` as an opaque handle. -/
 @[export l4yaml_parse_with_yaml_config_impl]
 def parseWithYamlConfig (input : @& String) (configYaml : @& String)
     : Except ParseError (Array YamlDocument) :=
   match parseConfigYaml ParserLimits configYaml with
-  | .error _ => parseYamlSafe input {}  -- fall back to defaults on config error
+  | .error msg => .error (.configError msg)
   | .ok limits => parseYamlSafe input limits
 
 /-- Dump a YamlValue with a YAML-configured DumpConfig.
-    Falls back to default DumpConfig on config parse error. -/
+    A config parse error is returned as the config reader's message.
+
+    Returns `Except String String` as an opaque handle; inspect it with
+    `dumpResultIsOk` / `dumpResultGetError` / `dumpResultGetOutput`. -/
 @[export l4yaml_dump_with_yaml_config_impl]
-def dumpWithYamlConfig (val : @& YamlValue) (configYaml : @& String) : String :=
-  let cfg := match parseConfigYaml DumpConfig configYaml with
-    | .ok c => c
-    | .error _ => {}
-  dump val cfg
+def dumpWithYamlConfig (val : @& YamlValue) (configYaml : @& String) : Except String String :=
+  (parseConfigYaml DumpConfig configYaml).map fun cfg => dump val cfg
+
+/-- Check whether a `dumpWithYamlConfig` result is `.ok`. Returns 1 or 0. -/
+@[export l4yaml_dump_result_is_ok_impl]
+def dumpResultIsOk (result : @& Except String String) : UInt8 :=
+  match result with
+  | .ok _ => 1
+  | .error _ => 0
+
+/-- Extract the config error from a failed `dumpWithYamlConfig`.
+    Returns empty string if the result is `.ok`. -/
+@[export l4yaml_dump_result_get_error_impl]
+def dumpResultGetError (result : @& Except String String) : String :=
+  match result with
+  | .error e => e
+  | .ok _ => ""
+
+/-- Extract the YAML text from a successful `dumpWithYamlConfig`.
+    Returns empty string if the result is an error. -/
+@[export l4yaml_dump_result_get_output_impl]
+def dumpResultGetOutput (result : @& Except String String) : String :=
+  match result with
+  | .ok s => s
+  | .error _ => ""
 
 end L4YAML.FFI
 

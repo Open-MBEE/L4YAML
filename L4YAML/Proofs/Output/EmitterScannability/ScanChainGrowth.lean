@@ -3713,7 +3713,7 @@ lemma parseStreamLoop_single_doc
         -- POSITIONAL `mk`: a field added to `ParseState` is paid here, and no
         -- grep for the field's name finds it.  `declaredAnchors` sits beside
         -- `anchors`, which the document reset clears alongside it.
-        have h_peek'_r : (ParseState.mk ps'.tokens ps'.pos #[] #[]
+        have h_peek'_r : (ParseState.mk ps'.tokens ps'.pos #[] .empty #[] .empty
             ps'.tagHandles ps'.trackPositions #[] #[]).peek?
             = some .streamEnd := h_peek'
         simp only [ParseState.tryConsume, h_peek'_r,

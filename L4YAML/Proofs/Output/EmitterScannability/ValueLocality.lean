@@ -440,7 +440,7 @@ lemma parseSinglePairMapping_inv (ps : ParseState) (g : Nat) (v : YamlValue) (q 
       obtain ⟨key0, psk0⟩ := kr
       have hk : pairKeyStep ps.advance g = .ok (key0, psk0) := by rw [hk_eq]; exact heq5
       simp only [] at h
-      cases key0 <;> simp only [] at h <;>
+      cases key0 <;> (unfold keyPathSegment at h; simp only [] at h) <;>
       (split at h
        · rename_i hc
          obtain ⟨h_pkv, h_st⟩ := tryConsume_true_facts _ YamlToken.value hc
@@ -484,8 +484,7 @@ lemma parseSinglePairMapping_inv (ps : ParseState) (g : Nat) (v : YamlValue) (q 
     -- `rw` — kabstract reaches the ite's Decidable instance, whereas simp/dsimp
     -- skip instance args, diverge the hypothesis, and `split at h` then refuses.
     -- With no instance-side occurrence left, the `emptyNode` unfold is safe again.
-    rw [show (handleBlockMappingKeyEntry.match_4 (fun _ => String) emptyNode
-        (fun s => s.content) (fun _ => "0")) = "" from rfl] at h
+    rw [show keyPathSegment emptyNode = "" from rfl] at h
     simp only [emptyNode] at h
     split at h
     · rename_i hc

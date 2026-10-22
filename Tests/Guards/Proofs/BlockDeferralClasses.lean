@@ -499,27 +499,36 @@ live `explicitKeyLine` and stands at `explicitKeyCol`.
 
 The register is set by the most recent `?` (or restored by the matching flow
 close), so the shape wants a `?` mid-line at column c on one line and a `:`
-mid-line at the SAME column on a later one.  Every input of that shape the
-measurement found is REFUSED, by §8.2.2 [197]'s own `s-indent(n)` test — the
-one `explicit_at_indent_of_dispatch` reads forwards.  Two instruments agree:
-a sweep of 35 937 three-line programs over a 33-fragment line alphabet (5 186
-accepted, 1 412 of them carrying a landed class-A `:`, **zero** carrying a
-compact one) and all 351 `yaml-test-suite` sources (zero of EITHER).
+mid-line at the SAME column on a later one.  **First reading (item 204):** every
+input of that shape the measurement found was REFUSED, by §8.2.2 [197]'s own
+`s-indent(n)` test — the one `explicit_at_indent_of_dispatch` reads forwards.
+Two instruments agreed: a sweep of 35 937 three-line programs over a 33-fragment
+line alphabet (5 186 accepted, 1 412 of them carrying a landed class-A `:`,
+**zero** carrying a compact one) and all 351 `yaml-test-suite` sources (zero of
+EITHER).
 
-That is an emptiness measured at the runtime, not proved, so this section is a
-refutation TARGET.  The rows are the boundary: the `:` shapes the scanner
-refuses, and the `?`/`-` neighbours at the same coordinate that it accepts —
-which is what says the refusal belongs to the `:`'s own [197] test and not to
-the column. -/
+**Current reading (item 337).**  The stale-key hook now fires on a `-` strictly
+left of the `?`'s column, so the register is DEAD before the later line's `:`
+is dispatched: the `:` is an ordinary empty-key implicit value, the inputs
+below are ACCEPTED (both pipelines, identical event streams), and the compact
+premise is never reached (`CompactRouteCensus`: 0 of 35 937 reach it, 8 514
+accepted; the 170 that moved are all `… - ? a⏎- : b`, which libyaml refuses as
+`- : b` block-mapping errors — the empty-key divergence item 333 records, not
+the [197] test).  The emptiness is therefore no longer a refusal measured at
+the runtime; it is unreachability of the premise, and this section stays as the
+boundary that documents the change: the `:` shapes that were refused and are
+now accepted, beside the `?`/`-` neighbours that always were. -/
 
 -- The compact route's own shape, at three depths: the mid-line `:` standing at
--- a live `explicitKeyCol`.  `currentIndent` is the third number.
+-- what USED to be a live `explicitKeyCol` (dead since item 337).  `currentIndent`
+-- is the third number of the historical refusals' positions.
 #guard pins "- ? a\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +MAP =VAL : =VAL :b -MAP -SEQ -DOC -STR")
 #guard pins "- ? [x]\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP +SEQ [] =VAL :x -SEQ =VAL : -MAP +MAP =VAL : =VAL :b -MAP -SEQ -DOC -STR")
 #guard pins "- - ? a\n- - : b\n" == ("scan-accepted", "+STR +DOC +SEQ +SEQ +MAP =VAL :a =VAL : -MAP -SEQ +SEQ +MAP =VAL : =VAL :b -MAP -SEQ -SEQ -DOC -STR")
 
--- The SAME coordinate with a `?` or a `-` instead: accepted, and neither
--- indicator ever reaches the deferral — so the refusal above is the `:`'s.
+-- The SAME coordinate with a `?` or a `-` instead: accepted before item 337
+-- too, and neither indicator ever reaches the deferral — the historical
+-- refusal above was the `:`'s.
 #guard pins "- ? a\n- ? b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +MAP =VAL :b =VAL : -MAP -SEQ -DOC -STR")
 #guard pins "- ? a\n- - b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +SEQ =VAL :b -SEQ -SEQ -DOC -STR")
 
@@ -3261,9 +3270,12 @@ wrapper: the class's emptiness is re-derivable, its cause is one error, its
 refutation is machine-checked, and its remaining cost is counted rather than
 estimated.
 
-**The boundary**, re-pinned at the current runtime — the compact shape at three
-depths, refused by `[197]`'s test, and the `?`/`-` neighbours at the identical
-coordinate that are accepted (so the refusal belongs to the `:`): -/
+**The boundary**, re-pinned at the current runtime — the compact shape at two
+depths and the `?`/`-` neighbours at the identical coordinate.  Until item 337
+the `:` rows were refused by `[197]`'s test and the neighbours accepted (so the
+refusal belonged to the `:`); since item 337 the hook kills the register on the
+dedenting `-` and all four are accepted — the premise is unreachable rather
+than refused (§4). -/
 
 #guard pins "- ? a\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +MAP =VAL : =VAL :b -MAP -SEQ -DOC -STR")
 #guard pins "- - ? a\n- - : b\n" == ("scan-accepted", "+STR +DOC +SEQ +SEQ +MAP =VAL :a =VAL : -MAP -SEQ +SEQ +MAP =VAL : =VAL :b -MAP -SEQ -SEQ -DOC -STR")

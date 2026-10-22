@@ -223,7 +223,7 @@ def expectedTrees255 : List String :=
 def expectedPayments : List String :=
   ["R4 relay accum_content_on_pendingMapValue_indented #1 ctor:pendingProps.h_closeFE idx=n + 1 src=h_frames99@2:Floor(n,ks) tgt=bound(ks<ne) Floor(ne,ks) eq(n=ne + 1) := match[paid{cover=step(relay(param:accum_content_on_pendingMapValue_indented.h_frames99))}|punt]"]
 def expectedFloorLits : List String :=
-  ["accum_block_on_closeThenBlock lo=lo idx=k ks=nv :: ksv var ×1",
+  ["accum_block_on_closeThenBlock lo=lo idx=k ks=map(…) :: ksv var ×1",
    "accum_block_on_closeThenBlock lo=nv + 1 idx=nv + 1 + m ks=[] lit ×1",
    "accum_block_on_noPending lo=0 idx=k ks=[] lit ×1",
    "accum_block_on_pendingBlock lo=n + 1 idx=k ks=[] lit ×1",
@@ -232,27 +232,27 @@ def expectedFloorLits : List String :=
    "accum_content_on_pendingBlock_indented lo=lo idx=n ks=ks var ×5",
    "accum_content_on_pendingMapValue_indented lo=lo idx=n + 1 ks=ks var ×5",
    "accum_content_on_pendingMapValue_indented lo=lo idx=n ks=ks var ×1",
-   "accum_content_on_pendingMapValue_indented lo=lo idx=n ks=n :: ks var ×4",
-   "accum_content_pending lo=lo idx=k ks=k :: ks var ×10",
+   "accum_content_on_pendingMapValue_indented lo=lo idx=n ks=map(…) :: ks var ×4",
+   "accum_content_pending lo=lo idx=k ks=map(…) :: ks var ×10",
    "accum_content_pending lo=lo idx=k ks=ks var ×3",
    "accum_content_pending lo=lo idx=m ks=ks var ×14",
    "accum_content_pending lo=lo idx=n ks=ks var ×1",
    "accum_content_pending lo=lo idx=ne ks=ks var ×3",
-   "colon_fires_implicit_key lo=lo idx=k ks=k :: ks var ×2",
-   "colon_fires_props_key lo=lo idx=k ks=k :: ks var ×2",
-   "colon_open_map lo=k idx=k ks=k :: [] own ×5",
-   "colon_open_map_implicit lo=lo idx=k + 1 ks=k :: ks var ×2",
-   "colon_open_map_implicit lo=lo idx=k ks=k :: ks var ×2",
-   "colon_open_map_props lo=lo idx=k + 1 ks=k :: ks var ×2",
-   "colon_open_map_props lo=lo idx=k ks=k :: ks var ×2",
-   "compact_open_map lo=n + 1 idx=n + 1 + m ks=n + 1 + m :: [] lit ×1",
-   "content_dispatch_routed lo=lo idx=k ks=k :: ks var ×2",
-   "content_dispatch_routed lo=lo idx=k ks=k :: ksv var ×2",
-   "dedent_cover_of_floor lo=lo idx=w ks=w :: ks' var ×1",
-   "entryKeyPack_of_dispatch lo=lo idx=w ks=w :: ks var ×2",
-   "entryPropsKeyPack_of_dispatch lo=lo idx=w ks=w :: ks var ×2",
+   "colon_fires_implicit_key lo=lo idx=k ks=map(…) :: ks var ×2",
+   "colon_fires_props_key lo=lo idx=k ks=map(…) :: ks var ×2",
+   "colon_open_map lo=k idx=k ks=map(…) :: [] own ×5",
+   "colon_open_map_implicit lo=lo idx=k + 1 ks=map(…) :: ks var ×2",
+   "colon_open_map_implicit lo=lo idx=k ks=map(…) :: ks var ×2",
+   "colon_open_map_props lo=lo idx=k + 1 ks=map(…) :: ks var ×2",
+   "colon_open_map_props lo=lo idx=k ks=map(…) :: ks var ×2",
+   "compact_open_map lo=n + 1 idx=n + 1 + m ks=map(…) :: [] lit ×1",
+   "content_dispatch_routed lo=lo idx=k ks=map(…) :: ks var ×2",
+   "content_dispatch_routed lo=lo idx=k ks=map(…) :: ksv var ×2",
+   "dedent_cover_of_floor lo=lo idx=w ks=map(…) :: ks' var ×1",
+   "entryKeyPack_of_dispatch lo=lo idx=w ks=map(…) :: ks var ×2",
+   "entryPropsKeyPack_of_dispatch lo=lo idx=w ks=map(…) :: ks var ×2",
    "question_open_map lo=k + 1 idx=k + 1 ks=[] own ×2",
-   "question_open_map lo=k idx=k ks=k :: [] own ×5"]
+   "question_open_map lo=k idx=k ks=map(…) :: [] own ×5"]
 def expectedTransports : List String :=
   ["Floor.mono_index: 9 in 5 [accum_block_on_closeThenBlock=1, colon_open_map_implicit=2, colon_open_map_props=2, entryKeyPack_of_dispatch=2, entryPropsKeyPack_of_dispatch=2]",
    "Floor.cons: 4 in 2 [entryKeyPack_of_dispatch=2, entryPropsKeyPack_of_dispatch=2]",
@@ -341,7 +341,7 @@ coverPuntEntry=+0 mergedBase=true mergedAll=true floorLits=86 own=12 lit=5 var=6
 ownLemmas=2 scanned=32 monoIndex=9 monoIndexLemmas=5 floorCons=4 floorConsLemmas=2 \
 floorPopTo=1 floorPopToLemmas=1 leOfMem=0 coveredPopTo=1 coveredPopToLemmas=1 \
 raiseFloor=0 dedupHead=2 dedupHeadLemmas=2 coveredCons=4 rootMonoCaller=1 \
-rootMonoSite=1 rootNtop=1 nodes=103679 floorNodes=26222"
+rootMonoSite=1 rootNtop=1 nodes=104570 floorNodes=26085"
 
 /-! ## §4 The reading -/
 

@@ -683,14 +683,14 @@ partial def relaySrcs : Cls → Array String
 
 def expectedSites : List String :=
   ["accum_block_on_pendingBlock #1 ctor:pendingBlock.h_closeF idx=k mono=1(h_mono:sc) monoOpt=0 base=1(h_base:sc) baseOpt=0 prep=1(h_preprocess:sc→s_prep,c) dispB=1(h_dispatch:c) dispC=0 hc=0 chr=1(hc:c='-') corr=5(hcorr_prep:s_prep,hcorr_result:s',h_corr:sc,hcorr_sc:s_prep,hcorr_dash2:s') noflow=1(h_noflow) save=0 fl=0 top=1(h_top_old:sc≤n) larm=1(h_larm) floor=0 nic=1(h_nic_old:sc) armed=0 col0=2(h_landed.2.1:sp_mid.col=0,hcol_mid:sp_mid.col=0) ids=0 cover=0 coverFn=0 ⊢ inputs=full lo=[own=k]",
-   "accum_content_on_pendingMapValue_indented #1 ctor:pendingProps.h_closeFE idx=n + 1 mono=1(h_mono:sc) monoOpt=0 base=1(h_base:sc) baseOpt=0 prep=1(h_preprocess:sc→s_prep,c) dispB=0 dispC=1(h_dispatch:c) hc=0 chr=0 corr=3(hcorr_prep:s_prep,hcorr_result:s',h_corr:sc) noflow=1(h_flow_disp) save=1(h_sk_s) fl=0 top=0 larm=0 floor=1(h_floor_old:sc@n + 1) nic=2(h_nic_mv:sc,h_nic_s:s') armed=0 col0=1(h_col0_old:0<sp_scan.col) ids=0 cover=4(h_closeF99@2:Floor(n,n :: ks),h_frames99@2:Floor(n,ks),h_closeFV108@2:Floor(n + 1,ks),h_framesV108@2:Floor(n + 1,ks)) coverFn=1(h_cov_step) ⊢ inputs=missing(floorSrc) lo=[relay=h_closeF99:Floor(n,n :: ks);relay=h_frames99:Floor(n,ks);relay=h_closeFV108:Floor(n + 1,ks);relay=h_framesV108:Floor(n + 1,ks)]",
+   "accum_content_on_pendingMapValue_indented #1 ctor:pendingProps.h_closeFE idx=n + 1 mono=1(h_mono:sc) monoOpt=0 base=1(h_base:sc) baseOpt=0 prep=1(h_preprocess:sc→s_prep,c) dispB=0 dispC=1(h_dispatch:c) hc=0 chr=0 corr=3(hcorr_prep:s_prep,hcorr_result:s',h_corr:sc) noflow=1(h_flow_disp) save=1(h_sk_s) fl=0 top=0 larm=0 floor=1(h_floor_old:sc@n + 1) nic=2(h_nic_mv:sc,h_nic_s:s') armed=0 col0=1(h_col0_old:0<sp_scan.col) ids=0 cover=4(h_closeF99@2:Floor(n,map(…) :: ks),h_frames99@2:Floor(n,ks),h_closeFV108@2:Floor(n + 1,ks),h_framesV108@2:Floor(n + 1,ks)) coverFn=1(h_cov_step) ⊢ inputs=missing(floorSrc) lo=[relay=h_closeF99:Floor(n,map(…) :: ks);relay=h_frames99:Floor(n,ks);relay=h_closeFV108:Floor(n + 1,ks);relay=h_framesV108:Floor(n + 1,ks)]",
    "colon_open_map_explicit #1 ctor:pendingMapValue.h_closeF idx=nv mono=0 monoOpt=0 base=0 baseOpt=0 prep=0 dispB=1(h_dispatch:':') dispC=0 hc=0 chr=0 corr=3(hcorr_prep:s_prep,hcorr_result:s',hcorr_colon:s') noflow=1(h_noflow_disp) save=0 fl=0 top=1(h_top_in:s'≤nv) larm=0 floor=1(h_floor_in:s'@nv + 1) nic=2(h_nic_disp:s_prep*,hpf.1:s') armed=0 col0=1(hcol_mid:sp_mid.col=0) ids=0 cover=0 coverFn=0 ⊢ inputs=missing(mono,base,prep) lo=[own=nv]",
    "content_dispatch_routed #1 ctor:pendingProps.h_closeFE idx=0 mono=0 monoOpt=0 base=0 baseOpt=0 prep=0 dispB=0 dispC=1(h_dispatch:c) hc=1(hprops:'&'|'!') chr=1(h:c='&') corr=3(hcorr_prep:s_prep,hcorr_result:s',hc:s') noflow=1(h_flow_disp) save=0 fl=0 top=0 larm=0 floor=0 nic=3(h_nic_prep:s_prep,h_nic_ad:s_prep*,h_nic_s:s') armed=0 col0=0 ids=0 cover=0 coverFn=1(h_cov_lift) ⊢ inputs=missing(mono,base,prep,floorSrc) lo=[] idx0",
    "content_dispatch_routed #2 ctor:pendingProps.h_closeFE idx=0 mono=0 monoOpt=0 base=0 baseOpt=0 prep=0 dispB=0 dispC=1(h_dispatch:c) hc=1(hprops:'&'|'!') chr=1(h:c='!') corr=3(hcorr_prep:s_prep,hcorr_result:s',hc:s') noflow=1(h_flow_disp) save=0 fl=0 top=0 larm=0 floor=0 nic=3(h_nic_prep:s_prep,h_nic_ad:s_prep*,h_nic_s:s') armed=0 col0=0 ids=0 cover=0 coverFn=1(h_cov_lift) ⊢ inputs=missing(mono,base,prep,floorSrc) lo=[] idx0"]
 def expectedShapes : List String :=
   ["pendingBlock.h_closeF bound(ks<n) Floor(n,ks) eq(—)",
    "pendingBlockContent.h_closeF bound(ks<n) Floor(n,ks) eq(—)",
-   "pendingMapValue.h_closeF bound(ks<n) Floor(n,n :: ks) eq(—)",
+   "pendingMapValue.h_closeF bound(ks<n) Floor(n,map(…) :: ks) eq(—)",
    "pendingProps.h_closeFE bound(ks<ne) Floor(ne,ks) eq(n=ne + 1)"]
 def expectedBounds : List String :=
   ["accum_block_on_pendingBlock #1 idx=k ctor=s' where=landed bounds=[h_top_old:sc≤n floor=n + 1 at(by hkn:k=n) old mono=yes] ⊢ at-index",
@@ -699,7 +699,7 @@ def expectedBounds : List String :=
    "content_dispatch_routed #1 idx=0 ctor=s' where=— bounds=[] ⊢ no-bound",
    "content_dispatch_routed #2 idx=0 ctor=s' where=— bounds=[] ⊢ no-bound"]
 def expectedCallers : List String :=
-  ["colon_open_map_explicit #1 ← accum_block_on_closeThenBlock #1 state=s_prep mono=no base=no bounds=[] idx=k ⊢ no-mono,no-bound | back=sc(h_preprocess) monoB=yes(h_mono) baseB=yes(h_base) boundsB=[] resumeB=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing] ⊢ own",
+  ["colon_open_map_explicit #1 ← accum_block_on_closeThenBlock #1 state=s_prep mono=no base=no bounds=[] idx=k ⊢ no-mono,no-bound | back=sc(h_preprocess) monoB=yes(h_mono) baseB=yes(h_base) boundsB=[] resumeB=[h_valF:frames(map(…) :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing] ⊢ own",
    "colon_open_map_explicit #1 ← accum_block_on_pendingBlock #1 state=s_prep mono=no base=no bounds=[] idx=k ⊢ no-mono,no-bound | back=sc(h_preprocess) monoB=yes(h_mono) baseB=yes(h_base) boundsB=[h_top_old:sc≤n floor=n + 1 undecided(—)] resumeB=[h_closeFV_old:frames(ks)] ⊢ own",
    "colon_open_map_explicit #1 ← accum_block_on_pendingBlockContent #1 state=s_prep mono=no base=no bounds=[] idx=k ⊢ no-mono,no-bound | back=sc(h_preprocess) monoB=yes(h_mono) baseB=yes(h_base) boundsB=[] resumeB=[h_closeF_old:frames(ks); h_closeFV_old:frames(ks)] ⊢ own",
    "content_dispatch_routed #1 ← accum_content_on_noPending #1 state=s_prep mono=no base=no bounds=[] idx=0 ⊢ no-mono,no-bound | back=sc(h_preprocess) monoB=no baseB=no boundsB=[] resumeB=[] ⊢ no-mono-back,no-bound-back",
@@ -719,12 +719,12 @@ def expectedCallers : List String :=
    "content_dispatch_routed #2 ← accum_content_pending #5 state=s_prep mono=no base=no bounds=[] idx=0 ⊢ no-mono,no-bound | back=sc(h_preprocess) monoB=yes(h_mono) baseB=yes(h_base) boundsB=[] resumeB=[h_defer_split:frames(ks)] ⊢ no-bound-back",
    "content_dispatch_routed #2 ← content_dispatch_after_close #1 state=s_prep mono=no base=no bounds=[] idx=0 ⊢ no-mono,no-bound | back=— monoB=no baseB=no boundsB=[] resumeB=[] ⊢ no-prep-back"]
 def expectedLack : List String :=
-  ["colon_open_map_explicit #1 ctor:pendingMapValue.h_closeF lacks=[mono,base,prep] idx=nv pre=s_prep(disp) callers=3 supplied=0 suppliedB=3 step=[IndentStackCover.dispatchBlockIndicators_cover→CoverStep] shape=Covered(lo,ks,s) ∨ ∃c.s.indents.back?=some(c,false) ∧ Covered(lo,c :: ks,s) consed=existential pin=top∧floor(h_top_in,h_floor_in) bottom=at[hvp,h_slot:SBlockIndented(nv) at(syn)] resume=[] ne=— ⊢ bottom-at,no-relay",
+  ["colon_open_map_explicit #1 ctor:pendingMapValue.h_closeF lacks=[mono,base,prep] idx=nv pre=s_prep(disp) callers=3 supplied=0 suppliedB=3 step=[IndentStackCover.dispatchBlockIndicators_cover→CoverStep] shape=Covered(lo,ks,s) ∨ ∃c.s.indents.back?=some(c,false) ∧ Covered(lo,map(…) :: ks,s) consed=existential pin=top∧floor(h_top_in,h_floor_in) bottom=at[hvp,h_slot:SBlockIndented(nv) at(syn)] resume=[] ne=— ⊢ bottom-at,no-relay",
    "content_dispatch_routed #1 ctor:pendingProps.h_closeFE lacks=[mono,base,prep,floorSrc] idx=0 pre=s_prep(disp) callers=8 supplied=0 suppliedB=0 step=[IndentStackCover.dispatchContent_cover→Covered] shape=Covered consed=none pin=— bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[] ne=none(0=ne + 1) ⊢ vacuous(0=ne + 1)",
    "content_dispatch_routed #2 ctor:pendingProps.h_closeFE lacks=[mono,base,prep,floorSrc] idx=0 pre=s_prep(disp) callers=8 supplied=0 suppliedB=0 step=[IndentStackCover.dispatchContent_cover→Covered] shape=Covered consed=none pin=— bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[] ne=none(0=ne + 1) ⊢ vacuous(0=ne + 1)"]
 def expectedBottoms : List String :=
   ["accum_block_on_pendingBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_close_entry_old:SCompactSeqTail(n) at(by hkn:k=n); h_cont:SCompactSeqTail(k) at(syn)] resume=[h_closeFV_old:frames(ks)]",
-   "accum_content_on_pendingMapValue_indented #1 ctor:pendingProps.h_closeFE idx=n + 1 bottom=at[h_close_old:SBlockNode(n + 1) at(syn)] resume=[h_closeF99:frames(n :: ks); h_frames99:frames(ks); h_closeFV108:frames(ks); h_framesV108:frames(ks); h_seqF168:tail(n)←SBlockNode(n + 1)]",
+   "accum_content_on_pendingMapValue_indented #1 ctor:pendingProps.h_closeFE idx=n + 1 bottom=at[h_close_old:SBlockNode(n + 1) at(syn)] resume=[h_closeF99:frames(map(…) :: ks); h_frames99:frames(ks); h_closeFV108:frames(ks); h_framesV108:frames(ks); h_seqF168:tail(n)←SBlockNode(n + 1)]",
    "colon_open_map_explicit #1 ctor:pendingMapValue.h_closeF idx=nv bottom=at[hvp,h_slot:SBlockIndented(nv) at(syn)] resume=[]",
    "content_dispatch_routed #1 ctor:pendingProps.h_closeFE idx=0 bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[]",
    "content_dispatch_routed #2 ctor:pendingProps.h_closeFE idx=0 bottom=at[→h_route:SBlockNode(0) at(syn)] resume=[]"]
@@ -732,8 +732,8 @@ def expectedBottoms : List String :=
 -- (`h_resSeqV`, `h_slotV'`) among its resume haves; nothing else moves.
 def expectedBottomsPaid : List String :=
   -- Item 305: `closeThenBlock`'s first entry park reads the `?` slot's bottom (`h_slotV`) beside the awaited node's frames.
-  ["accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_docRoute:SBlockNode(0) undecided(—); h_seqRoute:SBlockSeqEntries(k) at(syn); h_entryTail:SCompactSeqTail(k) at(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([]); h_seqFrames:frames(ks); h_slotV:frames(ks); h_resSeqV:frames(ks); h_slotV':frames(ks); h_seqFramesV:frames(ks)] relaySrc=[local:accum_block_on_closeThenBlock.h_seqFrames]",
-   "accum_block_on_closeThenBlock #2 ctor:pendingBlock.h_closeF idx=nv + 1 + m bottom=below[hvs:SBlockIndented(nv) below(syn)] resume=[h_valF:frames(nv :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks)] relaySrc=[]",
+  ["accum_block_on_closeThenBlock #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_docRoute:SBlockNode(0) undecided(—); h_seqRoute:SBlockSeqEntries(k) at(syn); h_entryTail:SCompactSeqTail(k) at(syn)] resume=[h_valF:frames(map(…) :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks); h_res_land:tail(k)←landing; h_resV_land:tail(k)←landing; h_seqBottom:frames([]); h_seqFrames:frames(ks); h_slotV:frames(ks); h_resSeqV:frames(ks); h_slotV':frames(ks); h_seqFramesV:frames(ks)] relaySrc=[local:accum_block_on_closeThenBlock.h_seqFrames]",
+   "accum_block_on_closeThenBlock #2 ctor:pendingBlock.h_closeF idx=nv + 1 + m bottom=below[hvs:SBlockIndented(nv) below(syn)] resume=[h_valF:frames(map(…) :: ks); h_mapF:frames(ks); h_mapFV:frames(ks); h_valFV:frames(ks)] relaySrc=[]",
    "accum_block_on_noPending #1 ctor:pendingBlock.h_closeF idx=k bottom=at[h_rootTail:SCompactSeqTail(k) at(syn)] resume=[] relaySrc=[]",
    "accum_block_on_pendingBlock #2 ctor:pendingBlock.h_closeF idx=k bottom=below[h_close_entry_old:SCompactSeqTail(n) below(by hlt:n<k); h_close_inner:SBlockSeqEntries(k) at(syn)] resume=[h_closeFV_old:frames(ks)] relaySrc=[]",
    "accum_block_on_pendingBlock #3 ctor:pendingBlock.h_closeF idx=n + 1 + m bottom=below[h_close_entry_old:SCompactSeqTail(n) below(syn); h_close_old:SBlockIndented(n) below(syn)] resume=[h_closeFV_old:frames(ks)] relaySrc=[]",
@@ -798,7 +798,7 @@ missMono=3 missBase=3 missPrep=3 missFloorSrc=3 own=2 empty=0 relay=1 relayEntri
 bounds=2 below=0 belowSyn=0 belowArm=0 at=2 atSyn=1 atArm=1 undecided=0 bOwn=1 \
 bOld=1 landedBelow=0 inlineBelow=0 payable=0 lack=3 lackCallers=19 lackSupplied=0 \
 lackSuppliedB=3 lackLow=0 lackPayable=0 vacuous=2 bottomBelow=0 paidRows=14 \
-bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=103679"
+bottomPaidBelow=5 bottomPaidRelay=8 named=8 rows=167 nodes=104570"
 
 /-! ## §3 The reading -/
 

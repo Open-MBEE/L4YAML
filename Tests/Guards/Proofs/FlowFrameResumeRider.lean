@@ -47,6 +47,7 @@ assumed.  (Three names have since left this list: `noFrame` with item 125,
 namespace L4YAML.Tests.Guards.FlowFrameResumeRider
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -102,11 +103,11 @@ example {sc : ScannerState} {kc : Nat} {sp_start sp_br sp_tok sp_key : SurfPos}
     (route : ∀ sp_v, SBlockMapEntry kc sp_key sp_v → SLYamlStream sp_start sp_v)
     (head : ∀ sp_end, SFlowContent 0 .flowOut sp_br sp_end →
       ImplicitKeyHead sp_key sp_end ∨ True)
-    (tw99 : ∃ ks : List Nat, (∀ k' ∈ ks, k' < kc) ∧
+    (tw99 : ∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < kc) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry kc sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail kc sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e)
-    (tw108 : ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < kc) ∧
+    (tw108 : ∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < kc) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry kc sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail kc sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e)
@@ -131,11 +132,11 @@ example {sp_start sp_br sp_key : SurfPos} {kc : Nat}
     (route : ∀ sp_v, SBlockMapEntry kc sp_key sp_v → SLYamlStream sp_start sp_v)
     (head : ∀ sp_end, SFlowContent 0 .flowOut sp_br sp_end →
       ImplicitKeyHead sp_key sp_end ∨ True)
-    (tw99 : ∃ ks : List Nat, (∀ k' ∈ ks, k' < kc) ∧
+    (tw99 : ∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < kc) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry kc sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail kc sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e)
-    (tw108 : ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < kc) ∧
+    (tw108 : ∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < kc) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry kc sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail kc sp_v sp_e →
       KeyFrames (ExplValueLine sp_start nv) ks sp_e) :

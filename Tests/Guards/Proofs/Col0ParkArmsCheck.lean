@@ -172,7 +172,7 @@ what turns the flag into the floor; its sentinel disjunct falls to
 `SentinelBase`, exactly as it does inside `landing_floor_of_arm`. -/
 
 example {sc s_prep s_skip : ScannerState} {c : Char}
-    {w lo m : Nat} {ksw ksw' : List Nat}
+    {w lo m : Nat} {ksw ksw' : List FrameLevel}
     -- the PARK's own datum, item 154's field
     (h_armed : sc.needIndentCheck = true)
     (h_flow : sc.inFlow = false)
@@ -180,8 +180,8 @@ example {sc s_prep s_skip : ScannerState} {c : Char}
     (h_base : SentinelBase sc) (h_mono : Mono sc)
     (h_preprocess : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_fl : Floor lo m ksw) (h_cv : Covered lo ksw sc)
-    (hmem : w ∈ ksw) (h_ww : ResumeWidths ksw ksw' w) (h_scol : s_prep.col = w) :
-    ∃ lo : Nat, Floor lo w (w :: ksw') ∧ Covered lo (w :: ksw') s_prep := by
+    (hmem : FrameLevel.map w ∈ ksw) (h_ww : ResumeWidths ksw ksw' w) (h_scol : s_prep.col = w) :
+    ∃ lo : Nat, Floor lo w (FrameLevel.map w :: ksw') ∧ Covered lo (FrameLevel.map w :: ksw') s_prep := by
   have h_floor : s_prep.currentIndent ≤ (s_prep.col : Int) := by
     rcases preprocess_top_le_col_of_armed h_skip
         (by have hsc := h_flow

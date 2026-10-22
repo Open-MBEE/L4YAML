@@ -147,6 +147,7 @@ namespace L4YAML.Tests.Guards.BlockDeferralClasses
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
   L4YAML.Proofs.CouplingBridge
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 /-! ## §1  The wrappers, pinned by APPLICATION
 
@@ -407,7 +408,7 @@ dispatched as a block VALUE indicator.  Every accepted one holds a live key on
 its line, and every one whose own landing popped landed on an open MAPPING
 level.  So the `¬ possible` arm is empty over the corpus — item 293 refutes it —
 and `dedent`'s
-`w ∉ ks` is false wherever the frames cover the stack
+`FrameLevel.map w ∉ ks` is false wherever the frames cover the stack
 (`preprocess_landing_mem_or_seq`); the sequence case is the `:`'s own
 `trailingContent` (§8.2.1), refused in the rows below.  The props park's `tab`
 input is refused too, and item 289 refutes its arm.  ~~`noKeyContext` is still the relay item 211 measured:
@@ -1525,13 +1526,13 @@ wrapper count moved: this is item 173's arm, not a `_stamp_*` site. -/
     runs); and `resumeAt` pops the levels the dedent ended, handing back exactly
     the opener's resume arm — widths bounded by the landing, continuation from
     the landing's own mapping tail. -/
-example {n k : Nat} {sp_start sp_scan sp_mid : SurfPos} {ks : List Nat}
+example {n k : Nat} {sp_start sp_scan sp_mid : SurfPos} {ks : List FrameLevel}
     (h_ssl : SSLComments sp_scan sp_mid)
     (closeF : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ∀ sp_e : SurfPos, SCompactSeqTail n sp_m sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e)
-    (hmem : k ∈ ks) :
-    ∃ ks' : List Nat, (∀ k' ∈ ks', k' < k) ∧
+    (hmem : FrameLevel.map k ∈ ks) :
+    ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
         ResumeFrames (SLYamlStream sp_start) ks' sp_end :=
   let ⟨ks', hw, cont⟩ :=
@@ -1547,11 +1548,11 @@ example {n : Nat} {sp_start sp_scan sp_mid : SurfPos}
     (h_ssl : SSLComments sp_scan sp_mid)
     (closeF : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ∀ sp_e : SurfPos, SCompactSeqTail n sp_m sp_e →
-      ResumeFrames (SLYamlStream sp_start) [2, 0] sp_e) :
-    (∃ ks' : List Nat, (∀ k' ∈ ks', k' < 2) ∧
+      ResumeFrames (SLYamlStream sp_start) [FrameLevel.map 2, FrameLevel.map 0] sp_e) :
+    (∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < 2) ∧
         ∀ sp_end : SurfPos, SCompactMapTail 2 sp_mid sp_end →
           ResumeFrames (SLYamlStream sp_start) ks' sp_end) ∧
-    (∃ ks' : List Nat, (∀ k' ∈ ks', k' < 0) ∧
+    (∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < 0) ∧
         ∀ sp_end : SurfPos, SCompactMapTail 0 sp_mid sp_end →
           ResumeFrames (SLYamlStream sp_start) ks' sp_end) :=
   let stack := closeF sp_mid h_ssl sp_mid (SCompactSeqTail.nil n sp_mid)
@@ -1565,7 +1566,7 @@ example {n : Nat} {sp_start sp_scan sp_mid : SurfPos}
     stream — and committing the `?` entry to its `e-node` value is precisely
     what a landing inside a still-open frame must not do (`ResumeFrames`' own
     docstring, item 108). -/
-example {n k nv : Nat} {sp_start sp_scan sp_mid : SurfPos} {ks : List Nat}
+example {n k nv : Nat} {sp_start sp_scan sp_mid : SurfPos} {ks : List FrameLevel}
     -- underscored because the second control's only use is inside
     -- `fail_if_success`, which discards the term it elaborates
     (_h_ssl : SSLComments sp_scan sp_mid)
@@ -1575,24 +1576,24 @@ example {n k nv : Nat} {sp_start sp_scan sp_mid : SurfPos} {ks : List Nat}
     (_closeV : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ∀ sp_e : SurfPos, SCompactSeqTail n sp_m sp_e →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_e)
-    (_hmem : k ∈ ks) :
+    (_hmem : FrameLevel.map k ∈ ks) :
     True := by
   -- control A: the stream-bottomed stack fills the arm
-  have _okS : ∃ ks' : List Nat, (∀ k' ∈ ks', k' < k) ∧
+  have _okS : ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
         ResumeFrames (SLYamlStream sp_start) ks' sp_end :=
     let ⟨ks', hw, cont⟩ :=
       (_closeS sp_mid _h_ssl sp_mid (SCompactSeqTail.nil n sp_mid)).resumeAt _hmem
     ⟨ks', hw.lt, cont⟩
   -- control B: the value-line-bottomed stack pops just as well, at its own bottom
-  have _okV : ∃ ks' : List Nat, (∀ k' ∈ ks', k' < k) ∧
+  have _okV : ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
         ResumeFrames (ExplValueLine sp_start nv) ks' sp_end :=
     let ⟨ks', hw, cont⟩ :=
       (_closeV sp_mid _h_ssl sp_mid (SCompactSeqTail.nil n sp_mid)).resumeAt _hmem
     ⟨ks', hw.lt, cont⟩
   fail_if_success
-    have : ∃ ks' : List Nat, (∀ k' ∈ ks', k' < k) ∧
+    have : ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < k) ∧
         ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
           ResumeFrames (SLYamlStream sp_start) ks' sp_end :=
       let ⟨ks', hw, cont⟩ :=
@@ -2119,11 +2120,11 @@ missing and does not survey what the field means. -/
     written bottom-polymorphic at item 108 and has been available at this
     instance ever since; what was missing was a parameter to hand the result
     to. -/
-example {k nv : Nat} {sp_start sp_scan sp_land : SurfPos} {ks : List Nat}
+example {k nv : Nat} {sp_start sp_scan sp_land : SurfPos} {ks : List FrameLevel}
     (framesV : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid)
-    (h_ssl : SSLComments sp_scan sp_land) (hmem : k ∈ ks) :
-    ∃ ks' : List Nat, (∀ k' ∈ ks', k' < k) ∧
+    (h_ssl : SSLComments sp_scan sp_land) (hmem : FrameLevel.map k ∈ ks) :
+    ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         ResumeFrames (ExplValueLine sp_start nv) ks' sp_end :=
   let ⟨ks', hw, cont⟩ := (framesV sp_land h_ssl).resumeAt hmem
@@ -2134,7 +2135,7 @@ example {k nv : Nat} {sp_start sp_scan sp_land : SurfPos} {ks : List Nat}
     which is `h_explUp_chain`'s body at one member, and so `pendingMapValue`'s
     `h_kslot` at one member.  `resumeFrameRoute` is item 109's route with the
     bottom taken as a parameter, exactly as `resumeMapRouteF` already was. -/
-example {k nv : Nat} {sp_start sp_land sp_key : SurfPos} {ks : List Nat}
+example {k nv : Nat} {sp_start sp_land sp_key : SurfPos} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (cont : ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end) :
@@ -2147,7 +2148,7 @@ example {k nv : Nat} {sp_start sp_land sp_key : SurfPos} {ks : List Nat}
 /-- **The `:` half at its own entry**, which item 93 punted: the empty-key entry
     `[189]` opens completes with the awaited value, and the value line owed
     underneath is the frame the resumed level stands in. -/
-example {k nv : Nat} {sp_start sp_land sp_ind sp_scan' : SurfPos} {ks : List Nat}
+example {k nv : Nat} {sp_start sp_land sp_ind sp_scan' : SurfPos} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_ind) (h_lit : GLit ':' sp_ind sp_scan')
     (cont : ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end) :
@@ -2166,7 +2167,7 @@ example {k nv : Nat} {sp_start sp_land sp_ind sp_scan' : SurfPos} {ks : List Nat
     line, because closing it commits the `?` entry to its `e-node` value
     (`ResumeFrames`' own docstring, item 108).  That is the whole content of
     item 194's "the residue is a BOTTOM", stated so this file checks it. -/
-example {k nv : Nat} {sp_start sp_land sp_key : SurfPos} {ks : List Nat}
+example {k nv : Nat} {sp_start sp_land sp_key : SurfPos} {ks : List FrameLevel}
     -- underscored because the second control's only use is inside
     -- `fail_if_success`, which discards the term it elaborates
     (_h_ind : SIndent k sp_land sp_key)
@@ -2197,7 +2198,7 @@ example {k nv : Nat} {sp_start sp_land sp_key : SurfPos} {ks : List Nat}
     the other would have carried.  Stated at the three-frame ladder: the nested
     caller hands `[4]`, the dedent arm hands `0`, and the union answers at
     both. -/
-example {k : Nat} {sp_start sp_land sp_ind : SurfPos} {ks : List Nat}
+example {k : Nat} {sp_start sp_land sp_ind : SurfPos} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_ind)
     (nested : ∀ nv ∈ [4], ∀ sp_v : SurfPos, SBlockMapEntry k sp_ind sp_v →
       ExplValueLine sp_start nv sp_v)
@@ -2299,12 +2300,12 @@ one row still reading `—` is named in it.
 with a `nil` tail, and `resumeAt` — indifferent to the bottom since item 108 —
 pops the levels the dedent ended: -/
 
-example {sp_start sp_scan sp_land : SurfPos} {n k nv : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_land : SurfPos} {n k nv : Nat} {ks : List FrameLevel}
     (closeFV : ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end)
-    (h_ssl : SSLComments sp_scan sp_land) (hmem : k ∈ ks) :
-    ∃ ks' : List Nat, (∀ k' ∈ ks', k' < k) ∧
+    (h_ssl : SSLComments sp_scan sp_land) (hmem : FrameLevel.map k ∈ ks) :
+    ∃ ks' : List FrameLevel, (∀ fr ∈ ks', fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
         ResumeFrames (ExplValueLine sp_start nv) ks' sp_end := by
   obtain ⟨ks', h_w, cont⟩ :=
@@ -2315,7 +2316,7 @@ example {sp_start sp_scan sp_land : SurfPos} {n k nv : Nat} {ks : List Nat}
 opener's entry lands in the level, and what is still owed underneath is the
 enclosing frame's `s-indent(nv) ':'` line rather than the finished stream: -/
 
-example {sp_start sp_land sp_key : SurfPos} {k nv : Nat} {ks : List Nat}
+example {sp_start sp_land sp_key : SurfPos} {k nv : Nat} {ks : List FrameLevel}
     (h_ind : SIndent k sp_land sp_key)
     (cont : ∀ sp_end : SurfPos, SCompactMapTail k sp_land sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end) :
@@ -2326,15 +2327,15 @@ example {sp_start sp_land sp_key : SurfPos} {k nv : Nat} {ks : List Nat}
 answers its own, and the stream-bottomed one cannot answer the frame's line.
 This is item 194's finding, re-checked on the lane that lacked the field. -/
 
-example {sp_start sp_land : SurfPos} {ks : List Nat}
+example {sp_start sp_land : SurfPos} {ks : List FrameLevel}
     (hS : ResumeFrames (SLYamlStream sp_start) ks sp_land) :
     SLYamlStream sp_start sp_land := hS.close
 
-example {sp_start sp_land : SurfPos} {nv : Nat} {ks : List Nat}
+example {sp_start sp_land : SurfPos} {nv : Nat} {ks : List FrameLevel}
     (hV : ResumeFrames (ExplValueLine sp_start nv) ks sp_land) :
     ExplValueLine sp_start nv sp_land := hV.close
 
-example {sp_start sp_land : SurfPos} {_nv : Nat} {ks : List Nat}
+example {sp_start sp_land : SurfPos} {_nv : Nat} {ks : List FrameLevel}
     (_hS : ResumeFrames (SLYamlStream sp_start) ks sp_land) : True := by
   fail_if_success
     have : ExplValueLine sp_start _nv sp_land := _hS.close
@@ -2354,7 +2355,7 @@ example {sp_start sp_land : SurfPos} {nv : Nat}
     (h : ResumeFrames (ExplValueLine sp_start nv) [] sp_land) :
     ExplValueLine sp_start nv sp_land := h.close
 
-example {sp_start sp_land : SurfPos} {_k nv : Nat} {_ks : List Nat}
+example {sp_start sp_land : SurfPos} {_k nv : Nat} {_ks : List FrameLevel}
     (_h : ExplValueLine sp_start nv sp_land) : True := by
   fail_if_success
     have : ResumeFrames (ExplValueLine sp_start nv) (_k :: _ks) sp_land :=
@@ -2367,7 +2368,7 @@ and the value-line face's widths already run to the park's own level inclusive
 (item 150's stagger) — so unlike `h_closeF`'s crossing, which conses `nv ::`,
 this one moves the list unchanged: -/
 
-example {sp_start sp_scan sp_land sp_key sp_scan' : SurfPos} {n k nv : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_land sp_key sp_scan' : SurfPos} {n k nv : Nat} {ks : List FrameLevel}
     (closeFV : ∀ sp_mid : SurfPos, SBlockNode (n + 1) .blockIn sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid)
     (hnk : n < k) (h_ssl : SSLComments sp_scan sp_land)
@@ -2447,7 +2448,7 @@ field is passed through, so the flip reads 5 sites of 6.
 carries `n = ne + 1`; the landing names `k` with `n = k + 1`; the field carries
 no cover, so `ne = k` is the whole step: -/
 
-example {sp_start sp_node : SurfPos} {n ne k nv : Nat} {ks : List Nat}
+example {sp_start sp_node : SurfPos} {n ne k nv : Nat} {ks : List FrameLevel}
     (hne : n = ne + 1) (hk : n = k + 1)
     (r : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail ne sp_m sp_end →
@@ -2461,7 +2462,7 @@ example {sp_start sp_node : SurfPos} {n ne k nv : Nat} {ks : List Nat}
 
 /-! …and without the equation there is nothing to specialize: -/
 
-example {sp_start sp_node : SurfPos} {n ne _k nv : Nat} {ks : List Nat}
+example {sp_start sp_node : SurfPos} {n ne _k nv : Nat} {ks : List FrameLevel}
     (_r : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail ne sp_m sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end) : True := by
@@ -2475,7 +2476,7 @@ example {sp_start sp_node : SurfPos} {n ne _k nv : Nat} {ks : List Nat}
 node goes into the entry-content park's face, and what the stack stands on is
 all that differs. -/
 
-example {sp_start sp_node sp_scan' : SurfPos} {k nv : Nat} {ks : List Nat}
+example {sp_start sp_node sp_scan' : SurfPos} {k nv : Nat} {ks : List FrameLevel}
     (closeFEV : ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail k sp_m sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end)
@@ -2489,7 +2490,7 @@ example {sp_start sp_node sp_scan' : SurfPos} {k nv : Nat} {ks : List Nat}
 /-! **§18.3 — and the stream-bottomed entry face cannot stand in for it**, which
 is why relaying `h_closeFE` through the same fold was never the answer: -/
 
-example {sp_start sp_node sp_scan' : SurfPos} {k _nv : Nat} {ks : List Nat}
+example {sp_start sp_node sp_scan' : SurfPos} {k _nv : Nat} {ks : List FrameLevel}
     (_closeFE : ∀ sp_m : SurfPos, SBlockNode (k + 1) .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail k sp_m sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end)
@@ -2574,7 +2575,7 @@ example {sp_start sp_scan : SurfPos} {n nv : Nat}
       ∀ sp_i sp_c : SurfPos, SIndent nv sp_e sp_i → GLit ':' sp_i sp_c →
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
       SLYamlStream sp_start sp_v) :
-    ∃ (nv : Nat) (ks : List Nat),
+    ∃ (nv : Nat) (ks : List FrameLevel),
       ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_mid sp_end →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_end :=
@@ -2590,7 +2591,7 @@ example {sp_start sp_scan : SurfPos} {ns : List Nat} {nv : Nat} (hmem : nv ∈ n
       SIndent nv sp_mid sp_i → GLit ':' sp_i sp_c →
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
       SLYamlStream sp_start sp_v) :
-    ∃ (nv : Nat) (ks : List Nat),
+    ∃ (nv : Nat) (ks : List FrameLevel),
       ∀ sp_mid : SurfPos, SSLComments sp_scan sp_mid →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_mid :=
   ⟨nv, [], fun sp_mid h_ssl =>
@@ -2602,14 +2603,14 @@ example (k : Nat) : k ∉ ([] : List Nat) := by simp
 
 /-! **§19.2 — and the consumers gate on MEMBERSHIP**, which is what makes those
 payments worthless.  Item 155 wrote the sentence for the stream bottom — *the
-lane's cover is unspendable: `ResumeFrames.resumeAt` gates on `j ∈ ks`, so a
+lane's cover is unspendable: `ResumeFrames.resumeAt` gates on `FrameLevel.map j ∈ ks`, so a
 landing can pop to no width an empty list names* — and it holds verbatim here.
 The POSITIVE CONTROL first: a stack that names the landing width pops to
 exactly the shape `indicator_open_map`'s `h_resV_land` asks for. -/
 
 example {sp_start sp_mid : SurfPos} {nv k : Nat}
-    (fV : ResumeFrames (ExplValueLine sp_start nv) [k] sp_mid) :
-    ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    (fV : ResumeFrames (ExplValueLine sp_start nv) [FrameLevel.map k] sp_mid) :
+    ∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ sp_end : SurfPos, SCompactMapTail k sp_mid sp_end →
         ResumeFrames (ExplValueLine sp_start nv) ks sp_end :=
   match fV.resumeAt (List.mem_singleton.mpr rfl) with
@@ -2626,7 +2627,7 @@ example {sp_start sp_mid : SurfPos} {nv _k : Nat}
   fail_if_success
     exact (⟨nv, [], fun _ h => absurd h (by simp),
       fun sp_end _h_tail => ResumeFrames.bottom sp_end _fV.close⟩ :
-      ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < _k) ∧
+      ∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < _k) ∧
         ∀ sp_end : SurfPos, SCompactMapTail _k sp_mid sp_end →
           ResumeFrames (ExplValueLine sp_start nv) ks sp_end)
   trivial
@@ -2638,7 +2639,7 @@ at.  The crossing is the `[185]` compactSeq fold `h_kslot` already used twelve
 lines above: the inner entry and its tail become the OUTER park's slot, and the
 outer tail is `nil`. -/
 
-example {sp_start sp_scan sp_sc sp_scan' : SurfPos} {n m nv : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_sc sp_scan' : SurfPos} {n m nv : Nat} {ks : List FrameLevel}
     (h_ind : SIndent m sp_scan sp_sc)
     (h_dash2 : GLit '-' sp_sc sp_scan') (h_gnot2 : GNot SNsChar sp_scan')
     (closeFV : ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
@@ -2657,7 +2658,7 @@ example {sp_start sp_scan sp_sc sp_scan' : SurfPos} {n m nv : Nat} {ks : List Na
 fold — which is why item 198's field was the one this crossing needed and
 `h_closeF` was never the answer: -/
 
-example {sp_start sp_scan sp_sc sp_scan' : SurfPos} {n m _nv : Nat} {ks : List Nat}
+example {sp_start sp_scan sp_sc sp_scan' : SurfPos} {n m _nv : Nat} {ks : List FrameLevel}
     (_h_ind : SIndent m sp_scan sp_sc)
     (_h_dash2 : GLit '-' sp_sc sp_scan') (_h_gnot2 : GNot SNsChar sp_scan')
     (_closeF : ∀ sp_mid : SurfPos, SBlockIndented n .blockIn sp_scan sp_mid →
@@ -2743,7 +2744,7 @@ frame's `: w`.
 checked: the input `flowKeyRoute_of_root` had is `ResumeFrames` at the STREAM
 bottom, and no amount of it is the value line. -/
 
-example {sp_start sp_scan : SurfPos} {_nv : Nat} {ks : List Nat}
+example {sp_start sp_scan : SurfPos} {_nv : Nat} {ks : List FrameLevel}
     (_fS : ∀ sp_m : SurfPos, SSLComments sp_scan sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m) : True := by
   fail_if_success
@@ -2758,11 +2759,11 @@ value-line twin of item 176's landing spend is that spend verbatim, one bottom
 over, and `resumeMapRouteF` (already bottom-parametric) carries it across the
 keyed entry. -/
 
-example {sp_start sp_mid sp_key : SurfPos} {nv w : Nat} {ks : List Nat}
-    (hmem : w ∈ ks)
+example {sp_start sp_mid sp_key : SurfPos} {nv w : Nat} {ks : List FrameLevel}
+    (hmem : FrameLevel.map w ∈ ks)
     (h_ind : SIndent w sp_mid sp_key)
     (fV : ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) :
-    ∃ (nv : Nat) (ks' : List Nat), (∀ k' ∈ ks', k' < w) ∧
+    ∃ (nv : Nat) (ks' : List FrameLevel), (∀ fr ∈ ks', fr.width < w) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry w sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail w sp_v sp_e →
       ResumeFrames (ExplValueLine sp_start nv) ks' sp_e :=
@@ -2776,8 +2777,8 @@ difference from item 200's three measured-and-left punts — those were payable
 only at `ks = []`, where the consumer's `resumeAt` gate can spend nothing; this
 one is paid at the stack the park was holding. -/
 
-example {sp_start sp_mid sp_key : SurfPos} {nv w : Nat} {ks : List Nat}
-    (hmem : w ∈ ks)
+example {sp_start sp_mid sp_key : SurfPos} {nv w : Nat} {ks : List FrameLevel}
+    (hmem : FrameLevel.map w ∈ ks)
     (h_ind : SIndent w sp_mid sp_key)
     (fV : ResumeFrames (ExplValueLine sp_start nv) ks sp_mid) :
     ∃ ns : List Nat, ∀ nv ∈ ns,
@@ -2796,7 +2797,7 @@ example {sp_start sp_mid sp_key : SurfPos} {nv w : Nat} {ks : List Nat}
 close to a value line through the same term — so the pair needed the new
 premise and not a re-reading of the old one: -/
 
-example {sp_start sp_mid sp_key : SurfPos} {_nv w : Nat} {ks' : List Nat}
+example {sp_start sp_mid sp_key : SurfPos} {_nv w : Nat} {ks' : List FrameLevel}
     (_h_ind : SIndent w sp_mid sp_key)
     (_cont : ∀ sp_e : SurfPos, SCompactMapTail w sp_mid sp_e →
       ResumeFrames (SLYamlStream sp_start) ks' sp_e) : True := by
@@ -2878,7 +2879,7 @@ were one constructor slot away.  `compactMapRoute` was filling
 example {sp_start sp_entry sp_key : SurfPos} {nc w : Nat} {cc : YamlContext}
     (h_close : ∀ sp, SBlockIndented nc cc sp_entry sp → SLYamlStream sp_start sp)
     (h_ind : SIndent w sp_entry sp_key) :
-    ∃ ks : List Nat, (∀ k' ∈ ks, k' < nc + 1 + w) ∧
+    ∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < nc + 1 + w) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry (nc + 1 + w) sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail (nc + 1 + w) sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e :=
@@ -2894,7 +2895,7 @@ example {sp_start sp_scan sp_land sp_key : SurfPos} {n w : Nat}
     (h_node : ∀ sp, SBlockNode n .blockIn sp_scan sp → SLYamlStream sp_start sp)
     (h_ssl : SSLComments sp_scan sp_land)
     (h_ind : SIndent w sp_land sp_key) :
-    ∃ ks : List Nat, (∀ k' ∈ ks, k' < w) ∧
+    ∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < w) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry w sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail w sp_v sp_e →
       ResumeFrames (SLYamlStream sp_start) ks sp_e :=
@@ -2941,7 +2942,7 @@ example {sp_start sp_entry sp_key : SurfPos} {nc w nv : Nat} {cc : YamlContext}
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
       SLYamlStream sp_start sp_v)
     (h_ind : SIndent w sp_entry sp_key) :
-    ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < nc + 1 + w) ∧
+    ∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < nc + 1 + w) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry (nc + 1 + w) sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail (nc + 1 + w) sp_v sp_e →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_e :=
@@ -3000,15 +3001,15 @@ body:
 An index that occurs once is written and never read: nothing else in the field
 mentions it, so no consumer can be testing it.  **43 bottom indices in
 `StreamAccum`, not one of them tested**, against frames lists that are tested
-at every landing (`resumectx_of_landing` decides `w ∈ ks`; the covers and the
-`∀ k' ∈ ks, k' < k` guards quantify over the same list).  A widening buys
+at every landing (`resumectx_of_landing` decides `FrameLevel.map w ∈ ks`; the covers and the
+`∀ fr ∈ ks, fr.width < k` guards quantify over the same list).  A widening buys
 exactly what something reads, so widening these buys nothing.
 
 **§22.1 — and it would cost the field.**  A chain over a list nothing reads is
 payable from no premises at all, because the list may be empty: -/
 
 example {sp_start sp_key : SurfPos} {k : Nat} :
-    ∃ (nvs ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+    ∃ (nvs : List Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
       ∀ nv ∈ nvs, ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (ExplValueLine sp_start nv) ks sp_e :=
@@ -3061,7 +3062,7 @@ example {sp_start sp_scan sp_key : SurfPos} {nc w : Nat} {cc : YamlContext}
       ∀ sp_i sp_c : SurfPos, SIndent nv sp sp_i → GLit ':' sp_i sp_c →
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
       SLYamlStream sp_start sp_v) :
-    ∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < nc + 1 + w) ∧
+    ∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < nc + 1 + w) ∧
       ∀ sp_v : SurfPos, SBlockMapEntry (nc + 1 + w) sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail (nc + 1 + w) sp_v sp_e →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_e := by
@@ -3087,7 +3088,7 @@ example {sp_start sp_scan sp_key : SurfPos} {nc w : Nat} {cc : YamlContext}
       ∀ sp_v : SurfPos, SBlockIndented nv .blockOut sp_c sp_v →
       SLYamlStream sp_start sp_v) : True := by
   fail_if_success
-    have : ∃ (nvs ks : List Nat), (∀ k' ∈ ks, k' < nc + 1 + w) ∧
+    have : ∃ (nvs ks : List FrameLevel), (∀ fr ∈ ks, fr.width < nc + 1 + w) ∧
         ∀ nv ∈ nvs, ∀ sp_v : SurfPos, SBlockMapEntry (nc + 1 + w) sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail (nc + 1 + w) sp_v sp_e →
         ResumeFrames (ExplValueLine sp_start nv) ks sp_e := by

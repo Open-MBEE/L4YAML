@@ -37,6 +37,7 @@ parameter without moving any of this). -/
 namespace L4YAML.Tests.Guards.ScannerDedentSibling
 
 open L4YAML L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -126,14 +127,14 @@ private def refuses (input : String) : Bool :=
 
 -- §4 The frames machinery at its types: a two-level stack closes to the
 -- fused stream, and the spend pops to the landing's own level.
-example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [2, 0] sp) :
+example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [FrameLevel.map 2, FrameLevel.map 0] sp) :
     SLYamlStream sp_start sp := h.close
 
-example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [2, 0] sp) :
-    ∃ ks', ResumeWidths [2, 0] ks' 0 ∧
+example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [FrameLevel.map 2, FrameLevel.map 0] sp) :
+    ∃ ks', ResumeWidths [FrameLevel.map 2, FrameLevel.map 0] ks' 0 ∧
       (∀ sp_end, SCompactMapTail 0 sp sp_end →
         ResumeFrames (SLYamlStream sp_start) ks' sp_end) :=
-  h.resumeAt (by simp)
+  h.resumeAt (by decide)
 
 /-- The level constructor demands the strict ordering, and this stack's bottom
     is the stream — the two invariants every producer of THIS instantiation
@@ -143,9 +144,9 @@ example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [2, 0]
     `SLYamlStream sp_start` and is unchanged by it. -/
 example {sp_start sp : SurfPos}
     (h_cont : ∀ sp_end, SCompactMapTail 3 sp sp_end →
-      ResumeFrames (SLYamlStream sp_start) [1] sp_end) :
-    ResumeFrames (SLYamlStream sp_start) [3, 1] sp :=
-  ResumeFrames.level 3 [1] sp (by simp) h_cont
+      ResumeFrames (SLYamlStream sp_start) [FrameLevel.map 1] sp_end) :
+    ResumeFrames (SLYamlStream sp_start) [FrameLevel.map 3, FrameLevel.map 1] sp :=
+  ResumeFrames.level 3 [FrameLevel.map 1] sp (by decide) h_cont
 
 /-- `rootMapRouteF` seeds the stack: the entry plus its whole tail close the
     root mapping over the bottomed stream. -/

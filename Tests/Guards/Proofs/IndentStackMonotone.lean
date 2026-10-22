@@ -47,6 +47,7 @@ stack.  §4 is the escape and what still owes it. -/
 namespace L4YAML.Tests.Guards.IndentStackMonotone
 
 open L4YAML L4YAML.Scanner
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open L4YAML.Proofs.IndentStackMono L4YAML.Proofs.IndentStackCover
 open L4YAML.Proofs.IndentStackBase
 
@@ -160,7 +161,7 @@ example : Mono twoLevels := twoLevels_mono
 
 /-- **The unfloored cover is false there**: level 0 is open, a mapping level, at
     a non-negative column, and `0 ∉ [2]`. -/
-example : ¬ Covered 0 [2] twoLevels := by
+example : ¬ Covered 0 [FrameLevel.map 2] twoLevels := by
   intro h
   have hmem : { column := (0 : Int), isSequence := false } ∈ twoLevels.indents := by
     simp [twoLevels]
@@ -168,11 +169,11 @@ example : ¬ Covered 0 [2] twoLevels := by
   simp at this
 
 /-- **The floored one is true**, and it is the top that says so. -/
-example : Covered 2 [2] twoLevels :=
+example : Covered 2 [FrameLevel.map 2] twoLevels :=
   covered_singleton_of_top_le twoLevels_mono (by decide)
 
 /-- The floor only weakens: a lower floor covers a higher one's obligations. -/
-example {lo lo' : Nat} {ks : List Nat} {s : ScannerState} (h : Covered lo ks s)
+example {lo lo' : Nat} {ks : List FrameLevel} {s : ScannerState} (h : Covered lo ks s)
     (hle : lo ≤ lo') : Covered lo' ks s := h.raise_floor hle
 
 /-! ## §4  Where the floor comes from, and the escape that still owes one

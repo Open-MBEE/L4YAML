@@ -37,6 +37,7 @@ and INHERITED from the park otherwise. -/
 namespace Tests.Guards.FlowOpenParkArm
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 open L4YAML.Proofs.CouplingBridge
 
 /-! ## §1  The datum is uniform over the pendings
@@ -93,11 +94,11 @@ example {sc s_prep : ScannerState} {c : Char} {sp_start sp_scan sp_prep : SurfPo
         ∀ sp_i sp_c : SurfPos, SIndent nv sp_e sp_i → GLit ':' sp_i sp_c →
         ∀ sp_w : SurfPos, SBlockIndented nv .blockOut sp_c sp_w →
         SLYamlStream sp_start sp_w) ∨ True) ∧
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=
@@ -133,11 +134,11 @@ example {n : Nat} {sc s_prep : ScannerState} {c : Char}
         ∀ sp_i sp_c : SurfPos, SIndent nv sp_e sp_i → GLit ':' sp_i sp_c →
         ∀ sp_w : SurfPos, SBlockIndented nv .blockOut sp_c sp_w →
         SLYamlStream sp_start sp_w) ∨ True) ∧
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) ∧
-      ((∃ (nv : Nat) (ks : List Nat), (∀ k' ∈ ks, k' < k) ∧
+      ((∃ (nv : Nat) (ks : List FrameLevel), (∀ fr ∈ ks, fr.width < k) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         KeyFrames (ExplValueLine sp_start nv) ks sp_e) ∨ True)) ∨ True :=

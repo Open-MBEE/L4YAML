@@ -16,7 +16,7 @@ Item 148 carried a cover from a root down an unbounded chain of nested implicit
 keys and left ONE branch punting: `entryKeyPack_of_dispatch`'s dedent, where the
 landing pops to a level below the park's own.  The reason it named was a
 mismatch of lists — the park's cover is over the whole of `ks`, the pack the
-landing opens carries `w :: ks'`, and `ks'` drops every width above `w`.
+landing opens carries `FrameLevel.map w :: ks'`, and `ks'` drops every width above `w`.
 
 The mismatch is real and it is not a list fact.  What reads the one list as the
 other is the landing's own FLOOR: preprocessing's unwind stopped at `w`, so the
@@ -56,43 +56,43 @@ A landing at `j` closes the levels above it and keeps the rest.  Which rest is
 the question the surface never had to ask and the scanner cannot do without. -/
 
 /-- The widths, named. -/
-example (ks ks' : List Nat) (j : Nat) :
-    ResumeWidths ks ks' j ↔ ∀ k', k' ∈ ks' ↔ (k' ∈ ks ∧ k' < j) := Iff.rfl
+example (ks ks' : List FrameLevel) (j : Nat) :
+    ResumeWidths ks ks' j ↔ ∀ fr, fr ∈ ks' ↔ (fr ∈ ks ∧ fr.width < j) := Iff.rfl
 
 /-- A landing at 2 on a three-level stack keeps exactly the level at 0. -/
-example : ResumeWidths [4, 2, 0] [0] 2 := by
+example : ResumeWidths [FrameLevel.map 4, FrameLevel.map 2, FrameLevel.map 0] [FrameLevel.map 0] 2 := by
   intro k'
   constructor
-  · intro h; simp at h; subst h; exact ⟨by simp, by omega⟩
+  · intro h; simp at h; subst h; exact ⟨by simp, by decide⟩
   · rintro ⟨h, hlt⟩; simp at h; rcases h with rfl | rfl | rfl <;> simp_all
 
-/-- **The bound alone cannot say that**: `∀ k' ∈ ks', k' < j` is satisfied by
+/-- **The bound alone cannot say that**: `∀ fr ∈ ks', fr.width < j` is satisfied by
     the EMPTY list, so a caller holding it knows nothing about which frames
     survived. -/
-example : ∀ k' ∈ ([] : List Nat), k' < 2 := by simp
+example : ∀ fr ∈ ([] : List FrameLevel), fr.width < 2 := by simp
 
 /-- **Nor can a SUBLIST** — the reading item 148 named, which is one of the two
     halves and not the one that was missing.  A sublist IS what the floor spends
     (`Floor.pop_to`: every surviving width was a frame the park had already
     bounded); the half the COVER spends is completeness, and a sublist cannot
     supply it, since `[]` is a sublist of every list. -/
-example : ([] : List Nat).Sublist [4, 2, 0] := by simp
+example : ([] : List FrameLevel).Sublist [FrameLevel.map 4, FrameLevel.map 2, FrameLevel.map 0] := by simp
 
 /-- The named form refuses both: level 0 is below the landing, so it is
     still a frame and the empty list is not what the landing leaves. -/
-example : ¬ ResumeWidths [4, 2, 0] [] 2 := by
+example : ¬ ResumeWidths [FrameLevel.map 4, FrameLevel.map 2, FrameLevel.map 0] [] 2 := by
   intro h
-  have := (h 0).mpr ⟨by simp, by omega⟩
+  have := (h (FrameLevel.map 0)).mpr ⟨by simp, by decide⟩
   simp at this
 
 /-- The two projections the payment spends: what survived was a frame
     already… -/
-example {ks ks' : List Nat} {j : Nat} (h : ResumeWidths ks ks' j) :
-    ∀ k' ∈ ks', k' ∈ ks := h.sub
+example {ks ks' : List FrameLevel} {j : Nat} (h : ResumeWidths ks ks' j) :
+    ∀ fr ∈ ks', fr ∈ ks := h.sub
 
 /-- …and nothing below the landing was dropped. -/
-example {ks ks' : List Nat} {j : Nat} (h : ResumeWidths ks ks' j) :
-    ∀ k' ∈ ks, k' < j → k' ∈ ks' := h.keep
+example {ks ks' : List FrameLevel} {j : Nat} (h : ResumeWidths ks ks' j) :
+    ∀ fr ∈ ks, fr.width < j → fr ∈ ks' := h.keep
 
 /-! ## §2  The two hops
 
@@ -107,17 +107,17 @@ The frames' bound travels for free; the stack's cover does not. -/
     carried across this hop and never read — it is the NESTED branch that
     spends it (`Floor.mono_index`), and the two branches of the key dispatch
     are what make both halves live. -/
-example {lo n w : Nat} {ks ks' : List Nat}
-    (h : Floor lo n ks) (hmem : w ∈ ks) (hsub : ∀ k' ∈ ks', k' ∈ ks) :
-    Floor lo w (w :: ks') := h.pop_to hmem hsub
+example {lo n w : Nat} {ks ks' : List FrameLevel}
+    (h : Floor lo n ks) (hmem : FrameLevel.map w ∈ ks) (hsub : ∀ fr ∈ ks', fr ∈ ks) :
+    Floor lo w (FrameLevel.map w :: ks') := h.pop_to hmem hsub
 
 /-- **The cover is re-listed, and that needs the machine.**  The landing's floor
     bounds the TOP; monotonicity turns that into a bound on every entry; and the
     entries at or left of `w` are the frames the landing kept. -/
-example {lo w : Nat} {ks ks' : List Nat} {s : ScannerState}
+example {lo w : Nat} {ks ks' : List FrameLevel} {s : ScannerState}
     (h_mono : Mono s) (h_top : s.currentIndent ≤ (w : Int))
-    (h_keep : ∀ k' ∈ ks, k' < w → k' ∈ ks')
-    (h : Covered lo ks s) : Covered lo (w :: ks') s :=
+    (h_keep : ∀ fr ∈ ks, fr.width < w → fr ∈ ks')
+    (h : Covered lo ks s) : Covered lo (FrameLevel.map w :: ks') s :=
   h.pop_to h_mono h_top h_keep
 
 /-- A stack that is NOT monotone, for the refutation below: the top is at 1
@@ -131,12 +131,12 @@ private def unsorted : ScannerState :=
 example : unsorted.currentIndent = 1 := by
   simp [unsorted, ScannerState.currentIndent]
 
-example : Covered 0 [5, 1] unsorted := by
+example : Covered 0 [FrameLevel.map 5, FrameLevel.map 1] unsorted := by
   intro e he _ hnn
   simp [unsorted] at he
   rcases he with rfl | rfl | rfl <;> simp_all
 
-example : ¬ Covered 0 [1] unsorted := by
+example : ¬ Covered 0 [FrameLevel.map 1] unsorted := by
   intro h
   have := h { column := 5, isSequence := false } (by simp [unsorted]) rfl (by simp)
   simp at this
@@ -144,13 +144,13 @@ example : ¬ Covered 0 [1] unsorted := by
 /-- **`Mono` is load-bearing, not decoration.**  Drop it and the same three
     remaining hypotheses hold of `unsorted` at `w = 1` — the top is at 1, and
     no frame of `[5, 1]` is strictly below 1 — while the conclusion is false. -/
-example : ¬ (∀ (lo w : Nat) (ks ks' : List Nat) (s : ScannerState),
-    s.currentIndent ≤ (w : Int) → (∀ k' ∈ ks, k' < w → k' ∈ ks') →
-    Covered lo ks s → Covered lo (w :: ks') s) := by
+example : ¬ (∀ (lo w : Nat) (ks ks' : List FrameLevel) (s : ScannerState),
+    s.currentIndent ≤ (w : Int) → (∀ fr ∈ ks, fr.width < w → fr ∈ ks') →
+    Covered lo ks s → Covered lo (FrameLevel.map w :: ks') s) := by
   intro h
-  refine absurd (h 0 1 [5, 1] [] unsorted
+  refine absurd (h 0 1 [FrameLevel.map 5, FrameLevel.map 1] [] unsorted
     (by simp [unsorted, ScannerState.currentIndent])
-    (by intro k' hk' hlt; simp at hk'; rcases hk' with rfl | rfl <;> omega)
+    (by intro k' hk' hlt; simp at hk'; rcases hk' with rfl | rfl <;> (dsimp only at hlt; omega))
     (by
       intro e he _ hnn
       simp [unsorted] at he
@@ -166,9 +166,9 @@ the caller's stack readings, the park's carried cover, and the line-start park �
 so what it produces is the LEFT disjunct rather than the field's `∨ True`. -/
 
 example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
-    {n w lo : Nat} {ks ks' : List Nat}
+    {n w lo : Nat} {ks ks' : List FrameLevel}
     (h_mono : Mono sc) (h_base : SentinelBase sc)
-    (h_fl : Floor lo n ks) (h_cv : Covered lo ks sc) (hmem : w ∈ ks)
+    (h_fl : Floor lo n ks) (h_cv : Covered lo ks sc) (hmem : FrameLevel.map w ∈ ks)
     (h_larm : sp_scan.col ≠ 0 → s_prep.inFlow = false →
       s_prep.simpleKey.possible = true ∧ s_prep.simpleKey.pos.col = s_prep.col ∧
       s_prep.simpleKeyAllowed = true ∧
@@ -177,9 +177,9 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
     (h_pre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_ind_eq : s'.indents = s_prep.indents)
     (h_noflow : s_prep.inFlow = false)
-    (h_step : ∀ (lo : Nat) (ks : List Nat), Covered lo ks sc → Covered lo ks s')
+    (h_step : ∀ (lo : Nat) (ks : List FrameLevel), Covered lo ks sc → Covered lo ks s')
     (h_w : ResumeWidths ks ks' w) :
-    Floor lo w (w :: ks') ∧ Covered lo (w :: ks') s' :=
+    Floor lo w (FrameLevel.map w :: ks') ∧ Covered lo (FrameLevel.map w :: ks') s' :=
   ⟨h_fl.pop_to hmem h_w.sub,
    (h_step lo ks h_cv).pop_to
      ((preprocess_mono h_pre h_mono).of_indents_eq h_ind_eq)
@@ -193,10 +193,10 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
     frames carry no cover), and the park's own column — and nothing else: every
     other premise is discharged from what the accumulation already threads. -/
 example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
-    {n w : Nat} {ks : List Nat}
+    {n w : Nat} {ks : List FrameLevel}
     (h_cov : (Mono sc ∧ SentinelBase sc) ∨ True)
     (h_dcov : (∃ lo : Nat, Floor lo n ks ∧ Covered lo ks sc) ∨ True)
-    (hmem : w ∈ ks)
+    (hmem : FrameLevel.map w ∈ ks)
     (h_larm : sp_scan.col ≠ 0 → s_prep.inFlow = false →
       s_prep.simpleKey.possible = true ∧ s_prep.simpleKey.pos.col = s_prep.col ∧
       s_prep.simpleKeyAllowed = true ∧
@@ -205,9 +205,9 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
     (h_pre : scanNextToken_preprocess sc = .ok (some (s_prep, c)))
     (h_ind_eq : s'.indents = s_prep.indents)
     (h_noflow : s_prep.inFlow = false)
-    (h_step : ∀ (lo : Nat) (ks : List Nat), Covered lo ks sc → Covered lo ks s')
-    {ks' : List Nat} (h_w : ResumeWidths ks ks' w) :
-    (∃ lo : Nat, Floor lo w (w :: ks') ∧ Covered lo (w :: ks') s') ∨ True :=
+    (h_step : ∀ (lo : Nat) (ks : List FrameLevel), Covered lo ks sc → Covered lo ks s')
+    {ks' : List FrameLevel} (h_w : ResumeWidths ks ks' w) :
+    (∃ lo : Nat, Floor lo w (FrameLevel.map w :: ks') ∧ Covered lo (FrameLevel.map w :: ks') s') ∨ True :=
   dedent_cover_of_landing h_cov h_dcov hmem h_larm h_scol h_pre h_ind_eq
     h_noflow h_step ks' h_w
 
@@ -216,8 +216,8 @@ example {sc s_prep s' : ScannerState} {c : Char} {sp_scan : SurfPos}
 example {sc : ScannerState} {sp_start sp_scan : SurfPos}
     (h : ImplicitKeyPack sc sp_start sp_scan) :
     ∃ (k : Nat) (sp_key : SurfPos),
-      ((∃ ks : List Nat, (∀ k' ∈ ks, k' < k) ∧
-        ((∃ lo : Nat, Floor lo k (k :: ks) ∧ Covered lo (k :: ks) sc) ∨ True) ∧
+      ((∃ ks : List FrameLevel, (∀ fr ∈ ks, fr.width < k) ∧
+        ((∃ lo : Nat, Floor lo k (FrameLevel.map k :: ks) ∧ Covered lo (FrameLevel.map k :: ks) sc) ∨ True) ∧
         ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
         ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
         ResumeFrames (SLYamlStream sp_start) ks sp_e) ∨ True) := by
@@ -316,7 +316,7 @@ was projected down to its widths now pass it through unchanged.
 
 **What still does not pay.**
 
-* ~~**The membership split.**  The branch still runs `by_cases hmem : w ∈ ks` and
+* ~~**The membership split.**  The branch still runs `by_cases hmem : FrameLevel.map w ∈ ks` and
   punts when the landing names no frame.  `preprocess_landing_mem_or_seq` derives
   that membership from the cover it now has in hand — but it wants the park's
   `SentinelBase`, `s_prep.indents ≠ sc.indents`, and a refutation of the SEQUENCE
@@ -324,13 +324,13 @@ was projected down to its widths now pass it through unchanged.
   the `:` and the pack cannot.~~  **Item 150: that reading is wrong, and the
   derivation would buy nothing.**  `KeyPackPunt.dedent` takes no argument, so the
   punt disjunct is inhabited at every state and the branch already returns the
-  pack at exactly the inputs where `w ∈ ks` holds — a derivation of `w ∈ ks` can
+  pack at exactly the inputs where `FrameLevel.map w ∈ ks` holds — a derivation of `FrameLevel.map w ∈ ks` can
   only re-prove what the split decided.  What moves the domain is a PAYLOAD on
   the constructor.  There is also a fourth requirement this list did not name:
   `preprocess_landing_mem_or_seq` wants the landing at or right of the cover's
   floor, and a dedent lands strictly left of the park's index.  Both are
   machine-checked in `ValueLineCoverSpent`'s §5.  Item 297 deletes `dedent`:
-  the `w ∉ ks` exit keys a fresh document at the landing, row 19's
+  the `FrameLevel.map w ∉ ks` exit keys a fresh document at the landing, row 19's
   over-approximation.
 * **A park at a line start.**  The walk that reached the landing crossed nothing,
   so preprocessing armed no unwind and there is no floor to measure — item 147's

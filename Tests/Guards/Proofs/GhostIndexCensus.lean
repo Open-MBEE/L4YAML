@@ -26,7 +26,7 @@ constructor field, or a quantifier inside a field's statement — is one of:
 | `prop` | a `Prop` binder — a continuation, a route, a fact about the state | no — obligations are the induction hypothesis |
 | `scalar` | a `Nat`, `Int`, `Bool`, `Char`, context, token array … | not counted as ghost here: most are grammar parameters (`n`, `c`) or pinned to the state by an inequality |
 | `snapshot` | an `Option ScannerState` — a whole scanner state carried as an index | **yes** |
-| `ghost` | a `List Nat` (the frame lists and value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
+| `ghost` | a `List FrameLevel` (the frame lists — a mirror of `sc.indents` until `Covered` is an equality, item 332), a `List Nat` (the value-line chains), an `Array Bool` (the kinds and the key mask), a `FrameTail` | **yes** unless pinned to a projection of the state |
 | `disjunct` | not a binder: an `∨` inside a field's statement, recorded at the field | **the shape Rule 8 forbids** when the alternative restates state (`PackAlt`, item 320's (A)); pinned per field so none can join unnoticed |
 
 Rows are keyed by the FIELD they stand in (`ctor[i].name`), not only by the
@@ -96,7 +96,9 @@ def classify (t : Expr) : MetaM Class := do
       if t.getAppNumArgs == 1 && t.appArg!.isConstOf ``ScannerState then return .snapshot
       else return .scalar
   | some ``List =>
-      if t.getAppNumArgs == 1 && t.appArg!.isConstOf ``Nat then return .ghost else return .scalar
+      if t.getAppNumArgs == 1 && (t.appArg!.isConstOf ``Nat ||
+          t.appArg!.isConstOf ``L4YAML.Proofs.IndentStackCover.FrameLevel) then return .ghost
+      else return .scalar
   | some ``Array =>
       if t.getAppNumArgs == 1 && t.appArg!.isConstOf ``Bool then return .ghost else return .scalar
   | some ``FrameTail => return .ghost
@@ -253,7 +255,7 @@ it may only shrink. -/
     2026-10-21 (item 331; rows re-keyed by field and the disjunct list added the
     same day, after Devin Review on PR #7), the day the census was taken — Rule 8's baseline; the
     carriers are every `Prop`-valued declaration of `StreamAccum` (see `carriersOf`). -/
-def expectedSummary : String := "carriers=52 snapshot=9 ghost=73 or=92"
+def expectedSummary : String := "carriers=52 snapshot=9 ghost=72 or=92"
 
 def expectedTally : List String :=
   [ "BareLandingFacts: surface=0 state=2 prop=0 scalar=1 snapshot=0 ghost=0 or=0",
@@ -277,7 +279,7 @@ def expectedTally : List String :=
     "InlineResidue: surface=2 state=0 prop=0 scalar=1 snapshot=0 ghost=0 or=0",
     "InteriorGap: surface=3 state=1 prop=14 scalar=7 snapshot=0 ghost=1 or=2",
     "KeyFloor: surface=0 state=0 prop=1 scalar=7 snapshot=0 ghost=0 or=0",
-    "KeyFrames: surface=6 state=0 prop=9 scalar=5 snapshot=0 ghost=3 or=0",
+    "KeyFrames: surface=4 state=0 prop=5 scalar=3 snapshot=0 ghost=2 or=0",
     "KeyPackPunt: surface=0 state=1 prop=9 scalar=0 snapshot=0 ghost=0 or=0",
     "KmSound: surface=0 state=1 prop=9 scalar=21 snapshot=0 ghost=3 or=2",
     "MapFrame: surface=40 state=0 prop=30 scalar=2 snapshot=0 ghost=1 or=0",
@@ -319,8 +321,8 @@ def expectedGhost : List String :=
     "FlowBaseAnchor.body x : Option ScannerState",
     "FlowBaseRoutes.type[4].g g : Option ScannerState",
     "FlowBaseRoutes.mk[6].key ns : List Nat",
-    "FlowBaseRoutes.mk[6].key ks : List Nat",
-    "FlowBaseRoutes.mk[6].key ks : List Nat",
+    "FlowBaseRoutes.mk[6].key ks : List IndentStackCover.FrameLevel",
+    "FlowBaseRoutes.mk[6].key ks : List IndentStackCover.FrameLevel",
     "FlowBaseRoutes.mk[7].vslot ns : List Nat",
     "FlowOpenHeld.type[3].S S : List Nat",
     "FlowOpenHeld.body T : List Nat",
@@ -351,13 +353,12 @@ def expectedGhost : List String :=
     "GateOf.type[0].a a : Option ScannerState",
     "GateOf.body x : Option ScannerState",
     "ImplicitKeyPack.body ns : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
-    "ImplicitKeyPack.body ks : List Nat",
+    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "ImplicitKeyPack.body ks : List IndentStackCover.FrameLevel",
     "InteriorGap.type[1].tl tl : FrameTail",
-    "KeyFrames.type[1].a a : List Nat",
-    "KeyFrames.mapLevel[2].ks ks : List Nat",
-    "KeyFrames.seqLevel[2].ks ks : List Nat",
+    "KeyFrames.type[1].a a : List IndentStackCover.FrameLevel",
+    "KeyFrames.level[2].ks ks : List IndentStackCover.FrameLevel",
     "KmSound.type[1].km km : Array Bool",
     "KmSound.body xs : Array Bool",
     "KmSound.body xs : Array Bool",
@@ -365,37 +366,37 @@ def expectedGhost : List String :=
     "PackAltG.type[0]._g _g : Option ScannerState",
     "ParkCore.mk[4].held S : List Nat",
     "PendingNode.pendingContent[8].h_vpack ns : List Nat",
-    "PendingNode.pendingContent[10].h_framesS ks : List Nat",
-    "PendingNode.pendingContent[11].h_framesV ks : List Nat",
-    "PendingNode.pendingContent[15].h_seqF ks : List Nat",
+    "PendingNode.pendingContent[10].h_framesS ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingContent[11].h_framesV ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingContent[15].h_seqF ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingProps[21].h_kslot ns : List Nat",
-    "PendingNode.pendingProps[24].h_closeFE ks : List Nat",
-    "PendingNode.pendingProps[25].h_closeF ks : List Nat",
-    "PendingNode.pendingProps[26].h_closeFV ks : List Nat",
-    "PendingNode.pendingProps[28].h_closeFEV ks : List Nat",
-    "PendingNode.pendingBlockContent[12].h_closeF ks : List Nat",
+    "PendingNode.pendingProps[24].h_closeFE ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingProps[25].h_closeF ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingProps[26].h_closeFV ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingProps[28].h_closeFEV ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingBlockContent[12].h_closeF ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingBlockContent[16].h_kslotUp ns : List Nat",
-    "PendingNode.pendingBlockContent[17].h_closeFV ks : List Nat",
-    "PendingNode.pendingBlock[11].h_closeF ks : List Nat",
+    "PendingNode.pendingBlockContent[17].h_closeFV ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingBlock[11].h_closeF ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingBlock[14].h_kslotUp ns : List Nat",
-    "PendingNode.pendingBlock[15].h_closeFV ks : List Nat",
+    "PendingNode.pendingBlock[15].h_closeFV ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingMapValue[15].h_kslot ns : List Nat",
-    "PendingNode.pendingMapValue[16].h_closeF ks : List Nat",
-    "PendingNode.pendingMapValue[17].h_frames ks : List Nat",
-    "PendingNode.pendingMapValue[18].h_closeFV ks : List Nat",
-    "PendingNode.pendingMapValue[19].h_framesV ks : List Nat",
-    "PendingNode.pendingMapValue[21].h_seqF ks : List Nat",
+    "PendingNode.pendingMapValue[16].h_closeF ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue[17].h_frames ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue[18].h_closeFV ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue[19].h_framesV ks : List IndentStackCover.FrameLevel",
+    "PendingNode.pendingMapValue[21].h_seqF ks : List IndentStackCover.FrameLevel",
     "PendingNode.pendingMapValue[22].h_explUp ns : List Nat",
     "PropsKeyPack.body ns : List Nat",
-    "PropsKeyPack.body ks : List Nat",
-    "PropsKeyPack.body ks : List Nat",
-    "ResumeFrames.type[1].a a : List Nat",
-    "ResumeFrames.level[2].ks ks : List Nat",
-    "ResumeKeyCtx.body ks : List Nat",
-    "ResumeKeyCtx.body ksv : List Nat",
-    "ResumeKeyCtx.body ksq : List Nat",
-    "ResumeWidths.type[0].ks ks : List Nat",
-    "ResumeWidths.type[1].ks' ks' : List Nat",
+    "PropsKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "PropsKeyPack.body ks : List IndentStackCover.FrameLevel",
+    "ResumeFrames.type[1].a a : List IndentStackCover.FrameLevel",
+    "ResumeFrames.level[2].ks ks : List IndentStackCover.FrameLevel",
+    "ResumeKeyCtx.body ks : List IndentStackCover.FrameLevel",
+    "ResumeKeyCtx.body ksv : List IndentStackCover.FrameLevel",
+    "ResumeKeyCtx.body ksq : List IndentStackCover.FrameLevel",
+    "ResumeWidths.type[0].ks ks : List IndentStackCover.FrameLevel",
+    "ResumeWidths.type[1].ks' ks' : List IndentStackCover.FrameLevel",
     "SeqFrame.type[2].a a : FrameTail" ]
 
 /-- Every `∨` inside a carrier's statements, keyed by field (Devin Review on

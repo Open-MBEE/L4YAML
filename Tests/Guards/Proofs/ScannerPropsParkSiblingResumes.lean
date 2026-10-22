@@ -48,6 +48,7 @@ namespace L4YAML.Tests.Guards.ScannerPropsParkSiblingResumes
 
 open L4YAML L4YAML.Scanner L4YAML.Surface L4YAML.Proofs.StreamAccum
   L4YAML.Proofs.NodeProduction
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -231,11 +232,11 @@ example {sp_start sp_node sp_scan' : SurfPos} {n nv : Nat}
 
 The entry face (`h_closeFE`) funds `pendingBlockContent.h_closeF` by one
 application; the mapping face (`h_closeF`, `pendingMapValue.h_closeF`'s
-`n :: ks` instance) funds `pendingContent.h_framesS` the same way; and a
+`FrameLevel.map n :: ks` instance) funds `pendingContent.h_framesS` the same way; and a
 landing on the run itself spends either at the `propsEmpty` node — which is
 how `resumectx_of_landing` receives a real stack from this park. -/
 
-example {sp_start sp_node sp_scan' : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_node sp_scan' : SurfPos} {n : Nat} {ks : List FrameLevel}
     (closeFE : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ∀ sp_end : SurfPos, SCompactSeqTail n sp_m sp_end →
       ResumeFrames (SLYamlStream sp_start) ks sp_end)
@@ -246,7 +247,7 @@ example {sp_start sp_node sp_scan' : SurfPos} {n : Nat} {ks : List Nat}
     ResumeFrames (SLYamlStream sp_start) ks sp_end :=
   fun sp_mid h_ssl => closeFE sp_mid (h_nodeAt sp_mid h_ssl)
 
-example {sp_start sp_node sp_scan' : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_node sp_scan' : SurfPos} {n : Nat} {ks : List FrameLevel}
     (closeF : ∀ sp_m : SurfPos, SBlockNode n .blockIn sp_node sp_m →
       ResumeFrames (SLYamlStream sp_start) ks sp_m)
     (h_nodeAt : ∀ sp_m : SurfPos, SSLComments sp_scan' sp_m →
@@ -259,7 +260,7 @@ example {sp_start sp_node sp_scan' : SurfPos} {n : Nat} {ks : List Nat}
 -- comments, the entry closes around it with a nil tail, and the levels
 -- below stand ready — the `SSLComments`-domain shape the landing skeleton's
 -- resume context asks for.
-example {sp_start sp_node sp_p sp_scan : SurfPos} {n : Nat} {ks : List Nat}
+example {sp_start sp_node sp_p sp_scan : SurfPos} {n : Nat} {ks : List FrameLevel}
     {ha ht : Bool}
     (h_sep : SSeparateLines n sp_node sp_p)
     (h_run : PropsRun n .flowOut ha ht sp_p sp_scan)

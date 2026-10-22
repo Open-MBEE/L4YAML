@@ -43,6 +43,7 @@ NOT close. -/
 namespace L4YAML.Tests.Guards.ScannerDedentKeepsExplicitFrame
 
 open L4YAML L4YAML.Surface L4YAML.Proofs.StreamAccum
+open L4YAML.Proofs.IndentStackCover (FrameLevel)
 
 private def emits (input : String) (expected : List String) : Bool :=
   let e := some (String.intercalate "\n" expected ++ "\n")
@@ -97,11 +98,11 @@ private def refuses (input : String) : Bool :=
 Item 99's stack is the instantiation at the stream, unchanged, and `close`
 reaches whatever the bottom holds. -/
 
-example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [2, 0] sp) :
+example {sp_start sp : SurfPos} (h : ResumeFrames (SLYamlStream sp_start) [FrameLevel.map 2, FrameLevel.map 0] sp) :
     SLYamlStream sp_start sp := h.close
 
 example {sp_start : SurfPos} {nv : Nat} {sp : SurfPos}
-    (h : ResumeFrames (ExplValueLine sp_start nv) [2] sp) :
+    (h : ResumeFrames (ExplValueLine sp_start nv) [FrameLevel.map 2] sp) :
     ExplValueLine sp_start nv sp := h.close
 
 /-- And the value-line bottom is exactly the twin item 93 wrote inline: closing
@@ -137,13 +138,13 @@ Each implicit `:` beneath the frame pushes its own entry's level onto the
 value-line stack, exactly as it pushes onto the stream stack — the entry, then
 the level's remaining tail, then whatever the pack carried. -/
 
-example {sp_start sp_key : SurfPos} {k nv : Nat} {ks : List Nat}
-    (h_lt : ∀ k' ∈ ks, k' < k)
+example {sp_start sp_key : SurfPos} {k nv : Nat} {ks : List FrameLevel}
+    (h_lt : ∀ fr ∈ ks, fr.width < k)
     (routeFV : ∀ sp_v : SurfPos, SBlockMapEntry k sp_key sp_v →
       ∀ sp_e : SurfPos, SCompactMapTail k sp_v sp_e →
       ResumeFrames (ExplValueLine sp_start nv) ks sp_e)
     {sp_mid : SurfPos} (h_entry : SBlockMapEntry k sp_key sp_mid) :
-    ResumeFrames (ExplValueLine sp_start nv) (k :: ks) sp_mid :=
+    ResumeFrames (ExplValueLine sp_start nv) (FrameLevel.map k :: ks) sp_mid :=
   ResumeFrames.level k ks sp_mid h_lt
     (fun sp_end h_tail => routeFV sp_mid h_entry sp_end h_tail)
 
@@ -154,9 +155,9 @@ stack to its own level and conses the landed entry there; closing what is left
 lands on the frame's value line, which is the pack's value-line twin —
 `?⏎  a:⏎    b:⏎  c: 2⏎: - w`'s `c` with the `?` still open behind it. -/
 
-example {sp_start sp_mid sp_land : SurfPos} {nv w : Nat} {ks : List Nat}
+example {sp_start sp_mid sp_land : SurfPos} {nv w : Nat} {ks : List FrameLevel}
     (frames : ResumeFrames (ExplValueLine sp_start nv) ks sp_mid)
-    (hmem : w ∈ ks)
+    (hmem : FrameLevel.map w ∈ ks)
     (h_ind : SIndent w sp_mid sp_land) :
     ∀ sp_v : SurfPos, SBlockMapEntry w sp_land sp_v →
     ∀ sp_e : SurfPos, SCompactMapTail w sp_v sp_e →
@@ -174,11 +175,11 @@ example {sp_start sp_mid sp_land : SurfPos} {nv w : Nat} {ks : List Nat}
     landing can name a level in one and not the other.  `resumeAt` is what
     refuses the rest. -/
 example {sp_start : SurfPos} {nv : Nat} {sp : SurfPos}
-    (h : ResumeFrames (ExplValueLine sp_start nv) [4, 2] sp) :
-    ∃ ks', ResumeWidths [4, 2] ks' 2 ∧
+    (h : ResumeFrames (ExplValueLine sp_start nv) [FrameLevel.map 4, FrameLevel.map 2] sp) :
+    ∃ ks', ResumeWidths [FrameLevel.map 4, FrameLevel.map 2] ks' 2 ∧
       (∀ sp_end, SCompactMapTail 2 sp sp_end →
         ResumeFrames (ExplValueLine sp_start nv) ks' sp_end) :=
-  h.resumeAt (by simp)
+  h.resumeAt (by decide)
 
 /-! ## §6 What this does NOT close
 

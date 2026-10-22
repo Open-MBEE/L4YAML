@@ -52,26 +52,50 @@ open L4YAML.Proofs.IndentStackMono
 
 /-! ## §1  The predicate -/
 
+/-- A still-open level as the frame lists name it: the scanner's `IndentEntry`
+    with its column a `Nat` and its kind kept (item 332).  `List Nat` lost the
+    kind, and a resume fact that must resume a level of ONE kind could not say
+    which; carrying it makes "the level at `k` is a mapping" membership of
+    `FrameLevel.map k`, read off the list the proof already holds. -/
+structure FrameLevel where
+  width : Nat
+  isSeq : Bool
+deriving DecidableEq, Repr
+
+/-- The scanner's entry, as a frame. -/
+def FrameLevel.ofEntry (e : IndentEntry) : FrameLevel := ⟨e.column.toNat, e.isSequence⟩
+
+/-- A mapping level of width `k`. -/
+abbrev FrameLevel.map (k : Nat) : FrameLevel := ⟨k, false⟩
+
+/-- A sequence level of width `k`. -/
+abbrev FrameLevel.seq (k : Nat) : FrameLevel := ⟨k, true⟩
+
+@[simp] lemma FrameLevel.width_map (k : Nat) : (FrameLevel.map k).width = k := rfl
+@[simp] lemma FrameLevel.width_seq (k : Nat) : (FrameLevel.seq k).width = k := rfl
+@[simp] lemma FrameLevel.map_inj {k k' : Nat} : FrameLevel.map k = FrameLevel.map k' ↔ k = k' :=
+  ⟨fun h => by cases h; rfl, fun h => h ▸ rfl⟩
+
 /-- **Every open mapping level is a frame.**  `ks` is the accumulation's frame
     list (still-open mapping widths); this says the scanner's stack holds no
     mapping level the surface does not know about.  Negative columns are exempt
     (the sentinel is the only one) and so are sequence levels. -/
-def Covered (lo : Nat) (ks : List Nat) (s : ScannerState) : Prop :=
-  ∀ e ∈ s.indents, e.isSequence = false → (lo : Int) ≤ e.column → e.column.toNat ∈ ks
+def Covered (lo : Nat) (ks : List FrameLevel) (s : ScannerState) : Prop :=
+  ∀ e ∈ s.indents, e.isSequence = false → (lo : Int) ≤ e.column → FrameLevel.map e.column.toNat ∈ ks
 
 /-- A step that leaves the stack alone carries the cover. -/
-lemma Covered.of_indents_eq {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma Covered.of_indents_eq {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (h : Covered lo ks s) (heq : s'.indents = s.indents) : Covered lo ks s' := by
   intro e he; rw [heq] at he; exact h e he
 
 /-- A step that only POPS carries it too. -/
-lemma Covered.of_subset {lo : Nat} {ks : List Nat} {s s' : ScannerState} (h : Covered lo ks s)
+lemma Covered.of_subset {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} (h : Covered lo ks s)
     (hsub : ∀ e ∈ s'.indents, e ∈ s.indents) : Covered lo ks s' :=
   fun e he => h e (hsub e he)
 
 /-- The cover is monotone in the frames. -/
-lemma Covered.mono {lo : Nat} {ks ks' : List Nat} {s : ScannerState} (h : Covered lo ks s)
-    (hsub : ∀ k ∈ ks, k ∈ ks') : Covered lo ks' s :=
+lemma Covered.mono {lo : Nat} {ks ks' : List FrameLevel} {s : ScannerState} (h : Covered lo ks s)
+    (hsub : ∀ e ∈ ks, e ∈ ks') : Covered lo ks' s :=
   fun e he hseq hnn => hsub _ (h e he hseq hnn)
 
 /-- **Where a carried cover is spendable** (item 148).  A landing reads as a
@@ -82,12 +106,12 @@ lemma Covered.mono {lo : Nat} {ks ks' : List Nat} {s : ScannerState} (h : Covere
     bound says nothing and the cover weakens to vacuity (`Covered.raise_floor`).
     Both together is the reading that travels: at or below the level's own
     index, and at or below every width the frames name. -/
-def Floor (lo n : Nat) (ks : List Nat) : Prop :=
-  lo ≤ n ∧ ∀ k' ∈ ks, lo ≤ k'
+def Floor (lo n : Nat) (ks : List FrameLevel) : Prop :=
+  lo ≤ n ∧ ∀ e ∈ ks, lo ≤ e.width
 
 /-- A frame the surface opens is bounded as soon as its own width is. -/
-lemma Floor.cons {lo n c : Nat} {ks : List Nat} (h : Floor lo n ks) (hc : lo ≤ c) :
-    Floor lo n (c :: ks) :=
+lemma Floor.cons {lo n c : Nat} {ks : List FrameLevel} (h : Floor lo n ks) (hc : lo ≤ c) :
+    Floor lo n (FrameLevel.map c :: ks) :=
   ⟨h.1, fun k' hk' => by
     rcases List.mem_cons.mp hk' with rfl | h'
     · exact hc
@@ -95,11 +119,11 @@ lemma Floor.cons {lo n c : Nat} {ks : List Nat} (h : Floor lo n ks) (hc : lo ≤
 
 /-- The width a dedent landing names is at or right of the floor — which is
     exactly what `preprocess_landing_mem_or_seq` asks its caller for. -/
-lemma Floor.le_of_mem {lo n j : Nat} {ks : List Nat} (h : Floor lo n ks) (hj : j ∈ ks) :
-    lo ≤ j := h.2 j hj
+lemma Floor.le_of_mem {lo n j : Nat} {ks : List FrameLevel} (h : Floor lo n ks) (hj : FrameLevel.map j ∈ ks) :
+    lo ≤ j := h.2 _ hj
 
 /-- A deeper level inherits the bound of the level it opened under. -/
-lemma Floor.mono_index {lo n n' : Nat} {ks : List Nat} (h : Floor lo n ks) (hn : n ≤ n') :
+lemma Floor.mono_index {lo n n' : Nat} {ks : List FrameLevel} (h : Floor lo n ks) (hn : n ≤ n') :
     Floor lo n' ks := ⟨Nat.le_trans h.1 hn, h.2⟩
 
 /-- **The dedent's hop on the frames** (item 149).  A landing pops to a width
@@ -107,27 +131,27 @@ lemma Floor.mono_index {lo n n' : Nat} {ks : List Nat} (h : Floor lo n ks) (hn :
     strictly below it — all of them frames the incoming list held.  So the
     bound travels without moving: the floor was at or below every width in
     `ks`, and `w :: ks'` names nothing `ks` did not. -/
-lemma Floor.pop_to {lo n w : Nat} {ks ks' : List Nat}
-    (h : Floor lo n ks) (hmem : w ∈ ks) (hsub : ∀ k' ∈ ks', k' ∈ ks) :
-    Floor lo w (w :: ks') :=
-  ⟨h.2 w hmem, fun k' hk' => by
-    rcases List.mem_cons.mp hk' with rfl | h'
-    · exact h.2 k' hmem
-    · exact h.2 k' (hsub k' h')⟩
+lemma Floor.pop_to {lo n w : Nat} {ks ks' : List FrameLevel}
+    (h : Floor lo n ks) (hmem : FrameLevel.map w ∈ ks) (hsub : ∀ e ∈ ks', e ∈ ks) :
+    Floor lo w (FrameLevel.map w :: ks') :=
+  ⟨h.2 _ hmem, fun e he => by
+    rcases List.mem_cons.mp he with rfl | h'
+    · exact h.2 _ hmem
+    · exact h.2 e (hsub e h')⟩
 
 /-- A width named twice is named once (item 148) — the shape a `:` leaves when
     the level it opens is already one of the frames. -/
-lemma Covered.dedup_head {lo k : Nat} {ks : List Nat} {s : ScannerState}
-    (h : Covered lo (k :: k :: ks) s) : Covered lo (k :: ks) s :=
+lemma Covered.dedup_head {lo k : Nat} {ks : List FrameLevel} {s : ScannerState}
+    (h : Covered lo (FrameLevel.map k :: FrameLevel.map k :: ks) s) : Covered lo (FrameLevel.map k :: ks) s :=
   h.mono fun _ hx => by
     rcases List.mem_cons.mp hx with rfl | h'
     · exact List.mem_cons_self
     · exact h'
 
 /-- …in particular a frame the surface opens costs the cover nothing. -/
-lemma Covered.cons {lo : Nat} {ks : List Nat} {s : ScannerState} (c : Nat)
+lemma Covered.cons {lo : Nat} {ks : List FrameLevel} {s : ScannerState} (c : Nat)
     (h : Covered lo ks s) :
-    Covered lo (c :: ks) s :=
+    Covered lo (FrameLevel.map c :: ks) s :=
   h.mono fun _ hk => List.mem_cons_of_mem _ hk
 
 /-! ## §2  The writers
@@ -152,16 +176,16 @@ lemma unwindIndentsLoop_mem (s : ScannerState) (col : Int) (fuel : Nat)
       exact indents_mem_of_mem_pop hm
     · exact id
 
-lemma unwindIndents_cover {lo : Nat} {ks : List Nat} {s : ScannerState} (col : Int)
+lemma unwindIndents_cover {lo : Nat} {ks : List FrameLevel} {s : ScannerState} (col : Int)
     (h : Covered lo ks s) : Covered lo ks (unwindIndents s col) :=
   h.of_subset fun _ he => unwindIndentsLoop_mem s col s.indents.size he
 
-lemma pushSequenceIndent_cover {lo : Nat} {ks : List Nat} {s : ScannerState} (col : Int)
+lemma pushSequenceIndent_cover {lo : Nat} {ks : List FrameLevel} {s : ScannerState} (col : Int)
     (h : Covered lo ks s) : Covered lo ks (pushSequenceIndent s col) := by
   unfold pushSequenceIndent
   split
   · intro e he hseq _
-    show e.column.toNat ∈ ks
+    show FrameLevel.map e.column.toNat ∈ ks
     rcases Array.mem_push.mp (by simpa [ScannerState.emit] using he) with hmem | rfl
     · exact h e (by simpa [ScannerState.emit] using hmem) hseq ‹_›
     · exact absurd hseq (by simp)
@@ -169,8 +193,8 @@ lemma pushSequenceIndent_cover {lo : Nat} {ks : List Nat} {s : ScannerState} (co
 
 /-- **The one place the frames pay.**  `[187]`'s push opens a mapping level at
     `c`, and the cover holds again once `c` is a frame. -/
-lemma pushMappingIndent_cover {lo : Nat} {ks : List Nat} {s : ScannerState} (c : Nat)
-    (h : Covered lo ks s) : Covered lo (c :: ks) (pushMappingIndent s (c : Int)) := by
+lemma pushMappingIndent_cover {lo : Nat} {ks : List FrameLevel} {s : ScannerState} (c : Nat)
+    (h : Covered lo ks s) : Covered lo (FrameLevel.map c :: ks) (pushMappingIndent s (c : Int)) := by
   unfold pushMappingIndent
   split
   · intro e he hseq hnn
@@ -198,16 +222,16 @@ lemma pushMappingIndent_back (s : ScannerState) (c : Nat)
 
 /-- **What one scanner step does to the cover.**  Either it survives, or one
     mapping level opened at the top and the frames gain exactly its column. -/
-def CoverStep (lo : Nat) (ks : List Nat) (s : ScannerState) : Prop :=
+def CoverStep (lo : Nat) (ks : List FrameLevel) (s : ScannerState) : Prop :=
   Covered lo ks s ∨ ∃ c : Nat,
     s.indents.back? = some { column := (c : Int), isSequence := false } ∧
-      Covered lo (c :: ks) s
+      Covered lo (FrameLevel.map c :: ks) s
 
-lemma CoverStep.of_covered {lo : Nat} {ks : List Nat} {s : ScannerState}
+lemma CoverStep.of_covered {lo : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h : Covered lo ks s) :
     CoverStep lo ks s := Or.inl h
 
-lemma CoverStep.of_indents_eq {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma CoverStep.of_indents_eq {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (h : CoverStep lo ks s) (heq : s'.indents = s.indents) : CoverStep lo ks s' := by
   rcases h with h | ⟨c, hb, hc⟩
   · exact Or.inl (h.of_indents_eq heq)
@@ -215,14 +239,14 @@ lemma CoverStep.of_indents_eq {lo : Nat} {ks : List Nat} {s s' : ScannerState}
 
 /-! ## §4  The stages -/
 
-lemma scanDocumentStart_cover {lo : Nat} {ks : List Nat} {s : ScannerState}
+lemma scanDocumentStart_cover {lo : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h : Covered lo ks s) :
     Covered lo ks (scanDocumentStart s) := by
   refine Covered.of_indents_eq (unwindIndents_cover (-1) h) ?_
   unfold scanDocumentStart
   simp [advanceN_preserves_indents, emit_indents]
 
-lemma scanDocumentEnd_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma scanDocumentEnd_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (hok : scanDocumentEnd s = .ok s') (h : Covered lo ks s) : Covered lo ks s' := by
   unfold scanDocumentEnd at hok
   simp only [bind, Except.bind] at hok
@@ -234,14 +258,14 @@ lemma scanDocumentEnd_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
 
 /-- The `-`'s `[183]` opens a SEQUENCE level, which the frames do not record —
     so the cover survives it untouched. -/
-lemma scanBlockEntry_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma scanBlockEntry_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (h_noflow : s.inFlow = false) (hok : scanBlockEntry s = .ok s') (h : Covered lo ks s) :
     Covered lo ks s' :=
   Covered.of_indents_eq (pushSequenceIndent_cover (s.col : Int) h)
     (scanBlockEntry_indents h_noflow hok)
 
 /-- The `?`'s `[187]` opens a MAPPING level at the indicator's own column. -/
-lemma scanKey_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma scanKey_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (h_noflow : s.inFlow = false) (hok : scanKey s = .ok s') (h : Covered lo ks s) :
     CoverStep lo ks s' := by
   have heq := scanKey_indents h_noflow hok
@@ -253,7 +277,7 @@ lemma scanKey_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
 
 /-- The `:`'s two pushes: the implicit key's column (`[193]`), and the keyless
     entry's own (`[195]`'s empty key). -/
-lemma scanValuePrepare_cover {lo : Nat} {ks : List Nat} {s : ScannerState}
+lemma scanValuePrepare_cover {lo : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h : Covered lo ks s) :
     CoverStep lo ks (scanValuePrepare s) := by
   unfold scanValuePrepare
@@ -278,7 +302,7 @@ lemma scanValuePrepare_cover {lo : Nat} {ks : List Nat} {s : ScannerState}
           unfold pushMappingIndent; rw [ite_eq_right hgt]
       · exact Or.inl h
 
-lemma scanValue_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma scanValue_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (hok : scanValue s = .ok s') (h : Covered lo ks s) : CoverStep lo ks s' := by
   unfold scanValue at hok
   simp only [bind, Except.bind] at hok
@@ -298,7 +322,7 @@ lemma scanValue_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
 /-! ## §5  The five stages, the step, and the seed -/
 
 /-- Preprocessing's own unwind only POPS, and the key save is an equation. -/
-lemma preprocess_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} {c : Char}
+lemma preprocess_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_preprocess s = .ok (some (s', c))) (h : Covered lo ks s) :
     Covered lo ks s' := by
   unfold scanNextToken_preprocess at hok
@@ -330,7 +354,7 @@ lemma preprocess_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} {c : Cha
             obtain ⟨rfl, _⟩ := hok
             exact Covered.of_indents_eq h_c ((closeStaleExplicitKey_indents _).trans (saveSimpleKey_preserves_indents _))
 
-lemma dispatchStructural_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} {c : Char}
+lemma dispatchStructural_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchStructural s c = .ok (some s')) (h : Covered lo ks s) :
     Covered lo ks s' := by
   unfold scanNextToken_dispatchStructural at hok
@@ -345,12 +369,12 @@ lemma dispatchStructural_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} 
     | exact scanDocumentEnd_cover (by assumption) h
     | exact Covered.of_indents_eq h (scanDirective_preserves_indents (by assumption))
 
-lemma dispatchFlowIndicators_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} {c : Char}
+lemma dispatchFlowIndicators_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchFlowIndicators s c = .ok (some s')) (h : Covered lo ks s) :
     Covered lo ks s' :=
   h.of_indents_eq (dispatchFlowIndicators_preserves_indents hok)
 
-lemma dispatchBlockIndicators_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} {c : Char}
+lemma dispatchBlockIndicators_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchBlockIndicators s c = .ok (some s')) (h : Covered lo ks s) :
     CoverStep lo ks s' := by
   by_cases hf : s.inFlow = true
@@ -368,12 +392,12 @@ lemma dispatchBlockIndicators_cover {lo : Nat} {ks : List Nat} {s s' : ScannerSt
       | exact scanKey_cover h_noflow (by assumption) h
       | exact scanValue_cover (by assumption) h
 
-lemma dispatchContent_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState} {c : Char}
+lemma dispatchContent_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchContent s c = .ok s') (h : Covered lo ks s) :
     Covered lo ks s' :=
   h.of_indents_eq (dispatchContent_preserves_indents hok)
 
-lemma scanNextToken_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma scanNextToken_cover {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (hok : scanNextToken s = .ok (some s')) (h : Covered lo ks s) : CoverStep lo ks s' := by
   unfold scanNextToken at hok
   simp only [bind, Except.bind, pure, Except.pure, Bind.bind, Pure.pure] at hok
@@ -468,7 +492,7 @@ lemma scanNextToken_cover {lo : Nat} {ks : List Nat} {s s' : ScannerState}
 /-! ## §6  The seed -/
 
 /-- The initial stack is the sentinel alone, which no frame has to cover. -/
-lemma mk'_cover (input : String) (lo : Nat) (ks : List Nat) :
+lemma mk'_cover (input : String) (lo : Nat) (ks : List FrameLevel) :
     Covered lo ks (ScannerState.mk' input) := by
   intro e he _ hnn
   have : e = { column := -1, isSequence := false } := by
@@ -490,7 +514,7 @@ lemma mk'_cover (input : String) (lo : Nat) (ks : List Nat) :
     The top entry is a mapping level (`scanValue_top_not_sequence` — a saved key
     at or left of the floor whose column is a SEQUENCE level's own is
     `trailing content`), and the cover carries mapping levels to frames. -/
-lemma landing_mem_of_value {lo : Nat} {ks : List Nat} {s : ScannerState} {top : IndentEntry}
+lemma landing_mem_of_value {lo : Nat} {ks : List FrameLevel} {s : ScannerState} {top : IndentEntry}
     (hok : scanValueValidate s = .ok ())
     (h_poss : s.simpleKey.possible = true) (h_noflow : s.inFlow = false)
     (h_top : s.indents.back? = some top)
@@ -498,7 +522,7 @@ lemma landing_mem_of_value {lo : Nat} {ks : List Nat} {s : ScannerState} {top : 
     (h_le : (s.simpleKey.pos.col : Int) ≤ s.currentIndent)
     (h_floor : lo ≤ s.simpleKey.pos.col)
     (h_cov : Covered lo ks s) :
-    s.simpleKey.pos.col ∈ ks := by
+    FrameLevel.map s.simpleKey.pos.col ∈ ks := by
   have h_seq : top.isSequence = false :=
     scanValue_top_not_sequence hok h_poss h_noflow h_top h_at h_le
   have h_mem : top ∈ s.indents :=
@@ -513,14 +537,14 @@ lemma landing_mem_of_value {lo : Nat} {ks : List Nat} {s : ScannerState} {top : 
     so an explicit key accepted at the landing's own column has a mapping level
     under it and the landing is a frame — the exemption is a residue at neither
     consumer. -/
-lemma landing_mem_of_key {lo : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma landing_mem_of_key {lo : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     {top : IndentEntry}
     (hok : scanKey s = .ok s') (h_noflow : s.inFlow = false)
     (h_top : s.indents.back? = some top)
     (h_at : (s.col : Int) = top.column)
     (h_floor : lo ≤ s.col)
     (h_cov : Covered lo ks s) :
-    s.col ∈ ks := by
+    FrameLevel.map s.col ∈ ks := by
   have h_seq : top.isSequence = false :=
     scanKey_top_not_sequence hok h_noflow h_top h_at
   have h_mem : top ∈ s.indents :=
@@ -541,7 +565,7 @@ lemma landing_mem_of_key {lo : Nat} {ks : List Nat} {s s' : ScannerState}
     which is a fact about the TOP once the stack is monotone. -/
 
 /-- Raising the floor weakens the cover: fewer entries are asked about. -/
-lemma Covered.raise_floor {lo lo' : Nat} {ks : List Nat} {s : ScannerState}
+lemma Covered.raise_floor {lo lo' : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h : Covered lo ks s) (hle : lo ≤ lo') : Covered lo' ks s :=
   fun e he hseq hlo => h e he hseq (Int.le_trans (Int.ofNat_le.mpr hle) hlo)
 
@@ -772,11 +796,11 @@ lemma scanValueClearKey_arm {s : ScannerState} (h : s.simpleKey.possible = true)
     for a KNOWN `k` rather than `c :: ks` for an unknown one.  The first premise
     is what keeps `[196]`'s keyless push at `s.col` out: that branch wants the
     register empty and no `?` line, and the two arms here are the other two. -/
-lemma scanValuePrepare_cover_key {lo k : Nat} {ks : List Nat} {s : ScannerState}
+lemma scanValuePrepare_cover_key {lo k : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h_arm : s.simpleKey.possible = true ∨ s.explicitKeyLine.isSome = true)
     (h_col : s.simpleKey.possible = true → s.simpleKey.pos.col = k)
     (h : Covered lo ks s) :
-    Covered lo (k :: ks) (scanValuePrepare s) := by
+    Covered lo (FrameLevel.map k :: ks) (scanValuePrepare s) := by
   unfold scanValuePrepare
   split
   · rename_i h_poss
@@ -797,10 +821,10 @@ lemma scanValuePrepare_cover_key {lo k : Nat} {ks : List Nat} {s : ScannerState}
 /-- The `:`'s whole step (item 148): the key clear either keeps the column or
     hands the prepare its `?` line, the prepare is the only writer, and the emit
     and the advance leave the stack alone. -/
-lemma scanValue_cover_key {lo k : Nat} {ks : List Nat} {s s' : ScannerState}
+lemma scanValue_cover_key {lo k : Nat} {ks : List FrameLevel} {s s' : ScannerState}
     (hok : scanValue s = .ok s') (h_poss : s.simpleKey.possible = true)
     (h_col : s.simpleKey.pos.col = k) (h : Covered lo ks s) :
-    Covered lo (k :: ks) s' := by
+    Covered lo (FrameLevel.map k :: ks) s' := by
   unfold scanValue at hok
   simp only [bind, Except.bind] at hok
   split at hok <;> try contradiction
@@ -813,7 +837,7 @@ lemma scanValue_cover_key {lo k : Nat} {ks : List Nat} {s s' : ScannerState}
       · rfl
       · split <;> rfl
     · rfl
-  have key : Covered lo (k :: ks) (scanValuePrepare (scanValueClearKey s)) := by
+  have key : Covered lo (FrameLevel.map k :: ks) (scanValuePrepare (scanValueClearKey s)) := by
     rcases scanValueClearKey_arm h_poss with ⟨h1, h2⟩ | ⟨h1, h2⟩
     · exact scanValuePrepare_cover_key (Or.inl h1) (fun _ => h2.trans h_col)
         (h.of_indents_eq h_ck)
@@ -827,7 +851,7 @@ lemma scanValue_cover_key {lo k : Nat} {ks : List Nat} {s s' : ScannerState}
     itself, if it is open at all.  This is the cover a producer that opens a
     mapping at the landing can hand over without knowing anything below it. -/
 lemma covered_singleton_of_top_le {s : ScannerState} {c : Nat}
-    (h_mono : Mono s) (h_top : s.currentIndent ≤ (c : Int)) : Covered c [c] s := by
+    (h_mono : Mono s) (h_top : s.currentIndent ≤ (c : Int)) : Covered c [FrameLevel.map c] s := by
   intro e he _ hlo
   have hle : e.column ≤ s.currentIndent := h_mono.le_currentIndent e he
   have hc : e.column = (c : Int) := by omega
@@ -842,9 +866,9 @@ lemma covered_singleton_of_top_le {s : ScannerState} {c : Nat}
     that index rather than `c :: ks` for an unknown `c`.  The left arm costs
     the frames nothing (`Covered.cons`); in the right arm the opened level is
     the top, and the top is `k`. -/
-lemma CoverStep.cons_of_top_eq {lo k : Nat} {ks : List Nat} {s : ScannerState}
+lemma CoverStep.cons_of_top_eq {lo k : Nat} {ks : List FrameLevel} {s : ScannerState}
     (h : CoverStep lo ks s) (h_top : s.currentIndent = (k : Int)) :
-    Covered lo (k :: ks) s := by
+    Covered lo (FrameLevel.map k :: ks) s := by
   rcases h with h | ⟨c, hb, hc⟩
   · exact h.cons k
   · have hck : c = k := by
@@ -861,10 +885,10 @@ lemma CoverStep.cons_of_top_eq {lo k : Nat} {ks : List Nat} {s : ScannerState}
     (`ResumeFrames.resumeAt`'s `ResumeWidths`, whose `keep` direction is this
     lemma's third argument).  What it does NOT need is the floor's own value: the
     incoming cover keeps it, and this hop only re-lists the widths. -/
-lemma Covered.pop_to {lo w : Nat} {ks ks' : List Nat} {s : ScannerState}
+lemma Covered.pop_to {lo w : Nat} {ks ks' : List FrameLevel} {s : ScannerState}
     (h_mono : Mono s) (h_top : s.currentIndent ≤ (w : Int))
-    (h_keep : ∀ k' ∈ ks, k' < w → k' ∈ ks')
-    (h : Covered lo ks s) : Covered lo (w :: ks') s := by
+    (h_keep : ∀ e ∈ ks, e.width < w → e ∈ ks')
+    (h : Covered lo ks s) : Covered lo (FrameLevel.map w :: ks') s := by
   intro e he hseq hlo
   have hle : e.column ≤ s.currentIndent := h_mono.le_currentIndent e he
   have hmem := h e he hseq hlo

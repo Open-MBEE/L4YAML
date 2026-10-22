@@ -628,7 +628,46 @@ lemma scanValue_sound {s s' : ScannerState} (hok : scanValue s = .ok s') (h : So
   have hadv_slots : SlotsOk (((scanValuePrepare (scanValueClearKey s)).emit .value).advance) := by
     refine ⟨by rw [hadv_pk, hadv_ind]; exact hp1.1, ?_⟩
     intro i l hi; rw [hadv_pk] at hi; rw [hadv_cols]; exact hp1.2 i l hi
-  sorry
+  by_cases hf : s.inFlow = true
+  · -- flow: the `:` ends any pending key; the stack and the slots are untouched
+    have hpos : 0 < s.flowLevel := by simpa [ScannerState.inFlow] using hf
+    simp only [hf, Bool.true_or, ite_true]
+    refine ⟨⟨hadv_slots.1, hadv_slots.2⟩, ?_, ?_, ?_⟩
+    · intro h0; simp only [hadv_fl] at h0; omega
+    · intro _
+      change ((((scanValuePrepare (scanValueClearKey s)).emit .value).advance).explicitKeyStack)[0]? = some (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).innermostPendingKey
+      rw [hadv_st, hadv_inn]; exact h.base hpos
+    · show _ = _; rw [hadv_st, hadv_fl]; exact h.stack
+  · have h_noflow : s.inFlow = false := by simpa using hf
+    have h0 : s.flowLevel = 0 := (inFlow_false_iff s).1 h_noflow
+    simp only [h_noflow, Bool.false_eq_true, ↓reduceIte]
+    by_cases hsv : scanValueKeySurvives s (scanValueClearKey s) = true
+    · simp only [hsv, ↓reduceIte]
+      refine ⟨⟨hadv_slots.1, hadv_slots.2⟩, ?_, ?_, ?_⟩
+      · intro _
+        change (_, _) = (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).innermostPendingKey
+        rw [hck4, hck5, hadv_inn, ← h.reg h0]
+        cases hek : s.explicitKeyLine with
+        | some l => rfl
+        | none =>
+          simp only [Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
+          have := innermost_none_snd s.indentColumns s.pendingKeys
+            (by rw [← innermostPendingKey_eq, ← h.reg h0, hek])
+          rw [← innermostPendingKey_eq, ← h.reg h0] at this
+          simp only at this; rw [this]
+      · intro hpos; simp only [hadv_fl] at hpos; omega
+      · show _ = _; rw [hadv_st, hadv_fl]; exact h.stack
+    · simp only [hsv, Bool.false_eq_true, ↓reduceIte]
+      refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩
+      · show (PendingKeys.closeAt _ _ _).size = _
+        rw [closeAt_size]; exact hadv_slots.1
+      · intro i l hi
+        obtain ⟨hm, -⟩ := closeAt_marked _ _ _ _ _ hi
+        exact hadv_slots.2 i l hm
+      · intro _; rfl
+      · intro hpos; simp only [hadv_fl] at hpos; omega
+      · show _ = _; rw [hadv_st, hadv_fl]; exact h.stack
+
 lemma scanBlockEntry_sound {s s' : ScannerState} (hok : scanBlockEntry s = .ok s') (h : Sound s) :
     Sound s' := by
   sorry

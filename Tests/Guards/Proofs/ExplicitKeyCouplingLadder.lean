@@ -89,8 +89,14 @@ example : ∀ {s s' : ScannerState}, scanKey s = .ok s' →
 -- The two transport wrappers a producer reads at its own step:
 example : ∀ (s s1 : ScannerState) (c : Char),
     scanNextToken_preprocess s = .ok (some (s1, c)) →
-    s1.explicitKeyLine = s.explicitKeyLine ∧ s1.explicitKeyCol = s.explicitKeyCol :=
-  L4YAML.Proofs.ExplicitKeyCoupling.preprocess_preserves_explicitKey
+    (s1.explicitKeyLine = s.explicitKeyLine ∧ s1.explicitKeyCol = s.explicitKeyCol) ∨
+    (s1.explicitKeyLine = none ∧ s1.explicitKeyCol = -1) :=
+  L4YAML.Proofs.ExplicitKeyCoupling.preprocess_explicitKey_cases
+
+example : ∀ (s s1 : ScannerState) (c : Char),
+    scanNextToken_preprocess s = .ok (some (s1, c)) →
+    s.explicitKeyLine = none → s1.explicitKeyLine = none :=
+  L4YAML.Proofs.ExplicitKeyCoupling.preprocess_explicitKeyLine_none
 
 example : ∀ (s : ScannerState) (c : Char) (s' : ScannerState),
     scanNextToken_dispatchContent s c = .ok s' →
@@ -165,9 +171,10 @@ private def regs (input : String) (n : Nat) : Option (Option Nat × Int × Optio
 #guard regs "? a\n: b: c\n" 2 == some (some 0, 0, none)
 #guard regs "? a\n: b: c\n" 3 == some (none, -1, none)
 #guard regs "? a\n: b: c\n" 5 == some (none, -1, some 1)
--- `? [a]⏎z: v` — the landing keeps the restored pair live across the break;
--- the keyed `:` at the frame's own column KILLS it and STAMPS.
-#guard regs "? [a]\nz: v\n" 5 == some (some 0, 0, none)
+-- `? [a]⏎z: v` — the sibling `z` at the frame's own column ENDS the restored
+-- pair in preprocessing (item 333: the `?` entry is over, `{[a]: null, z: v}`);
+-- the keyed `:` then STAMPS on a dead register.
+#guard regs "? [a]\nz: v\n" 5 == some (none, -1, none)
 #guard regs "? [a]\nz: v\n" 6 == some (none, -1, some 1)
 -- `? earth: blue⏎: moon: white` — the keyed `:` DEEPER than the frame's
 -- column stamps and lets the pair SURVIVE (spec 8.19).

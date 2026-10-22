@@ -9,6 +9,7 @@ public import L4YAML.Proofs.Scanner.PreprocessIndentStable
 public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
 public import L4YAML.Proofs.Output.EmitterScannability.ScanSteps
 public import L4YAML.Proofs.Coupling.ScalarCoupling
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 @[expose] public section Blanket
 
@@ -47,6 +48,8 @@ are measured against.
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.FlowIndentStable
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Scanner
 open L4YAML.Proofs.PreprocessIndentStable
@@ -105,7 +108,7 @@ lemma preprocess_indents_of_inFlow {sc s_prep : ScannerState} {c : Char}
         · exact absurd h (by simp)
         · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, -⟩ := h
-          exact (saveSimpleKey_preserves_indents s_skip).trans h_ind_skip
+          exact (closeStaleExplicitKey_indents _).trans ((saveSimpleKey_preserves_indents s_skip).trans h_ind_skip)
 
 /-! ## §2  The scans a flow interior can reach leave `indents` alone -/
 

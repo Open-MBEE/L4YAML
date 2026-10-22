@@ -45,19 +45,7 @@ open L4YAML.CharPredicates
 
 /-! ## Anchor and Alias Scanning -/
 
-/-- Scan an anchor (`&name`) or alias (`*name`) indicator.
-
-    **Implements** (YAML 1.2.2 §6.9):
-    - `[101] c-ns-anchor-property` = `"&" ns-anchor-name`
-    - `[104] c-ns-alias-node`      = `"*" ns-anchor-name`
-    - `[102] ns-anchor-char`       = `ns-char - c-flow-indicator`
-    - `[103] ns-anchor-name`       = `ns-anchor-char+`
-    - `[13]  c-anchor` = `"&"` / `[14] c-alias` = `"*"`
-
-    **Pre**: Scanner at `&` (anchor) or `*` (alias).
-    **Post**: Advances past indicator + name characters, emits `.anchor name`
-    or `.alias name`. Sets `simpleKeyAllowed := false`. -/
--- Helper: Collect anchor/alias name characters using structural recursion.
+/-- Collect anchor/alias name characters using structural recursion. -/
 @[yaml_spec "6.9" 101 "c-ns-anchor-property", yaml_spec "6.9" 104 "c-ns-alias-node", yaml_spec "6.9" 102 "ns-anchor-char", yaml_spec "6.9" 103 "ns-anchor-name", yaml_spec "6.9" 13 "c-anchor", yaml_spec "6.9" 14 "c-alias"]
 def collectAnchorNameLoop (s : ScannerState) (name : String) (fuel : Nat) : String × ScannerState :=
   match fuel with
@@ -72,6 +60,18 @@ def collectAnchorNameLoop (s : ScannerState) (name : String) (fuel : Nat) : Stri
         (name, s)
     | none => (name, s)
 
+/-- Scan an anchor (`&name`) or alias (`*name`) indicator.
+
+    **Implements** (YAML 1.2.2 §6.9):
+    - `[101] c-ns-anchor-property` = `"&" ns-anchor-name`
+    - `[104] c-ns-alias-node`      = `"*" ns-anchor-name`
+    - `[102] ns-anchor-char`       = `ns-char - c-flow-indicator`
+    - `[103] ns-anchor-name`       = `ns-anchor-char+`
+    - `[13]  c-anchor` = `"&"` / `[14] c-alias` = `"*"`
+
+    **Pre**: Scanner at `&` (anchor) or `*` (alias).
+    **Post**: Advances past indicator + name characters, emits `.anchor name`
+    or `.alias name`. Sets `simpleKeyAllowed := false`. -/
 @[yaml_spec "6.9" 101 "c-ns-anchor-property",
   yaml_spec "6.9" 104 "c-ns-alias-node"]
 def scanAnchorOrAlias (s : ScannerState) (isAnchor : Bool) : Except ScanError ScannerState :=
@@ -88,8 +88,8 @@ def scanAnchorOrAlias (s : ScannerState) (isAnchor : Bool) : Except ScanError Sc
 
 /-! ## Tag Scanning -/
 
--- Helper: Collect verbatim tag URI until '>', accepting only ns-uri-char [39].
--- Returns (uri, foundClose, state) where foundClose is true iff '>' was consumed.
+/-- Collect verbatim tag URI until `>`, accepting only ns-uri-char [39].
+    Returns `(uri, foundClose, state)` where `foundClose` is true iff `>` was consumed. -/
 @[yaml_spec "5.6" 39 "ns-uri-char"]
 def collectVerbatimTagLoop (s : ScannerState) (uri : String) (fuel : Nat) : String × Bool × ScannerState :=
   match fuel with
@@ -104,7 +104,7 @@ def collectVerbatimTagLoop (s : ScannerState) (uri : String) (fuel : Nat) : Stri
         (uri, false, s)
     | none => (uri, false, s)
 
--- Helper: Collect tag suffix characters using ns-tag-char [40].
+/-- Collect tag suffix characters using ns-tag-char [40]. -/
 @[yaml_spec "5.6" 39 "ns-uri-char",
   yaml_spec "5.6" 40 "ns-tag-char"]
 def collectTagSuffixLoop (s : ScannerState) (suffix : String) (fuel : Nat) : String × ScannerState :=
@@ -119,9 +119,9 @@ def collectTagSuffixLoop (s : ScannerState) (suffix : String) (fuel : Nat) : Str
         (suffix, s)
     | none => (suffix, s)
 
--- Helper: Collect tag handle characters until '!' or invalid char.
--- Between the opening and closing '!', only ns-word-char [38] is valid per [92].
--- Returns (chars_before_bang, found_second_bang, state).
+/-- Collect tag handle characters until `!` or an invalid char.
+    Between the opening and closing `!`, only ns-word-char [38] is valid per [92].
+    Returns `(chars_before_bang, found_second_bang, state)`. -/
 @[yaml_spec "5.6" 38 "ns-word-char"]
 def collectTagHandleLoop (s : ScannerState) (chars : String) (fuel : Nat) : String × Bool × ScannerState :=
   match fuel with

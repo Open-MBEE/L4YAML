@@ -1907,6 +1907,121 @@ def testCloseStaleExplicitKey (state : IO.Ref TestCollector) : IO Unit := do
   checkStaleCase state "end-of-input" "? a\n" 4 1 0 (some 0) 0 0 false
 
 
+/-! ## Priority 9 — `stripAnchors`/`adaptForFlowContext` commute with `resolveAliases` (PR: clean before resolve)
+
+`addAnchor` now stores `(val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors`
+where it used to store `(val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext`.
+`L4YAML/Algebra/Value.lean` §7 claims the two agree whenever every table value is
+`Cleaned` (`cleaned_resolveAliases_comm`, via `stripAnchors_resolveAliases` and
+`adaptForFlowContext_resolveAliases`), and that the table `addAnchor` builds is
+`Cleaned` entry by entry (`cleaned_of_pipeline`).
+
+**Risk:** MEDIUM on the hypothesis: without `Cleaned` the statements are FALSE
+(a table value carrying an anchor is stripped by the old order and kept by the
+new one; a table value with a flow indicator in a plain scalar is quoted by the
+old order only).  LOW on the structural cases, but `findSome?` takes the FIRST
+match, so duplicate names must resolve identically on both sides, and an absent
+alias must stay an `.alias` on both.
+
+**Audit approach:** evaluate both sides on empty / singleton / duplicate-name /
+absent-alias tables and on every constructor (scalar with and without anchor,
+alias, nested sequence, nested mapping with an alias key), with cleaned tables
+(both equalities must hold) and with dirty tables (the unconditional statement
+must be refuted, so the hypothesis is doing work).
+-/
+
+/-- A plain scalar carrying an anchor. -/
+def svAnch (content anchor : String) : YamlValue :=
+  .scalar { content, style := .plain, anchor := some anchor }
+
+/-- A block sequence carrying an anchor. -/
+def seqAnch (items : List YamlValue) (anchor : String) : YamlValue :=
+  .sequence .block items.toArray none (some anchor)
+
+/-- `Cleaned` decided at runtime: the pipeline is a fixpoint of the value. -/
+def isCleaned (v : YamlValue) : Bool :=
+  v.stripAnchors.adaptForFlowContext == v
+
+/-- Old `addAnchor` order: resolve, then clean. -/
+def resolveThenClean (v : YamlValue) (A : Array (String × YamlValue)) : YamlValue :=
+  (v.resolveAliases A).stripAnchors.adaptForFlowContext
+
+/-- New `addAnchor` order: clean, then resolve. -/
+def cleanThenResolve (v : YamlValue) (A : Array (String × YamlValue)) : YamlValue :=
+  (v.stripAnchors.adaptForFlowContext).resolveAliases A
+
+/-- One instantiation of the three §7 lemmas on a table every entry of which is
+    `Cleaned`: both component commutations and the composite must hold. -/
+def checkCleanedComm (state : IO.Ref TestCollector) (label : String) (v : YamlValue)
+    (A : Array (String × YamlValue)) : IO Unit := do
+  checkM state s!"{label}: table is Cleaned (hypothesis holds)"
+    (A.all fun p => isCleaned p.2) s!"{repr A}"
+  checkM state s!"{label}: stripAnchors_resolveAliases"
+    ((v.resolveAliases A).stripAnchors == v.stripAnchors.resolveAliases A)
+    s!"{repr (v.resolveAliases A).stripAnchors} ≠ {repr (v.stripAnchors.resolveAliases A)}"
+  checkM state s!"{label}: adaptForFlowContext_resolveAliases"
+    ((v.resolveAliases A).adaptForFlowContext == v.adaptForFlowContext.resolveAliases A)
+    s!"{repr (v.resolveAliases A).adaptForFlowContext} ≠ {repr (v.adaptForFlowContext.resolveAliases A)}"
+  checkM state s!"{label}: cleaned_resolveAliases_comm (old addAnchor = new addAnchor)"
+    (resolveThenClean v A == cleanThenResolve v A)
+    s!"{repr (resolveThenClean v A)} ≠ {repr (cleanThenResolve v A)}"
+  checkM state s!"{label}: cleaned_of_pipeline (what addAnchor stores is Cleaned)"
+    (isCleaned (v.stripAnchors.adaptForFlowContext)) s!"{repr (v.stripAnchors.adaptForFlowContext)}"
+
+/-- The hypothesis boundary: on a table with a non-`Cleaned` entry the two orders
+    must DIFFER on a value that reaches the entry — otherwise `Cleaned` is dead weight. -/
+def checkDirtyRefutes (state : IO.Ref TestCollector) (label : String) (v : YamlValue)
+    (A : Array (String × YamlValue)) : IO Unit := do
+  checkM state s!"{label}: table is NOT Cleaned" (!(A.all fun p => isCleaned p.2)) s!"{repr A}"
+  checkM state s!"{label}: unconditional commutation is refuted"
+    (resolveThenClean v A != cleanThenResolve v A) s!"both sides {repr (resolveThenClean v A)}"
+
+def testCleanedResolveAliases (state : IO.Ref TestCollector) : IO Unit := do
+  let a := sv "a"
+  let b := sv "b"
+  let tbl1 : Array (String × YamlValue) := #[("x", a)]
+  let tblDup : Array (String × YamlValue) := #[("x", a), ("x", b)]
+  let tblTwo : Array (String × YamlValue) := #[("x", a), ("y", seqv [a, b])]
+  -- Every constructor against the empty table: nothing to substitute.
+  checkCleanedComm state "empty/scalar" a #[]
+  checkCleanedComm state "empty/anchored-scalar" (svAnch "a" "p") #[]
+  checkCleanedComm state "empty/alias" (.alias "x") #[]
+  checkCleanedComm state "empty/seq" (seqv [a, .alias "x"]) #[]
+  checkCleanedComm state "empty/map" (mapv [(a, .alias "x")]) #[]
+  -- Singleton table, matching alias at every position.
+  checkCleanedComm state "singleton/alias" (.alias "x") tbl1
+  checkCleanedComm state "singleton/alias-in-seq-first" (seqv [.alias "x", b]) tbl1
+  checkCleanedComm state "singleton/alias-in-seq-last" (seqv [b, .alias "x"]) tbl1
+  checkCleanedComm state "singleton/alias-as-map-key" (mapv [(.alias "x", b)]) tbl1
+  checkCleanedComm state "singleton/alias-as-map-value" (mapv [(b, .alias "x")]) tbl1
+  checkCleanedComm state "singleton/anchored-seq-holding-alias" (seqAnch [.alias "x"] "q") tbl1
+  checkCleanedComm state "singleton/nested-seq-in-map" (mapv [(a, seqv [seqv [.alias "x"]])]) tbl1
+  -- Absent alias: stays an alias on both sides.
+  checkCleanedComm state "absent/alias" (.alias "nope") tbl1
+  checkCleanedComm state "absent/alias-in-map" (mapv [(.alias "nope", .alias "x")]) tbl1
+  -- Duplicate names: the FIRST entry wins on both sides.
+  checkCleanedComm state "dup/alias" (.alias "x") tblDup
+  checkCleanedComm state "dup/alias-in-seq" (seqv [.alias "x", .alias "x"]) tblDup
+  checkM state "dup/first-match wins" ((YamlValue.alias "x").resolveAliases tblDup == a) ""
+  -- Two names, one a collection: substituted subtree shared.
+  checkCleanedComm state "two/both-aliases" (seqv [.alias "x", .alias "y"]) tblTwo
+  checkCleanedComm state "two/map-of-aliases" (mapv [(.alias "x", .alias "y")]) tblTwo
+  -- Plain scalar with a flow indicator: adaptForFlowContext quotes it; cleaned table keeps it quoted.
+  let quoted : YamlValue := .scalar { content := "a,b", style := .doubleQuoted }
+  checkCleanedComm state "flow-indicator/quoted-table" (.alias "x") #[("x", quoted)]
+  checkCleanedComm state "flow-indicator/raw-value" (seqv [sv "a,b", .alias "x"]) #[("x", quoted)]
+  -- Hypothesis boundary: dirty tables refute the unconditional statement.
+  checkDirtyRefutes state "dirty/anchored-scalar" (.alias "x") #[("x", svAnch "a" "p")]
+  checkDirtyRefutes state "dirty/anchored-seq" (seqv [.alias "x"]) #[("x", seqAnch [a] "q")]
+  checkDirtyRefutes state "dirty/plain-flow-indicator" (mapv [(a, .alias "x")]) #[("x", sv "a,b")]
+  checkDirtyRefutes state "dirty/second-dup-entry-unreached-still-dirty"
+    (.alias "y") #[("x", a), ("y", svAnch "b" "r")]
+  -- A dirty entry no alias reaches: the orders agree anyway (the refutation needs the alias).
+  checkM state "dirty/unreached entry agrees"
+    (resolveThenClean (.alias "x") #[("x", a), ("y", svAnch "b" "r")]
+      == cleanThenResolve (.alias "x") #[("x", a), ("y", svAnch "b" "r")]) ""
+
+
 /-! ## Priority 10 — `PendingKeys` and the re-read register (item 335, row 12 step 4)
 
 `ScannerState.pendingKeys` runs in lockstep with `indents`: one slot per level,
@@ -1990,6 +2105,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testFlowParserHelpers state
   testHandleBlockMappingKeyEntryMono state
   testCloseStaleExplicitKey state
+  testCleanedResolveAliases state
   testPendingKeys state
   let results ← finish state
   return { name := "adversarialinstantiation",

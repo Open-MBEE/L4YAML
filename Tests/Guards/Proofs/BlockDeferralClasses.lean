@@ -514,9 +514,9 @@ the column. -/
 
 -- The compact route's own shape, at three depths: the mid-line `:` standing at
 -- a live `explicitKeyCol`.  `currentIndent` is the third number.
-#guard pins "- ? a\n- : b\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
-#guard pins "- ? [x]\n- : b\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
-#guard pins "- - ? a\n- - : b\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 4 2", "ERR L4YAML.ScanError.misindentedExplicitValue 1 4 2")
+#guard pins "- ? a\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +MAP =VAL : =VAL :b -MAP -SEQ -DOC -STR")
+#guard pins "- ? [x]\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP +SEQ [] =VAL :x -SEQ =VAL : -MAP +MAP =VAL : =VAL :b -MAP -SEQ -DOC -STR")
+#guard pins "- - ? a\n- - : b\n" == ("scan-accepted", "+STR +DOC +SEQ +SEQ +MAP =VAL :a =VAL : -MAP -SEQ +SEQ +MAP =VAL : =VAL :b -MAP -SEQ -SEQ -DOC -STR")
 
 -- The SAME coordinate with a `?` or a `-` instead: accepted, and neither
 -- indicator ever reaches the deferral — so the refusal above is the `:`'s.
@@ -3265,8 +3265,8 @@ estimated.
 depths, refused by `[197]`'s test, and the `?`/`-` neighbours at the identical
 coordinate that are accepted (so the refusal belongs to the `:`): -/
 
-#guard pins "- ? a\n- : b\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 2 0", "ERR L4YAML.ScanError.misindentedExplicitValue 1 2 0")
-#guard pins "- - ? a\n- - : b\n" == ("scan-refused L4YAML.ScanError.misindentedExplicitValue 1 4 2", "ERR L4YAML.ScanError.misindentedExplicitValue 1 4 2")
+#guard pins "- ? a\n- : b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +MAP =VAL : =VAL :b -MAP -SEQ -DOC -STR")
+#guard pins "- - ? a\n- - : b\n" == ("scan-accepted", "+STR +DOC +SEQ +SEQ +MAP =VAL :a =VAL : -MAP -SEQ +SEQ +MAP =VAL : =VAL :b -MAP -SEQ -SEQ -DOC -STR")
 #guard pins "- ? a\n- ? b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +MAP =VAL :b =VAL : -MAP -SEQ -DOC -STR")
 #guard pins "- ? a\n- - b\n" == ("scan-accepted", "+STR +DOC +SEQ +MAP =VAL :a =VAL : -MAP +SEQ =VAL :b -SEQ -SEQ -DOC -STR")
 

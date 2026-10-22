@@ -608,9 +608,23 @@ theorem trimEndIx_eq (p : Char → Bool) (s : String) :
     rw [← String.toList_inj, String.toList_ofList]
     simpa using (key s.toList [] rfl h).symm
 
+/-- Runtime body of `trimTrailingWSIx`: O(trailing white) instead of O(|s|). The `List Char`
+    spec stays proof-facing; `Tests/Guards/Parity/ScalarTrimImpl.lean` checks they agree. -/
+def trimTrailingWSIxImpl (s : String) : String :=
+  (s.dropEndWhile isWhiteSpaceBool).copy
+
 /-- Trim trailing space/tab from a string. -/
 @[inline] def trimTrailingWSIx (s : String) : String :=
   trimEndIx isWhiteSpaceBool s
+
+/-- Runtime body of `takeCharsIx`: no `List Char` round trip. -/
+def takeCharsIxImpl (s : String) (n : Nat) : String :=
+  (s.dropEnd (s.length - n)).copy
+
+/-- The first `n` characters of `s` (all of `s` when `n ≥ s.length`). -/
+@[implemented_by takeCharsIxImpl]
+def takeCharsIx (s : String) (n : Nat) : String :=
+  String.ofList (s.toList.take n)
 
 /-! ### Layer F1 — multi-line quoted scalar folding helpers
 
@@ -1590,6 +1604,10 @@ def parseBlockHeaderLoopIx {input : String} (c : IxCursor input)
       else
         (chomp, explicitOffset, c)
     | none => (chomp, explicitOffset, c)
+
+/-- Runtime body of `stripTrailingNewlines`: O(trailing line feeds), see `trimTrailingWSIxImpl`. -/
+def stripTrailingNewlinesImpl (s : String) : String :=
+  (s.dropEndWhile isLineFeedBool).copy
 
 /-- Strip trailing `\n` characters from `s`. -/
 @[inline] def stripTrailingNewlines (s : String) : String :=

@@ -43579,8 +43579,8 @@ then the flip.
 placeholder indexed by the §9.2 gate "for want of another open-time datum"; the datum is `sc.explicitKeyStack`'s base
 pair, which `StreamAccum` never reads (0 mentions).  Two carriers priced: the mandate's re-index of the frame by the
 pushed pair, 48 hand-written signatures (item 325's probe 1002), against a `FlowStackK` conjunct read off the live
-stack beside `FlowBaseAnchor` — one predicate, five transport lemmas on `FlowBaseAnchor`'s pattern, ten `FlowStackK`
-constructions, five guards, no new index.  The conjunct is chosen (Rule 8: a projection over an index).  The residue
+stack beside `FlowBaseAnchor` — one predicate, a transport family on `FlowBaseAnchor`'s pattern (four bodies, the rest
+`congr` over the existing `_preserves_explicitKeyStack` leaves), ten `FlowStackK` constructions, five guards, no new index.  The conjunct is chosen (Rule 8: a projection over an index).  The residue
 instrument re-run on this tree agrees with its pin verbatim (`stubs=1` is this step's deliverable); the build step waits
 for #32/#33, whose scanner (item 333) is what makes the frame roots' `e = none` payable.**
 
@@ -43622,8 +43622,10 @@ binder, and the census must then pin the pair to `sc.explicitKeyStack` or count 
 `FlowStackK` already reads the gate off the live state at `(0 < fl → KmSound sc km kc ∧ FlowBaseAnchor g sc (fl - 1) ∧ …)`;
 beside it, `EkBase sc (fl - 1)` — the base frame's pair sits `fl - 1` entries below the stack's top and its line is
 `none` — with the transport family `FlowBaseAnchor` already has (`transport`, `congr`, `pushInert`, `pushOpen`,
-`pushClose`: five lemmas, each a case on what the step does to `explicitKeyStack`; probe 1001's `genesis` /
-`nestOpen` / `nestClose` / `congr` are their bodies), ten `FlowStackK` constructions in `StreamAccum` (31 mentions)
+`pushClose` and fifteen per-dispatch wrappers from `preprocess` to `seqEnd`/`mapEnd`, 71 mentions, `gate` read six
+times at the closes; for the pair only the two opens and two closes move the stack, so every other wrapper is `congr`
+over `ScannerEkStackPreservation`'s `_preserves_explicitKeyStack` leaf lemmas, which already exist; probe 1001's
+`genesis` / `nestOpen` / `nestClose` / `congr` are the four bodies that are not), ten `FlowStackK` constructions in `StreamAccum` (31 mentions)
 and the five guards that destructure it (`GhostIndexCensus`, `FlowParkAnchor`, `FlowStackFloorReal`,
 `FlowReservationFloor`, `FlowGateGeneration`).  The close then proves `ExplicitValueRefused s'` from the conjunct
 through `scanFlowSequenceEnd`'s restore (`restoredEk := explicitKeyStack.back?.getD (none, -1)`, `Scanner.lean:182`) —
@@ -43648,8 +43650,8 @@ each; closure log and gate vocabulary pass on the entry.  No declaration touched
 **NEXT — step 3, built: `EkBase` beside `FlowBaseAnchor` in `FlowStackK`, off `fix-a-grammar-completeness` once #32 and
 #33 land.**  Predictions to carry: residue `stubs 1 → 0` with `decline` unchanged at 110 (the conjunct pays the close, not
 the parks); `GhostIndexCensus` `snapshot=9 → 8` and `or` down by the frame's nine disjuncts if they become conjunct reads,
-else unchanged; the five transport lemmas close by `simp` on the scanner's `explicitKeyStack` equations plus
-`closeStaleExplicitKey`'s projection lemma (item 333: the hook leaves the stack alone); `FlowStackK.nil` gains a vacuous
+else unchanged; the transport wrappers close by `simp` on `ScannerEkStackPreservation`'s equations plus
+`closeStaleExplicitKey_explicitKeyStack` (item 333: the hook leaves the stack alone); `FlowStackK.nil` gains a vacuous
 arm; no theorem restated.  Then step 4 (`IndentEntry.pendingKey`), then the flip.
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)

@@ -9,6 +9,7 @@ public import L4YAML.Proofs.Coupling.StructureCoupling
 public import L4YAML.Proofs.Scanner.FlowAdjacency
 public import L4YAML.Proofs.Scanner.BlockScalarFlowGuard
 public import L4YAML.Proofs.Scanner.AliasTrailingContent
+public import L4YAML.Proofs.Scanner.CloseStaleExplicitKey
 
 public meta import L4YAML.CapstoneAttr
 @[expose] public section Blanket
@@ -47,6 +48,8 @@ scan_full_consumption           -- initial state + BOM + loop
 set_option autoImplicit false
 
 namespace L4YAML.Proofs.ScanStrictCoupling
+
+open L4YAML.Proofs.CloseStaleExplicitKey
 
 open L4YAML.Surface
 open L4YAML.Scanner
@@ -280,6 +283,12 @@ lemma scanNextToken_dispatchContent_corr (sc : ScannerState) (sp : SurfPos) (c :
 /-! ## §3 Preprocess Coupling -/
 
 -- scanNextToken_preprocess preserves ScannerSurfCorr on the .ok (some _) path.
+/-- Item 333: the stale-register reset moves no surface datum. -/
+lemma closeStaleExplicitKey_corr (s : ScannerState) (sp : SurfPos)
+    (h : ScannerSurfCorr s sp) : ScannerSurfCorr (closeStaleExplicitKey s) sp := by
+  rcases closeStaleExplicitKey_cases s with h_eq | h_eq <;> rw [h_eq] <;>
+    exact ⟨h.chars_from, h.col_eq, h.end_eq, h.input_prefix, h.indent_cols_nonneg⟩
+
 lemma scanNextToken_preprocess_corr (sc : ScannerState) (sp : SurfPos)
     (hcorr : ScannerSurfCorr sc sp) (s' : ScannerState) (c : Char)
     (hok : scanNextToken_preprocess sc = .ok (some (s', c))) :
@@ -305,14 +314,14 @@ lemma scanNextToken_preprocess_corr (sc : ScannerState) (sp : SurfPos)
                 { (unwindIndents s_content ↑s_content.col) with
                   needIndentCheck := false } sp2 :=
               ⟨hcorr2.chars_from, hcorr2.col_eq, hcorr2.end_eq, hcorr2.input_prefix, hcorr2.indent_cols_nonneg⟩
-            exact ⟨sp2, saveSimpleKey_corr _ sp2 hcorr3⟩
+            exact ⟨sp2, closeStaleExplicitKey_corr _ sp2 (saveSimpleKey_corr _ sp2 hcorr3)⟩
       · split at hok
         · simp at hok
         · split at hok
           · simp at hok
           · have h := Except.ok.inj hok; injection h with h
             obtain ⟨h1, h2⟩ := Prod.mk.inj h; subst h1; subst h2
-            exact ⟨sp1, saveSimpleKey_corr _ sp1 hcorr1⟩
+            exact ⟨sp1, closeStaleExplicitKey_corr _ sp1 (saveSimpleKey_corr _ sp1 hcorr1)⟩
 
 -- When scanNextToken_preprocess returns .ok none, all input is consumed.
 lemma scanNextToken_preprocess_none_consumed (sc : ScannerState) (sp : SurfPos)
@@ -337,7 +346,7 @@ lemma scanNextToken_preprocess_none_consumed (sc : ScannerState) (sp : SurfPos)
         · cases hok
         · split at hok
           · rename_i h_indent h_no_trailing h_peek_none
-            exfalso; rw [saveSimpleKey_peek] at h_peek_none
+            exfalso; rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at h_peek_none
             unfold ScannerState.peek? at h_peek_none; dsimp only [] at h_peek_none
             unfold unwindIndents at h_peek_none
             simp only [unwindIndentsLoop_offset, unwindIndentsLoop_inputEnd,
@@ -351,7 +360,7 @@ lemma scanNextToken_preprocess_none_consumed (sc : ScannerState) (sp : SurfPos)
         · cases hok
         · split at hok
           · rename_i h_no_indent h_no_trailing h_peek_none
-            exfalso; rw [saveSimpleKey_peek] at h_peek_none
+            exfalso; rw [closeStaleExplicitKey_peek, saveSimpleKey_peek] at h_peek_none
             unfold ScannerState.peek? at h_peek_none
             split at h_peek_none
             · cases h_peek_none
@@ -708,7 +717,7 @@ lemma preprocess_some_directivesPresent {sc s_prep : ScannerState} {c : Char}
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨h1, _⟩ := h
-            rw [← h1, saveSimpleKey_dp, unwindIndents_dp]
+            rw [← h1, closeStaleExplicitKey_directivesPresent, saveSimpleKey_dp, unwindIndents_dp]
             exact skipToContent_dp sc s1 hskip
       · split at h
         · simp at h
@@ -716,7 +725,7 @@ lemma preprocess_some_directivesPresent {sc s_prep : ScannerState} {c : Char}
           · simp at h
           · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
             obtain ⟨h1, _⟩ := h
-            rw [← h1, saveSimpleKey_dp]
+            rw [← h1, closeStaleExplicitKey_directivesPresent, saveSimpleKey_dp]
             exact skipToContent_dp sc s1 hskip
 
 /-- `scanYamlDirective` always sets `directivesPresent`. -/

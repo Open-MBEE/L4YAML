@@ -9,10 +9,7 @@ public import L4YAML.Proofs.Scanner.IndexedWhitespace
 
 @[expose] public section Blanket
 
-/-! # `IndexedIndent` — Phase 3 indentation / line-break dispatch proofs (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedIndent` — Phase 3 indentation / line-break dispatch proofs
 
 This file extends `IndexedWhitespace.lean` to cover the four
 Step 3 productions listed in the blueprint:

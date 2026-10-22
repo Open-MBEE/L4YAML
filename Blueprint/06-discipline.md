@@ -230,6 +230,54 @@ path: justify it under Rule 1, add it to
 update the `Capstones.lean` pins + `scripts/capstones.txt` (and the
 FGM catalogue, per Rule 4).
 
+## Rule 8 — No ghost index on the accumulation invariant
+
+Added 2026-10-21 (DOCS item 331), when row 12's two open forks (items 320
+and 325) turned out to be one question. Every index a carrier of the
+accumulation invariant introduces — a parameter, a constructor field, a
+quantifier inside a field's statement — must be one of three things:
+
+1. **a surface position** (`SurfPos`, or a predicate on positions): the
+   correspondence is the theorem;
+2. **an obligation** (a `Prop`: a continuation, a route, a fact about the
+   state): the induction hypothesis;
+3. **a projection of the scanner state**, `f sc` for the `ScannerState`
+   the carrier is about — the kinds index is `sc.flowStack` (9b(i)), the
+   frame lists are `sc.indents` above a floor, the frame tail is
+   `FrameTail.ofToken` of the last real token.
+
+When a proof needs a fact that none of the three gives, **the scanner is
+incomplete**: add the field to `ScannerState` (and its indexed twin), make
+the scanner *read* it, and prove the projection — as `explicitKeyCol`
+(item 48), `explicitKeyStack` (item 98), `docStartLine` (item 299) and
+`definedAnchors` were added. What the rule forbids is the fourth option:
+a proof-side datum or disjunct carried beside the data the scanner
+already holds — a `List Nat` that mirrors the indent stack without its
+kinds, an `Option ScannerState` snapshot of the open-time state, a
+`∨ <stack-shape fact>` on a park's alternative. Such a datum needs a
+transport lemma per step (the `DispatchPrice`/`ParkGapWidth` ladders are
+what that costs), and it hides a missing field: the scalar `?` register
+was one (item 326 found it dead under an open outer `?`; item 331 found
+the over-refusal that follows, `?⏎  ? y⏎  : z⏎: w: x`).
+
+- **Gate**:
+  [`Tests/Guards/Proofs/GhostIndexCensus.lean`](../Tests/Guards/Proofs/GhostIndexCensus.lean)
+  walks the carriers' telescopes, constructor fields and nested `∃`/`∀`
+  binders and pins, per carrier, the binders by class — `surface`, `state`,
+  `prop`, `scalar`, `snapshot` (an `Option ScannerState`), `ghost` (a
+  `List Nat`, an `Array Bool`, a `FrameTail`) — and the full `ghost` +
+  `snapshot` list. The carriers are read off the environment (every
+  `Prop`-valued declaration of `StreamAccum`, plus `ScannerSurfCorr`), so a
+  new predicate cannot escape it. Baseline at item 331: 52 carriers, 9
+  snapshot indices, 73 ghost binders. **The list may only shrink**: a row leaves it when its
+  carrier is re-indexed by a projection or a new field; a re-pin that adds
+  a row is a Rule 8 violation and the PR must say which of the three
+  classes the new index belongs to instead.
+- **Not covered**: `scalar` binders (`Nat`, `Bool`, `Char`, contexts, token
+  arrays). Most are grammar parameters (`n`, `c`) or pinned to the state by
+  an inequality (`n ≤ minContentIndentOf sc`); the census lists their counts
+  so a growth there is visible, but does not name them.
+
 ## Checklist before merging a new lemma or theorem
 
 Contributor self-check:

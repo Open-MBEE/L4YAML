@@ -14,9 +14,9 @@ public import L4YAML.Output.Emitter
 
 @[expose] public section Blanket
 
-/-! # `IndexedEmitterScannability.ScanChain` — Phase 3 Step 6f.3b3 staging
+/-! # `IndexedEmitterScannability.ScanChain` — Phase 3 Step 6f.3b3
 
-**Status**: staging file, fully populated through §3. §1 ports the
+**Status**: fully populated through §3. §1 ports the
 legacy §3 prelude *utility lemmas* (lines 842–1184 of
 `Proofs/Output/EmitterScannability.lean`); §2 ports the `ScanChain`
 inductive + helpers (legacy lines 1185–1232 + 1261–1280). §3 lifts

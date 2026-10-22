@@ -13,10 +13,7 @@ public import L4YAML.Scanner.IndexedPresenter
 public meta import L4YAML.Scanner.IndexedPresenter
 @[expose] public section Blanket
 
-/-! # `IndexedRoundtrip` — Phase 3 Step 5c corpus roundtrip theorem (staging)
-
-**Status**: staging file. Not imported by `L4YAML.lean` until the
-Phase 3 cutover commit (Step 6).
+/-! # `IndexedRoundtrip` — Phase 3 Step 5c corpus roundtrip theorem
 
 ## Statement
 

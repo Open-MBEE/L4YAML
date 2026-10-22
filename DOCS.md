@@ -5549,7 +5549,7 @@ the top of this table is R3.
 
 | # | Action | Blocks | Where |
 |---|---|---|---|
-| 12 | **β.5 — retire `pendingFlow`, delete `scannerDrop`.** Items 11–326 closed it one arm at a time. ~~**ONE proof obligation is left**~~: `accum_flow_open_depth0`'s `drop_ride`, taken by three live arms, where `dropClose` is spent — **PAID** by steps 12.1–12.2 (items 284–285), which put those arms on `slot_ride`, a frame that spends no `dropClose`. ~~Behind it the deletion is mechanical rather than exploratory, because it has already been elaborated to a fixpoint~~ — **corrected at [item 285](#item-285-2026-10-18)**: the fixpoint sorries the escape `block_dispatch_deferred` and keeps its statement, so it never reached the escape's three wrappers, applied **eight** times in three live declarations — [item 264](#item-264-2026-09-25) §3's three STARVED classes. That domain is the second obligation. **The six steps are the six rows below, each with its state and the one instrument that re-derives it.** The per-item record is [Row 12 — β.5 closure log](#row-12--β5-closure-log); the ordered dependencies are [REMAINING, in order](#remaining-in-order); the cell this row carried through item 281 is [archived verbatim](#row-12--the-plan-table-cell-archived-2026-10-18). | Step 5, the converse | ditto |
+| 12 | **β.5 — retire `pendingFlow`, delete `scannerDrop`.** Items 11–330 closed it one arm at a time. ~~**ONE proof obligation is left**~~: `accum_flow_open_depth0`'s `drop_ride`, taken by three live arms, where `dropClose` is spent — **PAID** by steps 12.1–12.2 (items 284–285), which put those arms on `slot_ride`, a frame that spends no `dropClose`. ~~Behind it the deletion is mechanical rather than exploratory, because it has already been elaborated to a fixpoint~~ — **corrected at [item 285](#item-285-2026-10-18)**: the fixpoint sorries the escape `block_dispatch_deferred` and keeps its statement, so it never reached the escape's three wrappers, applied **eight** times in three live declarations — [item 264](#item-264-2026-09-25) §3's three STARVED classes. That domain is the second obligation. **The six steps are the six rows below, each with its state and the one instrument that re-derives it.** The per-item record is [Row 12 — β.5 closure log](#row-12--β5-closure-log); the ordered dependencies are [REMAINING, in order](#remaining-in-order); the cell this row carried through item 281 is [archived verbatim](#row-12--the-plan-table-cell-archived-2026-10-18). | Step 5, the converse | ditto |
 | 19 | **Tighten `implicitContinue`** — the THIRD over-approximation of `[211]`, found 2026-08-13 by item 30, ~~and not yet priced~~ **priced by SHAPE 2026-09-07** (item 108) **and half-paid the same day** (item 109: the landing skeleton carries the frames, so a landed sibling resumes its level instead of re-opening at the root; item 110 then paid `pendingBlockContent` from item 99's entry-level field; item 111 paid the props landing, item 112 the block-scalar value arms, item 113 the sequence-side entry arms the same day, item 114 the props park's own five resume faces and item 115 the entry producers' props-key pack twins, leaving the CONSTRUCTOR, which item 110 measured as **LAST rather than next**: tightening it breaks 16 `StreamAccum` sites including `rootMapRoute`/`rootMapRouteF`, the fallback every punting park uses). It requires no `l-document-suffix+` and takes `SLAnyDocument`, so it admits a BARE document after another with no `...`: `- "a"⏎  - b` satisfies `InYamlLanguage` while `parseYaml` rejects it (`invalidBareDocument`, §9.2). It falsifies the converse exactly as `scannerDrop` does. ~~17 construction sites — one in `DocumentProduction` (`stream_implicit_continue`), already legal because it passes an EXPLICIT document, and 16 in `StreamAccum`, every one passing `SLAnyDocument.bare`.~~ **ELEVEN applications as of 2026-09-09**, measured from the elaborated environment and confirmed by flipping the constructor ([item 135](#item-135-2026-09-09)): one is `GOpt.none` and safe; NINE break in `StreamAccum` — seven passing `SLAnyDocument.bare`, one `.directive`, one `.explicit` — and `stream_implicit_continue` is a tenth, the same `.explicit` wrapper and NOT legal as written. Item 135 took 16 to 9 by deleting two dead sites, turning `pendingDocStart`'s document builder into a route (three sites) and spending `noPending.h_nodoc` at the seed's root sequence (two).  **Item 136 gave the landing face its HEAD arm** (2026-09-10) and paid it at all four of the virgin park's landings; **item 137 gave it the MARKER arm** the same day, at `pendingDocStart`'s two unpaid landings (the other two were routed by items 43 and 56). The count held at NINE through both, because the seven are fallback ARMS of shared lemmas and an arm goes only when its last caller can pay something else; what item 137 removes is a whole caller FAMILY rather than a site. **Item 138 moved the count** (2026-09-10): `[209] l-directive-document` has its own `[211]` arm now — `single`'s slot or `suffixContinue`'s, chosen by the flag `scanDirective` itself reads, which only `noPending` and `pendingDocEnd` can have up — so the surface is **TEN applications in nine holders** and the flip gives **eight** errors, at seven lemmas. One application (`ssl_comments_extend_stream`'s `GOpt.none`) types under either reading and never breaks, which is why the two numbers differ. Nothing DEFERS to it, so it is not an escape site and not row 12's business; it comes after row 12 only because row 12's remaining items still edit those sites. **A FOURTH over-approximation joined it 2026-08-16** (item 40), one level down and ~~also unpriced~~ **PRICED 2026-09-07 by item 107**: `SBlockNode.blockSeq`/`.blockMap` bind `[183]`/`[187]`'s auto-detected `m` as a `Nat` where both productions write `m > 0`, ~~which is harmless at the root (the encoding's `n = 0` is the spec's `n = -1`)~~ and admits a nested collection at its enclosing entry's own width otherwise — `k:⏎  :⏎  b: 2` gets a NESTED derivation where `parseYaml` reads a sibling. The root is where it is NOT harmless: three families reach `m = 0` — the root's own mapping, the seq-spaces key `?⏎- a`, and the equal-width landing — the spec reaches the first two with `m = 1` off an index of `-1`, and `seqSpaces 0 .blockOut = seqSpaces 1 .blockOut` because `Nat` subtraction truncates at exactly that index, so the encoding cannot state the floor that separates them. The repair is a re-indexing of `SBlockNode` to `n_lean = n_spec + 1`, not a side condition on four call sites; machine-checked in `Tests/Guards/Proofs/BlockCollectionWidthFloor.lean` and written up at [Item 107](#item-107-2026-09-07). **Its RUNTIME twin landed 2026-09-15 at item 177**: the props-less scalar/alias landing at an open level's own column refuses at `danglingNodePos?`'s narrowed slot-offered exemption ([Item 177](#item-177-2026-09-15)); **the `[96]` half followed at item 178** ([Item 178](#item-178-2026-09-16)), found by the re-index's own flip instrument (75 sites / 13 `StreamAccum` definitions; the props-headed at-column park is unprovable at the shifted index while the scanner accepts it), so the re-indexing can now follow without orphaning an accepted input; **and the re-indexing itself LANDED at item 179** ([Item 179](#item-179-2026-09-16)) — the FOURTH over-approximation is gone, both pack lemmas' landing splits are strict, and the two root content consumers are deleted.  What this row still owes is the `[210]` narrowing alone, whose prerequisites ~~are the crossed-window arms' root family and the `k: &x⏎a` acceptance~~ **are all LANDED** — the crossed-window arms' family refuses at the scanner as of item 180 and their proofs retired at item 181, and the `k: &x⏎a` family refuses as of [item 182](#item-182-2026-09-16), §9.2's FIFTH reading: `[96]`'s properties and the content they decorate are separated by the same `s-separate(n+1)` the run-start readings spend, so a run may park legally and cross the break BELOW its start. The narrowing's ~~prerequisite list is EMPTY~~ **RUNTIME** prerequisite list is empty, and [item 183](#item-183-2026-09-16) prices what stands after it: the flip's consumer surface is **8 definitions / 15 applications** (pinned in `Tests/Guards/Proofs/FlipConsumerSurface.lean` — not the flip instrument's own five, which count the flip's WORK), decomposing into refutable arms, three missing routes, and **`pendingFlow`**, whose `CompletedTail` is FALSE by construction and whose arms therefore cannot be paid by a field at any price. So R3's `pendingFlow` deletion is a PREREQUISITE of this narrowing, not a parallel row. | Step 5, the converse | [The over-approximation problem](#the-over-approximation-problem) |
 | 13 | **Step 5 — the converse** `grammar_completeness` — blocked on rows 12 AND 19, since the converse is false while either over-approximation stands — then **Step 6** the `parse_iff_grammar` biconditional. ~~Closing rows 12 and 19 unblocks the converse.~~ **A THIRD blocker, recorded 2026-09-27, and rows 12 and 19 do not reach it**: `parseYaml` enforces per-document conditions that are not syntactic — `*x` is refused by `scanFiltered` with `undefinedAlias` and `!h!x` by `parseStream` with `undeclaredTagHandle`, while the surface grammar derives both — and every surface relation is `SurfPos → SurfPos → Prop` with NO environment parameter anywhere in `L4YAML/Surface/`, so `InYamlLanguage` cannot STATE the condition at any tightness. This is a change of LAYER, not a fifth over-approximation: Step 6's right-hand side gains an explicit serialization-well-formedness conjunct (anchor/alias ordering, tag-handle declaration state), not yet specified. Found by an independent audit of `main` at `16562a7` by Heath Sanchez of [Metalogic Labs](https://metalogiclabs.xyz/). The same audit's flow class was already closed on this branch: `[[a][b]]`, `[[a]b]`, `["a""b"]`, `{a: b: c}` and `[[][]]` all scan clean and fail in the token parser at `16562a7`, and all five are refused by the SCANNER here with `invalidFlowEntry` — measured by running one probe against both commits, since `invalidFlowEntry` is present in `Scanner/Scanner.lean` at `16562a7` too and the executable path differs by ~3,600 inserted lines. | capstone 7.7 | [Grammar completeness plan](#grammar-completeness-plan), [The over-approximation problem](#the-over-approximation-problem) |
 
@@ -5577,9 +5577,9 @@ priced by a gate that already exists and is re-run once 12.3 lands.
 | **12.3.3** | **The other six arms.** `dedent` and `noKeyContext` at both `:` consumers, `¬ possible` at the implicit one, `tab` at the props one — each given the fact it stands for and refuted at its consumer. The runtime empties four (`¬ possible`, `tab`, both `dedent`s where the frames cover the stack) — [item 296](#item-296-2026-10-19): `dedent`'s frameless exit is accepted input, and is routed; its `w ∉ ks` exit is accepted where the frames carry no cover — [item 297](#item-297-2026-10-20): that exit keys a fresh document too, and `dedent` is deleted with its two `:` arms; [item 300](#item-300-2026-10-20): the marker-line class has its own reason, `markerLine`, refuted at both consumers; ~~`noKeyContext` is item 211's relay~~ — [item 294](#item-294-2026-10-19) and [item 295](#item-295-2026-10-19): three of its classes are accepted input, and item 295 routes them; the rest is refuted. | ⬜ open — in progress. Refuted: `tab` ([item 289](#item-289-2026-10-19)) and `¬ possible` ([item 293](#item-293-2026-10-19), priced at items [290](#item-290-2026-10-19)–[292](#item-292-2026-10-19)). `noKeyContext` measured at [item 294](#item-294-2026-10-19); its three accepted classes are routed at [item 295](#item-295-2026-10-19). `dedent`'s frameless exit routed at [item 296](#item-296-2026-10-19); `dedent` deleted at [item 297](#item-297-2026-10-20), the escape's inline applications 5 → 3. `noKeyContext`'s refusal half priced at [item 298](#item-298-2026-10-20): one refused class (a key on the `---` line) and `drop_ride`'s frame; the consumer refutation exists; the carrier is priced two ways (a proof-side payload, or a scanner field); the owner picked the field, and [item 299](#item-299-2026-10-20) lands it — `docStartLine` in both scanners, `markerOnLine` at the six checks, the walk deleted, the proofs on the field, every runtime number its baseline's; [item 300](#item-300-2026-10-20) builds the reason, `markerLine`, and both `:` consumers refute it, so `noKeyContext`'s two arms stand on `drop_ride`'s frame and refused input — 12.4's. **12.3.3 is closed to 12.4.** **NEXT** 12.3.4, `_stamp_nopack`, measured first | the escape's inline applications 7 → 6 at item 289, 6 → 5 at item 293 and 5 → **3** at item 297 (`inline_class_price.py arms`); `inline_class_price.py census`: `rows=432 accepted=371 nokey=0 popped=37 onto-map=37 onto-seq=0 off-level=0`, pinned at `BlockDeferralClasses.expectedInlineCensus`; the carriers are named in [item 286](#item-286-2026-10-19), and at item 289 no `:` dispatch at a park without a live key succeeds, over the census's rows and 16 inputs aimed at the shape, refused ones included; at items 294–295, `noKeyContext`'s accepted classes are 20 hand-written inputs and one corpus case (M2N8), all routed; item 295's iterated census finds one site that hands a frame no key route outright, the escape's own `drop_ride`; at item 296, `punt_reason_price.py split` reads `dedent` at 2 productions (the `w ∉ ks` exit) and 3 consumer arms, and 17 hand-written inputs reach the frameless exit, all accepted and routed; at item 297 the `w ∉ ks` exit is routed over 15 inputs (9 accepted at coverless frames, 6 refused as `trailingContent` where the frames cover the stack) and `dedent` has no production; at item 298 `reaches` reads 1 of 8 `content_dispatch_routed` applications declining all five contexts (the `---` park's) and 35 marker-line inputs are all refused at the `:` (`contentOnDocumentStartLine`, `sameLineBlockCollection`, `invalidImplicitKey`), with the nodes and next-line keys among them accepted; at item 299 the field's runtime is re-validated at eventscore 347/358, matrix 402/402 + 282/282 on both pipelines, suiterunner 869/0/151, run-all-tests 4568/4568 — all unchanged; at item 300 `apps=3` is unmoved (the two `noKeyContext` arms and the dead one), and content after a flow node on the marker line is refused before any key (`trailingContent`, 9 inputs) |
 | **12.3.4** | **`_stamp_nopack`** (3 applications) — the park carries no value pack. ~~[Item 264](#item-264-2026-09-25) §3's carrier, the seq-spaces alternative of `[188]`~~ — paid at [item 188](#item-188-2026-09-17), and the class did not move: its domain is a `-` landing on the frame's key sequence from any park that is NOT the `?` park (the dedent, the sibling after a compact mapping, a flow collection, a block scalar or a props-only entry), whose route hands `closeThenBlock` no slot; its price is the pack family's uninformative alternative at **103 sites in 20 declarations** — [item 301](#item-301-2026-10-20). The sub-steps below split it. | ⬜ open — MEASURED at [item 301](#item-301-2026-10-20); unbuilt | `PACK-FLIP sites=103 decls=20 rounds=3 decline=102 relay=1 leaf=70 uncond=32` (`scripts/pack_flip_census.py`, pinned at `BlockDeferralClasses.expectedPackFlip`); the γ family accepted 14/14 and class A at the frame's column (§30) |
 | **12.3.4.1** | ~~**The sequence lane's value-line twin, `h_seqFV`**~~ — [item 302](#item-302-2026-10-20): **the value-line resume STACK `KeyFrames`** — `ResumeFrames` with a sequence level beside the mapping one, at the `ExplValueLine` bottom — because a landing two levels out and a mapping level between sequence levels are accepted inside a frame. (a) the inductive, `close`, `ofResumeFrames`, kind-aware `resumeAt` beside `ResumeFrames`; (b) ~~`pendingBlock.h_kslot`/`pendingBlockContent.h_kslot` generalized to the stack~~ — [item 304](#item-304-2026-10-20): the stack lives where every γ park already carries one, so every `ResumeFrames (ExplValueLine …)` position (`h_closeFV`, `h_framesV`, `h_closeFEV`, four record fields, the route and opener lemmas) becomes `KeyFrames`, the `:`/key consumers declining the sequence case; (b′) the PUSHES — `seqLevel` at the nested-`-` arms over the outer park's stack, the bottom at item 188's landed `-`, the entry park's stack relayed onto the parks inside the entry; (c) the three γ routes hand `closeThenBlock` their stack as `h_mapFV` and the landed-`-` arm pays the new park from `resumeAt`'s sequence case. | ✅ CLOSED — (a) [item 303](#item-303-2026-10-20); (b) [item 304](#item-304-2026-10-20); (b′) [item 305](#item-305-2026-10-20) + [item 306](#item-306-2026-10-20); (c) [item 307](#item-307-2026-10-20): the three γ routes hand `closeThenBlock` their stack as `h_mapFV` and its close as `h_vpack`, and the landed-`-` arm pays the new park's `h_kslot` and stack from `KeyFrames.resumeAt`'s sequence case — `PACK-FLIP uncond` 32 → 29 as priced; NEXT is 12.3.4.2 | the three γ roots pay: `PACK-FLIP`'s `uncond` 32 → **29**; the dedent families of §30–§31 carry the pack; the family stays at 103 sites (no new field) |
-| **12.3.4.2** | **Narrow the family's alternative to a park predicate the class-A consumer refutes** — ~~`∨ True` → `∨ sc.explicitKeyLine = none`~~ [item 308](#item-308-2026-10-20): the register alone is not enough — a `?` frame crosses `---`/`...` with its register live (probe 726, the references agree), so the alternative is `sc.explicitKeyLine = none ∨ sc.currentIndent = -1` (the marker's unwind), each disjunct refuted at the consumer (`ekl_dis_eq_park`; `scanValue_explicit_at_indent`). On the nine fields and their restatements: 11 roots prove the register dead from scanner facts, 1 is cleared by the flow open, 4 marker roots pay the indent (a new fact on the two marker parks, 3 producers), 3 relay the enclosing pack, the 9 face roots are re-read (`h_expl`'s alternative is the stamp beside it), 1 goes with `pendingFlow` (12.4); the 72 leaves transport through one preservation lemma per dispatch kind (three exist; `scanValue`'s is a one-line contrapositive); five alternative-free helpers take `alt` as a parameter. Split by lane as the flip's rounds direct. | ⬜ open — PRICED at [item 308](#item-308-2026-10-20); (a) DONE at [item 309](#item-309-2026-10-20) (`ExplicitValueRefused`, its two refutations, three helpers generic in `alt`); RE-SEQUENCED at [item 310](#item-310-2026-10-21): the pack family and the value-stack family are one connected component (through `closeThenBlock.h_vpack` and `.close`), so the narrowing is one type step first; the TYPE STEP is DONE at [item 311](#item-311-2026-10-21) — 96 tails in 26 declarations at `∨ PackAlt sc` (`∨ PackAltG g` on the flow frame, a placeholder whose carrier lane (d) chooses), both `True`, the four crossings between a park and a frame named (`PackAltG.ofPark`, `PackAlt.ofGateClose`), the flip census on the two bodies reading the whole component (264 sites = the 99 pack sites + 165 chain/stack sites; 103 roots, 161 leaves, 3 stubs), twelve `∨ True`-keyed detector sites in nine guards taught the name; the RESIDUE mode of the census is BUILT at [item 312](#item-312-2026-10-21) (`--alt refused`: `PackAlt sc := ExplicitValueRefused sc`, the transports between park states counted apart as `relayState`; pinned as `expectedPackResidue`); lane (b)'s TRANSPORTS are PAID at [item 313](#item-313-2026-10-21) (`ExplicitValueRefused.step_content` + its promised `PackAlt.step_content` wrapper; `relayState` 20 → 3, the three left are the `-`/`:` dispatch's and the flow open's); lane (b)'s LEAVES are PAID at [item 314](#item-314-2026-10-21) (sixty-one arms through `PackAlt.step_content`/`step_dispatch` or verbatim; `decline` 245 → 184); the key-pack lemmas' six transport arms are PAID at [item 315](#item-315-2026-10-21) (`entryPropsKeyPack_of_dispatch` takes the dispatch as a last premise; `decline` 184 → 178); lane (b)'s roots are measured there (41, no register fact in scope); lanes (c)–(g) are PRICED at [item 316](#item-316-2026-10-21): every block-lane transport (70 leaves + the 3 standing `relayState`) needs ONE park invariant — `currentIndent = -1 → explicitKeyLine = none` (a live register has a pushed indent; only a marker empties the stack) — and then one register-preservation lemma per indicator (`-` and `:` probed: ``step_blockEntry`/`step_value` with the invariant as a premise elaborate clean, `863-probe-316``); the `?` lane's leaves are REAL stack payments, not transports; the marker parks need the `-1` fact; the flow frame needs its carrier; [item 317](#item-317-2026-10-21) found the invariant's one exception to be a SCANNER BUG — the explicit-key register survived a document marker (`? a⏎---⏎- b⏎: v` accepted as three documents) — and fixed both pipelines (a marker ends the register); so the predicate's indent disjunct has no producer and the invariant is not needed; [item 326](#item-326-2026-10-21) REFUTED lane (f)'s lemma: a dead register does not mean an empty `?` chain (`?⏎  ? y⏎  : z⏎  ? q⏎: w`, accepted by both pipelines and libyaml, has a dead register at `? q` under an open outer `?`), so `question_open_map`'s two leaves join item 320's A/B class; **the rows of lanes (d) and (f) wait on NFR — item 320's A/B and item 325's A′/B′ are OPEN**; NEXT (item 327): measure 12.3.5 (`_stamp_offcol`), which depends on neither | `PACK-FLIP` reads no `∨ True` tail on the family; every `Or.inr trivial` on it is gone |
+| **12.3.4.2** | **Narrow the family's alternative to a park predicate the class-A consumer refutes** — ~~`∨ True` → `∨ sc.explicitKeyLine = none`~~ [item 308](#item-308-2026-10-20): the register alone is not enough — a `?` frame crosses `---`/`...` with its register live (probe 726, the references agree), so the alternative is `sc.explicitKeyLine = none ∨ sc.currentIndent = -1` (the marker's unwind), each disjunct refuted at the consumer (`ekl_dis_eq_park`; `scanValue_explicit_at_indent`). On the nine fields and their restatements: 11 roots prove the register dead from scanner facts, 1 is cleared by the flow open, 4 marker roots pay the indent (a new fact on the two marker parks, 3 producers), 3 relay the enclosing pack, the 9 face roots are re-read (`h_expl`'s alternative is the stamp beside it), 1 goes with `pendingFlow` (12.4); the 72 leaves transport through one preservation lemma per dispatch kind (three exist; `scanValue`'s is a one-line contrapositive); five alternative-free helpers take `alt` as a parameter. Split by lane as the flip's rounds direct. | ⬜ open — PRICED at [item 308](#item-308-2026-10-20); (a) DONE at [item 309](#item-309-2026-10-20) (`ExplicitValueRefused`, its two refutations, three helpers generic in `alt`); RE-SEQUENCED at [item 310](#item-310-2026-10-21): the pack family and the value-stack family are one connected component (through `closeThenBlock.h_vpack` and `.close`), so the narrowing is one type step first; the TYPE STEP is DONE at [item 311](#item-311-2026-10-21) — 96 tails in 26 declarations at `∨ PackAlt sc` (`∨ PackAltG g` on the flow frame, a placeholder whose carrier lane (d) chooses), both `True`, the four crossings between a park and a frame named (`PackAltG.ofPark`, `PackAlt.ofGateClose`), the flip census on the two bodies reading the whole component (264 sites = the 99 pack sites + 165 chain/stack sites; 103 roots, 161 leaves, 3 stubs), twelve `∨ True`-keyed detector sites in nine guards taught the name; the RESIDUE mode of the census is BUILT at [item 312](#item-312-2026-10-21) (`--alt refused`: `PackAlt sc := ExplicitValueRefused sc`, the transports between park states counted apart as `relayState`; pinned as `expectedPackResidue`); lane (b)'s TRANSPORTS are PAID at [item 313](#item-313-2026-10-21) (`ExplicitValueRefused.step_content` + its promised `PackAlt.step_content` wrapper; `relayState` 20 → 3, the three left are the `-`/`:` dispatch's and the flow open's); lane (b)'s LEAVES are PAID at [item 314](#item-314-2026-10-21) (sixty-one arms through `PackAlt.step_content`/`step_dispatch` or verbatim; `decline` 245 → 184); the key-pack lemmas' six transport arms are PAID at [item 315](#item-315-2026-10-21) (`entryPropsKeyPack_of_dispatch` takes the dispatch as a last premise; `decline` 184 → 178); lane (b)'s roots are measured there (41, no register fact in scope); lanes (c)–(g) are PRICED at [item 316](#item-316-2026-10-21): every block-lane transport (70 leaves + the 3 standing `relayState`) needs ONE park invariant — `currentIndent = -1 → explicitKeyLine = none` (a live register has a pushed indent; only a marker empties the stack) — and then one register-preservation lemma per indicator (`-` and `:` probed: ``step_blockEntry`/`step_value` with the invariant as a premise elaborate clean, `863-probe-316``); the `?` lane's leaves are REAL stack payments, not transports; the marker parks need the `-1` fact; the flow frame needs its carrier; [item 317](#item-317-2026-10-21) found the invariant's one exception to be a SCANNER BUG — the explicit-key register survived a document marker (`? a⏎---⏎- b⏎: v` accepted as three documents) — and fixed both pipelines (a marker ends the register); so the predicate's indent disjunct has no producer and the invariant is not needed; [item 326](#item-326-2026-10-21) REFUTED lane (f)'s lemma: a dead register does not mean an empty `?` chain (`?⏎  ? y⏎  : z⏎  ? q⏎: w`, accepted by both pipelines and libyaml, has a dead register at `? q` under an open outer `?`), so `question_open_map`'s two leaves join item 320's A/B class; **the rows of lanes (d) and (f) wait on NFR — item 320's A/B and item 325's A′/B′ are OPEN**; 12.3.5 measured and priced at items 327–330; NEXT: NFR's two decisions, then build in [item 330](#item-330-2026-10-21)'s order; [item 331](#item-331-2026-10-21) re-reads both forks under Blueprint Rule 8 (no ghost index) and pins the invariant's ghost data in `GhostIndexCensus` — the forks become a projection (the kind on the frame list), a projection (the pushed register pair on the flow frame) and a missing field (a per-level pending `?`), in that build order | `PACK-FLIP` reads no `∨ True` tail on the family; every `Or.inr trivial` on it is gone |
 | **12.3.4.3** | **Refute the three applications and delete `block_dispatch_deferred_stamp_nopack`** — the `inr` branch at each site is `h_src (Or.inl ((ekl_dis_eq_park h_preprocess).trans h))`, the term the sites already pass as `_h_park`. | ⬜ open — behind 12.3.4.2 | `_stamp_nopack` applications 3 → **0**; `beta5_arms.py` and the guards that count the wrapper re-pinned |
-| **12.3.5** | **`_stamp_offcol`** (3 applications) — the landing is on none of the park's frames. | ⬜ open — unmeasured | [item 264](#item-264-2026-09-25) §3's carrier, the enclosing mapping's still-open tail on the dedent lane, re-measured at this class's own item |
+| **12.3.5** | **`_stamp_offcol`** (3 applications) — the landing is on none of the park's frames. | ⬜ open — RE-PRICED at [item 329](#item-329-2026-10-21) and READ at [item 330](#item-330-2026-10-21): the threading's second ring reaches the park's `KeyFrames` value-line fact (`h_mapFV` → `h_resSeqV`), whose declines are item 320's (B) question, so the two `h_kslot` applications wait on NFR's A/B and `closeThenBlock`'s on lane (d) | [item 264](#item-264-2026-09-25) §3's carrier, the enclosing mapping's still-open tail on the dedent lane, re-measured at this class's own item |
 | **12.4** | **Apply the deletion** — `pendingFlow`, its five dead arms, the escape, `dropClose` with `drop_ride` and `opaque_resume`, and `PendingNode.close_with_ssl`'s `pendingFlow` arm. ~~Mechanical: the edit has been elaborated for real, to a fixpoint, since item 263.~~ The fixpoint sorries the escape's body and so never reached its callers ([item 285](#item-285-2026-10-18)), which is why this row stands behind 12.3. | ⬜ open — behind 12.3 | `scripts/beta5_arms.py`: `control=7 arms=1 dead=6 left=[block_dispatch_deferred]` at item 285, with `drop_ride` deleted as dead; `scripts/flip_beta5.py`: `rounds=23 clean=1 sorried=13 restated=0 deleted=3 pins=37`, item 263's, whose thirteen sorried bodies include the escape's — so its "no statement anywhere must be restated" holds of the sorried tree and not of the deletion |
 | **12.5** | **Re-pin the thirty-seven** — instrument debt, not proof debt: the top-level censuses the deletion re-reads, among them `ParkBill`'s seven pins, `DropDependents`, `FlipConsumerSurface`'s DEFERRAL lane, `DropFalsity` and `ParkGapCensus`. `expectedFixpoint` and `expectedArms` are checked from the OTHER side — the scripts read those literals out of the file — so both move by hand and the scripts must agree afterwards. | ⬜ open — behind 12.4 | the fixpoint's `pins=37` population; `scripts/flip_beta5.py` must print `FIX-PIN agrees` and `scripts/beta5_arms.py` `ARM-PIN agrees` |
 | **12.6** | **Restate the record and hand over the top of the table** — this row and its six, the state table under [item 279](#item-279-2026-10-18), and [REMAINING, in order](#remaining-in-order); then R4's narrowing takes the top, since it is marked OPEN *behind R3*. | ⬜ open — behind 12.5 | R4's flip breaks **5** definitions (`scripts/flip_210.py`) and that number has been constant since item 166, so it is the next row's opening price and not a forecast |
@@ -43230,6 +43230,238 @@ entry carries the correction.
 NEXT (item 327): measure 12.3.5 — the domain of `_stamp_offcol`, the inputs that exit through its three applications — which
 depends on neither open decision.  The rows of lanes (d) and (f) wait on NFR: item 320's A/B, now with these two leaves,
 and item 325's A′/B′.
+
+### Item 327 (2026-10-21)
+
+**Step 12.3.5 MEASURED — no library change.  `_stamp_offcol`'s domain is the class-A DEDENT lane: an admitted explicit
+value `:` that closes the `?` key's nested content on its way to the `?`'s column.  The lane is mainstream YAML — seven
+corpus cases — and the branch that defers it fires only where the park's key-slot frame misses the column the register
+names.  The diagnosis is STARVED: the packs never state that the frame they hold is the one the register names.**
+
+**The class** (the wrapper's own premises, `accum_block_on_closeThenBlock`, `…_pendingBlockContent` and `…_pendingBlock`).
+All three applications sit in the `¬ h_src` branch — the dispatch state's register is live, the simple key is not
+possible, and the column is `explicitKeyCol` — so the `:` is the explicit value of the LATEST `?`, and the scanner admitted
+it at the indent (`explicit_at_indent_of_dispatch`).  The deferral fires when the park's own key-slot frame `nv` is not the
+landing's column `k` and its up-chain (`h_upSpend`, item 190) has no member at `k` either.
+
+**The runtime domain** (`1030-classA-dedent-probe.py`, output `1030-classA-dedent.out`; the scanner over every test case of
+the yaml-test-suite's 351 source files and 15 targeted inputs).  For each block-context `:` with a live register at the
+`?`'s column: 35 class-A colons, all in accepted inputs, 15 of them DEDENT (the step pops indents) — seven in the corpus
+(KK5P three times, M5DY, RZP5, V9D5, XW4D; M5DY is the spec's `? - Detroit Tigers⏎  - Chicago cubs⏎:`) and eight targeted
+(`?⏎  - b⏎: c`, `?⏎  k: v⏎: w`, `?⏎  - - b⏎: c`, `- ?⏎    - b⏎  : c`, `?⏎  - b⏎  - c⏎: d`, `?⏎  a:⏎    - b⏎: c`,
+`?⏎  ? - a⏎  : b⏎: c`, `k:⏎  ?⏎    - b⏎  : c`).  Every one lands at the column of the `?` whose register is live — which is
+what class A means — and the outer-frame readings item 190 cites (`?⏎  ? - a⏎: w`) are not class A at all: the register
+names the inner `?` (`explicitKeyCol = 2 ≠ 0` at `: w`, `1034-item190-example-register.out`; the input is accepted by both
+pipelines and libyaml as `{{[a]: ~}: w}`), so they take `h_generic`.  The scanner cannot see the park's frames, so
+whether a reachable park ever misses the register's `?` is a proof-side question; nothing in the measurement says it does.
+
+**The carrier, named and NOT priced.**  The key-slot fields (`pendingBlockContent.h_kslot`, `pendingBlock.h_kslot` and their
+kin, item 187's eight constructor fields) state `(∃ nv, kslot nv …) ∨ PackAlt sc` — some frame index, never which.  With
+the register live, the alternative is false (item 318) and the left disjunct holds, but for an index the consumer cannot
+compare with the register.  The datum is the equation `nv = explicitKeyCol` (or `explicitKeyCol ∈ ns` for the chained
+fields) while the register is live; with it the three sites' `by_cases hknv : nv = k` negative branches are refuted by
+the `:`'s own `h_src`, and the wrapper goes.  Its price is the producers of those fields, which this item did not count; its
+consumer probe is those three negative branches.  It depends on neither open decision: it strengthens the routes, not the
+alternative.
+
+**No library file changed; no build.**  The probe ran in the package's `Scratch/` and is deleted.
+
+NEXT (item 328): price the carrier — count the producers of the key-slot fields in the current tree (an environment census
+of `PendingNode` constructor applications, by field) and run the consumer probe at one of the three negative branches with
+the equation as a hypothesis — before building it.  12.3.4.2's lanes (d) and (f) still wait on NFR (item 320's A/B, item
+325's A′/B′).
+
+### Item 328 (2026-10-21)
+
+**Step 12.3.5 PRICED — no library change.  The off-column carrier, `nv = explicitKeyCol` while the register is live,
+refutes the deferring branch from facts all three sites already hold (consumer probe, green); tightening the three
+key-slot fields it lives on breaks 30 sites in 9 declarations on the first ring.  It strengthens routes, not the
+alternative, so it is buildable before either of NFR's decisions.**
+
+**The consumer probe** (`1040-Probe328OffcolConsumer.lean`, elaborated in the package's `Scratch/` and deleted, output
+`1040-probe328-r2.out`).  `offcol_refuted` takes the sites' own hypotheses — the preprocess step, the class-A branch's
+`¬ h_src` over the directive-normalized state, the landing's `SIndent k sp_mid sp_prep` off a column-0 line start
+(`hcol_mid`), the step's `ScannerSurfCorr s_prep sp_prep` — plus the candidate field `sc.explicitKeyLine ≠ none →
+(nv : Int) = sc.explicitKeyCol`, and refutes `¬ nv = k`: the register is live (else `h_src`'s first disjunct), the
+column is `explicitKeyCol` (its third), preprocess and the normalization carry both registers and the column, and the
+landing's column is `k`.  Axioms: `propext`, `Classical.choice`, `Quot.sound`.  All three applications sit in a LANDED
+branch where those facts are in scope (`accum_block_on_closeThenBlock` from 24392, `…_pendingBlockContent` from 25738,
+`…_pendingBlock` from 26223, each before its inline branch).
+
+**The census** (`1041-Probe328Census.lean`, an environment census over the library and every guard, output
+`1041-probe328-census.out`).  Sixteen hand-written declarations build or take apart the three parks whose fields the sites
+read — `pendingContent` (`h_vpack`, the chained form `closeThenBlock` tests by membership), `pendingBlockContent` and
+`pendingBlock` (`h_kslot`): the four `PendingNode` case lemmas (`arm_tight_or_col`, `close_with_ssl`, `dirRoute`, `nic0`)
+and twelve dispatch and step lemmas; no guard does.
+
+**The first ring** (`1042-offcol-carrier-flip.py`, one elaboration with the three fields tightened and the file restored
+byte-identical, md5 checked; output `1042-offcol-carrier-flip.out`).  `∃ nv, …` gains `(sc.explicitKeyLine ≠ none → (nv :
+Int) = sc.explicitKeyCol) ∧` and `∃ ns, …` gains `(sc.explicitKeyLine ≠ none → ∃ nv ∈ ns, (nv : Int) = sc.explicitKeyCol)
+∧`: 30 errors in 9 declarations — `accum_content_pending` 9, `accum_block_on_closeThenBlock` 4, `accum_block_on_pendingBlock`,
+`accum_block_pending`, `accum_content_on_pendingBlock_indented`, `accum_content_on_pendingMapValue_indented` 3 each,
+`accum_flow_open_depth0`, `accum_step_flow` 2 each, `accum_block_on_pendingBlockContent` 1; 28 application type mismatches
+(a producer's `⟨nv, kslot⟩`, or the field handed to a parameter that restates the old shape) and 2 "function expected".
+The ring is a lower bound: tightening the restated parameters moves the mismatch to their callers, and whether each
+producer can SUPPLY the equation is what building it settles — the `?` dispatch sets the register to the frame's own
+column, and every other producer transports a field whose register the step preserves.
+
+**Why it is independent.**  The three applications sit in the class-A branch's `Or.inl ⟨nv, kslot⟩` arm; the `Or.inr` arm
+beside them is `_stamp_nopack` (12.3.4), which 12.3.4.2's narrowing refutes.  The carrier strengthens the left disjunct
+only, and its refutation uses nothing but that equation and the `:`'s own `h_src`.  **Correction ([item 329](#item-329-2026-10-21)):** only on the two `h_kslot` fields. `pendingContent.h_vpack` is also produced at the flow closes, where its membership needs lane (d)'s datum, so `closeThenBlock`'s application waits with lane (d); and the two `h_kslot` fields are a threading from the `?` dispatch through three more field families, not a two-field patch.
+
+**No library file changed; no build.**
+
+NEXT (item 329): BUILD it — tighten the three fields and the parameters that restate them to a fixpoint, pay the producers
+(the `?` dispatch's own column; transports elsewhere), refute the three negative branches with `offcol_refuted`, and delete
+`block_dispatch_deferred_stamp_offcol`, closing 12.3.5.  12.3.4.2's lanes (d) and (f) still wait on NFR (item 320's A/B,
+item 325's A′/B′).
+
+### Item 329 (2026-10-21)
+
+**Step 12.3.5 RE-PRICED — no library change.  The off-column carrier is independent of NFR's two decisions only on its
+two `h_kslot` fields, and even there it is a threading, not a two-field patch: the first ring is 19 sites in 7
+declarations, and its producers draw the frame index from three more field families.  Item 328's independence claim is
+corrected.**
+
+**Where item 328 was wrong.**  It read the three fields the sites test as one carrier.  `pendingContent.h_vpack` — the
+chained form `accum_block_on_closeThenBlock` tests by membership — is also produced at the flow closes
+(`accum_step_flow`'s `]` and `}` arms, `flowVPack_of_close resume.vslot`, two of item 328's thirty first-ring sites).
+There the membership needs the restored register's column tied to the frame's open-time slot, which is lane (d)'s datum
+(item 325); under (B′) it would be false at a close like `? a⏎[1]: b`'s, where the register comes back live and the
+frame's slot set is empty.  So `closeThenBlock`'s application waits with lane (d), and only the two `h_kslot` fields —
+read by `accum_block_on_pendingBlockContent` and `accum_block_on_pendingBlock` — are independent.
+
+**The key-slot-only ring** (`1046-offcol-kslot-only-flip.py`, one elaboration with `pendingBlockContent.h_kslot` and
+`pendingBlock.h_kslot` tightened, the file restored md5-identical; output `1046-offcol-kslot-only-flip.out`): 19 errors in 7
+declarations, none at a flow close.  By the source of the frame index each producer hands on:
+
+| class | sites | what pays it |
+|---|---|---|
+| transports of a tightened `h_kslot` | `accum_block_on_pendingBlockContent` 25791, `accum_block_on_pendingBlock` 26277/26365/26756, `accum_content_on_pendingBlock_indented` 32794/33072/33250 | the old field's equation across a `-` or content dispatch, which preserves both register fields — one transport lemma per dispatch kind |
+| restated parameters | `accum_block_pending` 27335/27350/36152 | the two dispatch lemmas' own `h_kslot` parameters, tightened with the fields |
+| consumers | `accum_flow_open_depth0` 13043/13071 | one more component in the `⟨nv, kslot⟩` patterns |
+| new sources | `accum_block_on_closeThenBlock` 24199/24715 (`h_vslot`, the `?` park's own slot), 24720/24721 (`h_resKslot`, built from the resume sequence frames `h_resSeqV`), `accum_content_pending` 35827/35949/36063 (`h_kslotE_k`, the props park's chained slot) | the equation threaded into those three field families and their producers — the second ring |
+
+**What it changes.**  The carrier is a threading of `nv = explicitKeyCol` from the `?` dispatch, which sets the register to
+the frame's own column, through every slot-carrying field the two `h_kslot` fields are fed from — the shape of items 299
+and 305, priced by the producers of the three new families, which this item did not count.  Its consumer probe stands
+(item 328: the refutation uses only the equation and the `:`'s own `h_src`).
+
+**No library file changed; no build.**
+
+NEXT (item 330): price the second ring — the same flip with the three new families tightened — then build the threading
+in one item, refute the two `h_kslot` sites' negative branches, and leave `_stamp_offcol` at `closeThenBlock`'s one
+application, which waits with lane (d).
+
+### Item 330 (2026-10-21)
+
+**Step 12.3.5, the second ring READ — no library change.  The off-column threading reaches the park's `KeyFrames`
+value-line fact, whose declines are item 320's (B) question, so it is scheduled after NFR's A/B decision.  With this,
+every remaining step of row 12 waits on NFR's two OPEN decisions.**
+
+**The second ring** (read off the three sources item 329 named).  `closeThenBlock`'s `h_vslot` is the `?` park's own
+slot — `∃ nv sp_a, … ∧ sp_scan.col = nv + 1 ∧ …`, the frame index one column left of the park, i.e. the `?`'s own column —
+and `pendingProps.h_kslotE` is the props park's entry slot (`∃ ne nv, n = ne + 1 ∧ …`); each takes the equation from its
+own producers.  The third, `h_resKslot`, is built from `h_resSeqV`, and `h_resSeqV` from the park's `h_mapFV` — the value-line
+resume stack `∃ nv ks, … KeyFrames (ExplValueLine sp_start nv) ks …` (item 302) — through `resumeAt`, with two declines of
+its own: the resumed level is a mapping (`rcases cont with _ | contS`, the first arm) or the stack holds no level `k`.  Those
+are the side-condition declines item 320 put to NFR: (B) would restate the resume facts as conditional on the level's kind,
+which changes exactly these fields and their twins.  Threading `nv = explicitKeyCol` through `h_mapFV` now would be built
+against the statements (B) replaces, so the off-column carrier waits for the decision rather than being built twice.
+
+**Where row 12 stands.**
+
+| step | waits on | why |
+|---|---|---|
+| 12.3.4.2, lanes (b)–(f) side-condition rows, `question_open_map`'s two leaves | item 320's A/B | the resume facts' declines (items 320, 323, 326) |
+| 12.3.4.2, lane (d) — the flow frame's carrier | item 325's A′/B′ | `main`'s and `slot_ride`'s frames open over a live register with no `?` value possible |
+| 12.3.4.3 — refute and delete `_stamp_nopack` | 12.3.4.2's flip | its `inr` branch is refuted by the narrowed alternative |
+| 12.3.5 — `_stamp_offcol` | item 320's A/B (two applications, through `h_mapFV`) and lane (d) (`closeThenBlock`'s) | items 328–330 |
+| 12.4–12.6 | 12.3 | the deletion, the re-pins, the hand-over |
+
+**No library file changed; no build.**
+
+NEXT (item 331): NFR's two decisions — item 320's A/B and item 325's A′/B′ — then build in the order of the table.
+
+### Item 331 (2026-10-21)
+
+**Row 12's two forks re-read as one question, and that question made a RULE and a GATE — no library change.
+Blueprint Rule 8 (no ghost index on the accumulation invariant) and `Tests/Guards/Proofs/GhostIndexCensus.lean`,
+which pins the invariant's proof-side data: 52 carriers, 9 snapshot indices, 73 ghost binders.  Beside it, a
+scanner over-refusal the single `?` register causes, found while measuring item 326's input.**
+
+**The re-reading.**  Items 320 and 325 each offered a choice between widening a park's alternative with a
+proof-side disjunct ((A) a stack-shape fact, (A′) a §9.2-refusal fact) and restating a field ((B), (B′)).  Read
+against what the scanner holds, the two forks are the same shape: the proof reads the `?` frame through one scalar
+register (`explicitKeyLine`/`explicitKeyCol`) and proof-side lists of widths, where the obligations depend on
+structured state.  Three facts, one per fork and one for `question_open_map`'s leaves — (i) the KIND of an indent
+level: the scanner has it (`IndentEntry.isSequence`), the proof's `ResumeFrames`/`KeyFrames` dropped it
+(`List Nat`), and `IndentStackCover.Covered` ties the list to `sc.indents` in one direction only; (ii) the register at
+a flow frame's OPEN: the scanner has it (`explicitKeyStack`, pushed at `[`/`{`, restored at the close), the frame
+type does not read it (`PackAltG g` is a placeholder; item 325's 48-signature re-index would COPY the datum); (iii)
+which `?` frames are still OPEN above a park: the scanner does not have it — the register is "the latest `?`", and
+item 326 measured it dead at `? q` under an open outer `?`.  (A) and (A′) are the pattern DOCS.md's `definedAnchors`
+discussion already names: ghost state papering over an incomplete `ScannerState`.  So the forks are answered by
+the rule rather than case by case: (i) is a projection the frame list must carry (the kind beside the width),
+(ii) is a projection the frame must read (the pushed pair), (iii) is a missing field (a per-level pending `?`),
+and the `∨ PackAlt sc` on a chain field becomes the EMPTY case of a quantifier over `sc.indents` rather than a
+disjunct to transport.  The decision rows of items 320/325/330 stand as written; this item records the frame they
+are decided in, not the decisions.
+
+**The over-refusal** (`~/scratch/l4yaml-row12/{A..M}.yaml`; both pipelines at `6aa0cbfa` — `lake exe tryparse`, the
+legacy path, and `l4yaml-event`/`tryscan`, the indexed one — against PyYAML 6.0.3's `yaml.parse` with `SafeLoader`
+and `CSafeLoader`, i.e. libyaml):
+
+| input | L4YAML, both pipelines | libyaml / PyYAML |
+|---|---|---|
+| `?⏎  ? y⏎  : z⏎: w: x` | REFUSED — "second value indicator at line 3, column 3 — an implicit value admits no same-line mapping (§8.2.2)" | accepted, `{{y: z}: {w: x}}` |
+| `?⏎  ? y⏎  : z⏎  ? q⏎: w: x` | REFUSED — the same, line 4 | accepted, `{{y: z, q: null}: {w: x}}` |
+| `?⏎  y: z⏎: w: x` (control: an implicit `:` keeps the register, item 326) | accepted | accepted |
+| `? a⏎: b: c` (control: one `?`) | accepted | accepted |
+
+The mechanism is item 326's measurement one token on: the inner `: z` is the explicit value of `? y` and clears the
+register; the outer `?`'s `: w` then finds `explicitKeyLine = none`, is classified an IMPLICIT value
+(`implicitValueLine := some line`, item 48), and `[192]`'s compact mapping after it — legal under `[197]`'s
+`s-l+block-indented` — trips the same-line check.  A per-level register (the outer level still pending at `: w`)
+classifies it as `[197]`'s explicit value, which is libyaml's reading.  Runtime repair is NOT in this item; it is
+priced as the field of (iii), to be built with the acceptance set checked before and after (CLAUDE.md §10: both
+pipelines and libyaml on item 325's 21 inputs, item 326's seven, these four, and the yaml-test-suite).
+
+**The gate** (`Tests/Guards/Proofs/GhostIndexCensus.lean`, imported from `Tests/Guards.lean`; one targeted build,
+110 jobs; pin rounds `guard-r1`–`r10`).  The carriers are READ OFF THE ENVIRONMENT — every `Prop`-valued definition,
+structure or inductive `StreamAccum` declares, less constructors, projections, recursors and the generated
+`below`/`brecOn`/`inj` auxiliaries, plus `CouplingBridge.ScannerSurfCorr`: 52 of them.  A first cut named 31 by hand,
+and Devin Review's one finding on the PR was the reason that is the wrong instrument: `ResumeKeyCtx` binds three
+`List Nat` frame lists and enters the accumulation lemmas through `h_resumectx`, and a hand list would never have
+seen a ghost added to it (`ResumeWidths` was the other omission).  It classifies every binder of each (the type's telescope, each
+constructor's fields past the parameters, a definition's body, and every `∃`/`∀`/matcher-lambda binder nested in a
+field's statement) by its TYPE: `surface` (`SurfPos`, or a predicate on positions), `state` (`ScannerState`), `prop`,
+`scalar`, `snapshot` (`Option ScannerState`), `ghost` (`List Nat`, `Array Bool`, `FrameTail`).  Three pins:
+`expectedSummary = "carriers=52 snapshot=9 ghost=73"`, the per-carrier tally, and the 82-row `snapshot`+`ghost` list.
+
+**What the list says.**  By type: 46 `List Nat` — `PendingNode`'s 22 (`ns` ×6, the value-line chains of items 93/192;
+`ks` ×16, the resume stacks of items 99/108/148/150), `FlowBaseRoutes.mk` 4, `ImplicitKeyPack` 4, `PropsKeyPack` 3,
+`ResumeFrames` 2, `KeyFrames` 3, `ResumeKeyCtx` 3 (`ks`, `ksv`, `ksq`), `ResumeWidths` 2, and 3 that are NOT ghost by the rule's own reading — `FlowOpenHeld`'s `S`/`T` and
+`ParkCore.mk`'s `S`, lists of token INDICES, a projection of `tokens` already; 15 `Array Bool` — the kinds `ks`
+(pinned to `sc.flowStack` since 9b(i), so a projection with its lemma already in hand) and the key mask `km`
+(`KmSound`'s, a summary of `simpleKeyStack` entries); 12 `FrameTail` — `tl`, `FrameTail.ofToken` of the last real
+token; 9 `Option ScannerState` — the open-time snapshot `g` on `FlowStackB`/`FlowOpenStack`/`FlowBaseRoutes`/
+`FlowStackK`/`PackAltG`, read at the close by `GateOf` and `FlowBaseAnchor`.  The rows row 12 is blocked on are the
+`List Nat` ones (forks (i) and (iii)) and `PackAltG`'s snapshot (fork (ii)); `g`, `km` and `tl` block nothing today
+and are retired one item each after 12.6, each priced by a probe as item 325 priced the carrier.
+
+**Gates on this tree.**  `lake build Tests.Guards.Proofs.GhostIndexCensus` green; `check-theorem-keyword`,
+`check-closure-log` re-run with this entry in.  No library file changed, so every census pin and the runtime gates
+stand at item 330's.
+
+NEXT (item 332): row 12 in the rule's order — (1) the frame lists carry the kind (`List Nat` → the scanner's
+`IndentEntry`, `Covered` as membership; item 320's (B), with the premise on the list's own kind, no new disjunct),
+which pays the side-condition rows of items 320/323 and unblocks 12.3.5's two `h_kslot` applications; (2) the
+scanner clears the register when the `?` entry closes (item 325's live-register opens are stale registers), measured
+on the reference inputs before and after; (3) the flow frame indexed by the pushed pair, `PackAltG (e, ec) := e =
+none`, lane (d); (4) the per-level pending `?` field, which retires the chains and `question_open_map`'s two leaves
+and repairs the over-refusal above; then `PackAlt sc := ExplicitValueRefused sc`, 12.3.4.3, 12.4–12.6.  Each step
+re-pins `GhostIndexCensus` downward.
 
 ## Row 12 — the plan-table cell, archived (2026-10-18)
 

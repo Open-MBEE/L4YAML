@@ -5,7 +5,7 @@ public import L4YAML.Scanner.IndexedDispatch
 public import L4YAML.Output.Emitter
 public import L4YAML.Parser.Composition
 public import L4YAML.Proofs.Parser.ParserGrammableBase
-public import L4YAML.Proofs.Scanner.IndentStackCover
+public import L4YAML.Proofs.Production.StreamAccum
 public import Tests.VerifiedResult
 
 @[expose] public section Blanket
@@ -1991,6 +1991,100 @@ def testFrameLevelKinds (state : IO.Ref TestCollector) : IO Unit := do
   checkM state "Floor: a named width below lo refutes" (decide (Floor 2 5 [FrameLevel.map 1]) == false) "Floor 2 5 [map 1]"
   checkM state "Floor: a seq width counts like a map width"
     (decide (Floor 2 5 [s2, m2]) && !(decide (Floor 3 5 [s2, FrameLevel.map 4]))) "Floor on mixed kinds"
+
+/-! ### The resume conclusions, instantiated at compile time
+
+`KeyFrames.resumeAt` / `resumeAtMap` / `resumeAtSeq` promise, for a member level,
+a surviving frame list pinned by `ResumeWidths` and a continuation of the
+level's OWN kind.  Those are `Prop`s, so the instantiation is an `example` per
+boundary stack (zero, one and two levels; map, seq, mixed), each of which fails
+to elaborate if the statement weakens: the `ResumeWidths` reading is spent to
+decide exactly which levels survive, and the continuation is applied to the
+kind's own empty tail (`SCompactMapTail.nil` / `SCompactSeqTail.nil`) — the
+opposite kind would not type-check. -/
+
+section ResumeConclusions
+open L4YAML.Surface L4YAML.Proofs.IndentStackCover L4YAML.Proofs.StreamAccum
+
+/-- `[map 2]`: the trivial continuation closes at the bottom. -/
+def kfMap2 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.map 2] sp :=
+  .mapLevel 2 [] sp (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial)
+
+/-- `[seq 2]`. -/
+def kfSeq2 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.seq 2] sp :=
+  .seqLevel 2 [] sp (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial)
+
+/-- `[seq 2, map 0]`: a sequence level opened under a mapping level, innermost first. -/
+def kfSeq2Map0 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.seq 2, FrameLevel.map 0] sp :=
+  .seqLevel 2 [FrameLevel.map 0] sp
+    (fun fr h => by simp only [List.mem_singleton] at h; subst h; decide)
+    (fun sp' _ => .mapLevel 0 [] sp' (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial))
+
+/-- `[map 4, map 1]`: two mapping levels. -/
+def kfMap4Map1 (sp : SurfPos) : KeyFrames (fun _ => True) [FrameLevel.map 4, FrameLevel.map 1] sp :=
+  .mapLevel 4 [FrameLevel.map 1] sp
+    (fun fr h => by simp only [List.mem_singleton] at h; subst h; decide)
+    (fun sp' _ => .mapLevel 1 [] sp' (fun _ h => absurd h List.not_mem_nil) (fun _ _ => .bottom _ trivial))
+
+-- Zero levels: nothing resumes (the gate is membership of `[]`).
+example : ¬ (FrameLevel.map 0 ∈ ([] : List FrameLevel)) := by decide
+example : ¬ (FrameLevel.seq 0 ∈ ([] : List FrameLevel)) := by decide
+
+-- One mapping level: resumes at its own width with NO survivor, and the
+-- continuation owed is the MAP tail.
+example (sp : SurfPos) : True := by
+  obtain ⟨ks', hw, cont⟩ := (kfMap2 sp).resumeAtMap (j := 2) (by decide)
+  have h_none : ∀ fr, fr ∉ ks' := fun fr h => by
+    have ⟨hm, hlt⟩ := (hw fr).mp h
+    simp only [List.mem_singleton] at hm; subst hm; exact absurd hlt (by decide)
+  exact (cont sp (SCompactMapTail.nil 2 sp)).close
+
+-- One mapping level is NOT resumable as a sequence (the opposite kind is refused by the gate).
+example : ¬ (FrameLevel.seq 2 ∈ [FrameLevel.map 2]) := by decide
+
+-- One sequence level: the SEQ tail, no survivor; not resumable as a mapping.
+example (sp : SurfPos) : True := by
+  obtain ⟨ks', hw, cont⟩ := (kfSeq2 sp).resumeAtSeq (j := 2) (by decide)
+  have h_none : ∀ fr, fr ∉ ks' := fun fr h => by
+    have ⟨hm, hlt⟩ := (hw fr).mp h
+    simp only [List.mem_singleton] at hm; subst hm; exact absurd hlt (by decide)
+  exact (cont sp (SCompactSeqTail.nil 2 sp)).close
+example : ¬ (FrameLevel.map 2 ∈ [FrameLevel.seq 2]) := by decide
+
+-- Mixed, resumed at the sequence level: `map 0` survives, `seq 2` does not,
+-- and the survivor is itself resumable as a mapping afterwards.
+example (sp : SurfPos) : True := by
+  obtain ⟨ks', hw, cont⟩ := (kfSeq2Map0 sp).resumeAtSeq (j := 2) (by decide)
+  have h_keep : FrameLevel.map 0 ∈ ks' := (hw _).mpr ⟨by decide, by decide⟩
+  have h_drop : FrameLevel.seq 2 ∉ ks' := fun h => absurd ((hw _).mp h).2 (by decide)
+  have next := cont sp (SCompactSeqTail.nil 2 sp)
+  obtain ⟨ks'', hw', cont'⟩ := next.resumeAtMap (j := 0) h_keep
+  have h_none : ∀ fr, fr ∉ ks'' := fun fr h => absurd ((hw' fr).mp h).2 (by omega)
+  exact (cont' sp (SCompactMapTail.nil 0 sp)).close
+
+-- Mixed, resumed at the inner mapping level directly: nothing survives (the
+-- sequence level above it is not below width 0) and the tail is the MAP tail.
+example (sp : SurfPos) : True := by
+  obtain ⟨ks', hw, cont⟩ := (kfSeq2Map0 sp).resumeAtMap (j := 0) (by decide)
+  have h_none : ∀ fr, fr ∉ ks' := fun fr h => absurd ((hw fr).mp h).2 (by omega)
+  exact (cont sp (SCompactMapTail.nil 0 sp)).close
+
+-- Two mapping levels: resuming at the outer keeps the inner; at the inner keeps nothing.
+example (sp : SurfPos) : True := by
+  obtain ⟨ks', hw, cont⟩ := (kfMap4Map1 sp).resumeAtMap (j := 4) (by decide)
+  have h_keep : FrameLevel.map 1 ∈ ks' := (hw _).mpr ⟨by decide, by decide⟩
+  have h_drop : FrameLevel.map 4 ∉ ks' := fun h => absurd ((hw _).mp h).2 (by decide)
+  exact (cont sp (SCompactMapTail.nil 4 sp)).close
+example (sp : SurfPos) : True := by
+  obtain ⟨ks', hw, cont⟩ := (kfMap4Map1 sp).resumeAtMap (j := 1) (by decide)
+  have h_none : ∀ fr, fr ∉ ks' := fun fr h => by
+    have ⟨hm, hlt⟩ := (hw fr).mp h
+    rcases List.mem_cons.mp hm with h | h
+    · subst h; exact absurd hlt (by decide)
+    · have h := List.mem_singleton.mp h; subst h; exact absurd hlt (by decide)
+  exact (cont sp (SCompactMapTail.nil 1 sp)).close
+
+end ResumeConclusions
 
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)

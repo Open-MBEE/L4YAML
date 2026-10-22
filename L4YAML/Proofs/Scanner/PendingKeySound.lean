@@ -544,10 +544,91 @@ lemma scanKey_sound {s s' : ScannerState} (hok : scanKey s = .ok s')
     · intro hpos'; rw [hfl] at hpos'; omega
     · show s'.explicitKeyStack.size = s'.flowLevel; rw [hstk, hfl]; exact hst
 
-lemma scanValue_sound {s s' : ScannerState} (hok : scanValue s = .ok s') (h : Sound s)
-    (hbase : SentinelBase s) : Sound s' := by
-  sorry
+lemma scanValueClearKey_core (s : ScannerState) :
+    (scanValueClearKey s).indents = s.indents ∧ (scanValueClearKey s).pendingKeys = s.pendingKeys ∧
+    (scanValueClearKey s).flowLevel = s.flowLevel ∧
+    (scanValueClearKey s).explicitKeyLine = s.explicitKeyLine ∧
+    (scanValueClearKey s).explicitKeyCol = s.explicitKeyCol ∧
+    (scanValueClearKey s).explicitKeyStack = s.explicitKeyStack := by
+  unfold scanValueClearKey
+  split <;> (try split) <;> (try split) <;> exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 
+/-- `scanValuePrepare` pushes at most one empty slot: `SlotsOk` and the innermost
+    pending key survive, as do the flow fields and the register. -/
+lemma scanValuePrepare_core (s : ScannerState) (hs : SlotsOk s) :
+    SlotsOk (scanValuePrepare s) ∧
+    (scanValuePrepare s).innermostPendingKey = s.innermostPendingKey ∧
+    (scanValuePrepare s).flowLevel = s.flowLevel ∧
+    (scanValuePrepare s).explicitKeyLine = s.explicitKeyLine ∧
+    (scanValuePrepare s).explicitKeyCol = s.explicitKeyCol ∧
+    (scanValuePrepare s).explicitKeyStack = s.explicitKeyStack := by
+  unfold scanValuePrepare
+  split
+  · split
+    · split
+      · refine ⟨hs.push_none { column := (s.simpleKey.pos.col : Int), isSequence := false } rfl rfl,
+          ?_, rfl, rfl, rfl, rfl⟩
+        rw [innermostPendingKey_eq, innermostPendingKey_eq]
+        simp only [ScannerState.indentColumns, Array.map_push]
+        exact innermost_push_none _ _ _ (by simp [hs.1])
+      · exact ⟨hs, rfl, rfl, rfl, rfl, rfl⟩
+    · exact ⟨hs, rfl, rfl, rfl, rfl, rfl⟩
+  · split
+    · exact ⟨hs, rfl, rfl, rfl, rfl, rfl⟩
+    · split
+      · refine ⟨pushMappingIndent_slots s _ hs, ?_, ?_, ?_, ?_, ?_⟩ <;>
+          unfold pushMappingIndent <;> split <;> try rfl
+        rw [innermostPendingKey_eq, innermostPendingKey_eq]
+        simp only [ScannerState.indentColumns, ScannerState.emit, Array.map_push]
+        exact innermost_push_none _ _ _ (by simp [hs.1])
+      · exact ⟨hs, rfl, rfl, rfl, rfl, rfl⟩
+
+lemma innermost_none_snd (cols : Array Int) (pks : Array (Option Nat))
+    (h : (PendingKeys.innermost cols pks).1 = none) : (PendingKeys.innermost cols pks).2 = -1 := by
+  rw [innermost_eq_go] at h ⊢; exact go_none_snd cols pks _ h
+
+lemma scanValue_sound {s s' : ScannerState} (hok : scanValue s = .ok s') (h : Sound s) :
+    Sound s' := by
+  unfold scanValue at hok
+  simp only [bind, Except.bind] at hok
+  split at hok <;> try contradiction
+  split at hok <;> try contradiction
+  split at hok <;> try contradiction
+  simp only [Except.ok.injEq] at hok; subst hok
+  obtain ⟨hck1, hck2, hck3, hck4, hck5, hck6⟩ := scanValueClearKey_core s
+  have hs_kc : SlotsOk (scanValueClearKey s) := by
+    refine ⟨by rw [hck1, hck2]; exact h.slots.1, ?_⟩
+    intro i l hi; rw [hck2] at hi
+    have hcols : (scanValueClearKey s).indentColumns = s.indentColumns := by
+      simp [ScannerState.indentColumns, hck1]
+    rw [hcols]; exact h.slots.2 i l hi
+  obtain ⟨hp1, hp2, hp3, hp4, hp5, hp6⟩ := scanValuePrepare_core _ hs_kc
+  have hinn_kc : (scanValueClearKey s).innermostPendingKey = s.innermostPendingKey := by
+    simp [innermostPendingKey_eq, ScannerState.indentColumns, hck1, hck2]
+  -- the emitted-and-advanced state before the final write
+  have hadv_pk : (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).pendingKeys
+      = (scanValuePrepare (scanValueClearKey s)).pendingKeys := by
+    rw [advance_preserves_pendingKeys, emit_pendingKeys]
+  have hadv_ind : (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).indents
+      = (scanValuePrepare (scanValueClearKey s)).indents := by
+    rw [L4YAML.Proofs.EmitterScannability.advance_preserves_indents]; rfl
+  have hadv_cols : (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).indentColumns
+      = (scanValuePrepare (scanValueClearKey s)).indentColumns := by
+    simp [ScannerState.indentColumns, hadv_ind]
+  have hadv_fl : (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).flowLevel
+      = s.flowLevel := by
+    rw [L4YAML.Proofs.ScannerLoopInvariant.advance_flowLevel]; simp [ScannerState.emit, ScannerState.emitAt, hp3, hck3]
+  have hadv_st : (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).explicitKeyStack
+      = s.explicitKeyStack := by
+    rw [L4YAML.Proofs.ScannerEkStack.advance_preserves_explicitKeyStack,
+        L4YAML.Proofs.ScannerEkStack.emit_preserves_explicitKeyStack, hp6, hck6]
+  have hadv_inn : (((scanValuePrepare (scanValueClearKey s)).emit .value).advance).innermostPendingKey
+      = s.innermostPendingKey := by
+    rw [innermostPendingKey_eq, hadv_cols, hadv_pk, ← innermostPendingKey_eq, hp2, hinn_kc]
+  have hadv_slots : SlotsOk (((scanValuePrepare (scanValueClearKey s)).emit .value).advance) := by
+    refine ⟨by rw [hadv_pk, hadv_ind]; exact hp1.1, ?_⟩
+    intro i l hi; rw [hadv_pk] at hi; rw [hadv_cols]; exact hp1.2 i l hi
+  sorry
 lemma scanBlockEntry_sound {s s' : ScannerState} (hok : scanBlockEntry s = .ok s') (h : Sound s) :
     Sound s' := by
   sorry

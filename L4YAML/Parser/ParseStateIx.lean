@@ -232,22 +232,30 @@ def ParseStateIx.declareAnchorOpt {input : String} (ps : ParseStateIx input) :
 
 /-- Register an anchor definition `&name` with its resolved value for alias lookup.
 
-    The value is resolved (aliases expanded from the current anchor map)
-    and stripped (anchor annotation removed) before storing.  This ensures:
+    The value is stripped (anchor annotation removed), adapted for any flow
+    context, and then resolved (aliases expanded from the current anchor map)
+    before storing.  This ensures:
     - Transitive alias chains resolve correctly (`*b → [*a, world] → [hello, world]`)
     - Anchor map values compare equal to plain values (no stale `anchor := some name`)
+
+    Cleaning runs on the raw value, *before* alias substitution, so it costs
+    O(size of the anchor's own syntax) and the substituted anchor values stay
+    shared rather than being rebuilt node by node.  Every stored value is
+    already a fixed point of `stripAnchors ∘ adaptForFlowContext`, so this is
+    the same value the resolve-first order produced
+    (`Algebra.Value.cleaned_resolveAliases_comm`); only the cost differs.
 -/
 def ParseStateIx.addAnchor {input : String} (ps : ParseStateIx input)
     (name : String) (val : YamlValue) : ParseStateIx input :=
-  let cleaned := ((val.resolveAliasesWith ps.anchorIndex.find?).stripAnchors).adaptForFlowContext
+  let cleaned := (val.stripAnchors.adaptForFlowContext).resolveAliasesWith ps.anchorIndex.find?
   { ps with anchors := ps.anchors.push (name, cleaned),
             anchorIndex := ps.anchorIndex.push name cleaned }
 
-/-- `addAnchor` stores the value `resolveAliases` would compute: the index
+/-- `addAnchor` stores the value `resolveAliases` would compute (clean first, then resolve): the index
     only changes how the first-match lookup is performed. -/
 @[simp] lemma ParseStateIx.addAnchor_anchors {input : String} (ps : ParseStateIx input) (name : String) (val : YamlValue) :
     (ps.addAnchor name val).anchors =
-      ps.anchors.push (name, ((val.resolveAliases ps.anchors).stripAnchors).adaptForFlowContext) := by
+      ps.anchors.push (name, (val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors) := by
   simp [ParseStateIx.addAnchor]
 
 /-! ## Node Properties -/

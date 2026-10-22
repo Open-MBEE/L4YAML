@@ -35,17 +35,11 @@ variable {input : String}
 lemma addAnchor_wfaS (ps : ParseStateIx input) (name : String) (val : YamlValue)
     (h_wfa : WellFormedAnchorsS ps.anchors)
     (h_scan : ∀ inFlow,
-      Scannable ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext) inFlow) :
+      Scannable (((val.stripAnchors.adaptForFlowContext).resolveAliases ps.anchors).stripAnchors)
+        inFlow) :
     WellFormedAnchorsS (ps.addAnchor name val).anchors := by
   rw [ParseStateIx.addAnchor_anchors]
-  apply WFAS_of_push
-  · exact h_wfa
-  · intro inFlow
-    have h_eq : ((val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext).stripAnchors =
-        (val.resolveAliases ps.anchors).stripAnchors.adaptForFlowContext :=
-      stripAnchors_of_cleaned (val.resolveAliases ps.anchors)
-    rw [h_eq]
-    exact h_scan inFlow
+  exact WFAS_of_push _ _ h_wfa h_scan
 
 /-- Node finalization preserves `WellFormedAnchorsS` — indexed twin.  As in the
     legacy one, the `AllAliasesResolve` premise its `Grammable` original takes

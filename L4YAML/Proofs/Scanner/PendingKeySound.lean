@@ -950,38 +950,705 @@ lemma scanDocumentEnd_sound {s s' : ScannerState} (hok : scanDocumentEnd s = .ok
 /-- The preprocess keeps everything but `RegOk`, and keeps `RegOk` unless the
     next character is a `?` — the one hook exemption that can outlive the pop
     of the key's level (`- ? a⏎? b`); `scanKey` overwrites the register. -/
+lemma SlotsOk.of_eq {s s' : ScannerState} (h : SlotsOk s)
+    (hpk : s'.pendingKeys = s.pendingKeys) (hind : s'.indents = s.indents) : SlotsOk s' := by
+  have hcols : s'.indentColumns = s.indentColumns := by simp [ScannerState.indentColumns, hind]
+  refine ⟨?_, ?_⟩
+  · rw [hpk, hind]; exact h.1
+  · intro i l hi; rw [hcols]; exact h.2 i l (hpk ▸ hi)
+
+/-- Every marked slot sits at or left of the innermost pending key: `go` returns
+    the marked slot of largest index, and the stack is monotone. -/
+lemma go_marked_le (cols : Array Int) (pks : Array (Option Nat)) (n i l : Nat) (hi : i < n)
+    (hpk : pks[i]? = some (some l))
+    (hmono : ∀ (i j : Nat), i ≤ j → ∀ (ci cj : Int), cols[i]? = some ci → cols[j]? = some cj →
+      ci ≤ cj)
+    (hcols : ∀ (j l' : Nat), pks[j]? = some (some l') → ∃ c, cols[j]? = some c) :
+    cols[i]?.getD (-1) ≤ (go cols pks n).2 := by
+  induction n with
+  | zero => omega
+  | succ n ih =>
+    simp only [go]
+    rcases Nat.lt_or_ge i n with hlt | hge
+    · split
+      · rename_i l' hl'
+        have hpn : pks[n]? = some (some l') := by
+          rcases hn : pks[n]? with _ | x
+          · simp [hn] at hl'
+          · simp [hn] at hl'; rw [hl']
+        obtain ⟨ci, hci⟩ := hcols i l hpk
+        obtain ⟨cn, hcn⟩ := hcols n l' hpn
+        simp only [hci, hcn, Option.getD_some]
+        exact hmono i n (Nat.le_of_lt hlt) ci cn hci hcn
+      · exact ih hlt
+    · have hin : i = n := by omega
+      subst hin
+      split
+      · exact Int.le_refl _
+      · rename_i hl'; rw [hpk] at hl'; simp at hl'
+
+lemma marked_le_innermost {s : ScannerState} (hs : SlotsOk s) (hm : Mono s) (i l : Nat)
+    (hi : s.pendingKeys[i]? = some (some l)) :
+    s.indentColumns[i]?.getD (-1) ≤ s.innermostPendingKey.2 := by
+  rw [innermostPendingKey_eq, innermost_eq_go]
+  have hlt : i < s.pendingKeys.size := by
+    rcases Nat.lt_or_ge i s.pendingKeys.size with h | h
+    · exact h
+    · simp [Array.getElem?_eq_none h] at hi
+  refine go_marked_le _ _ _ i l hlt hi ?_ ?_
+  · intro i j hij ci cj hci hcj
+    simp only [ScannerState.indentColumns, Array.getElem?_map, Option.map_eq_some_iff] at hci hcj
+    obtain ⟨ei, hei, rfl⟩ := hci
+    obtain ⟨ej, hej, rfl⟩ := hcj
+    have hj : j < s.indents.size := by
+      rcases Nat.lt_or_ge j s.indents.size with h | h
+      · exact h
+      · simp [Array.getElem?_eq_none h] at hej
+    have hi' : i < s.indents.size := by omega
+    have hle := L4YAML.Proofs.IndentStackMono.MonoArr.le_last hm j hj i hi' hij
+    rw [Array.getElem?_eq_getElem hi', Option.some.injEq] at hei
+    rw [Array.getElem?_eq_getElem hj, Option.some.injEq] at hej
+    subst hei; subst hej; exact hle
+  · intro j l' hj
+    obtain ⟨c, hc, _⟩ := hs.2 j l' hj
+    exact ⟨c, hc⟩
+
+/-- The hook never moves the cursor. -/
+lemma closeStaleExplicitKey_peek (s : ScannerState) :
+    (closeStaleExplicitKey s).peek? = s.peek? := by
+  rcases closeStaleExplicitKey_cases s with h | h <;> rw [h] <;> rfl
+
+/-- Outside flow, with a character under the cursor, the hook either re-reads
+    the register or leaves it because the cursor is at or right of the register
+    column (or the register is already dead). -/
+lemma closeStaleExplicitKey_spec (s : ScannerState) (hnf : s.inFlow = false) {c : Char}
+    (hpeek : s.peek? = some c) :
+    closeStaleExplicitKey s = (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey ∨
+    (closeStaleExplicitKey s = s ∧
+      (s.explicitKeyLine = none ∨ s.explicitKeyCol ≤ (s.col : Int))) := by
+  unfold closeStaleExplicitKey
+  rw [hnf, hpeek]
+  simp only [Bool.false_eq_true, ↓reduceIte]
+  rcases hekl : s.explicitKeyLine with _ | ekLine
+  · exact Or.inr ⟨rfl, Or.inl rfl⟩
+  · dsimp only
+    split
+    · exact Or.inl rfl
+    · rename_i hcond
+      refine Or.inr ⟨rfl, Or.inr ?_⟩
+      by_cases hle : s.explicitKeyCol ≤ (s.col : Int)
+      · exact hle
+      · exfalso
+        have hlt : (s.col : Int) < s.explicitKeyCol := by omega
+        apply hcond
+        simp only [Bool.and_eq_true, Bool.or_eq_true, bne_iff_ne, ne_eq, decide_eq_true_eq,
+          Bool.not_eq_true', Bool.and_eq_false_iff]
+        refine ⟨⟨Int.le_of_lt hlt, Or.inr hlt⟩, Or.inr ?_⟩
+        rw [beq_eq_false_iff_ne]; omega
+
+/-- The hook after an unwind at the cursor column.  The unwind may have popped
+    the register's own level; whatever it popped, the hook either re-reads the
+    register (`RegOk` by construction) or finds the cursor at or right of the
+    register column, in which case no marked slot was popped and the register is
+    still the innermost. -/
+lemma hook_after_unwind {s0 : ScannerState} (h : Sound s0) (hm : Mono s0) (hnf : s0.inFlow = false)
+    {c : Char} (t : ScannerState)
+    (ht_pk : t.pendingKeys = (unwindIndents s0 (s0.col : Int)).pendingKeys)
+    (ht_ind : t.indents = (unwindIndents s0 (s0.col : Int)).indents)
+    (ht_fl : t.flowLevel = s0.flowLevel)
+    (ht_ekl : t.explicitKeyLine = s0.explicitKeyLine) (ht_ekc : t.explicitKeyCol = s0.explicitKeyCol)
+    (ht_st : t.explicitKeyStack = s0.explicitKeyStack) (ht_col : t.col = s0.col)
+    (hpeek : (closeStaleExplicitKey t).peek? = some c) :
+    Sound (closeStaleExplicitKey t) := by
+  have h0 : s0.flowLevel = 0 := by simp [ScannerState.inFlow] at hnf; omega
+  have hsu : SlotsOk (unwindIndents s0 (s0.col : Int)) := unwindIndents_slots _ _ h.slots
+  have hs_t : SlotsOk t := SlotsOk.of_eq hsu ht_pk ht_ind
+  have hfl_t : t.flowLevel = 0 := ht_fl.trans h0
+  have hb_t : BaseOk t := fun hp => by rw [hfl_t] at hp; exact absurd hp (Nat.lt_irrefl 0)
+  have hstk_t : StackOk t := by
+    show t.explicitKeyStack.size = t.flowLevel
+    rw [ht_st, ht_fl]; exact h.stack
+  have hnf_t : t.inFlow = false := by simp [ScannerState.inFlow, hfl_t]
+  have hpeek_t : t.peek? = some c := by rw [← closeStaleExplicitKey_peek t]; exact hpeek
+  have hreg0 := h.reg h0
+  have hmarked : ∀ (i l : Nat), s0.pendingKeys[i]? = some (some l) →
+      s0.indentColumns[i]?.getD (-1) ≤ s0.explicitKeyCol := by
+    intro i l hi
+    have hle := marked_le_innermost h.slots hm i l hi
+    rw [← hreg0] at hle
+    exact hle
+  rcases closeStaleExplicitKey_spec t hnf_t hpeek_t with hre | ⟨hid, hwhy⟩
+  · rw [hre]
+    have hb' : BaseOk (t.clearPendingKeyAt t.explicitKeyCol) := by
+      intro hp
+      simp only [ScannerState.clearPendingKeyAt] at hp
+      rw [hfl_t] at hp; exact absurd hp (Nat.lt_irrefl 0)
+    have hst' : StackOk (t.clearPendingKeyAt t.explicitKeyCol) := by
+      show (t.clearPendingKeyAt t.explicitKeyCol).explicitKeyStack.size
+        = (t.clearPendingKeyAt t.explicitKeyCol).flowLevel
+      exact hstk_t
+    exact readPendingKey_sound (clearPendingKeyAt_slots hs_t _) hb' hst'
+  · rw [hid]
+    refine ⟨hs_t, fun _ => ?_, hb_t, hstk_t⟩
+    -- the marked slots of `s0` sit at or left of the cursor, so the unwind kept them
+    have hmarked' : ∀ (i l : Nat), s0.pendingKeys[i]? = some (some l) →
+        s0.indentColumns[i]?.getD (-1) ≤ (s0.col : Int) := by
+      intro i l hi
+      have hle := hmarked i l hi
+      rcases hwhy with hnone | hcol
+      · rw [ht_ekl] at hnone
+        have hsnd : s0.innermostPendingKey.2 = -1 := by
+          rw [innermostPendingKey_eq, innermost_eq_go]
+          apply go_none_snd
+          rw [← innermost_eq_go, ← innermostPendingKey_eq, ← hreg0, hnone]
+        rw [← hreg0] at hsnd
+        simp only at hsnd
+        have : (0 : Int) ≤ (s0.col : Int) := Int.ofNat_nonneg _
+        omega
+      · rw [ht_ekc, ht_col] at hcol
+        exact Int.le_trans hle hcol
+    have hinn_u : (unwindIndents s0 (s0.col : Int)).innermostPendingKey = s0.innermostPendingKey := by
+      unfold unwindIndents; exact unwindIndentsLoop_innermost s0 _ _ h.slots hmarked'
+    have hcols_t : t.indentColumns = (unwindIndents s0 (s0.col : Int)).indentColumns := by
+      simp [ScannerState.indentColumns, ht_ind]
+    show (t.explicitKeyLine, t.explicitKeyCol) = t.innermostPendingKey
+    rw [ht_ekl, ht_ekc, innermostPendingKey_eq, hcols_t, ht_pk, ← innermostPendingKey_eq, hinn_u]
+    exact hreg0
+
+/-- **Preprocess keeps the carrier.**  With the hook firing on `col ≤ ekCol`
+    alone (item 338 dropped its same-line and `?` exemptions), the register is
+    re-read whenever the unwind could have popped its level. -/
 lemma preprocess_sound {s s' : ScannerState} {c : Char}
-    (hok : scanNextToken_preprocess s = .ok (some (s', c))) (h : Sound s)
-    (hm : Mono s) (hbase : SentinelBase s) :
-    SlotsOk s' ∧ BaseOk s' ∧ StackOk s' ∧ (c ≠ '?' → RegOk s') := by
-  sorry
+    (hok : scanNextToken_preprocess s = .ok (some (s', c))) (h : Sound s) (hm : Mono s) :
+    Sound s' := by
+  unfold scanNextToken_preprocess at hok
+  simp only [bind, pure, Pure.pure, Except.pure, Except.bind] at hok
+  split at hok
+  · contradiction
+  · rename_i s_skip h_skip
+    have hind_skip := L4YAML.Proofs.PreprocessIndentStable.skipToContent_preserves_indents s s_skip h_skip
+    have hS : Sound s_skip := Sound.of_eq h (skipToContent_preserves_pendingKeys s s_skip h_skip)
+      hind_skip (L4YAML.Proofs.ScannerCorrectness.skipToContent_preserves_flowLevel s s_skip h_skip)
+      (L4YAML.Proofs.ExplicitKeyCoupling.skipToContent_preserves_explicitKeyLine s s_skip h_skip)
+      (L4YAML.Proofs.ExplicitKeyCoupling.skipToContent_preserves_explicitKeyCol s s_skip h_skip)
+      (L4YAML.Proofs.ScannerEkStack.skipToContent_preserves_explicitKeyStack s s_skip h_skip)
+    have hM : Mono s_skip := hm.of_indents_eq hind_skip
+    split at hok
+    · simp at hok
+    · split at hok
+      · rename_i hnic
+        have hnf : s_skip.inFlow = false := by
+          simp only [Bool.and_eq_true, Bool.not_eq_true'] at hnic; exact hnic.1
+        split at hok
+        · contradiction
+        · split at hok
+          · simp at hok
+          · rename_i cpk hpeek
+            simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
+            obtain ⟨rfl, rfl⟩ := hok
+            refine hook_after_unwind hS hM hnf _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hpeek
+            · rw [saveSimpleKey_preserves_pendingKeys]
+            · rw [L4YAML.Proofs.PreprocessIndentStable.saveSimpleKey_preserves_indents]
+            · rw [L4YAML.Proofs.ScannerCorrectness.saveSimpleKey_preserves_flowLevel]
+              exact L4YAML.Proofs.ScannerCorrectness.unwindIndents_preserves_flowLevel _ _
+            · rw [L4YAML.Proofs.ExplicitKeyCoupling.saveSimpleKey_preserves_explicitKeyLine]
+              exact L4YAML.Proofs.ExplicitKeyCoupling.unwindIndents_preserves_explicitKeyLine _ _
+            · rw [L4YAML.Proofs.ExplicitKeyCoupling.saveSimpleKey_preserves_explicitKeyCol]
+              exact L4YAML.Proofs.ExplicitKeyCoupling.unwindIndents_preserves_explicitKeyCol _ _
+            · rw [L4YAML.Proofs.ScannerEkStack.saveSimpleKey_preserves_explicitKeyStack]
+              exact L4YAML.Proofs.ScannerEkStack.unwindIndents_preserves_explicitKeyStack _ _
+            · rw [L4YAML.Proofs.PreprocessIndentStable.saveSimpleKey_col]
+              exact L4YAML.Proofs.PreprocessIndentStable.unwindIndents_col _ _
+      · split at hok
+        · contradiction
+        · split at hok
+          · simp at hok
+          · simp only [Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at hok
+            obtain ⟨rfl, rfl⟩ := hok
+            have hT : Sound (saveSimpleKey s_skip) := Sound.of_eq hS
+              (saveSimpleKey_preserves_pendingKeys _)
+              (L4YAML.Proofs.PreprocessIndentStable.saveSimpleKey_preserves_indents _)
+              (L4YAML.Proofs.ScannerCorrectness.saveSimpleKey_preserves_flowLevel _)
+              (L4YAML.Proofs.ExplicitKeyCoupling.saveSimpleKey_preserves_explicitKeyLine _)
+              (L4YAML.Proofs.ExplicitKeyCoupling.saveSimpleKey_preserves_explicitKeyCol _)
+              (L4YAML.Proofs.ScannerEkStack.saveSimpleKey_preserves_explicitKeyStack _)
+            exact closeStaleExplicitKey_sound hT
+
+/-! ## §4  The dispatchers -/
+
+/-! ### Directives never touch the register (twins of the `pendingKeys` proofs) -/
+
+lemma skipToEndOfLineLoop_explicitKeyLine (s : ScannerState) (fuel : Nat) :
+    (skipToEndOfLineLoop s fuel).explicitKeyLine = s.explicitKeyLine := by
+  induction fuel generalizing s with
+  | zero => unfold skipToEndOfLineLoop; rfl
+  | succ _ ih =>
+    unfold skipToEndOfLineLoop
+    split
+    · split
+      · rfl
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+    · rfl
+
+lemma skipToEndOfLine_explicitKeyLine (s : ScannerState) :
+    (skipToEndOfLine s).explicitKeyLine = s.explicitKeyLine := by
+  unfold skipToEndOfLine; exact skipToEndOfLineLoop_explicitKeyLine s _
+
+lemma collectDirectiveNameLoop_explicitKeyLine (s : ScannerState) (name : String)
+    (fuel : Nat) : (collectDirectiveNameLoop s name fuel).snd.explicitKeyLine = s.explicitKeyLine := by
+  induction fuel generalizing s name with
+  | zero => unfold collectDirectiveNameLoop; rfl
+  | succ _ ih =>
+    unfold collectDirectiveNameLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+      · rfl
+    · rfl
+
+lemma collectVersionMajorLoop_explicitKeyLine (s : ScannerState) (major : String)
+    (fuel : Nat) : (collectVersionMajorLoop s major fuel).snd.explicitKeyLine = s.explicitKeyLine := by
+  induction fuel generalizing s major with
+  | zero => unfold collectVersionMajorLoop; rfl
+  | succ _ ih =>
+    unfold collectVersionMajorLoop; split
+    · exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+      · rfl
+    · rfl
+
+lemma collectVersionMinorLoop_explicitKeyLine (s : ScannerState) (minor : String)
+    (fuel : Nat) : (collectVersionMinorLoop s minor fuel).snd.explicitKeyLine = s.explicitKeyLine := by
+  induction fuel generalizing s minor with
+  | zero => unfold collectVersionMinorLoop; rfl
+  | succ _ ih =>
+    unfold collectVersionMinorLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+      · rfl
+    · rfl
+
+lemma collectTagPrefixLoop_explicitKeyLine (s : ScannerState) (pfx : String)
+    (fuel : Nat) : (collectTagPrefixLoop s pfx fuel).snd.explicitKeyLine = s.explicitKeyLine := by
+  induction fuel generalizing s pfx with
+  | zero => unfold collectTagPrefixLoop; rfl
+  | succ _ ih =>
+    unfold collectTagPrefixLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+      · rfl
+    · rfl
+
+lemma collectTagHandleDirectiveLoop_explicitKeyLine (s : ScannerState) (handle : String)
+    (fuel : Nat) : (collectTagHandleDirectiveLoop s handle fuel).snd.explicitKeyLine = s.explicitKeyLine := by
+  induction fuel generalizing s handle with
+  | zero => unfold collectTagHandleDirectiveLoop; rfl
+  | succ _ ih =>
+    unfold collectTagHandleDirectiveLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine s
+      · rfl
+    · rfl
+
+lemma scanDirective_explicitKeyLine {s s' : ScannerState}
+    (h : scanDirective s = .ok s') : s'.explicitKeyLine = s.explicitKeyLine := by
+  unfold scanDirective at h
+  split at h
+  · contradiction
+  · simp only [] at h
+    split at h
+    · split at h
+      · rename_i s_inner h_inner
+        have h_eq := Except.ok.inj h; subst h_eq
+        rw [skipToEndOfLine_explicitKeyLine]
+        unfold scanYamlDirective at h_inner
+        simp only [bind, Except.bind] at h_inner
+        split at h_inner <;> try contradiction
+        repeat (any_goals (split at h_inner))
+        all_goals (try contradiction)
+        all_goals (simp only [Except.ok.injEq] at h_inner; subst h_inner)
+        all_goals (try simp [L4YAML.Proofs.ExplicitKeyCoupling.emitAt_preserves_explicitKeyLine, L4YAML.Proofs.ExplicitKeyCoupling.skipWhitespace_preserves_explicitKeyLine,
+              collectVersionMinorLoop_explicitKeyLine,
+              collectVersionMajorLoop_explicitKeyLine])
+        all_goals (rw [collectDirectiveNameLoop_explicitKeyLine,
+                       L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine])
+      · contradiction
+    · split at h
+      · split at h
+        · rename_i s_inner h_inner
+          have h_eq := Except.ok.inj h; subst h_eq
+          rw [skipToEndOfLine_explicitKeyLine]
+          unfold scanTagDirective at h_inner
+          dsimp only [] at h_inner
+          simp only [bind, Except.bind] at h_inner
+          split at h_inner <;> try (split at h_inner <;> try contradiction)
+          all_goals (try contradiction)
+          all_goals (simp only [Except.ok.injEq] at h_inner; subst h_inner)
+          all_goals simp [L4YAML.Proofs.ExplicitKeyCoupling.emitAt_preserves_explicitKeyLine, collectTagPrefixLoop_explicitKeyLine,
+                L4YAML.Proofs.ExplicitKeyCoupling.skipWhitespace_preserves_explicitKeyLine,
+                collectTagHandleDirectiveLoop_explicitKeyLine,
+                collectDirectiveNameLoop_explicitKeyLine,
+                L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine]
+        · contradiction
+      · simp only [Except.ok.injEq] at h; subst h
+        simp [skipToEndOfLine_explicitKeyLine, L4YAML.Proofs.ExplicitKeyCoupling.skipWhitespace_preserves_explicitKeyLine,
+              collectDirectiveNameLoop_explicitKeyLine,
+              L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyLine]
+
+lemma skipToEndOfLineLoop_explicitKeyCol (s : ScannerState) (fuel : Nat) :
+    (skipToEndOfLineLoop s fuel).explicitKeyCol = s.explicitKeyCol := by
+  induction fuel generalizing s with
+  | zero => unfold skipToEndOfLineLoop; rfl
+  | succ _ ih =>
+    unfold skipToEndOfLineLoop
+    split
+    · split
+      · rfl
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+    · rfl
+
+lemma skipToEndOfLine_explicitKeyCol (s : ScannerState) :
+    (skipToEndOfLine s).explicitKeyCol = s.explicitKeyCol := by
+  unfold skipToEndOfLine; exact skipToEndOfLineLoop_explicitKeyCol s _
+
+lemma collectDirectiveNameLoop_explicitKeyCol (s : ScannerState) (name : String)
+    (fuel : Nat) : (collectDirectiveNameLoop s name fuel).snd.explicitKeyCol = s.explicitKeyCol := by
+  induction fuel generalizing s name with
+  | zero => unfold collectDirectiveNameLoop; rfl
+  | succ _ ih =>
+    unfold collectDirectiveNameLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+      · rfl
+    · rfl
+
+lemma collectVersionMajorLoop_explicitKeyCol (s : ScannerState) (major : String)
+    (fuel : Nat) : (collectVersionMajorLoop s major fuel).snd.explicitKeyCol = s.explicitKeyCol := by
+  induction fuel generalizing s major with
+  | zero => unfold collectVersionMajorLoop; rfl
+  | succ _ ih =>
+    unfold collectVersionMajorLoop; split
+    · exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+      · rfl
+    · rfl
+
+lemma collectVersionMinorLoop_explicitKeyCol (s : ScannerState) (minor : String)
+    (fuel : Nat) : (collectVersionMinorLoop s minor fuel).snd.explicitKeyCol = s.explicitKeyCol := by
+  induction fuel generalizing s minor with
+  | zero => unfold collectVersionMinorLoop; rfl
+  | succ _ ih =>
+    unfold collectVersionMinorLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+      · rfl
+    · rfl
+
+lemma collectTagPrefixLoop_explicitKeyCol (s : ScannerState) (pfx : String)
+    (fuel : Nat) : (collectTagPrefixLoop s pfx fuel).snd.explicitKeyCol = s.explicitKeyCol := by
+  induction fuel generalizing s pfx with
+  | zero => unfold collectTagPrefixLoop; rfl
+  | succ _ ih =>
+    unfold collectTagPrefixLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+      · rfl
+    · rfl
+
+lemma collectTagHandleDirectiveLoop_explicitKeyCol (s : ScannerState) (handle : String)
+    (fuel : Nat) : (collectTagHandleDirectiveLoop s handle fuel).snd.explicitKeyCol = s.explicitKeyCol := by
+  induction fuel generalizing s handle with
+  | zero => unfold collectTagHandleDirectiveLoop; rfl
+  | succ _ ih =>
+    unfold collectTagHandleDirectiveLoop; split
+    · split
+      · rw [ih]; exact L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol s
+      · rfl
+    · rfl
+
+lemma scanDirective_explicitKeyCol {s s' : ScannerState}
+    (h : scanDirective s = .ok s') : s'.explicitKeyCol = s.explicitKeyCol := by
+  unfold scanDirective at h
+  split at h
+  · contradiction
+  · simp only [] at h
+    split at h
+    · split at h
+      · rename_i s_inner h_inner
+        have h_eq := Except.ok.inj h; subst h_eq
+        rw [skipToEndOfLine_explicitKeyCol]
+        unfold scanYamlDirective at h_inner
+        simp only [bind, Except.bind] at h_inner
+        split at h_inner <;> try contradiction
+        repeat (any_goals (split at h_inner))
+        all_goals (try contradiction)
+        all_goals (simp only [Except.ok.injEq] at h_inner; subst h_inner)
+        all_goals (try simp [L4YAML.Proofs.ExplicitKeyCoupling.emitAt_preserves_explicitKeyCol, L4YAML.Proofs.ExplicitKeyCoupling.skipWhitespace_preserves_explicitKeyCol,
+              collectVersionMinorLoop_explicitKeyCol,
+              collectVersionMajorLoop_explicitKeyCol])
+        all_goals (rw [collectDirectiveNameLoop_explicitKeyCol,
+                       L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol])
+      · contradiction
+    · split at h
+      · split at h
+        · rename_i s_inner h_inner
+          have h_eq := Except.ok.inj h; subst h_eq
+          rw [skipToEndOfLine_explicitKeyCol]
+          unfold scanTagDirective at h_inner
+          dsimp only [] at h_inner
+          simp only [bind, Except.bind] at h_inner
+          split at h_inner <;> try (split at h_inner <;> try contradiction)
+          all_goals (try contradiction)
+          all_goals (simp only [Except.ok.injEq] at h_inner; subst h_inner)
+          all_goals simp [L4YAML.Proofs.ExplicitKeyCoupling.emitAt_preserves_explicitKeyCol, collectTagPrefixLoop_explicitKeyCol,
+                L4YAML.Proofs.ExplicitKeyCoupling.skipWhitespace_preserves_explicitKeyCol,
+                collectTagHandleDirectiveLoop_explicitKeyCol,
+                collectDirectiveNameLoop_explicitKeyCol,
+                L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol]
+        · contradiction
+      · simp only [Except.ok.injEq] at h; subst h
+        simp [skipToEndOfLine_explicitKeyCol, L4YAML.Proofs.ExplicitKeyCoupling.skipWhitespace_preserves_explicitKeyCol,
+              collectDirectiveNameLoop_explicitKeyCol,
+              L4YAML.Proofs.ExplicitKeyCoupling.advance_preserves_explicitKeyCol]
+
+/-- Content dispatch keeps the slots in both contexts (the `PendingKeysStable`
+    twin is stated in flow only; this is the block-and-flow statement, mirroring
+    `IndentStackBase.dispatchContent_preserves_indents`). -/
+lemma dispatchContent_pendingKeys {s s' : ScannerState} {c : Char}
+    (hok : scanNextToken_dispatchContent s c = .ok s') : s'.pendingKeys = s.pendingKeys := by
+  unfold scanNextToken_dispatchContent at hok
+  simp only [bind, pure, Pure.pure, Except.pure, Except.bind] at hok
+  split at hok
+  · split at hok
+    · simp at hok
+    generalize h_fn : scanAnchorOrAlias s true = result at hok
+    cases result with
+    | error e => simp at hok
+    | ok s_a =>
+      simp only [Except.ok.injEq] at hok; subst hok; dsimp only []
+      exact scanAnchorOrAlias_preserves_pendingKeys h_fn
+  · split at hok
+    · split at hok
+      · simp at hok
+      split at hok
+      · simp at hok
+      · replace hok := aliasArm_scan_ok hok
+        generalize h_fn : scanAnchorOrAlias s false = result at hok
+        cases result with
+        | error e => simp at hok
+        | ok s_a =>
+          simp only [Except.ok.injEq] at hok; subst hok
+          exact scanAnchorOrAlias_preserves_pendingKeys h_fn
+    · split at hok
+      · split at hok
+        · simp at hok
+        generalize h_fn : scanTag s = result at hok
+        cases result with
+        | error e => simp at hok
+        | ok s_t =>
+          simp only [Except.ok.injEq] at hok; subst hok
+          exact scanTag_preserves_pendingKeys h_fn
+      · repeat (any_goals (split at hok))
+        any_goals contradiction
+        all_goals (try simp only [Except.ok.injEq] at *)
+        all_goals (try contradiction)
+        all_goals (try subst_vars)
+        all_goals (try dsimp only [])
+        all_goals first
+          | exact scanBlockScalar_preserves_pendingKeys (by assumption)
+          | exact scanDoubleQuoted_preserves_pendingKeys _ _ (by assumption)
+          | exact scanSingleQuoted_preserves_pendingKeys (by assumption)
+          | exact scanPlainScalar_preserves_pendingKeys (by assumption)
+          | (simp_all; done)
+
+lemma flowLevel_pos_of_ne {s : ScannerState} (h : ¬ (s.flowLevel == 0) = true) :
+    0 < s.flowLevel := by
+  simp at h; omega
 
 lemma dispatchStructural_sound {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchStructural s c = .ok (some s')) (h : Sound s)
     (hm : Mono s) (hbase : SentinelBase s) : Sound s' := by
-  sorry
+  unfold scanNextToken_dispatchStructural at hok
+  simp only [bind, pure, Pure.pure, Except.pure, Except.bind] at hok
+  repeat (any_goals (split at hok))
+  any_goals contradiction
+  all_goals (try simp only [Except.ok.injEq, Option.some.injEq] at *)
+  any_goals contradiction
+  all_goals (try subst_vars)
+  all_goals first
+    | exact scanDocumentStart_sound s h
+        (by rcases Nat.eq_zero_or_pos s.flowLevel with h0 | hp
+            · exact h0
+            · exfalso; simp_all [ScannerState.inFlow]) hm hbase
+    | exact scanDocumentEnd_sound (by assumption) h
+        (by rcases Nat.eq_zero_or_pos s.flowLevel with h0 | hp
+            · exact h0
+            · exfalso; simp_all [ScannerState.inFlow]) hm hbase
+    | exact Sound.of_eq h (scanDirective_preserves_pendingKeys (by assumption))
+        (L4YAML.Proofs.IndentStackBase.scanDirective_preserves_indents (by assumption))
+        (L4YAML.Proofs.ScannerCorrectness.scanDirective_preserves_flowLevel _ _ (by assumption))
+        (scanDirective_explicitKeyLine (by assumption))
+        (scanDirective_explicitKeyCol (by assumption))
+        (L4YAML.Proofs.ScannerEkStack.scanDirective_preserves_explicitKeyStack _ _ (by assumption))
 
 lemma dispatchFlowIndicators_sound {s s' : ScannerState} {c : Char}
     (hok : scanNextToken_dispatchFlowIndicators s c = .ok (some s')) (h : Sound s) : Sound s' := by
-  sorry
+  unfold scanNextToken_dispatchFlowIndicators at hok
+  simp only [bind, Except.bind, pure, Except.pure] at hok
+  repeat (any_goals (split at hok))
+  all_goals (try contradiction)
+  all_goals (try (simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok))
+  all_goals first
+    | exact scanFlowSequenceStart_sound s h
+    | exact scanFlowMappingStart_sound s h
+    | exact scanFlowSequenceEnd_sound s h (flowLevel_pos_of_ne (by assumption))
+    | exact scanFlowMappingEnd_sound s h (flowLevel_pos_of_ne (by assumption))
+    | exact scanFlowEntry_sound (by assumption) h (flowLevel_pos_of_ne (by assumption))
+    | simp_all
 
+/-- The block indicators.  `hcol` is the floor `scanKey` marks its level
+    against — item 338's STARVED premise (see `PreprocessFloor`). -/
 lemma dispatchBlockIndicators_sound {s s' : ScannerState} {c : Char}
-    (hok : scanNextToken_dispatchBlockIndicators s c = .ok (some s'))
-    (hs : SlotsOk s) (hb : BaseOk s) (hst : StackOk s) (hr : c ≠ '?' → RegOk s)
-    (hbase : SentinelBase s) : Sound s' := by
-  sorry
+    (hok : scanNextToken_dispatchBlockIndicators s c = .ok (some s')) (h : Sound s)
+    (hbase : SentinelBase s) (hcol : s.inFlow = false → s.currentIndent ≤ (s.col : Int)) :
+    Sound s' := by
+  by_cases hf : s.inFlow = true
+  · have hpos : 0 < s.flowLevel := by simp [ScannerState.inFlow] at hf; exact hf
+    exact Sound.of_eq_inFlow h hpos (dispatchBlockIndicators_preserves_pendingKeys hf hok)
+      (L4YAML.Proofs.FlowIndentStable.dispatchBlockIndicators_preserves_indents hf hok)
+      (L4YAML.Proofs.ScannerCorrectness.dispatchBlockIndicators_preserves_flowLevel s c s' hok)
+      (L4YAML.Proofs.ScannerEkStack.dispatchBlockIndicators_preserves_explicitKeyStack s c s' hok)
+  · have hnf : s.inFlow = false := by simpa using hf
+    unfold scanNextToken_dispatchBlockIndicators at hok
+    simp only [bind, pure, Pure.pure, Except.pure, Except.bind] at hok
+    repeat (any_goals (split at hok))
+    any_goals contradiction
+    all_goals (try simp only [Except.ok.injEq, Option.some.injEq] at *)
+    any_goals contradiction
+    all_goals (try subst_vars)
+    all_goals first
+      | exact scanBlockEntry_sound hnf (by assumption) h
+      | exact scanKey_sound (by assumption) h.slots h.base h.stack hbase hcol
+      | exact scanValue_sound (by assumption) h
 
 lemma dispatchContent_sound {s s' : ScannerState} {c : Char}
-    (hok : scanNextToken_dispatchContent s c = .ok s') (h : Sound s) : Sound s' := by
-  sorry
+    (hok : scanNextToken_dispatchContent s c = .ok s') (h : Sound s) : Sound s' :=
+  Sound.of_eq h (dispatchContent_pendingKeys hok)
+    (L4YAML.Proofs.IndentStackBase.dispatchContent_preserves_indents hok)
+    (L4YAML.Proofs.ScannerCorrectness.dispatchContent_preserves_flowLevel s c s' hok)
+    (L4YAML.Proofs.ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyLine s c s' hok)
+    (L4YAML.Proofs.ExplicitKeyCoupling.dispatchContent_preserves_explicitKeyCol s c s' hok)
+    (L4YAML.Proofs.ScannerEkStack.dispatchContent_preserves_explicitKeyStack s c s' hok)
 
 /-! ## §5  The step and the seed -/
 
+/-- **STARVED premise (item 338).**  After preprocess, outside flow, the cursor
+    is at or right of the current indent — the floor `scanKey` marks its level
+    against when it does not push one.  The unwind supplies it when it runs
+    (`IndentStackCover.unwindIndents_top_le`); when no indent check was pending
+    it is a fact about the cursor the carrier does not yet hold.  Probe p3 holds
+    it after every preprocess on 18 inputs; its carrier (`ColFloor`:
+    `inFlow = false → needIndentCheck = false → currentIndent ≤ col`) is the
+    follow-up item, and `StreamAccum` cannot thread `Sound` before it lands. -/
+def PreprocessFloor (s : ScannerState) : Prop :=
+  ∀ (sp : ScannerState) (c : Char), scanNextToken_preprocess s = .ok (some (sp, c)) →
+    sp.inFlow = false → sp.currentIndent ≤ (sp.col : Int)
+
 /-- **The step keeps the register honest.** -/
 lemma scanNextToken_sound {s s' : ScannerState}
-    (hok : scanNextToken s = .ok (some s')) (h : Sound s) (hm : Mono s) (hbase : SentinelBase s) :
-    Sound s' := by
-  sorry
+    (hok : scanNextToken s = .ok (some s')) (h : Sound s) (hm : Mono s) (hbase : SentinelBase s)
+    (hfloor : PreprocessFloor s) : Sound s' := by
+  unfold scanNextToken at hok
+  simp only [bind, Except.bind, pure, Except.pure, Bind.bind, Pure.pure] at hok
+  split at hok
+  · cases hok
+  · split at hok
+    · simp at hok
+    · rename_i sp c h_pre
+      have h_ps : Sound sp := preprocess_sound h_pre h hm
+      have h_pb : SentinelBase sp := L4YAML.Proofs.IndentStackBase.preprocess_base h_pre hbase
+      have h_pm : Mono sp := L4YAML.Proofs.IndentStackMono.preprocess_mono h_pre hm
+      have h_pc : sp.inFlow = false → sp.currentIndent ≤ (sp.col : Int) := hfloor sp c h_pre
+      split at hok
+      · cases hok
+      split at hok
+      · cases hok
+      split at hok
+      · cases hok
+      · split at hok
+        · simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+          exact dispatchStructural_sound ‹_› h_ps h_pm h_pb
+        · split at hok
+          · cases hok
+          split at hok
+          · cases hok
+          · rcases h_ad : sp.allowDirectives with _ | _
+            <;> simp only [h_ad, Bool.false_eq_true, ↓reduceIte] at hok
+            · generalize h_fi : scanNextToken_dispatchFlowIndicators sp c = fi at hok
+              cases fi with
+              | error => cases hok
+              | ok fi_opt =>
+                cases fi_opt with
+                | some s_fi =>
+                  simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                  exact dispatchFlowIndicators_sound h_fi h_ps
+                | none =>
+                  generalize h_bi : scanNextToken_dispatchBlockIndicators sp c = bi at hok
+                  cases bi with
+                  | error => cases hok
+                  | ok bi_opt =>
+                    cases bi_opt with
+                    | some s_bi =>
+                      simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                      exact dispatchBlockIndicators_sound h_bi h_ps h_pb h_pc
+                    | none =>
+                      generalize h_av : scanNextToken_checkAdjacentValue sp c = av at hok
+                      cases av with
+                      | error => cases hok
+                      | ok _ =>
+                      generalize h_dc : scanNextToken_dispatchContent sp c = dc at hok
+                      cases dc with
+                      | error => cases hok
+                      | ok s_dc =>
+                        simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                        exact dispatchContent_sound h_dc h_ps
+            · generalize h_sp2 :
+                (({ sp with allowDirectives := false, documentEverStarted := true }
+                  : ScannerState)) = sp2 at hok
+              have h_ps2 : Sound sp2 := by
+                rw [← h_sp2]; exact Sound.of_eq h_ps rfl rfl rfl rfl rfl rfl
+              have h_pb2 : SentinelBase sp2 := by rw [← h_sp2]; exact h_pb
+              have h_pc2 : sp2.inFlow = false → sp2.currentIndent ≤ (sp2.col : Int) := by
+                rw [← h_sp2]; exact h_pc
+              generalize h_fi : scanNextToken_dispatchFlowIndicators sp2 c = fi at hok
+              cases fi with
+              | error => cases hok
+              | ok fi_opt =>
+                cases fi_opt with
+                | some s_fi =>
+                  simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                  exact dispatchFlowIndicators_sound h_fi h_ps2
+                | none =>
+                  generalize h_bi : scanNextToken_dispatchBlockIndicators sp2 c = bi at hok
+                  cases bi with
+                  | error => cases hok
+                  | ok bi_opt =>
+                    cases bi_opt with
+                    | some s_bi =>
+                      simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                      exact dispatchBlockIndicators_sound h_bi h_ps2 h_pb2 h_pc2
+                    | none =>
+                      generalize h_av : scanNextToken_checkAdjacentValue sp2 c = av at hok
+                      cases av with
+                      | error => cases hok
+                      | ok _ =>
+                      generalize h_dc : scanNextToken_dispatchContent sp2 c = dc at hok
+                      cases dc with
+                      | error => cases hok
+                      | ok s_dc =>
+                        simp only [Except.ok.injEq, Option.some.injEq] at hok; subst hok
+                        exact dispatchContent_sound h_dc h_ps2
 
 /-! ### The seed -/
 

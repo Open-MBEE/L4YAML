@@ -503,9 +503,9 @@ def scanValue (s : ScannerState) : Except ScanError ScannerState := do
 def closeStaleExplicitKey (s : ScannerState) : ScannerState :=
   if s.inFlow then s
   else match s.explicitKeyLine, s.peek? with
-    | some ekLine, some c =>
-      if s.line != ekLine && (s.col : Int) ≤ s.explicitKeyCol
-          && (c != '-' || (s.col : Int) < s.explicitKeyCol) && c != '?' && !(c == ':' && (s.col : Int) == s.explicitKeyCol) then
+    | some _, some c =>
+      if (s.col : Int) ≤ s.explicitKeyCol
+          && (c != '-' || (s.col : Int) < s.explicitKeyCol) && !(c == ':' && (s.col : Int) == s.explicitKeyCol) then
         (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey
       else s
     | _, _ => s

@@ -420,6 +420,18 @@ lemma push_append_ofList_eq (s : String) (c : Char) (cs : List Char) :
 lemma append_ofList_nil (s : String) : s ++ String.ofList [] = s := by
   apply String.ext; simp
 
+/-- Flushing the `spaces` buffer and pushing `c` is the merged append. -/
+lemma append_flush_push_ofList_eq (s t : String) (c : Char) (cs : List Char) :
+    (s ++ t).push c ++ "" ++ String.ofList cs = s ++ t ++ String.ofList (c :: cs) := by
+  apply String.ext
+  simp [String.toList_append, String.toList_push, String.toList_ofList]
+
+/-- Buffering `c` into `spaces` is the merged append. -/
+lemma append_buffer_ofList_eq (s t : String) (c : Char) (cs : List Char) :
+    s ++ t.push c ++ String.ofList cs = s ++ t ++ String.ofList (c :: cs) := by
+  apply String.ext
+  simp [String.toList_append, String.toList_push, String.toList_ofList]
+
 /-- Hex foldl roundtrip for control characters. -/
 lemma hex_foldl_roundtrip : ∀ n : Fin 32,
     let h1 := hexNibble (n.val / 16)
@@ -761,28 +773,30 @@ lemma collectDoubleQuotedLoopIx_escapeString_succeeds {input : String}
       ⟨(escapeString (String.ofList content_rest)).toList ++ ['"'] ++ rest, c.pos.col⟩)
     (h_fuel : fuel ≥ content_rest.length + 1) :
     ∃ c',
-      collectDoubleQuotedLoopIx c acc 0 fuel =
+      collectDoubleQuotedLoopIx c acc "" fuel =
         some (acc ++ String.ofList content_rest, c') ∧
       CursorSurfCorrIx c' ⟨rest, c'.pos.col⟩ ∧
       c'.pos.col > 0 ∧
       c'.pos.line = c.pos.line := by
-  -- protectedLen (0 at every real entry) generalised so the IH covers the
-  -- escape branch's shifted boundary (B2); `escapeString` output has no line
-  -- folds, so the returned content is protectedLen-independent.
-  suffices H : ∀ (p : Nat) (c : IxCursor input) (acc : String) (fuel : Nat),
+  -- The `spaces` buffer (empty at every real entry) is generalised so the IH
+  -- covers the whitespace branch's buffering and the flushes (B2);
+  -- `escapeString` output has no line folds, so nothing is ever dropped and
+  -- the returned content is the merged `acc ++ spaces ++ content_rest`.
+  suffices H : ∀ (spaces : String) (c : IxCursor input) (acc : String) (fuel : Nat),
       CursorSurfCorrIx c
         ⟨(escapeString (String.ofList content_rest)).toList ++ ['"'] ++ rest, c.pos.col⟩ →
       fuel ≥ content_rest.length + 1 →
       ∃ c',
-        collectDoubleQuotedLoopIx c acc p fuel =
-          some (acc ++ String.ofList content_rest, c') ∧
+        collectDoubleQuotedLoopIx c acc spaces fuel =
+          some (acc ++ spaces ++ String.ofList content_rest, c') ∧
         CursorSurfCorrIx c' ⟨rest, c'.pos.col⟩ ∧
         c'.pos.col > 0 ∧
         c'.pos.line = c.pos.line by
-    exact H 0 c acc fuel hcorr h_fuel
+    have h := H "" c acc fuel hcorr h_fuel
+    rwa [String.append_empty] at h
   clear hcorr h_fuel
-  intro p c acc fuel hcorr h_fuel
-  induction content_rest generalizing c acc fuel p with
+  intro spaces c acc fuel hcorr h_fuel
+  induction content_rest generalizing c acc fuel spaces with
   | nil =>
     -- Closing quote: escapeString "" = "" → chars start with '"'.
     have h_ofnil : (String.ofList ([] : List Char)) = "" := rfl
@@ -795,7 +809,7 @@ lemma collectDoubleQuotedLoopIx_escapeString_succeeds {input : String}
       rw [h_peek]
       have h_dq : isDoubleQuoteBool '"' = true := by decide
       simp only [h_dq, ite_true]
-      rw [show acc ++ String.ofList [] = acc from append_ofList_nil acc]
+      rw [show acc ++ spaces ++ String.ofList [] = acc ++ spaces from append_ofList_nil _]
       refine ⟨c.advance, rfl, ?_, ?_, ?_⟩
       · have hcorr_adv := advance_non_newline_corrIx c '"' rest hcorr h_lt
           (by decide) (by decide)
@@ -843,10 +857,11 @@ lemma collectDoubleQuotedLoopIx_escapeString_succeeds {input : String}
           have h_col_tag : (c.advance.pos.col + 1 : Nat) =
               c.advance.advance.pos.col := hcorr_tag.col_eq
           rw [h_col_tag] at hcorr_tag
-          rw [show acc ++ String.ofList (ch :: cs) = acc.push ch ++ String.ofList cs
-              from (push_append_ofList_eq acc ch cs).symm]
+          rw [show acc ++ spaces ++ String.ofList (ch :: cs) =
+              (acc ++ spaces).push ch ++ "" ++ String.ofList cs
+              from (append_flush_push_ofList_eq acc spaces ch cs).symm]
           obtain ⟨c', h_loop, hcorr_c', h_col_c', h_line_c'⟩ :=
-            ih _ c.advance.advance (acc.push ch) fuel'
+            ih "" c.advance.advance ((acc ++ spaces).push ch) fuel'
             hcorr_tag (by simp [List.length_cons] at h_f; omega)
           refine ⟨c', h_loop, hcorr_c', h_col_c', ?_⟩
           have l_bs := advance_line_of_peekIx c '\\' h_lt_bs h_peek_bs (by decide) (by decide)
@@ -973,10 +988,11 @@ lemma collectDoubleQuotedLoopIx_escapeString_succeeds {input : String}
           have h_col_after : (c.advance.pos.col + 3 : Nat) =
               c_after.pos.col := hcorr_after.col_eq
           rw [h_col_after] at hcorr_after
-          rw [show acc ++ String.ofList (ch :: cs) = acc.push ch ++ String.ofList cs
-              from (push_append_ofList_eq acc ch cs).symm]
+          rw [show acc ++ spaces ++ String.ofList (ch :: cs) =
+              (acc ++ spaces).push ch ++ "" ++ String.ofList cs
+              from (append_flush_push_ofList_eq acc spaces ch cs).symm]
           obtain ⟨c', h_loop, hcorr_c', h_col_c', h_line_c'⟩ :=
-            ih _ c_after (acc.push ch) fuel' hcorr_after
+            ih "" c_after ((acc ++ spaces).push ch) fuel' hcorr_after
             (by simp [List.length_cons] at h_f; omega)
           refine ⟨c', h_loop, hcorr_c', h_col_c', ?_⟩
           have l_bs := advance_line_of_peekIx c '\\' h_lt_bs h_peek_bs (by decide) (by decide)
@@ -1007,18 +1023,31 @@ lemma collectDoubleQuotedLoopIx_escapeString_succeeds {input : String}
           rw [Bool.or_eq_false_iff]
           exact ⟨beq_eq_false_iff_ne.mpr h_ne_nl, beq_eq_false_iff_ne.mpr h_ne_cr⟩
         simp only [h_dq, h_es, h_nlb, Bool.false_eq_true, ite_false]
-        -- Advance and recurse.
+        -- Advance and recurse: `s-white` is buffered, anything else flushes
+        -- the buffer; both land on `acc ++ spaces ++ (ch :: cs)`.
         have hcorr_c := advance_non_newline_corrIx c ch _ hcorr h_lt_c h_ne_nl h_ne_cr
         have h_col_c : (c.pos.col + 1 : Nat) = c.advance.pos.col := hcorr_c.col_eq
         rw [h_col_c] at hcorr_c
-        rw [show acc ++ String.ofList (ch :: cs) = acc.push ch ++ String.ofList cs
-            from (push_append_ofList_eq acc ch cs).symm]
-        obtain ⟨c', h_loop, hcorr_c', h_col_c', h_line_c'⟩ :=
-          ih _ c.advance (acc.push ch) fuel' hcorr_c
-          (by simp [List.length_cons] at h_f; omega)
-        refine ⟨c', h_loop, hcorr_c', h_col_c', ?_⟩
         have l_c := advance_line_of_peekIx c ch h_lt_c h_peek_c h_ne_nl h_ne_cr
-        omega
+        by_cases h_ws : isWhiteSpaceBool ch = true
+        · simp only [h_ws, ite_true]
+          rw [show acc ++ spaces ++ String.ofList (ch :: cs) =
+              acc ++ spaces.push ch ++ String.ofList cs
+              from (append_buffer_ofList_eq acc spaces ch cs).symm]
+          obtain ⟨c', h_loop, hcorr_c', h_col_c', h_line_c'⟩ :=
+            ih (spaces.push ch) c.advance acc fuel' hcorr_c
+            (by simp [List.length_cons] at h_f; omega)
+          refine ⟨c', h_loop, hcorr_c', h_col_c', ?_⟩
+          omega
+        · simp only [h_ws, Bool.false_eq_true, ite_false]
+          rw [show acc ++ spaces ++ String.ofList (ch :: cs) =
+              (acc ++ spaces).push ch ++ "" ++ String.ofList cs
+              from (append_flush_push_ofList_eq acc spaces ch cs).symm]
+          obtain ⟨c', h_loop, hcorr_c', h_col_c', h_line_c'⟩ :=
+            ih "" c.advance ((acc ++ spaces).push ch) fuel' hcorr_c
+            (by simp [List.length_cons] at h_f; omega)
+          refine ⟨c', h_loop, hcorr_c', h_col_c', ?_⟩
+          omega
 
 /-! ### §3.5  Strictness walker on emitter output (item 7)
 

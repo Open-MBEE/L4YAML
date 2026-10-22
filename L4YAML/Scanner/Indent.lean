@@ -51,7 +51,7 @@ def unwindIndentsLoop (s : ScannerState) (col : Int) (fuel : Nat) : ScannerState
   | fuel' + 1 =>
     if s.currentIndent > col && s.indents.size > 1 then
       let s' := s.emit .blockEnd
-      let s' := { s' with indents := s'.indents.pop }
+      let s' := { s' with indents := s'.indents.pop, pendingKeys := s'.pendingKeys.pop }
       unwindIndentsLoop s' col fuel'
     else
       s
@@ -83,7 +83,7 @@ def unwindIndents (s : ScannerState) (col : Int) : ScannerState :=
 def pushSequenceIndent (s : ScannerState) (col : Int) : ScannerState :=
   if col > s.currentIndent then
     let s' := s.emit .blockSequenceStart
-    { s' with indents := s'.indents.push { column := col, isSequence := true } }
+    { s' with indents := s'.indents.push { column := col, isSequence := true }, pendingKeys := s'.pendingKeys.push none }
   else s
 
 /-- Push a new block mapping indent level if `col` is deeper than `currentIndent`.
@@ -97,7 +97,7 @@ def pushSequenceIndent (s : ScannerState) (col : Int) : ScannerState :=
 def pushMappingIndent (s : ScannerState) (col : Int) : ScannerState :=
   if col > s.currentIndent then
     let s' := s.emit .blockMappingStart
-    { s' with indents := s'.indents.push { column := col, isSequence := false } }
+    { s' with indents := s'.indents.push { column := col, isSequence := false }, pendingKeys := s'.pendingKeys.push none }
   else s
 
 end L4YAML.Scanner

@@ -126,7 +126,7 @@ lemma unwindIndentsLoop_corr (sc : ScannerState) (sp : SurfPos)
   | succ fuel' ih =>
     unfold unwindIndentsLoop; split
     · have hcorr_emit := corr_of_emit .blockEnd hcorr
-      exact ih { (sc.emit .blockEnd) with indents := _ } sp
+      exact ih { (sc.emit .blockEnd) with indents := _, pendingKeys := _ } sp
         ⟨hcorr_emit.chars_from, hcorr_emit.col_eq, hcorr_emit.end_eq, hcorr_emit.input_prefix,
          fun i hi h0 => by
            simp only [ScannerState.emit] at hi ⊢

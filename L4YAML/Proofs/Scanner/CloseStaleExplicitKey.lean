@@ -25,10 +25,12 @@ open L4YAML L4YAML.Scanner
 
 /-! ## Legacy scanner -/
 
-/-- The hook is the identity or exactly the register reset. -/
+/-- The hook is the identity or exactly the re-read of the register off the
+    pending-key stack with the closed level's key cleared (item 335: an outer
+    `?` survives, a lone `?` dies). -/
 lemma closeStaleExplicitKey_cases (s : ScannerState) :
     closeStaleExplicitKey s = s ∨
-    closeStaleExplicitKey s = { s with explicitKeyLine := none, explicitKeyCol := -1 } := by
+    closeStaleExplicitKey s = (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey := by
   unfold closeStaleExplicitKey
   split <;> (try split) <;> (try split) <;> first | exact Or.inl rfl | exact Or.inr rfl
 
@@ -42,119 +44,150 @@ lemma closeStaleExplicitKey_of_ek_none (s : ScannerState) (h : s.explicitKeyLine
     closeStaleExplicitKey s = s := by
   unfold closeStaleExplicitKey; rw [h]; split <;> rfl
 
-/-- The register after the hook is either dead or what it was. -/
+/-- The register after the hook is what it was, or the innermost pending key
+    below the closed level. -/
 lemma closeStaleExplicitKey_explicitKeyLine (s : ScannerState) :
-    (closeStaleExplicitKey s).explicitKeyLine = none ∨
-    (closeStaleExplicitKey s).explicitKeyLine = s.explicitKeyLine := by
-  rcases closeStaleExplicitKey_cases s with h | h <;> rw [h] <;> simp
+    (closeStaleExplicitKey s).explicitKeyLine = s.explicitKeyLine ∨
+    (closeStaleExplicitKey s).explicitKeyLine =
+      (s.clearPendingKeyAt s.explicitKeyCol).innermostPendingKey.1 := by
+  rcases closeStaleExplicitKey_cases s with h | h <;> rw [h]
+  · exact Or.inl rfl
+  · exact Or.inr rfl
 
 @[simp] lemma closeStaleExplicitKey_input (s : ScannerState) :
     (closeStaleExplicitKey s).input = s.input := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_inputEnd (s : ScannerState) :
     (closeStaleExplicitKey s).inputEnd = s.inputEnd := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_offset (s : ScannerState) :
     (closeStaleExplicitKey s).offset = s.offset := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_line (s : ScannerState) :
     (closeStaleExplicitKey s).line = s.line := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_col (s : ScannerState) :
     (closeStaleExplicitKey s).col = s.col := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_indents (s : ScannerState) :
     (closeStaleExplicitKey s).indents = s.indents := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_flowLevel (s : ScannerState) :
     (closeStaleExplicitKey s).flowLevel = s.flowLevel := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_tokens (s : ScannerState) :
     (closeStaleExplicitKey s).tokens = s.tokens := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_simpleKey (s : ScannerState) :
     (closeStaleExplicitKey s).simpleKey = s.simpleKey := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_simpleKeyStack (s : ScannerState) :
     (closeStaleExplicitKey s).simpleKeyStack = s.simpleKeyStack := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_simpleKeyAllowed (s : ScannerState) :
     (closeStaleExplicitKey s).simpleKeyAllowed = s.simpleKeyAllowed := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_needIndentCheck (s : ScannerState) :
     (closeStaleExplicitKey s).needIndentCheck = s.needIndentCheck := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_allowDirectives (s : ScannerState) :
     (closeStaleExplicitKey s).allowDirectives = s.allowDirectives := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_seenYamlDirective (s : ScannerState) :
     (closeStaleExplicitKey s).seenYamlDirective = s.seenYamlDirective := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_directivesPresent (s : ScannerState) :
     (closeStaleExplicitKey s).directivesPresent = s.directivesPresent := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_documentEverStarted (s : ScannerState) :
     (closeStaleExplicitKey s).documentEverStarted = s.documentEverStarted := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_flowStack (s : ScannerState) :
     (closeStaleExplicitKey s).flowStack = s.flowStack := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_implicitValueLine (s : ScannerState) :
     (closeStaleExplicitKey s).implicitValueLine = s.implicitValueLine := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_docStartLine (s : ScannerState) :
     (closeStaleExplicitKey s).docStartLine = s.docStartLine := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_explicitKeyStack (s : ScannerState) :
     (closeStaleExplicitKey s).explicitKeyStack = s.explicitKeyStack := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_comments (s : ScannerState) :
     (closeStaleExplicitKey s).comments = s.comments := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_definedAnchors (s : ScannerState) :
     (closeStaleExplicitKey s).definedAnchors = s.definedAnchors := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_currentPos (s : ScannerState) :
     (closeStaleExplicitKey s).currentPos = s.currentPos := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_hasMore (s : ScannerState) :
     (closeStaleExplicitKey s).hasMore = s.hasMore := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_peek (s : ScannerState) :
     (closeStaleExplicitKey s).peek? = s.peek? := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_inFlow (s : ScannerState) :
     (closeStaleExplicitKey s).inFlow = s.inFlow := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 @[simp] lemma closeStaleExplicitKey_currentIndent (s : ScannerState) :
     (closeStaleExplicitKey s).currentIndent = s.currentIndent := by
-  unfold closeStaleExplicitKey; split <;> (try split) <;> (try split) <;> rfl
+  unfold closeStaleExplicitKey ScannerState.readPendingKey ScannerState.clearPendingKeyAt
+  split <;> (try split) <;> (try split) <;> rfl
 
 /-- Peel the item-333 hook off every projection in sight (goal and
     hypotheses) so a preprocess proof reads `saveSimpleKey` again. -/

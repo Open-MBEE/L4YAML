@@ -145,7 +145,8 @@ lemma unwindIndentsLoop_mem (s : ScannerState) (col : Int) (fuel : Nat)
     · intro h
       have hm := ih _ h
       have he : ({ s.emit .blockEnd with
-          indents := (s.emit .blockEnd).indents.pop } : ScannerState).indents
+          indents := (s.emit .blockEnd).indents.pop,
+          pendingKeys := (s.emit .blockEnd).pendingKeys.pop } : ScannerState).indents
           = s.indents.pop := by simp [ScannerState.emit]
       rw [he] at hm
       exact indents_mem_of_mem_pop hm

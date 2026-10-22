@@ -227,7 +227,10 @@ def scanKey (s : ScannerState) : Except ScanError ScannerState := do
   -- not confirmation of a new implicit key.
   .ok { s_after_advance with simpleKeyAllowed := true, explicitKeyLine := some s.line,
                               explicitKeyCol := (s.col : Int),
-                              simpleKey := { possible := false } }
+                              simpleKey := { possible := false },
+                              pendingKeys := if s.inFlow then s_after_advance.pendingKeys
+                                else s_after_advance.pendingKeys.set!
+                                  (s_after_advance.indents.size - 1) (some s.line) }
 
 /-! ### scanValue — value indicator `:` (§8.2.2, §7.4)
 
@@ -345,7 +348,8 @@ def scanValuePrepare (s : ScannerState) : ScannerState :=
                       |>.setIfInBounds (idx + 1) ⟨s.simpleKey.pos, .key, s.simpleKey.pos⟩
         { s with
           tokens := tokens
-          indents := s.indents.push { column := (s.simpleKey.pos.col : Int), isSequence := false }
+          indents := s.indents.push { column := (s.simpleKey.pos.col : Int), isSequence := false },
+          pendingKeys := s.pendingKeys.push none
           simpleKey := { possible := false } }
       else
         let tokens := s.tokens.setIfInBounds (idx + 1) ⟨s.simpleKey.pos, .key, s.simpleKey.pos⟩
@@ -403,6 +407,18 @@ def scanValueIndentTabCheck (s : ScannerState) : Except ScanError Unit :=
     throw (.tabInIndentation s.line s.col)
   else .ok ()
 
+/-- Step 4 (item 335): does the pending explicit key survive this `:`?  In flow
+    never; in block a dead register has nothing to close, and a live one
+    survives an implicit `:` deeper than the key's column (the `:` is inside the
+    key's own content).  Named so proofs can split on it by name. -/
+def scanValueKeySurvives (s s_kc : ScannerState) : Bool :=
+  let explicitValue : Bool :=
+    s_kc.explicitKeyLine.isSome && !s_kc.simpleKey.possible
+      && (s.inFlow || (s.col : Int) == s_kc.explicitKeyCol)
+  !s.inFlow && (!s_kc.explicitKeyLine.isSome || !explicitValue
+    && (if s_kc.simpleKey.possible then (s_kc.simpleKey.pos.col : Int)
+        else (s.col : Int)) > s_kc.explicitKeyCol)
+
 /-- Check for illegal tab after explicit `:` at or below indent level (§6.1).
     `origCol`/`origIndent` come from the *original* state (before emit/advance);
     the peek is on the *advanced* state. -/
@@ -445,15 +461,24 @@ def scanValue (s : ScannerState) : Except ScanError ScannerState := do
   -- explicit value or killed by a sibling entry at the mapping's level.
   -- Item 51: the surviving entry's start is the resolved KEY when one is
   -- saved and the `:` itself otherwise (an empty-key entry survives too).
-  let ekl : Option Nat :=
-    if explicitValue then none
-    else if !s.inFlow
-        && (if s_kc.simpleKey.possible then (s_kc.simpleKey.pos.col : Int)
-            else (s.col : Int)) > s_kc.explicitKeyCol then
-      s_kc.explicitKeyLine
-    else none
-  let ekc : Int := if ekl.isSome then s_kc.explicitKeyCol else -1
-  .ok { s_after_advance with simpleKeyAllowed := true, explicitKeyLine := ekl, explicitKeyCol := ekc, implicitValueLine := ivl }
+  -- Step 4 (item 335): the register is the innermost pending level's.  In
+  -- flow the `:` ends any pending key; in block an implicit `:` deeper than
+  -- the key's column leaves it; the key's own value, or a shallower `:`, closes
+  -- the LEVEL's pending key and the register is re-read off the stack — so an
+  -- outer `?` survives an inner one's value (`?⏎  ? y⏎  : z⏎: w: x`).
+  let survives : Bool := scanValueKeySurvives s s_kc
+  let settle : Array (Option Nat) × Option Nat × Int :=
+    if s.inFlow then (s_after_advance.pendingKeys.map fun _ => none, none, -1)
+    else if survives then
+      (s_after_advance.pendingKeys, s_kc.explicitKeyLine,
+        if s_kc.explicitKeyLine.isSome then s_kc.explicitKeyCol else -1)
+    else PendingKeys.close s_after_advance.indentColumns s_after_advance.pendingKeys s_kc.explicitKeyCol
+  .ok { s_after_advance with
+        simpleKeyAllowed := true
+        explicitKeyLine := settle.2.1
+        explicitKeyCol := settle.2.2
+        pendingKeys := settle.1
+        implicitValueLine := ivl }
 
 /-! ## Simple-Key Tracking and Candidate Predicates -/
 
@@ -480,8 +505,8 @@ def closeStaleExplicitKey (s : ScannerState) : ScannerState :=
   else match s.explicitKeyLine, s.peek? with
     | some ekLine, some c =>
       if s.line != ekLine && (s.col : Int) ≤ s.explicitKeyCol
-          && c != ':' && c != '-' && c != '?' then
-        { s with explicitKeyLine := none, explicitKeyCol := -1 }
+          && c != '-' && c != '?' && !(c == ':' && (s.col : Int) == s.explicitKeyCol) then
+        (s.clearPendingKeyAt s.explicitKeyCol).readPendingKey
       else s
     | _, _ => s
 

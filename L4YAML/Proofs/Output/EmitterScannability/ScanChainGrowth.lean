@@ -542,7 +542,7 @@ lemma scanNextToken_flow_value (s : ScannerState)
   have h_scanValue_result : scanValue s_ad =
       (scanValueTabCheck (s_ad.col : Int) s_ad.currentIndent s_adv >>= fun () =>
         .ok { s_adv with simpleKeyAllowed := true, explicitKeyLine := none,
-                          explicitKeyCol := -1 }) := by
+                          explicitKeyCol := -1, pendingKeys := s_adv.pendingKeys.map fun _ => none }) := by
     unfold scanValue
     dsimp only []  -- zeta-reduce let bindings in the unfolded body
     rw [h_ckr, h_validate, h_indentTab]
@@ -571,7 +571,7 @@ lemma scanNextToken_flow_value (s : ScannerState)
     simp [this]
   -- Derive scanValue s_ad = .ok s_final
   let s_final : ScannerState := { s_adv with simpleKeyAllowed := true, explicitKeyLine := none,
-                                              explicitKeyCol := -1 }
+                                              explicitKeyCol := -1, pendingKeys := s_adv.pendingKeys.map fun _ => none }
   have h_scanValue_ok : scanValue s_ad = .ok s_final := by
     rw [h_scanValue_result, h_tab_ok]; dsimp only [Bind.bind, Except.bind]
   -- Derive block dispatch result

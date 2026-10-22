@@ -1098,7 +1098,7 @@ paramRows=82 packagedRows=29 punt=20 stamp=22 built=138 origins=76 originRows=41
 route=23 frames=30 tail=0 other=7 concl=8 invariant=8 heldOrigins=40 allHeld=9 \
 someHeld=39 noneHeld=76 unbornRows=0 relayedPunt=0 relayedStamp=10 relayedAbsurd=4 \
 relayedFact=0 deadRows=0 unbornPos=0 rounds=4 follows=343 lets=570 lapps=708 alts=4492 \
-nodes=12578 liteNodes=529617"
+nodes=12578 liteNodes=540245"
 
 /-! ## §4 The reading -/
 

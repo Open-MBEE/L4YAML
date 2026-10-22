@@ -210,7 +210,7 @@ lemma unwindIndentsLoop_preserves_flowStack (s : ScannerState) (col : Int) (fuel
   | zero => unfold unwindIndentsLoop; rfl
   | succ _ ih =>
     unfold unwindIndentsLoop; split
-    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
       simp [emit_preserves_flowStack] at this; exact this
     · rfl
 

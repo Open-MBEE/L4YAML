@@ -217,7 +217,7 @@ lemma unwindIndentsLoop_tokens_monotonic (s : ScannerState) (col : Int) (fuel : 
       have h_emit := emit_tokens_size s .blockEnd
       -- After modifying indents, tokens stay same (only indents field changed)
       let s' := s.emit .blockEnd
-      let s'' := { s' with indents := s'.indents.pop }
+      let s'' := { s' with indents := s'.indents.pop, pendingKeys := s'.pendingKeys.pop }
       -- s''.tokens = s'.tokens (modifying indents doesn't affect tokens)
       have h_tokens_eq : s''.tokens = s'.tokens := by rfl
       -- Apply IH to s''
@@ -248,7 +248,7 @@ lemma unwindIndentsLoop_preserves_prefix (s : ScannerState) (col : Int) (fuel : 
     split
     · -- Condition true: emit and recurse
       let s_emit := s.emit .blockEnd
-      let s_pop := { s_emit with indents := s_emit.indents.pop }
+      let s_pop := { s_emit with indents := s_emit.indents.pop, pendingKeys := s_emit.pendingKeys.pop }
       -- We know emit increases size by 1
       have h_emit_size : s_emit.tokens.size = s.tokens.size + 1 := emit_tokens_size s .blockEnd
       -- So i < s_emit.tokens.size
@@ -510,6 +510,128 @@ lemma pushMappingIndent_tokens_monotonic (s : ScannerState) (col : Int) :
   · simp [ScannerState.emit, Array.size_push]
   · omega
 
+/-! Item 335: the pending-key helpers touch only `pendingKeys` (mark/clear) or the
+    explicit-key register (read); every other projection is definitional. -/
+
+@[simp] lemma markPendingKey_tokens (s : ScannerState) (l : Nat) : (s.markPendingKey l).tokens = s.tokens := rfl
+
+@[simp] lemma markPendingKey_offset (s : ScannerState) (l : Nat) : (s.markPendingKey l).offset = s.offset := rfl
+
+@[simp] lemma markPendingKey_inputEnd (s : ScannerState) (l : Nat) : (s.markPendingKey l).inputEnd = s.inputEnd := rfl
+
+@[simp] lemma markPendingKey_line (s : ScannerState) (l : Nat) : (s.markPendingKey l).line = s.line := rfl
+
+@[simp] lemma markPendingKey_col (s : ScannerState) (l : Nat) : (s.markPendingKey l).col = s.col := rfl
+
+@[simp] lemma markPendingKey_indents (s : ScannerState) (l : Nat) : (s.markPendingKey l).indents = s.indents := rfl
+
+@[simp] lemma markPendingKey_flowLevel (s : ScannerState) (l : Nat) : (s.markPendingKey l).flowLevel = s.flowLevel := rfl
+
+@[simp] lemma markPendingKey_simpleKey (s : ScannerState) (l : Nat) : (s.markPendingKey l).simpleKey = s.simpleKey := rfl
+
+@[simp] lemma markPendingKey_simpleKeyStack (s : ScannerState) (l : Nat) : (s.markPendingKey l).simpleKeyStack = s.simpleKeyStack := rfl
+
+@[simp] lemma markPendingKey_simpleKeyAllowed (s : ScannerState) (l : Nat) : (s.markPendingKey l).simpleKeyAllowed = s.simpleKeyAllowed := rfl
+
+@[simp] lemma markPendingKey_needIndentCheck (s : ScannerState) (l : Nat) : (s.markPendingKey l).needIndentCheck = s.needIndentCheck := rfl
+
+@[simp] lemma markPendingKey_implicitValueLine (s : ScannerState) (l : Nat) : (s.markPendingKey l).implicitValueLine = s.implicitValueLine := rfl
+
+@[simp] lemma markPendingKey_flowStack (s : ScannerState) (l : Nat) : (s.markPendingKey l).flowStack = s.flowStack := rfl
+
+@[simp] lemma markPendingKey_explicitKeyStack (s : ScannerState) (l : Nat) : (s.markPendingKey l).explicitKeyStack = s.explicitKeyStack := rfl
+
+@[simp] lemma markPendingKey_input (s : ScannerState) (l : Nat) : (s.markPendingKey l).input = s.input := rfl
+
+@[simp] lemma markPendingKey_docStartLine (s : ScannerState) (l : Nat) : (s.markPendingKey l).docStartLine = s.docStartLine := rfl
+
+@[simp] lemma markPendingKey_inFlow (s : ScannerState) (l : Nat) : (s.markPendingKey l).inFlow = s.inFlow := rfl
+
+@[simp] lemma markPendingKey_currentIndent (s : ScannerState) (l : Nat) : (s.markPendingKey l).currentIndent = s.currentIndent := rfl
+
+@[simp] lemma clearPendingKeyAt_tokens (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).tokens = s.tokens := rfl
+
+@[simp] lemma clearPendingKeyAt_offset (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).offset = s.offset := rfl
+
+@[simp] lemma clearPendingKeyAt_inputEnd (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).inputEnd = s.inputEnd := rfl
+
+@[simp] lemma clearPendingKeyAt_line (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).line = s.line := rfl
+
+@[simp] lemma clearPendingKeyAt_col (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).col = s.col := rfl
+
+@[simp] lemma clearPendingKeyAt_indents (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).indents = s.indents := rfl
+
+@[simp] lemma clearPendingKeyAt_flowLevel (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).flowLevel = s.flowLevel := rfl
+
+@[simp] lemma clearPendingKeyAt_simpleKey (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).simpleKey = s.simpleKey := rfl
+
+@[simp] lemma clearPendingKeyAt_simpleKeyStack (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).simpleKeyStack = s.simpleKeyStack := rfl
+
+@[simp] lemma clearPendingKeyAt_simpleKeyAllowed (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).simpleKeyAllowed = s.simpleKeyAllowed := rfl
+
+@[simp] lemma clearPendingKeyAt_needIndentCheck (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).needIndentCheck = s.needIndentCheck := rfl
+
+@[simp] lemma clearPendingKeyAt_implicitValueLine (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).implicitValueLine = s.implicitValueLine := rfl
+
+@[simp] lemma clearPendingKeyAt_flowStack (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).flowStack = s.flowStack := rfl
+
+@[simp] lemma clearPendingKeyAt_explicitKeyStack (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).explicitKeyStack = s.explicitKeyStack := rfl
+
+@[simp] lemma clearPendingKeyAt_input (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).input = s.input := rfl
+
+@[simp] lemma clearPendingKeyAt_docStartLine (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).docStartLine = s.docStartLine := rfl
+
+@[simp] lemma clearPendingKeyAt_inFlow (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).inFlow = s.inFlow := rfl
+
+@[simp] lemma clearPendingKeyAt_currentIndent (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).currentIndent = s.currentIndent := rfl
+
+@[simp] lemma readPendingKey_tokens (s : ScannerState) : (s.readPendingKey).tokens = s.tokens := rfl
+
+@[simp] lemma readPendingKey_offset (s : ScannerState) : (s.readPendingKey).offset = s.offset := rfl
+
+@[simp] lemma readPendingKey_inputEnd (s : ScannerState) : (s.readPendingKey).inputEnd = s.inputEnd := rfl
+
+@[simp] lemma readPendingKey_line (s : ScannerState) : (s.readPendingKey).line = s.line := rfl
+
+@[simp] lemma readPendingKey_col (s : ScannerState) : (s.readPendingKey).col = s.col := rfl
+
+@[simp] lemma readPendingKey_indents (s : ScannerState) : (s.readPendingKey).indents = s.indents := rfl
+
+@[simp] lemma readPendingKey_flowLevel (s : ScannerState) : (s.readPendingKey).flowLevel = s.flowLevel := rfl
+
+@[simp] lemma readPendingKey_simpleKey (s : ScannerState) : (s.readPendingKey).simpleKey = s.simpleKey := rfl
+
+@[simp] lemma readPendingKey_simpleKeyStack (s : ScannerState) : (s.readPendingKey).simpleKeyStack = s.simpleKeyStack := rfl
+
+@[simp] lemma readPendingKey_simpleKeyAllowed (s : ScannerState) : (s.readPendingKey).simpleKeyAllowed = s.simpleKeyAllowed := rfl
+
+@[simp] lemma readPendingKey_needIndentCheck (s : ScannerState) : (s.readPendingKey).needIndentCheck = s.needIndentCheck := rfl
+
+@[simp] lemma readPendingKey_implicitValueLine (s : ScannerState) : (s.readPendingKey).implicitValueLine = s.implicitValueLine := rfl
+
+@[simp] lemma readPendingKey_flowStack (s : ScannerState) : (s.readPendingKey).flowStack = s.flowStack := rfl
+
+@[simp] lemma readPendingKey_explicitKeyStack (s : ScannerState) : (s.readPendingKey).explicitKeyStack = s.explicitKeyStack := rfl
+
+@[simp] lemma readPendingKey_input (s : ScannerState) : (s.readPendingKey).input = s.input := rfl
+
+@[simp] lemma readPendingKey_docStartLine (s : ScannerState) : (s.readPendingKey).docStartLine = s.docStartLine := rfl
+
+@[simp] lemma readPendingKey_inFlow (s : ScannerState) : (s.readPendingKey).inFlow = s.inFlow := rfl
+
+@[simp] lemma readPendingKey_currentIndent (s : ScannerState) : (s.readPendingKey).currentIndent = s.currentIndent := rfl
+
+@[simp] lemma markPendingKey_explicitKeyLine (s : ScannerState) (l : Nat) : (s.markPendingKey l).explicitKeyLine = s.explicitKeyLine := rfl
+
+@[simp] lemma markPendingKey_explicitKeyCol (s : ScannerState) (l : Nat) : (s.markPendingKey l).explicitKeyCol = s.explicitKeyCol := rfl
+
+@[simp] lemma clearPendingKeyAt_explicitKeyLine (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).explicitKeyLine = s.explicitKeyLine := rfl
+
+@[simp] lemma clearPendingKeyAt_explicitKeyCol (s : ScannerState) (c : Int) : (s.clearPendingKeyAt c).explicitKeyCol = s.explicitKeyCol := rfl
+
+@[simp] lemma readPendingKey_pendingKeys (s : ScannerState) : s.readPendingKey.pendingKeys = s.pendingKeys := rfl
+
+
 /-- `pushSequenceIndent` preserves or adds tokens. -/
 lemma pushSequenceIndent_tokens_monotonic (s : ScannerState) (col : Int) :
     (pushSequenceIndent s col).tokens.size ≥ s.tokens.size := by
@@ -539,10 +661,10 @@ lemma scanKey_adds_one_token (s : ScannerState) (s' : ScannerState)
     · split at h
       · contradiction
       · injection h with h_eq; subst h_eq
-        simp only [advance_preserves_tokens, emit_tokens_size]
+        simp only [advance_preserves_tokens, emit_tokens_size, markPendingKey_tokens]
         have := pushMappingIndent_tokens_monotonic s s.col; omega
     · injection h with h_eq; subst h_eq
-      simp only [advance_preserves_tokens, emit_tokens_size]
+      simp only [advance_preserves_tokens, emit_tokens_size, markPendingKey_tokens]
       have := pushMappingIndent_tokens_monotonic s s.col; omega
   · -- inFlow → no pushMappingIndent
     split at h
@@ -2516,7 +2638,7 @@ lemma pushMappingIndent_preserves_prefix (s : ScannerState) (col : Int)
       have := pushMappingIndent_tokens_monotonic s col; omega) = s.tokens[i] := by
   unfold pushMappingIndent
   split
-  · exact emit_preserves_tokens_at { s with indents := _ } .blockMappingStart i h
+  · exact emit_preserves_tokens_at { s with indents := _, pendingKeys := _ } .blockMappingStart i h
   · rfl
 
 /-- pushSequenceIndent preserves existing tokens. -/
@@ -2526,7 +2648,7 @@ lemma pushSequenceIndent_preserves_prefix (s : ScannerState) (col : Int)
       have := pushSequenceIndent_tokens_monotonic s col; omega) = s.tokens[i] := by
   unfold pushSequenceIndent
   split
-  · exact emit_preserves_tokens_at { s with indents := _ } .blockSequenceStart i h
+  · exact emit_preserves_tokens_at { s with indents := _, pendingKeys := _ } .blockSequenceStart i h
   · rfl
 
 /-! ### Composition helpers for prefix preservation -/
@@ -3455,7 +3577,7 @@ lemma unwindIndentsLoop_preserves_simpleKey (s : ScannerState) (col : Int) (fuel
   | zero => unfold unwindIndentsLoop; rfl
   | succ _ ih =>
     unfold unwindIndentsLoop; split
-    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
       simp [emit_preserves_simpleKey] at this; exact this
     · rfl
 
@@ -5636,7 +5758,7 @@ lemma unwindIndentsLoop_preserves_simpleKeyStack (s : ScannerState) (col : Int) 
   | zero => unfold unwindIndentsLoop; rfl
   | succ _ ih =>
     unfold unwindIndentsLoop; split
-    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop }
+    · have := ih { s.emit .blockEnd with indents := (s.emit .blockEnd).indents.pop, pendingKeys := (s.emit .blockEnd).pendingKeys.pop }
       simp [emit_preserves_simpleKeyStack] at this; exact this
     · rfl
 
@@ -8598,7 +8720,8 @@ lemma unwindIndentsLoop_preserves_ScanInv (s : ScannerState) (col : Int) (fuel :
     · -- Condition true: emit blockEnd, pop indents, recurse
       have h_emit : ScanInv (s.emit .blockEnd) := emit_preserves_ScanInv s .blockEnd h
       have h_pop : ScanInv ({ s.emit .blockEnd with
-          indents := (s.emit .blockEnd).indents.pop }) :=
+          indents := (s.emit .blockEnd).indents.pop,
+          pendingKeys := (s.emit .blockEnd).pendingKeys.pop }) :=
         field_update_preserves_ScanInv _ _ h_emit rfl rfl
       exact ih _ h_pop
     · exact h
@@ -8801,7 +8924,7 @@ lemma scanValuePrepare_preserves_ScanInv (s : ScannerState) (h : ScanInv s)
         unfold pushMappingIndent
         split
         · -- indent check true: emit blockMappingStart + push indent
-          exact emit_preserves_ScanInv { s with indents := _ } .blockMappingStart
+          exact emit_preserves_ScanInv { s with indents := _, pendingKeys := _ } .blockMappingStart
             (field_update_preserves_ScanInv _ _ h rfl rfl)
         · -- indent check false: no-op
           exact h

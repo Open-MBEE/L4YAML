@@ -79,6 +79,13 @@ structure ScannerState where
   col : Nat := 0
   /-- Indentation stack. Bottom entry: `{ column := -1 }`. -/
   indents : Array IndentEntry := #[{ column := -1, isSequence := false }]
+  /-- One slot per `indents` level: the line of the `?` whose explicit entry is
+      still open at that mapping level (§8.2.2 [190]).  Set by `scanKey`, cleared
+      by the level's own `:` or by a sibling entry at its column, popped with the
+      level.  The `explicitKeyLine`/`explicitKeyCol` register is the innermost
+      `some`, re-read whenever a level's key closes, so an outer `?` survives an
+      inner one's value (item 335). -/
+  pendingKeys : Array (Option Nat) := #[none]
   /-- Flow nesting level. 0 = block context. -/
   flowLevel : Nat := 0
   /-- Emitted tokens -/
@@ -311,6 +318,53 @@ def ScannerState.currentIndent (s : ScannerState) : Int :=
   match s.indents.back? with
   | some e => e.column
   | none => -1
+
+/-- Mark the innermost indent level as holding a pending explicit key opened on
+    `line` (`scanKey`, after `pushMappingIndent` has made the `?`'s level the top).
+    `pendingKeys` runs in lockstep with `indents` (one slot per level). -/
+def ScannerState.markPendingKey (s : ScannerState) (line : Nat) : ScannerState :=
+  { s with pendingKeys := s.pendingKeys.set! (s.indents.size - 1) (some line) }
+
+/-- `pendingKeys` with the slot of the level at column `col` closed (its `:` value
+    indicator arrived, or a sibling entry at its column ended the entry).  `cols`
+    is the indent stack's columns, in lockstep with `pks`. -/
+def PendingKeys.closeAt (cols : Array Int) (pks : Array (Option Nat)) (col : Int) :
+    Array (Option Nat) :=
+  (Array.range pks.size).map fun i =>
+    if cols[i]? == some col then none else pks[i]?.getD none
+
+/-- The innermost pending explicit key as the register pair `(line, column)`;
+    `(none, -1)` when no level holds one. -/
+def PendingKeys.innermost (cols : Array Int) (pks : Array (Option Nat)) : Option Nat × Int :=
+  match (Array.range pks.size).findSomeRev? (fun i =>
+      (pks[i]?.getD none).map fun l => (l, cols[i]?.getD (-1))) with
+  | some (l, c) => (some l, c)
+  | none => (none, -1)
+
+/-- Close the level at `col` and re-read the register: the new stack, then the
+    innermost pending key's `(line, column)` — the one triple a `:` that ends an
+    explicit entry writes. -/
+def PendingKeys.close (cols : Array Int) (pks : Array (Option Nat)) (col : Int) :
+    Array (Option Nat) × Option Nat × Int :=
+  (PendingKeys.closeAt cols pks col,
+   (PendingKeys.innermost cols (PendingKeys.closeAt cols pks col)).1,
+   (PendingKeys.innermost cols (PendingKeys.closeAt cols pks col)).2)
+
+/-- The indent stack's columns, in lockstep with `pendingKeys`. -/
+def ScannerState.indentColumns (s : ScannerState) : Array Int := s.indents.map (·.column)
+
+/-- Close the pending explicit key of the level at column `col`. -/
+def ScannerState.clearPendingKeyAt (s : ScannerState) (col : Int) : ScannerState :=
+  { s with pendingKeys := PendingKeys.closeAt s.indentColumns s.pendingKeys col }
+
+/-- The innermost pending explicit key, as the register pair `(line, column)`;
+    `(none, -1)` when no level holds one. -/
+def ScannerState.innermostPendingKey (s : ScannerState) : Option Nat × Int :=
+  PendingKeys.innermost s.indentColumns s.pendingKeys
+
+/-- Re-read the explicit-key register off the pending-key stack (block context). -/
+def ScannerState.readPendingKey (s : ScannerState) : ScannerState :=
+  { s with explicitKeyLine := s.innermostPendingKey.1, explicitKeyCol := s.innermostPendingKey.2 }
 
 /-- Emit a token at the current scanner position. -/
 def ScannerState.emit (s : ScannerState) (tok : YamlToken) : ScannerState :=

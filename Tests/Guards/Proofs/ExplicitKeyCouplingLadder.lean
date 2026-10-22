@@ -71,14 +71,18 @@ example : ∀ {s s' : ScannerState},
     scanValue s = .ok s' →
     (s.simpleKey.possible = true → (s.simpleKey.pos.col : Int) ≤ s.explicitKeyCol) →
     (s.col : Int) ≤ s.explicitKeyCol →
-    s'.explicitKeyLine = none :=
+    s'.explicitKeyLine = none ∨
+    ∃ cols pks, s'.explicitKeyLine = (PendingKeys.close cols pks s.explicitKeyCol).2.1 ∧
+      s'.explicitKeyCol = (PendingKeys.close cols pks s.explicitKeyCol).2.2 :=
   fun h1 h2 h3 =>
     L4YAML.Proofs.ExplicitKeyCoupling.scanValue_ekl_none_of_col_le h1 h2 h3
 
 example : ∀ {s s' : ScannerState},
     scanValue s = .ok s' → s'.explicitKeyLine.isSome = true →
-    s'.explicitKeyLine = s.explicitKeyLine ∧ s'.explicitKeyCol = s.explicitKeyCol ∧
-      s.explicitKeyLine.isSome = true :=
+    (s'.explicitKeyLine = s.explicitKeyLine ∧ s'.explicitKeyCol = s.explicitKeyCol ∧
+      s.explicitKeyLine.isSome = true) ∨
+    ∃ cols pks, s'.explicitKeyLine = (PendingKeys.close cols pks s.explicitKeyCol).2.1 ∧
+      s'.explicitKeyCol = (PendingKeys.close cols pks s.explicitKeyCol).2.2 :=
   fun h1 h2 =>
     L4YAML.Proofs.ExplicitKeyCoupling.scanValue_ekl_some_source h1 h2
 
@@ -90,7 +94,8 @@ example : ∀ {s s' : ScannerState}, scanKey s = .ok s' →
 example : ∀ (s s1 : ScannerState) (c : Char),
     scanNextToken_preprocess s = .ok (some (s1, c)) →
     (s1.explicitKeyLine = s.explicitKeyLine ∧ s1.explicitKeyCol = s.explicitKeyCol) ∨
-    (s1.explicitKeyLine = none ∧ s1.explicitKeyCol = -1) :=
+    (s.explicitKeyLine ≠ none ∧
+      ∃ t : ScannerState, s1 = (t.clearPendingKeyAt t.explicitKeyCol).readPendingKey) :=
   L4YAML.Proofs.ExplicitKeyCoupling.preprocess_explicitKey_cases
 
 example : ∀ (s s1 : ScannerState) (c : Char),

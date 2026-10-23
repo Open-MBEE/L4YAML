@@ -2687,6 +2687,199 @@ def testTokenCarrierWalk (state : IO.Ref TestCollector) : IO Unit := do
       s!"{hf} of {steps} boundaries"
     checkM state s!"walk/{label}: Sound after every step" (cf == 0) s!"{cf} of {steps} steps"
 
+
+/-! ## Priority 16 — the column floor rides the token boundary (item 339, row 12)
+
+Item 339 adds `ColFloor` (`needIndentCheck = false → currentIndent ≤ col`, every
+saved simple key — the live one and the flow-stacked ones — at or behind the
+cursor), proves it through every `scanNextToken` arm, and pays item 338's
+STARVED `PreprocessFloor` premise with it (`scanNextToken_sound_colfloor`).
+`StreamAccum` now threads `Sound ∧ ColFloor` through `scanNextToken_accum_step`
+and `scanLoop_grammar_prod`, seeded at `scan`'s `mk'`/`streamStart`/BOM state.
+
+**Risk:** the floor is read with `needIndentCheck = false` only, so the arms that
+leave the cursor at a line start must set the flag (block scalars, document
+markers), and the arms that stay on their line must not move the cursor LEFT
+of the floor (the quoted/plain folds re-establish it by their own
+`underIndentedScalar` gate; the flow plain loop by `[69] s-flow-line-prefix`).
+The seed must satisfy it with and without a BOM.
+
+**Audit approach:** `ColFloor` as a Boolean, checked at every token boundary of
+a `scanNextToken` walk alongside the hypotheses of `scanNextToken_sound_colfloor`
+(pre-state) and its conclusion (post-state), on the inputs each arm's floor
+argument is about; the seed states; a hand-built state that REFUTES the floor
+so the Boolean is known to be able to say no; and the in-flow under-indent that
+`dispatchStructural_floor` reads off the dispatcher's refusal.
+-/
+
+def behindB (p : YamlPos) (s : ScannerState) : Bool :=
+  p.line < s.line || (p.line == s.line && p.col ≤ s.col)
+
+def colFloorB (s : ScannerState) : Bool :=
+  (s.needIndentCheck || s.currentIndent ≤ (s.col : Int))
+    && (!s.simpleKey.possible || behindB s.simpleKey.pos s)
+    && s.simpleKeyStack.all (fun k => !k.possible || behindB k.pos s)
+
+/-- Walk `scanNextToken` from a seed state; at each step check the hypotheses of
+    `scanNextToken_sound_colfloor` on the pre-state and its conclusion on the post-state.
+    Returns `(steps, hypothesis failures, conclusion failures)`. -/
+def walkColFloor (s0 : ScannerState) (budget : Nat) : Nat × Nat × Nat := Id.run do
+  let mut s := s0
+  let mut steps := 0
+  let mut hypFail := 0
+  let mut concFail := 0
+  let mut fuel := budget
+  while fuel > 0 do
+    fuel := fuel - 1
+    let hyp := soundB s && monoB s && sentinelB s && colFloorB s
+    match scanNextToken s with
+    | .ok (some s') =>
+      steps := steps + 1
+      if !hyp then hypFail := hypFail + 1
+      else if !(soundB s' && colFloorB s') then concFail := concFail + 1
+      s := s'
+    | _ => fuel := 0
+  return (steps, hypFail, concFail)
+
+/-- `scan`'s own seed: `mk'`, the `streamStart` emission, and the BOM if there is one. -/
+def scanSeed (input : String) : ScannerState :=
+  let s := (ScannerState.mk' input).emit .streamStart
+  match s.peek? with
+  | some '\uFEFF' => s.consumeBOM
+  | _ => s
+
+def testColFloorWalk (state : IO.Ref TestCollector) : IO Unit := do
+  -- The seeds (`seed_colfloor`, `seed_bom_colfloor`, `seed_sound`, `seed_bom_sound`).
+  checkM state "colfloor/seed: ColFloor ∧ Sound" (colFloorB (scanSeed "a") && soundB (scanSeed "a")) ""
+  checkM state "colfloor/seed with BOM: ColFloor ∧ Sound"
+    (colFloorB (scanSeed "\uFEFFa") && soundB (scanSeed "\uFEFFa")) ""
+  -- The Boolean can say no: a cursor LEFT of its own floor, no indent check pending.
+  let bad : ScannerState := { ScannerState.mk' "x" with
+    indents := #[{ column := -1, isSequence := false }, { column := 4, isSequence := false }],
+    pendingKeys := #[none, none], needIndentCheck := false, col := 2 }
+  checkM state "colfloor/refutes: cursor left of the floor" (colFloorB bad == false) ""
+  -- …and a live key AHEAD of the cursor.
+  let badKey : ScannerState := { ScannerState.mk' "x" with
+    simpleKey := { possible := true, tokenIndex := 0, pos := ⟨0, 0, 7⟩, endLine := 0 } }
+  checkM state "colfloor/refutes: saved key ahead of the cursor" (colFloorB badKey == false) ""
+  checkM state "colfloor/Behind: same line, left" (behindB ⟨0, 0, 1⟩ { ScannerState.mk' "x" with col := 3 }) ""
+  checkM state "colfloor/Behind: earlier line" (behindB ⟨0, 0, 9⟩ { ScannerState.mk' "x" with line := 1 }) ""
+  checkM state "colfloor/Behind: refutes later line"
+    (behindB ⟨0, 2, 0⟩ { ScannerState.mk' "x" with line := 1, col := 9 } == false) ""
+  -- Every arm's floor argument, at every token boundary.
+  for (label, input) in [
+      ("plain block scalar", "a: b\nc: d\n"),
+      ("plain multi-line", "a: b\n  c\n  d\ne: f\n"),
+      ("plain in flow, folded", "k: [a\n  b, c]\n"),
+      ("flow mapping nested", "k: {a: [b, {c: d}],\n    e: f}\n"),
+      ("double quoted folded", "a: \"x\n  y\"\nb: c\n"),
+      ("single quoted folded", "a: 'x\n  y'\nb: c\n"),
+      ("block scalar, newline after", "a: |\n  x\n  y\nb: c\n"),
+      ("block scalar at EOF, no newline", "a: |\n  x"),
+      ("block scalar header at EOF", "a: |"),
+      ("folded block scalar, keep", "a: >+\n  x\n\n"),
+      ("explicit key over block scalar", "? |\n  x\n: y\n"),
+      ("explicit keys nested", "?\n  ? y\n  : z\n: w: x\n"),
+      ("explicit key with flow key", "?\n  ? {a: b}\n  : z\n: w: x\n"),
+      ("sequence of explicit keys", "- ? a\n  : b\n- ? c\n"),
+      ("dedenting dash", "- ? a\n- b\n"),
+      ("anchors tags alias", "? &k !!str a\n: *k\n"),
+      ("documents", "%YAML 1.2\n---\na: 1\n...\n---\nb: 2\n"),
+      ("comments", "? a # c\n# d\n: b\n"),
+      ("deep nesting", "- - - ? a\n      : b\n"),
+      ("BOM then mapping", "\uFEFFa: b\n"),
+      ("empty", ""),
+      ("flow sequence of implicit keys", "[a: b, c: d]\n")] do
+    let (steps, hf, cf) := walkColFloor (scanSeed input) (input.length + 8)
+    checkM state s!"colfloor/{label}: hypotheses hold at every boundary" (hf == 0)
+      s!"{hf} of {steps} boundaries"
+    checkM state s!"colfloor/{label}: Sound ∧ ColFloor after every step" (cf == 0)
+      s!"{cf} of {steps} steps"
+  -- `dispatchStructural_floor`: in flow the floor is read off the dispatcher's own
+  -- under-indent check — content at or left of the enclosing block floor is refused,
+  -- so a successful dispatch always has the floor.
+  checkM state "colfloor/flow under-indent refused (`underIndentedFlowContent`)"
+    (match scan "k:\n  v: [a,\n b]\n" with | .error _ => true | .ok _ => false) ""
+  checkM state "colfloor/flow continuation at the floor + 1 accepted"
+    (match scan "k:\n  v: [a,\n   b]\n" with | .error _ => false | .ok _ => true) ""
+
+
+/-- `collectPlainScalarLoop_flow_inv`'s premise and conclusion as Booleans, read off an
+    explicit `(l₀, c₀)` (the entry line and column). -/
+def flowInvB (l₀ c₀ : Nat) (s : ScannerState) : Bool :=
+  (s.line == l₀ && c₀ ≤ s.col) || (l₀ < s.line && s.currentIndent < (s.col : Int))
+
+def forwardB (s s' : ScannerState) : Bool :=
+  s.line < s'.line || (s'.line == s.line && s.col ≤ s'.col)
+
+/-- A flow-context scanner state over `input` with one block level at `indentCol`. -/
+def mkFlow (input : String) (indentCol : Int) : ScannerState :=
+  { ScannerState.mk' input with
+    flowLevel := 1
+    indents := #[{ column := -1, isSequence := false }, { column := indentCol, isSequence := false }]
+    pendingKeys := #[none, none] }
+
+/-- Direct instantiations of the generic helper lemmas of `ColFloor.lean` on their own
+    quantified scope: fuel 0/1/2, same-line and cross-line starts, vacuous premises counted. -/
+def testColFloorHelpers (state : IO.Ref TestCollector) : IO Unit := do
+  -- The flow plain loop at fuel 0, 1, 2 from a same-line start (`c₀ = col`) and from a
+  -- cross-line start (`l₀ < line`, cursor past the floor), on inputs with and without a
+  -- fold.  The conclusion must hold whenever the loop returns `.ok`.
+  let mut vacuous := 0
+  let mut checked := 0
+  for (label, input, indentCol) in [
+      ("plain", "ab, c]", (0 : Int)), ("folded", "a\n  b, c]", 0), ("folded twice", "a\n  b\n  c]", 0),
+      ("under-indented fold", "a\nb]", 0), ("comment after fold", "a\n  # c\n  b]", 0),
+      ("break first", "\n  b]", 0), ("empty", "", 0), ("deep floor", "a\n    b]", 2)] do
+    let s := mkFlow input indentCol
+    for fuel in [0, 1, 2, 3, input.length + 2] do
+      -- same-line start
+      match collectPlainScalarLoop s "" "" fuel true s.col s.inputEnd with
+      | .ok r =>
+        checked := checked + 1
+        checkM state s!"flow_inv/{label}/fuel {fuel}/same-line: conclusion"
+          (flowInvB s.line s.col r.state) s!"line {r.state.line} col {r.state.col}"
+      | .error _ => vacuous := vacuous + 1
+      -- cross-line start: pretend the loop entered one line earlier at column 0, with the
+      -- cursor strictly past the floor (premise's second disjunct)
+      let s2 := { s with line := 1, col := 3 }
+      if flowInvB 0 0 s2 then
+        match collectPlainScalarLoop s2 "" "" fuel true s2.col s2.inputEnd with
+        | .ok r =>
+          checked := checked + 1
+          checkM state s!"flow_inv/{label}/fuel {fuel}/cross-line: conclusion"
+            (flowInvB 0 0 r.state) s!"line {r.state.line} col {r.state.col}"
+        | .error _ => vacuous := vacuous + 1
+  checkM state "flow_inv: the loop returned .ok on most probes (premise not vacuous)"
+    (checked ≥ 40) s!"checked {checked}, vacuous {vacuous}"
+  checkM state "flow_inv: the under-indent gate did refuse at least once (vacuous arm reached)"
+    (vacuous ≥ 1) s!"vacuous {vacuous}"
+  -- `flowInvB` can say no.
+  checkM state "flow_inv/refutes: cross-line cursor at the floor"
+    (flowInvB 0 0 { mkFlow "x" 2 with line := 1, col := 2 } == false) ""
+  -- The `Forward` helpers at fuel 0/1/2: `consumeExactSpaces`, `collectLineContentLoop`,
+  -- `collectBlockScalarLoop`, `parseBlockHeaderLoop`, `collectCommentTextLoop`, and the
+  -- single-step `consumeNewline`/`advance`/`skipWhitespace`/`scanBlockScalarSkipComment`.
+  for (label, input) in [("spaces", "   x\n  y"), ("content", "abc\ndef"), ("break", "\n\n x"),
+      ("crlf", "\r\nx"), ("header", "|2-  # c\n  x"), ("empty", ""), ("bom", "\uFEFF")] do
+    let s := ScannerState.mk' input
+    for n in [0, 1, 2, 5] do
+      checkM state s!"forward/consumeExactSpaces/{label}/{n}" (forwardB s (consumeExactSpaces s n).2) ""
+      checkM state s!"forward/collectLineContentLoop/{label}/{n}" (forwardB s (collectLineContentLoop s "" n).2) ""
+      checkM state s!"forward/collectBlockScalarLoop/{label}/{n}"
+        (forwardB s (collectBlockScalarLoop s "" n 2 s.inputEnd).2) ""
+      checkM state s!"forward/parseBlockHeaderLoop/{label}/{n}"
+        (forwardB s (parseBlockHeaderLoop s .clip none n).2.2) ""
+      checkM state s!"forward/collectCommentTextLoop/{label}/{n}"
+        (forwardB s (collectCommentTextLoop s "" n).2) ""
+    checkM state s!"forward/consumeNewline/{label}" (forwardB s (consumeNewline s)) ""
+    checkM state s!"forward/advance/{label}" (forwardB s s.advance) ""
+    checkM state s!"forward/skipWhitespace/{label}" (forwardB s (skipWhitespace s)) ""
+    checkM state s!"forward/scanBlockScalarSkipComment/{label}" (forwardB s (scanBlockScalarSkipComment s)) ""
+  -- `forwardB` can say no.
+  checkM state "forward/refutes: cursor moved left on its line"
+    (forwardB { ScannerState.mk' "x" with col := 3 } { ScannerState.mk' "x" with col := 2 } == false) ""
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -2707,6 +2900,8 @@ def collectTests : IO VerifiedSuiteResult := do
   testDedentHook state
   testHookCarrier state
   testTokenCarrierWalk state
+  testColFloorWalk state
+  testColFloorHelpers state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

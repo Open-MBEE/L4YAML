@@ -168,7 +168,7 @@ private lemma handleBlockLineBreak_col_ge {s s' : ScannerState}
       exact Nat.le_trans (Nat.le_of_not_lt hcol) (skipWhitespace_col_ge _)
 
 /-- The terminator results hand back the walk's CURRENT state. -/
-private lemma terminates?_state {c : Char} {s : ScannerState}
+lemma terminates?_state {c : Char} {s : ScannerState}
     {content spaces : String} {inFlow : Bool} {r : PlainScalarResult}
     (h : collectPlainScalar_terminates? c s content spaces inFlow = some r) :
     r.state = s := by
@@ -192,7 +192,7 @@ private lemma terminates?_state {c : Char} {s : ScannerState}
     recursive step either spends a column on a non-break character or lands a
     fold at `contentIndent` or deeper; the stop paths return a state some
     earlier step certified. -/
-private lemma collectPlainScalarLoop_line_or_floor (fuel : Nat) :
+lemma collectPlainScalarLoop_line_or_floor (fuel : Nat) :
     ∀ (s : ScannerState) (content spaces : String) (ci ie l₀ : Nat)
       (r : PlainScalarResult),
     collectPlainScalarLoop s content spaces fuel false ci ie = .ok r →

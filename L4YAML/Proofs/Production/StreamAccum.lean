@@ -24,6 +24,7 @@ public import L4YAML.Proofs.Scanner.FlowIndentStable
 public import L4YAML.Proofs.Scanner.IndentStackBase
 public import L4YAML.Proofs.Scanner.IndentStackCover
 public import L4YAML.Proofs.Scanner.PendingKeySound
+public import L4YAML.Proofs.Scanner.ColFloor
 public import L4YAML.Proofs.Scanner.StaleCursorFloor
 public import L4YAML.Proofs.Scanner.ExplicitKeyCoupling
 public import L4YAML.Proofs.Coupling.TabIndentBridge
@@ -37124,6 +37125,11 @@ lemma scanNextToken_accum_step (sc : ScannerState)
     -- Item 147: the stack's SHAPE beside its base — the second half of what
     -- the landing's `:`/`?` openers measure their cover from.
     (h_mono : IndentStackMono.Mono sc)
+    -- Item 339: the pending-key carrier (item 338) and its column floor ride
+    -- the loop together; `ColFloor.scanNextToken_sound_colfloor` pays the
+    -- `PreprocessFloor` premise item 338 left STARVED.
+    (h_sound : PendingKeySound.Sound sc)
+    (h_cf : ColFloor.ColFloor sc)
     (h_ok : scanNextToken sc = .ok (some s')) :
     ∃ sp_gram' sp_block' sp_flow' sp_scan' b',
       SLYamlStream sp_start sp_gram' ∧
@@ -37134,7 +37140,9 @@ lemma scanNextToken_accum_step (sc : ScannerState)
       ScannerSurfCorr s' sp_scan' ∧
       (s'.flowLevel ≥ 1 →
         InteriorGap s' (tailOf s'.tokens) sp_flow' sp_scan' ∧
-          LastTokenReal s'.tokens ∧ s'.allowDirectives = false) := by
+          LastTokenReal s'.tokens ∧ s'.allowDirectives = false) ∧
+      PendingKeySound.Sound s' ∧ ColFloor.ColFloor s' := by
+  have h_sc' := ColFloor.scanNextToken_sound_colfloor h_ok h_sound h_mono h_base h_cf
   unfold scanNextToken at h_ok
   simp only [bind, Except.bind, pure, Except.pure] at h_ok
   split at h_ok
@@ -37169,8 +37177,10 @@ lemma scanNextToken_accum_step (sc : ScannerState)
       · split at h_ok
         · rename_i s_str
           have h := Except.ok.inj h_ok; injection h with h; subst h
-          exact accum_step_structural sc sp_start sp_gram sp_block sp_flow sp_scan s_pre s_str c_pre
-            h_stream h_stack h_flow h_pending h_dir_flag h_corr h_interior h_pre h_dn h_fv h_str_eq
+          obtain ⟨g', bl', fl', sn', b', q1, q2, q3, q4, q5, q6, q7⟩ :=
+            accum_step_structural sc sp_start sp_gram sp_block sp_flow sp_scan s_pre s_str c_pre
+              h_stream h_stack h_flow h_pending h_dir_flag h_corr h_interior h_pre h_dn h_fv h_str_eq
+          exact ⟨g', bl', fl', sn', b', q1, q2, q3, q4, q5, q6, q7, h_sc'.1, h_sc'.2⟩
         · -- Pending-directives check (Fix B) — pure check, no state change
           split at h_ok
           · simp at h_ok
@@ -37206,7 +37216,7 @@ lemma scanNextToken_accum_step (sc : ScannerState)
                   accum_step_flow sc sp_start sp_gram sp_block sp_flow sp_scan s_pre s_flow_out c_pre
                     h_stream h_stack h_flow h_pending h_corr h_interior h_pre h_dn h_fv h_str_eq
                     h_flow_disp h_bare h_base
-                exact ⟨g', bl', fl', sn', false, q1, q2, q3, q4, fun h => Bool.noConfusion h, q5, q6⟩
+                exact ⟨g', bl', fl', sn', false, q1, q2, q3, q4, fun h => Bool.noConfusion h, q5, q6, h_sc'.1, h_sc'.2⟩
               · rename_i h_flow_none
                 split at h_ok
                 · simp at h_ok
@@ -37217,7 +37227,7 @@ lemma scanNextToken_accum_step (sc : ScannerState)
                       accum_step_block sc sp_start sp_gram sp_block sp_flow sp_scan s_pre s_blk c_pre
                         h_stream h_kbc h_scf h_stack h_flow h_pending h_corr h_interior h_pre
                         h_dn h_fv h_str_eq h_blk h_bare h_base h_mono
-                    exact ⟨g', bl', fl', sn', false, q1, q2, q3, q4, fun h => Bool.noConfusion h, q5, q6⟩
+                    exact ⟨g', bl', fl', sn', false, q1, q2, q3, q4, fun h => Bool.noConfusion h, q5, q6, h_sc'.1, h_sc'.2⟩
                   · rename_i h_blk_none
                     -- Item 47: the adjacent-value check between the two dispatches.
                     split at h_ok
@@ -37254,7 +37264,7 @@ lemma scanNextToken_accum_step (sc : ScannerState)
                             h_stream h_stack h_flow h_pending h_corr h_interior h_pre h_dn
                             h_fv h_flow_none h_blk_none h_adj h_bare h_base h_mono h_cnt
                             h_str_eq h_not_doc
-                        exact ⟨g', bl', fl', sn', false, q1, q2, q3, q4, fun h => Bool.noConfusion h, q5, q6⟩
+                        exact ⟨g', bl', fl', sn', false, q1, q2, q3, q4, fun h => Bool.noConfusion h, q5, q6, h_sc'.1, h_sc'.2⟩
 
 /-! ## §2 EOF Step: scanNextToken returns none
 
@@ -37351,6 +37361,11 @@ lemma scanLoop_grammar_prod (sc : ScannerState)
     -- Item 147: the stack's SHAPE beside its base — the second half of what
     -- the landing's `:`/`?` openers measure their cover from.
     (h_mono : IndentStackMono.Mono sc)
+    -- Item 339: the pending-key carrier and its column floor ride the loop,
+    -- seeded by `mk'` (`ColFloor.seed_sound`/`seed_colfloor`) and
+    -- re-established at every step by `scanNextToken_accum_step`.
+    (h_sound : PendingKeySound.Sound sc)
+    (h_cf : ColFloor.ColFloor sc)
     (h_ok : scanLoop sc fuel = .ok tokens) :
     ∃ sp_final : SurfPos, SLYamlStream sp_start sp_final ∧ sp_final.chars = [] := by
   induction fuel generalizing sc sp_gram sp_block sp_flow sp_scan tokens b with
@@ -37399,10 +37414,10 @@ lemma scanLoop_grammar_prod (sc : ScannerState)
     · -- scanNextToken = .ok (some s') → one step + recurse
       rename_i s_next h_next
       obtain ⟨sp_gram', sp_block', sp_flow', sp_scan', b', h_stream', h_stack', h_flow',
-              h_pending', h_flag', h_corr', h_interior'⟩ :=
+              h_pending', h_flag', h_corr', h_interior', h_sound', h_cf'⟩ :=
         scanNextToken_accum_step sc sp_start sp_gram sp_block sp_flow sp_scan s_next
           h_stream h_kbc h_scf h_stack h_flow h_pending h_dir_flag h_corr h_interior h_base
-          h_mono h_next
+          h_mono h_sound h_cf h_next
       exact ih s_next sp_gram' sp_block' sp_flow' sp_scan' tokens
         h_stream'
         (ScannerCorrectness.scanNextToken_preserves_KeysBehindCursor sc s_next h_next h_kbc)
@@ -37414,7 +37429,7 @@ lemma scanLoop_grammar_prod (sc : ScannerState)
         -- Item 147: and its SHAPE — every push is guarded by
         -- `col > currentIndent`, which is the strict step the new top owes the
         -- old one, and the unwind only pops.
-        (IndentStackMono.scanNextToken_mono h_next h_mono h_base) h_ok
+        (IndentStackMono.scanNextToken_mono h_next h_mono h_base) h_sound' h_cf' h_ok
 
 /-! ## §4 Initial Stream + BOM Handling
 
@@ -37621,6 +37636,17 @@ lemma scan_content_gives_stream_v2
             col := 0 } : ScannerState).indents = _
           exact CouplingBridge.advance_indents _)
       · exact h_emit)
+    -- Item 339: the seed's pending-key carrier and column floor — `mk'` has no
+    -- pending key, an empty flow stack and the stream level `-1` under column 0;
+    -- the `streamStart` emission and §5.2's BOM advance keep all of it.
+    (by
+      split
+      · exact ColFloor.seed_bom_sound input
+      · exact ColFloor.seed_sound input)
+    (by
+      split
+      · exact ColFloor.seed_bom_colfloor input ‹_›
+      · exact ColFloor.seed_colfloor input)
     h
   -- B.4β: the initial scanner has `flowLevel = 0` (fresh `mk'`, `emit`/`advance`
   -- preserve it), so the empty flow stack is `nil` (depth 0); its frame-tail

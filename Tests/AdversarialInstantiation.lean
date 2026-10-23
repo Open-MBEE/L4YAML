@@ -2803,6 +2803,83 @@ def testColFloorWalk (state : IO.Ref TestCollector) : IO Unit := do
   checkM state "colfloor/flow continuation at the floor + 1 accepted"
     (match scan "k:\n  v: [a,\n   b]\n" with | .error _ => false | .ok _ => true) ""
 
+
+/-- `collectPlainScalarLoop_flow_inv`'s premise and conclusion as Booleans, read off an
+    explicit `(l₀, c₀)` (the entry line and column). -/
+def flowInvB (l₀ c₀ : Nat) (s : ScannerState) : Bool :=
+  (s.line == l₀ && c₀ ≤ s.col) || (l₀ < s.line && s.currentIndent < (s.col : Int))
+
+def forwardB (s s' : ScannerState) : Bool :=
+  s.line < s'.line || (s'.line == s.line && s.col ≤ s'.col)
+
+/-- A flow-context scanner state over `input` with one block level at `indentCol`. -/
+def mkFlow (input : String) (indentCol : Int) : ScannerState :=
+  { ScannerState.mk' input with
+    flowLevel := 1
+    indents := #[{ column := -1, isSequence := false }, { column := indentCol, isSequence := false }]
+    pendingKeys := #[none, none] }
+
+/-- Direct instantiations of the generic helper lemmas of `ColFloor.lean` on their own
+    quantified scope: fuel 0/1/2, same-line and cross-line starts, vacuous premises counted. -/
+def testColFloorHelpers (state : IO.Ref TestCollector) : IO Unit := do
+  -- The flow plain loop at fuel 0, 1, 2 from a same-line start (`c₀ = col`) and from a
+  -- cross-line start (`l₀ < line`, cursor past the floor), on inputs with and without a
+  -- fold.  The conclusion must hold whenever the loop returns `.ok`.
+  let mut vacuous := 0
+  let mut checked := 0
+  for (label, input, indentCol) in [
+      ("plain", "ab, c]", (0 : Int)), ("folded", "a\n  b, c]", 0), ("folded twice", "a\n  b\n  c]", 0),
+      ("under-indented fold", "a\nb]", 0), ("comment after fold", "a\n  # c\n  b]", 0),
+      ("break first", "\n  b]", 0), ("empty", "", 0), ("deep floor", "a\n    b]", 2)] do
+    let s := mkFlow input indentCol
+    for fuel in [0, 1, 2, 3, input.length + 2] do
+      -- same-line start
+      match collectPlainScalarLoop s "" "" fuel true s.col s.inputEnd with
+      | .ok r =>
+        checked := checked + 1
+        checkM state s!"flow_inv/{label}/fuel {fuel}/same-line: conclusion"
+          (flowInvB s.line s.col r.state) s!"line {r.state.line} col {r.state.col}"
+      | .error _ => vacuous := vacuous + 1
+      -- cross-line start: pretend the loop entered one line earlier at column 0, with the
+      -- cursor strictly past the floor (premise's second disjunct)
+      let s2 := { s with line := 1, col := 3 }
+      if flowInvB 0 0 s2 then
+        match collectPlainScalarLoop s2 "" "" fuel true s2.col s2.inputEnd with
+        | .ok r =>
+          checked := checked + 1
+          checkM state s!"flow_inv/{label}/fuel {fuel}/cross-line: conclusion"
+            (flowInvB 0 0 r.state) s!"line {r.state.line} col {r.state.col}"
+        | .error _ => vacuous := vacuous + 1
+  checkM state "flow_inv: the loop returned .ok on most probes (premise not vacuous)"
+    (checked ≥ 40) s!"checked {checked}, vacuous {vacuous}"
+  checkM state "flow_inv: the under-indent gate did refuse at least once (vacuous arm reached)"
+    (vacuous ≥ 1) s!"vacuous {vacuous}"
+  -- `flowInvB` can say no.
+  checkM state "flow_inv/refutes: cross-line cursor at the floor"
+    (flowInvB 0 0 { mkFlow "x" 2 with line := 1, col := 2 } == false) ""
+  -- The `Forward` helpers at fuel 0/1/2: `consumeExactSpaces`, `collectLineContentLoop`,
+  -- `collectBlockScalarLoop`, `parseBlockHeaderLoop`, `collectCommentTextLoop`, and the
+  -- single-step `consumeNewline`/`advance`/`skipWhitespace`/`scanBlockScalarSkipComment`.
+  for (label, input) in [("spaces", "   x\n  y"), ("content", "abc\ndef"), ("break", "\n\n x"),
+      ("crlf", "\r\nx"), ("header", "|2-  # c\n  x"), ("empty", ""), ("bom", "\uFEFF")] do
+    let s := ScannerState.mk' input
+    for n in [0, 1, 2, 5] do
+      checkM state s!"forward/consumeExactSpaces/{label}/{n}" (forwardB s (consumeExactSpaces s n).2) ""
+      checkM state s!"forward/collectLineContentLoop/{label}/{n}" (forwardB s (collectLineContentLoop s "" n).2) ""
+      checkM state s!"forward/collectBlockScalarLoop/{label}/{n}"
+        (forwardB s (collectBlockScalarLoop s "" n 2 s.inputEnd).2) ""
+      checkM state s!"forward/parseBlockHeaderLoop/{label}/{n}"
+        (forwardB s (parseBlockHeaderLoop s .clip none n).2.2) ""
+      checkM state s!"forward/collectCommentTextLoop/{label}/{n}"
+        (forwardB s (collectCommentTextLoop s "" n).2) ""
+    checkM state s!"forward/consumeNewline/{label}" (forwardB s (consumeNewline s)) ""
+    checkM state s!"forward/advance/{label}" (forwardB s s.advance) ""
+    checkM state s!"forward/skipWhitespace/{label}" (forwardB s (skipWhitespace s)) ""
+    checkM state s!"forward/scanBlockScalarSkipComment/{label}" (forwardB s (scanBlockScalarSkipComment s)) ""
+  -- `forwardB` can say no.
+  checkM state "forward/refutes: cursor moved left on its line"
+    (forwardB { ScannerState.mk' "x" with col := 3 } { ScannerState.mk' "x" with col := 2 } == false) ""
+
 def collectTests : IO VerifiedSuiteResult := do
   let state ← IO.mkRef ({} : TestCollector)
   test9g state
@@ -2824,6 +2901,7 @@ def collectTests : IO VerifiedSuiteResult := do
   testHookCarrier state
   testTokenCarrierWalk state
   testColFloorWalk state
+  testColFloorHelpers state
   let results ← finish state
   return { name := "adversarialinstantiation",
            label := "Adversarial Instantiation Tests (sorry audit)",

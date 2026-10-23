@@ -70,13 +70,8 @@ lemma Forward.trans {s t u : ScannerState} (h1 : Forward s t) (h2 : Forward t u)
 lemma Forward.of_same_line {s s' : ScannerState} (hl : s'.line = s.line) (hc : s.col ≤ s'.col) :
     Forward s s' := Or.inr ⟨hl, hc⟩
 
-lemma Forward.of_line_lt {s s' : ScannerState} (hl : s.line < s'.line) : Forward s s' := Or.inl hl
-
 lemma Forward.of_fields {s s' : ScannerState} (hl : s'.line = s.line) (hc : s'.col = s.col) :
     Forward s s' := Or.inr ⟨hl, hc ▸ Nat.le_refl _⟩
-
-lemma Forward.line_le {s s' : ScannerState} (h : Forward s s') : s.line ≤ s'.line := by
-  unfold Forward at h; omega
 
 lemma Forward.col_le_of_line_eq {s s' : ScannerState} (hf : Forward s s') (hl : s'.line = s.line) :
     s.col ≤ s'.col := by
@@ -110,9 +105,6 @@ lemma Forward.advanceN (s : ScannerState) (n : Nat) : Forward s (s.advanceN n) :
 
 lemma Forward.emit (s : ScannerState) (t : YamlToken) : Forward s (s.emit t) :=
   Forward.of_fields rfl rfl
-
-lemma Forward.emitAt (s : ScannerState) (p : YamlPos) (t : YamlToken) :
-    Forward s (s.emitAt p t) := Forward.of_fields rfl rfl
 
 /-- One non-break character spends one column on its line. -/
 lemma Forward.advance_of_nb {s : ScannerState} {c : Char} (hpk : s.peek? = some c)
